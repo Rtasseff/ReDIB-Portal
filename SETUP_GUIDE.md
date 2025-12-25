@@ -279,14 +279,44 @@ For basic testing, Redis is optional - the app uses in-memory caching instead.
 
 ---
 
+## Quick Test Data Setup (Recommended)
+
+Instead of manually creating test data, use the **seed_dev_data** command to automatically create a complete test environment:
+
+```bash
+python manage.py seed_dev_data --clear
+```
+
+This creates:
+- **8 test users** with different roles (all password: `testpass123`)
+- **2 nodes** (CICBIO and CNIC) with 4 equipment items
+- **2 calls** (one resolved, one open)
+- **4 applications** in different states (draft, feasibility review, rejected, completed)
+- **Complete workflow** examples with evaluations, grants, and publications
+
+**Test user accounts:**
+- `admin@test.redib.net` - Administrator
+- `coordinator@test.redib.net` - ReDIB Coordinator
+- `cic@test.redib.net` - Node Coordinator for CICBIO
+- `cnic@test.redib.net` - Node Coordinator for CNIC
+- `eval1@test.redib.net` - Evaluator (preclinical)
+- `eval2@test.redib.net` - Evaluator (clinical)
+- `applicant1@test.redib.net` - Applicant
+- `applicant2@test.redib.net` - Applicant
+
+See **TEST_SETUP.md** for detailed information about the test data.
+
+---
+
 ## Next Steps
 
-Once you have the basic data set up:
+Once you have the test data loaded:
 
-1. **Create a test application** (via admin)
-2. **Test the workflow** (submit → review → evaluate → approve)
-3. **Test email sending** (check console output or SMTP)
-4. **Test Celery tasks** (create pending reviews and wait for reminders)
+1. **Login with different roles** at http://localhost:8000/accounts/login/
+2. **Test the workflow** (submit APP-TEST-003, review APP-TEST-004)
+3. **Explore the admin** at http://localhost:8000/admin/
+4. **Test email sending** (check console output or SMTP)
+5. **Test Celery tasks** (if Redis is enabled)
 
 ---
 
