@@ -267,6 +267,16 @@ python manage.py runserver
 ### Issue: Emails not sending
 **Solution**: Check that email templates are created and marked as active in admin.
 
+### Issue: "Error connecting to redis:6379" when logging in
+**Solution**: The app is configured for local development without Redis by default (USE_REDIS=False in .env). This is normal. If you want to use Redis for caching and Celery:
+
+1. Install Redis: `brew install redis` (macOS) or `apt-get install redis` (Linux)
+2. Start Redis: `redis-server`
+3. Update `.env`: Set `USE_REDIS=True`
+4. Restart the Django server
+
+For basic testing, Redis is optional - the app uses in-memory caching instead.
+
 ---
 
 ## Next Steps
