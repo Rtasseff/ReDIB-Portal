@@ -18,10 +18,11 @@ class OrganizationAdmin(SimpleHistoryAdmin):
 
 @admin.register(Node)
 class NodeAdmin(SimpleHistoryAdmin):
-    list_display = ['code', 'name', 'location', 'is_active', 'created_at']
+    list_display = ['code', 'name', 'director', 'location', 'is_active', 'created_at']
     list_filter = ['is_active']
     search_fields = ['name', 'code', 'location']
     ordering = ['code']
+    autocomplete_fields = ['director']
 
 
 @admin.register(Equipment)

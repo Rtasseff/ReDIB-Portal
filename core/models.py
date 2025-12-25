@@ -51,6 +51,16 @@ class Node(models.Model):
         blank=True
     )
 
+    # Leadership
+    director = models.ForeignKey(
+        'User',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='directed_nodes',
+        help_text='Node director/coordinator'
+    )
+
     # Contact information
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=30, blank=True)

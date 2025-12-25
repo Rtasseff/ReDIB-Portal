@@ -37,12 +37,20 @@ class Application(models.Model):
         ('other', 'Other'),
     ]
 
+    # Spanish AEI (Agencia Estatal de Investigación) subject area classification
     SUBJECT_AREAS = [
-        ('biology', 'Biology'),
-        ('medicine', 'Medicine'),
-        ('engineering', 'Engineering'),
-        ('chemistry', 'Chemistry'),
-        ('physics', 'Physics'),
+        ('phy', 'PHY - Physics'),
+        ('che', 'CHE - Chemistry'),
+        ('mat', 'MAT - Materials Science and Technology'),
+        ('ear', 'EAR - Earth Sciences'),
+        ('bio', 'BIO - Biology'),
+        ('med', 'MED - Medicine'),
+        ('agr', 'AGR - Agricultural Sciences'),
+        ('eng', 'ENG - Engineering and Architecture'),
+        ('soc', 'SOC - Social Sciences'),
+        ('eco', 'ECO - Economics'),
+        ('law', 'LAW - Law'),
+        ('hum', 'HUM - Humanities'),
         ('other', 'Other'),
     ]
 
@@ -148,8 +156,26 @@ class Application(models.Model):
     def __str__(self):
         return f"{self.code} - {self.brief_description}"
 
+    # Valid state transitions based on design document section 6.1
+    VALID_TRANSITIONS = {
+        'draft': ['submitted'],
+        'submitted': ['under_feasibility_review', 'rejected_feasibility'],
+        'under_feasibility_review': ['rejected_feasibility', 'pending_evaluation'],
+        'rejected_feasibility': [],  # Terminal state
+        'pending_evaluation': ['under_evaluation'],
+        'under_evaluation': ['evaluated'],
+        'evaluated': ['accepted', 'pending', 'rejected'],
+        'accepted': ['scheduled'],
+        'pending': ['scheduled', 'rejected'],
+        'rejected': [],  # Terminal state
+        'scheduled': ['in_progress'],
+        'in_progress': ['completed'],
+        'completed': [],  # Terminal state
+    }
+
     def save(self, *args, **kwargs):
-        """Generate application code if not exists"""
+        """Generate application code and validate state transitions"""
+        # Generate application code if not exists
         if not self.code:
             # Generate code like: CALL-CODE-001
             last_app = Application.objects.filter(
@@ -167,7 +193,41 @@ class Application(models.Model):
 
             self.code = f"{self.call.code}-{new_num:03d}"
 
+        # Validate state transition if updating existing application
+        if self.pk:
+            old_status = Application.objects.get(pk=self.pk).status
+            if old_status != self.status:
+                valid_next_states = self.VALID_TRANSITIONS.get(old_status, [])
+                if self.status not in valid_next_states:
+                    from django.core.exceptions import ValidationError
+                    raise ValidationError(
+                        f"Invalid status transition from '{old_status}' to '{self.status}'. "
+                        f"Valid next states: {', '.join(valid_next_states) if valid_next_states else 'None (terminal state)'}"
+                    )
+
         super().save(*args, **kwargs)
+
+    def can_transition_to(self, new_status):
+        """
+        Check if application can transition to a new status.
+
+        Args:
+            new_status: The target status to check
+
+        Returns:
+            Boolean indicating if transition is valid
+        """
+        valid_next_states = self.VALID_TRANSITIONS.get(self.status, [])
+        return new_status in valid_next_states
+
+    def get_next_valid_states(self):
+        """
+        Get list of valid next states for this application.
+
+        Returns:
+            List of valid status choices
+        """
+        return self.VALID_TRANSITIONS.get(self.status, [])
 
     @property
     def total_hours_requested(self):
