@@ -3,7 +3,7 @@ Core models for ReDIB COA portal.
 Includes: User, Organization, Node, Equipment, UserRole
 """
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
@@ -121,8 +121,14 @@ class Equipment(models.Model):
         return f"{self.node.code} - {self.name}"
 
 
-class UserManager(models.Manager):
+class UserManager(BaseUserManager):
     """Custom manager for User model with email-based authentication."""
+
+    def get_by_natural_key(self, email):
+        """
+        Retrieve user by email (natural key for email-based authentication).
+        """
+        return self.get(**{self.model.USERNAME_FIELD: email})
 
     def create_user(self, email, password=None, **extra_fields):
         """
