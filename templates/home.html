@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="text-center mb-5">
+            <h1 class="display-4">ReDIB COA Portal</h1>
+            <p class="lead">Competitive Open Access Management System</p>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title h4">Welcome</h2>
+                <p>
+                    This is the Competitive Open Access (COA) management portal for the ReDIB
+                    (Red Distribuida de Imagen Biomédica) network.
+                </p>
+
+                {% if not user.is_authenticated %}
+                    <div class="mt-4">
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg me-2">
+                            Register
+                        </a>
+                        <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg">
+                            Login
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="mt-4">
+                        <p class="mb-3">Welcome back, <strong>{{ user.get_full_name }}</strong>!</p>
+                        <a href="/admin/" class="btn btn-primary">
+                            Go to Admin Dashboard
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">For Applicants</h5>
+                        <p class="card-text small">
+                            Submit and track your COA applications for access to ReDIB imaging facilities.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">For Evaluators</h5>
+                        <p class="card-text small">
+                            Review and score applications assigned to you during call evaluation periods.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">For Coordinators</h5>
+                        <p class="card-text small">
+                            Manage calls, assign evaluators, and oversee the complete COA process.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

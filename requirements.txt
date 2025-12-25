@@ -1,0 +1,45 @@
+# Core Django
+Django>=5.0,<5.1
+psycopg[binary]>=3.1
+python-dotenv>=1.0
+
+# Background tasks
+celery>=5.3
+redis>=5.0
+
+# Authentication
+django-allauth>=0.58
+
+# API (for future use)
+djangorestframework>=3.14
+
+# Audit trail
+django-simple-history>=3.4
+
+# Frontend enhancement
+django-htmx>=1.17
+
+# Environment management
+django-environ>=0.11
+
+# Document generation
+weasyprint>=60.0
+openpyxl>=3.1
+
+# Production server
+gunicorn>=21.0
+whitenoise>=6.6
+
+# Error tracking
+sentry-sdk>=1.35
+
+# Development tools
+django-debug-toolbar>=4.2
+ipython>=8.18
+
+# Form handling
+django-crispy-forms>=2.1
+crispy-bootstrap5>=2.0
+
+# Email
+django-anymail[brevo]>=10.2
