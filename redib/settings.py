@@ -138,12 +138,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Site ID (required for django-allauth)
 SITE_ID = 1
 
-# Django-allauth configuration
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+# Django-allauth configuration (updated to django-allauth 0.58+ API)
+ACCOUNT_LOGIN_METHODS = {'email'}  # Use email for authentication (replaces ACCOUNT_AUTHENTICATION_METHOD)
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = True
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*',     # Email required
+    'email2*',    # Email confirmation required (replaces ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE)
+    'password1*', # Password required
+    'password2*', # Password confirmation required
+]
+# Note: Username not included in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_USERNAME_REQUIRED=False)
+# Note: Email required via email* in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_EMAIL_REQUIRED=True)
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
