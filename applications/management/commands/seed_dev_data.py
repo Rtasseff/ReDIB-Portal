@@ -209,7 +209,7 @@ class Command(BaseCommand):
                 if node_code and node_code in nodes:
                     node = nodes[node_code]
 
-                role, role_created = UserRole.objects.get_or_create(
+                role, role_created = UserRole.objects.update_or_create(
                     user=user,
                     role=role_name,
                     node=node,
@@ -218,6 +218,12 @@ class Command(BaseCommand):
                 if role_created:
                     display = f"{role_name} at {node.code}" if node else role_name
                     self.stdout.write(f'    → Assigned role: {display}')
+                else:
+                    # Update area if it changed
+                    if role.area != area:
+                        role.area = area
+                        role.save()
+                        self.stdout.write(f'    → Updated role area: {role_name}')
 
         return users
 
