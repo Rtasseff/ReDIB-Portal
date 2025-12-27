@@ -1,0 +1,54 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}{{ feature }} - Coming Soon{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="bi bi-hourglass-split"></i> Feature Coming Soon</h4>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-tools" style="font-size: 4rem; color: #0dcaf0;"></i>
+                    <h2 class="mt-4">{{ feature }}</h2>
+                    <p class="lead text-muted">This feature will be available in {{ phase }}.</p>
+
+                    <hr class="my-4">
+
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Current Status</h5>
+                        <p class="mb-0">
+                            Phase 0 and Phase 1 (Call Management) are complete and ready for testing.
+                            <br>Additional features will be implemented progressively.
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>What you can test now:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Dashboard with role-based views</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Browse public calls</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Create and manage calls (Coordinator)</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Publish calls</li>
+                            <li class="mb-2"><i class="bi bi-hourglass text-warning"></i> Application submission ({{ phase }})</li>
+                            <li class="mb-2"><i class="bi bi-hourglass text-warning"></i> Feasibility review (Phase 3)</li>
+                            <li class="mb-2"><i class="bi bi-hourglass text-warning"></i> Evaluations (Phase 5)</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 col-6 mx-auto mt-4">
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <a href="{% url 'calls:public_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-megaphone"></i> Browse Calls
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

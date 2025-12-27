@@ -1,0 +1,102 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Step 1 - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' call.pk %}">{{ call.code }}</a></li>
+            <li class="breadcrumb-item active">New Application</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 1: Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.brief_description.id_for_label }}" class="form-label">
+                                {{ form.brief_description.label }} *
+                            </label>
+                            {{ form.brief_description }}
+                            {% if form.brief_description.errors %}
+                            <div class="text-danger small">{{ form.brief_description.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.brief_description.help_text }}
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>About this wizard:</strong> Your application will be saved as a draft at each step.
+                            You can return later to continue editing before final submission.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Next: Funding Info <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item {% if step == 1 %}active{% endif %}">
+                        <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item {% if step == 2 %}active{% endif %}">
+                        2. Funding & Project
+                    </div>
+                    <div class="list-group-item {% if step == 3 %}active{% endif %}">
+                        3. Equipment Request
+                    </div>
+                    <div class="list-group-item {% if step == 4 %}active{% endif %}">
+                        4. Scientific Content
+                    </div>
+                    <div class="list-group-item {% if step == 5 %}active{% endif %}">
+                        5. Declarations
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview & Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

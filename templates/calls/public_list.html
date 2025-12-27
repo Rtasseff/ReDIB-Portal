@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Open Calls - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Open Calls for Access</h1>
+    <p class="lead">Browse current and upcoming calls for Competitive Open Access to ReDIB facilities.</p>
+
+    {% if open_calls %}
+    <h2 class="mt-5 mb-3">Currently Open</h2>
+    <div class="row">
+        {% for call in open_calls %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">{{ call.code }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ call.title }}</h6>
+                    <p class="card-text text-muted small">{{ call.description|truncatewords:30|striptags }}</p>
+
+                    <hr>
+
+                    <div class="mb-2">
+                        <strong>Deadline:</strong><br>
+                        <span class="text-danger">{{ call.submission_end|date:"F d, Y H:i" }}</span>
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>Equipment Available:</strong><br>
+                        {{ call.equipment_allocations.count }} item{{ call.equipment_allocations.count|pluralize }}
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>Total Hours:</strong><br>
+                        {{ call.total_hours_offered }} hours
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-primary btn-sm w-100 mb-2">
+                        <i class="bi bi-info-circle"></i> View Details
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'applications:create' call.pk %}" class="btn btn-success btn-sm w-100">
+                        <i class="bi bi-file-earmark-plus"></i> Apply Now
+                    </a>
+                    {% else %}
+                    <a href="{% url 'account_login' %}?next={% url 'calls:public_detail' call.pk %}" class="btn btn-outline-success btn-sm w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Login to Apply
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4">
+        <h4 class="alert-heading"><i class="bi bi-info-circle"></i> No Open Calls Currently</h4>
+        <p>There are no open calls at this time. Please check back soon or contact ReDIB for more information.</p>
+    </div>
+    {% endif %}
+
+    {% if upcoming_calls %}
+    <h2 class="mt-5 mb-3">Upcoming Calls</h2>
+    <div class="list-group">
+        {% for call in upcoming_calls %}
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ call.code }} - {{ call.title }}</h6>
+                <small class="text-muted">{{ call.equipment_allocations.count }} equipment items</small>
+            </div>
+            <p class="mb-1 small text-muted">{{ call.description|truncatewords:20|striptags }}</p>
+            <small class="text-primary"><i class="bi bi-calendar"></i> Opens: {{ call.submission_start|date:"F d, Y" }}</small>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

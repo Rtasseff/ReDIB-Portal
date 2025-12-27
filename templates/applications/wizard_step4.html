@@ -1,0 +1,172 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Step 4 - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ application.call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 4: Scientific Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Evaluation Criteria:</strong> Your application will be evaluated based on these six criteria.
+                        Please provide detailed responses for each section.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.scientific_relevance.id_for_label }}" class="form-label">
+                                {{ form.scientific_relevance.label }} *
+                            </label>
+                            {{ form.scientific_relevance }}
+                            {% if form.scientific_relevance.errors %}
+                            <div class="text-danger small">{{ form.scientific_relevance.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe the scientific and technical relevance, quality, and originality of your project
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.methodology_description.id_for_label }}" class="form-label">
+                                {{ form.methodology_description.label }} *
+                            </label>
+                            {{ form.methodology_description }}
+                            {% if form.methodology_description.errors %}
+                            <div class="text-danger small">{{ form.methodology_description.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe your experimental and methodological design
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.expected_contributions.id_for_label }}" class="form-label">
+                                {{ form.expected_contributions.label }} *
+                            </label>
+                            {{ form.expected_contributions }}
+                            {% if form.expected_contributions.errors %}
+                            <div class="text-danger small">{{ form.expected_contributions.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe expected future contributions and dissemination plans
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.impact_strengths.id_for_label }}" class="form-label">
+                                {{ form.impact_strengths.label }} *
+                            </label>
+                            {{ form.impact_strengths }}
+                            {% if form.impact_strengths.errors %}
+                            <div class="text-danger small">{{ form.impact_strengths.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe the strengths and potential for advancement of knowledge
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.socioeconomic_significance.id_for_label }}" class="form-label">
+                                {{ form.socioeconomic_significance.label }} *
+                            </label>
+                            {{ form.socioeconomic_significance }}
+                            {% if form.socioeconomic_significance.errors %}
+                            <div class="text-danger small">{{ form.socioeconomic_significance.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe the social, economic, and industrial significance
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.opportunity_criteria.id_for_label }}" class="form-label">
+                                {{ form.opportunity_criteria.label }} *
+                            </label>
+                            {{ form.opportunity_criteria }}
+                            {% if form.opportunity_criteria.errors %}
+                            <div class="text-danger small">{{ form.opportunity_criteria.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Describe opportunity criteria and translational impact
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Your progress is automatically saved. You can return later to continue editing.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'applications:edit_step3' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Next: Declarations <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>2. Funding & Project</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>3. Equipment Request</strong>
+                    </div>
+                    <div class="list-group-item active">
+                        <strong>4. Scientific Content</strong>
+                    </div>
+                    <div class="list-group-item">
+                        5. Declarations
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview & Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

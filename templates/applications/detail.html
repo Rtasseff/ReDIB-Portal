@@ -1,0 +1,286 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Application {{ application.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'applications:my_applications' %}">My Applications</a></li>
+            <li class="breadcrumb-item active">{{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Application {{ application.code|default:"DRAFT" }}</h1>
+        <div>
+            {% if application.status == 'draft' %}
+                <span class="badge bg-secondary fs-5">Draft</span>
+            {% elif application.status == 'submitted' %}
+                <span class="badge bg-info fs-5">Submitted</span>
+            {% elif application.status == 'under_feasibility_review' %}
+                <span class="badge bg-warning text-dark fs-5">Under Review</span>
+            {% elif application.status == 'pending_evaluation' %}
+                <span class="badge bg-primary fs-5">Pending Evaluation</span>
+            {% elif application.status == 'under_evaluation' %}
+                <span class="badge bg-info fs-5">Being Evaluated</span>
+            {% elif application.status == 'evaluated' %}
+                <span class="badge bg-primary fs-5">Evaluated</span>
+            {% elif application.status == 'accepted' %}
+                <span class="badge bg-success fs-5">Accepted</span>
+            {% elif application.status == 'pending' %}
+                <span class="badge bg-warning fs-5">Pending (Waitlist)</span>
+            {% elif application.status == 'rejected' %}
+                <span class="badge bg-danger fs-5">Rejected</span>
+            {% else %}
+                <span class="badge bg-secondary fs-5">{{ application.get_status_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status Timeline -->
+    {% if application.status != 'draft' %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title">Application Timeline</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <small class="text-muted">Created</small>
+                    <p class="mb-0">{{ application.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+                {% if application.submitted_at %}
+                <div class="col-md-4">
+                    <small class="text-muted">Submitted</small>
+                    <p class="mb-0">{{ application.submitted_at|date:"M d, Y H:i" }}</p>
+                </div>
+                {% endif %}
+                {% if application.evaluated_at %}
+                <div class="col-md-4">
+                    <small class="text-muted">Evaluated</small>
+                    <p class="mb-0">{{ application.evaluated_at|date:"M d, Y H:i" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Basic Information -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Basic Information</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Call</dt>
+                <dd class="col-sm-9">
+                    <a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a> - {{ application.call.name }}
+                </dd>
+
+                <dt class="col-sm-3">Applicant</dt>
+                <dd class="col-sm-9">{{ application.applicant.get_full_name }} ({{ application.applicant.email }})</dd>
+
+                <dt class="col-sm-3">Brief Description</dt>
+                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Funding & Project -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Funding & Project Information</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_title|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Project Code</dt>
+                <dd class="col-sm-9">{{ application.project_code|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Project Type</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+
+                <dt class="col-sm-3">Subject Area</dt>
+                <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
+
+                <dt class="col-sm-3">Competitive Funding</dt>
+                <dd class="col-sm-9">
+                    {% if application.has_competitive_funding %}
+                        <span class="badge bg-success">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Equipment Request -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Equipment Request</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Service Modality</dt>
+                <dd class="col-sm-9">{{ application.get_service_modality_display }}</dd>
+
+                <dt class="col-sm-3">Specialization Area</dt>
+                <dd class="col-sm-9">{{ application.get_specialization_area_display }}</dd>
+            </dl>
+
+            <h6 class="mt-3 mb-3">Requested Equipment Access</h6>
+            {% if requested_access %}
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Node</th>
+                            <th>Equipment</th>
+                            <th>Hours Requested</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in requested_access %}
+                        <tr>
+                            <td>{{ access.equipment.node.code }}</td>
+                            <td>{{ access.equipment.name }}</td>
+                            <td>{{ access.hours_requested }}</td>
+                            <td>
+                                {% if access.hours_granted %}
+                                    <span class="badge bg-success">{{ access.hours_granted }} hours granted</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No equipment requested</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Scientific Content -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Scientific Content</h5>
+        </div>
+        <div class="card-body">
+            <h6>1. Scientific and Technical Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—" }}</p>
+
+            <h6 class="mt-3">2. Methodology and Experimental Design</h6>
+            <p class="text-pre-wrap">{{ application.methodology_description|default:"—" }}</p>
+
+            <h6 class="mt-3">3. Expected Contributions</h6>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"—" }}</p>
+
+            <h6 class="mt-3">4. Impact and Advancement of Knowledge</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"—" }}</p>
+
+            <h6 class="mt-3">5. Socioeconomic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"—" }}</p>
+
+            <h6 class="mt-3">6. Opportunity and Translational Impact</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"—" }}</p>
+        </div>
+    </div>
+
+    <!-- Declarations -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Declarations & Consent</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-6">Technical feasibility confirmed</dt>
+                <dd class="col-sm-6">
+                    {% if application.technical_feasibility_confirmed %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-6">Uses experimental animals</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_animals %}
+                        <span class="badge bg-info">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                {% if application.uses_animals %}
+                <dt class="col-sm-6">Has animal ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_animal_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
+                <dt class="col-sm-6">Uses human subjects</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_humans %}
+                        <span class="badge bg-info">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                {% if application.uses_humans %}
+                <dt class="col-sm-6">Has human ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_human_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
+                <dt class="col-sm-6">Data processing consent</dt>
+                <dd class="col-sm-6">
+                    {% if application.data_consent %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Given</span>
+                    {% else %}
+                        <span class="badge bg-danger">Not given</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'applications:my_applications' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Applications
+        </a>
+
+        {% if application.status == 'draft' %}
+        <a href="{% url 'applications:edit_step2' application.pk %}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Continue Editing
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.text-pre-wrap {
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}

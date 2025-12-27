@@ -1,0 +1,240 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Preview Application - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Preview Application</h1>
+
+    <div class="alert alert-warning">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Final Review</h5>
+        <p>Please carefully review your application before submitting. Once submitted, you cannot make further changes.</p>
+        <p class="mb-0"><strong>Deadline:</strong> {{ application.call.submission_end|date:"F d, Y H:i" }}</p>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">1. Basic Information</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Call</dt>
+                <dd class="col-sm-9">{{ application.call.code }} - {{ application.call.name }}</dd>
+
+                <dt class="col-sm-3">Brief Description</dt>
+                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Funding & Project -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">2. Funding & Project Information</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_title|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Project Code</dt>
+                <dd class="col-sm-9">{{ application.project_code|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Project Type</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+
+                <dt class="col-sm-3">Subject Area</dt>
+                <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
+
+                <dt class="col-sm-3">Competitive Funding</dt>
+                <dd class="col-sm-9">
+                    {% if application.has_competitive_funding %}
+                        <span class="badge bg-success">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Equipment Request -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">3. Equipment Request</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Service Modality</dt>
+                <dd class="col-sm-9">{{ application.get_service_modality_display }}</dd>
+
+                <dt class="col-sm-3">Specialization Area</dt>
+                <dd class="col-sm-9">{{ application.get_specialization_area_display }}</dd>
+            </dl>
+
+            <h6 class="mt-3 mb-3">Requested Equipment Access</h6>
+            {% if requested_access %}
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Node</th>
+                            <th>Equipment</th>
+                            <th>Hours Requested</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in requested_access %}
+                        <tr>
+                            <td>{{ access.equipment.node.code }}</td>
+                            <td>{{ access.equipment.name }}</td>
+                            <td>{{ access.hours_requested }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-danger">⚠️ No equipment requested</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Scientific Content -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">4. Scientific Content</h5>
+        </div>
+        <div class="card-body">
+            <h6>1. Scientific and Technical Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—" }}</p>
+
+            <h6 class="mt-3">2. Methodology and Experimental Design</h6>
+            <p class="text-pre-wrap">{{ application.methodology_description|default:"—" }}</p>
+
+            <h6 class="mt-3">3. Expected Contributions</h6>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"—" }}</p>
+
+            <h6 class="mt-3">4. Impact and Advancement of Knowledge</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"—" }}</p>
+
+            <h6 class="mt-3">5. Socioeconomic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"—" }}</p>
+
+            <h6 class="mt-3">6. Opportunity and Translational Impact</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"—" }}</p>
+        </div>
+    </div>
+
+    <!-- Declarations -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">5. Declarations & Consent</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-6">Technical feasibility confirmed</dt>
+                <dd class="col-sm-6">
+                    {% if application.technical_feasibility_confirmed %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-6">Uses experimental animals</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_animals %}
+                        <span class="badge bg-info">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                {% if application.uses_animals %}
+                <dt class="col-sm-6">Has animal ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_animal_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
+                <dt class="col-sm-6">Uses human subjects</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_humans %}
+                        <span class="badge bg-info">Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                {% if application.uses_humans %}
+                <dt class="col-sm-6">Has human ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_human_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
+                <dt class="col-sm-6">Data processing consent</dt>
+                <dd class="col-sm-6">
+                    {% if application.data_consent %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Given</span>
+                    {% else %}
+                        <span class="badge bg-danger">Not given</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Submit Actions -->
+    <div class="card border-success mb-4">
+        <div class="card-body">
+            <h5 class="card-title text-success"><i class="bi bi-check-circle"></i> Ready to Submit</h5>
+            <p class="card-text">
+                By submitting this application, you confirm that all information provided is accurate and complete.
+                Your application will be reviewed by ReDIB node coordinators for technical feasibility.
+            </p>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'applications:edit_step5' application.pk %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Edit
+                </a>
+
+                <form method="post" action="{% url 'applications:submit' application.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-lg"
+                            onclick="return confirm('Are you sure you want to submit this application? You cannot make changes after submission.')">
+                        <i class="bi bi-send"></i> Submit Application
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-pre-wrap {
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}

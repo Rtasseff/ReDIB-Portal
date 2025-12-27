@@ -1,0 +1,235 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}{{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_call_mgmt_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'calls:coordinator_dashboard' %}">Calls</a></li>
+        <li class="breadcrumb-item active">{{ call.code }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">{{ call.code }}</h1>
+        <p class="lead text-muted">{{ call.title }}</p>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'calls:call_edit' call.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                <i class="bi bi-eye"></i> Public View
+            </a>
+        </div>
+
+        {% if call.status == 'draft' %}
+        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
+           onclick="return confirm('Publish this call? This will send notification emails to users.')">
+            <i class="bi bi-send"></i> Publish
+        </a>
+        {% elif call.status == 'open' %}
+        <a href="{% url 'calls:close' call.pk %}" class="btn btn-sm btn-warning"
+           onclick="return confirm('Close this call for submissions?')">
+            <i class="bi bi-lock"></i> Close Submissions
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="mb-0">
+                    {% if call.status == 'draft' %}
+                    <span class="badge bg-secondary">Draft</span>
+                    {% elif call.status == 'open' %}
+                    <span class="badge bg-success">Open</span>
+                    {% elif call.status == 'closed' %}
+                    <span class="badge bg-warning">Closed</span>
+                    {% elif call.status == 'resolved' %}
+                    <span class="badge bg-info">Resolved</span>
+                    {% endif %}
+                </h3>
+                <p class="text-muted small mb-0">Status</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="mb-0">{{ applications.count }}</h3>
+                <p class="text-muted small mb-0">Application{{ applications.count|pluralize }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="mb-0">{{ equipment_allocations.count }}</h3>
+                <p class="text-muted small mb-0">Equipment Item{{ equipment_allocations.count|pluralize }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="mb-0">{{ call.total_hours_offered }}</h3>
+                <p class="text-muted small mb-0">Total Hours</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calendar"></i> Timeline</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Published:</strong><br>
+                {{ call.published_at|date:"F d, Y"|default:"Not yet" }}
+            </div>
+            <div class="col-md-3">
+                <strong>Submission:</strong><br>
+                {{ call.submission_start|date:"M d" }} - {{ call.submission_end|date:"M d, Y" }}
+            </div>
+            <div class="col-md-3">
+                <strong>Evaluation Deadline:</strong><br>
+                {{ call.evaluation_deadline|date:"F d, Y" }}
+            </div>
+            <div class="col-md-3">
+                <strong>Execution:</strong><br>
+                {{ call.execution_start|date:"M d" }} - {{ call.execution_end|date:"M d, Y" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Equipment Allocations</h5>
+    </div>
+    <div class="card-body">
+        {% if equipment_allocations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Node</th>
+                        <th>Equipment</th>
+                        <th>Category</th>
+                        <th>Hours Offered</th>
+                        <th>Hours Allocated</th>
+                        <th>Hours Available</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alloc in equipment_allocations %}
+                    <tr>
+                        <td>
+                            <strong>{{ alloc.equipment.node.code }}</strong><br>
+                            <small class="text-muted">{{ alloc.equipment.node.name }}</small>
+                        </td>
+                        <td>{{ alloc.equipment.name }}</td>
+                        <td><span class="badge bg-secondary">{{ alloc.equipment.get_category_display }}</span></td>
+                        <td><strong>{{ alloc.hours_offered }}</strong></td>
+                        <td>{{ alloc.hours_allocated }}</td>
+                        <td>
+                            {% if alloc.hours_available > 0 %}
+                            <span class="text-success">{{ alloc.hours_available }}</span>
+                            {% else %}
+                            <span class="text-danger">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Warning:</strong> No equipment allocations defined. You must add equipment before publishing.
+            <a href="{% url 'calls:call_edit' call.pk %}" class="alert-link">Edit call</a> to add equipment.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-file-text"></i> Applications</h5>
+        {% if applications %}
+        <span class="badge bg-primary">{{ applications.count }}</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Applicant</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.applicant.get_full_name }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ app.get_status_display }}</span>
+                        </td>
+                        <td>{{ app.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">
+            <i class="bi bi-info-circle"></i> No applications submitted yet.
+            {% if call.status == 'open' %}
+            Applications will appear here once users submit them.
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Description</h5>
+    </div>
+    <div class="card-body">
+        {{ call.description|safe }}
+    </div>
+</div>
+
+{% if call.guidelines %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-text"></i> Guidelines</h5>
+    </div>
+    <div class="card-body">
+        {{ call.guidelines|safe }}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

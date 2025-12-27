@@ -1,0 +1,154 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Step 2 - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ application.call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 2: Funding & Project Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.project_title.id_for_label }}" class="form-label">
+                                {{ form.project_title.label }} *
+                            </label>
+                            {{ form.project_title }}
+                            {% if form.project_title.errors %}
+                            <div class="text-danger small">{{ form.project_title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.project_code.id_for_label }}" class="form-label">
+                                {{ form.project_code.label }}
+                            </label>
+                            {{ form.project_code }}
+                            {% if form.project_code.errors %}
+                            <div class="text-danger small">{{ form.project_code.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Optional: Internal project identifier</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.funding_agency.id_for_label }}" class="form-label">
+                                {{ form.funding_agency.label }}
+                            </label>
+                            {{ form.funding_agency }}
+                            {% if form.funding_agency.errors %}
+                            <div class="text-danger small">{{ form.funding_agency.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.project_type.id_for_label }}" class="form-label">
+                                {{ form.project_type.label }} *
+                            </label>
+                            {{ form.project_type }}
+                            {% if form.project_type.errors %}
+                            <div class="text-danger small">{{ form.project_type.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.subject_area.id_for_label }}" class="form-label">
+                                {{ form.subject_area.label }} *
+                            </label>
+                            {{ form.subject_area }}
+                            {% if form.subject_area.errors %}
+                            <div class="text-danger small">{{ form.subject_area.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.has_competitive_funding }}
+                                <label class="form-check-label" for="{{ form.has_competitive_funding.id_for_label }}">
+                                    {{ form.has_competitive_funding.label }}
+                                </label>
+                            </div>
+                            {% if form.has_competitive_funding.errors %}
+                            <div class="text-danger small">{{ form.has_competitive_funding.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Check if this project has competitive funding from external agencies
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Your progress is automatically saved. You can return later to continue editing.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'applications:my_applications' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to My Applications
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Next: Equipment Request <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item active">
+                        <strong>2. Funding & Project</strong>
+                    </div>
+                    <div class="list-group-item">
+                        3. Equipment Request
+                    </div>
+                    <div class="list-group-item">
+                        4. Scientific Content
+                    </div>
+                    <div class="list-group-item">
+                        5. Declarations
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview & Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

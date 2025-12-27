@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+                    <li class="breadcrumb-item active">{{ call.code }}</li>
+                </ol>
+            </nav>
+
+            <h1>{{ call.code }}</h1>
+            <h3 class="text-muted mb-4">{{ call.title }}</h3>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Call Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            {% if call.status == 'open' %}
+                            <span class="badge bg-success">Open</span>
+                            {% elif call.status == 'closed' %}
+                            <span class="badge bg-warning">Closed</span>
+                            {% elif call.status == 'resolved' %}
+                            <span class="badge bg-secondary">Resolved</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Published:</strong><br>
+                            {{ call.published_at|date:"F d, Y" }}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-calendar-event"></i> Submission Period:</strong><br>
+                            {{ call.submission_start|date:"F d, Y" }} - {{ call.submission_end|date:"F d, Y H:i" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-hourglass"></i> Evaluation Deadline:</strong><br>
+                            {{ call.evaluation_deadline|date:"F d, Y" }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-play-circle"></i> Execution Period:</strong><br>
+                            {{ call.execution_start|date:"F d, Y" }} - {{ call.execution_end|date:"F d, Y" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-clock"></i> Total Hours Offered:</strong><br>
+                            {{ call.total_hours_offered }} hours
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div>
+                        <strong>Description:</strong>
+                        <div class="mt-2">{{ call.description|safe }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if call.guidelines %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Application Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    {{ call.guidelines|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Available Equipment</h5>
+                </div>
+                <div class="card-body">
+                    {% if equipment_allocations %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Node</th>
+                                    <th>Equipment</th>
+                                    <th>Category</th>
+                                    <th>Hours Offered</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alloc in equipment_allocations %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ alloc.equipment.node.name }}</strong><br>
+                                        <small class="text-muted">{{ alloc.equipment.node.code }}</small>
+                                    </td>
+                                    <td>{{ alloc.equipment.name }}</td>
+                                    <td><span class="badge bg-secondary">{{ alloc.equipment.get_category_display }}</span></td>
+                                    <td><strong>{{ alloc.hours_offered }}</strong> hours</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No equipment allocations defined.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if can_apply %}
+                    <a href="{% url 'applications:create' call.pk %}" class="btn btn-success btn-lg w-100 mb-3">
+                        <i class="bi bi-file-earmark-plus"></i> Apply for Access
+                    </a>
+                    <div class="alert alert-warning mb-0">
+                        <small>
+                            <i class="bi bi-clock"></i> <strong>Deadline:</strong><br>
+                            {{ call.submission_end|date:"F d, Y H:i" }}
+                        </small>
+                    </div>
+                    {% elif not user.is_authenticated %}
+                    <p class="text-muted mb-3">Please log in to submit an application.</p>
+                    <a href="{% url 'account_login' %}?next={% url 'calls:public_detail' call.pk %}" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> This call is not currently accepting applications.
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'calls:public_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Back to Calls
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Step 3 - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ application.call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 3: Equipment Request</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Service Modality -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ service_form.service_modality.label }} *</label>
+                            {% for radio in service_form.service_modality %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% if service_form.service_modality.errors %}
+                            <div class="text-danger small">{{ service_form.service_modality.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Specialization Area -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ service_form.specialization_area.label }} *</label>
+                            {% for radio in service_form.specialization_area %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% if service_form.specialization_area.errors %}
+                            <div class="text-danger small">{{ service_form.specialization_area.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Equipment Requests -->
+                        <h5 class="mb-3">Equipment & Hours Requested</h5>
+                        <p class="text-muted">Request access to equipment available in this call. You must request at least one equipment.</p>
+
+                        {{ access_formset.management_form }}
+
+                        {% if access_formset.non_form_errors %}
+                        <div class="alert alert-danger">
+                            {{ access_formset.non_form_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div id="equipment-formset">
+                            {% for form in access_formset %}
+                            <div class="card mb-3 equipment-form">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-7">
+                                            <label for="{{ form.equipment.id_for_label }}" class="form-label">
+                                                Equipment *
+                                            </label>
+                                            {{ form.id }}
+                                            {{ form.equipment }}
+                                            {% if form.equipment.errors %}
+                                            <div class="text-danger small">{{ form.equipment.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.hours_requested.id_for_label }}" class="form-label">
+                                                Hours *
+                                            </label>
+                                            {{ form.hours_requested }}
+                                            {% if form.hours_requested.errors %}
+                                            <div class="text-danger small">{{ form.hours_requested.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            {% if form.instance.pk %}
+                                                {{ form.DELETE }}
+                                                <label for="{{ form.DELETE.id_for_label }}" class="form-check-label ms-2">
+                                                    Remove
+                                                </label>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Your progress is automatically saved. You can return later to continue editing.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'applications:edit_step2' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Next: Scientific Content <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>2. Funding & Project</strong>
+                    </div>
+                    <div class="list-group-item active">
+                        <strong>3. Equipment Request</strong>
+                    </div>
+                    <div class="list-group-item">
+                        4. Scientific Content
+                    </div>
+                    <div class="list-group-item">
+                        5. Declarations
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview & Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

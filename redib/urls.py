@@ -11,8 +11,23 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
 
-    # Placeholder home page
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    # Core app (dashboard, home)
+    path('', include('core.urls')),
+
+    # Calls app
+    path('calls/', include('calls.urls')),
+
+    # Applications app (stub URLs for Phase 1 testing)
+    path('applications/', include('applications.urls')),
+
+    # Evaluations app (stub URLs for Phase 1 testing)
+    path('evaluations/', include('evaluations.urls')),
+
+    # Access app (stub URLs for Phase 1 testing)
+    path('access/', include('access.urls')),
+
+    # Reports app (stub URLs for Phase 1 testing)
+    path('reports/', include('reports.urls')),
 ]
 
 # Serve media files in development

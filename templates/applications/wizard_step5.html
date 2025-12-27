@@ -1,0 +1,195 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Step 5 - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ application.call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 5: Declarations & Consent</h5>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Technical Feasibility</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check">
+                                    {{ form.technical_feasibility_confirmed }}
+                                    <label class="form-check-label" for="{{ form.technical_feasibility_confirmed.id_for_label }}">
+                                        {{ form.technical_feasibility_confirmed.label }}
+                                    </label>
+                                </div>
+                                {% if form.technical_feasibility_confirmed.errors %}
+                                <div class="text-danger small">{{ form.technical_feasibility_confirmed.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    You should contact the ReDIB node coordinator to confirm that your proposed experiments are technically feasible.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Animal Use Ethics</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    {{ form.uses_animals }}
+                                    <label class="form-check-label" for="{{ form.uses_animals.id_for_label }}">
+                                        {{ form.uses_animals.label }}
+                                    </label>
+                                </div>
+                                {% if form.uses_animals.errors %}
+                                <div class="text-danger small">{{ form.uses_animals.errors }}</div>
+                                {% endif %}
+
+                                <div class="form-check mt-3">
+                                    {{ form.has_animal_ethics }}
+                                    <label class="form-check-label" for="{{ form.has_animal_ethics.id_for_label }}">
+                                        {{ form.has_animal_ethics.label }}
+                                    </label>
+                                </div>
+                                {% if form.has_animal_ethics.errors %}
+                                <div class="text-danger small">{{ form.has_animal_ethics.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    If you use animals, you must have approval from an ethics committee before starting experiments.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Human Subjects Ethics</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    {{ form.uses_humans }}
+                                    <label class="form-check-label" for="{{ form.uses_humans.id_for_label }}">
+                                        {{ form.uses_humans.label }}
+                                    </label>
+                                </div>
+                                {% if form.uses_humans.errors %}
+                                <div class="text-danger small">{{ form.uses_humans.errors }}</div>
+                                {% endif %}
+
+                                <div class="form-check mt-3">
+                                    {{ form.has_human_ethics }}
+                                    <label class="form-check-label" for="{{ form.has_human_ethics.id_for_label }}">
+                                        {{ form.has_human_ethics.label }}
+                                    </label>
+                                </div>
+                                {% if form.has_human_ethics.errors %}
+                                <div class="text-danger small">{{ form.has_human_ethics.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    If you use human subjects, you must have approval from an ethics committee before starting experiments.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4 border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">Data Consent (Required)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check">
+                                    {{ form.data_consent }}
+                                    <label class="form-check-label" for="{{ form.data_consent.id_for_label }}">
+                                        {{ form.data_consent.label }}
+                                    </label>
+                                </div>
+                                {% if form.data_consent.errors %}
+                                <div class="text-danger small">{{ form.data_consent.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    By checking this box, you consent to the processing of your personal data according to our privacy policy.
+                                    This is required to submit your application.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Almost done!</strong> After this step, you can preview your complete application and submit it.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'applications:edit_step4' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Next: Preview & Submit <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>2. Funding & Project</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>3. Equipment Request</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>4. Scientific Content</strong>
+                    </div>
+                    <div class="list-group-item active">
+                        <strong>5. Declarations</strong>
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview & Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
