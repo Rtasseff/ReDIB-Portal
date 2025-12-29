@@ -212,11 +212,23 @@ class ApplicationStep5Form(forms.ModelForm):
 class FeasibilityReviewForm(forms.ModelForm):
     """Feasibility review by node coordinator"""
 
+    # Override is_feasible to use radio buttons instead of checkbox
+    is_feasible = forms.TypedChoiceField(
+        choices=[
+            (True, 'Approve - Technically feasible'),
+            (False, 'Reject - Not feasible'),
+        ],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        coerce=lambda x: x == 'True',  # Convert string to boolean
+        label='Feasibility Decision',
+        required=True,
+        empty_value=None
+    )
+
     class Meta:
         model = FeasibilityReview
-        fields = ['decision', 'comments']
+        fields = ['is_feasible', 'comments']
         widgets = {
-            'decision': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'comments': forms.Textarea(attrs={
                 'rows': 5,
                 'class': 'form-control',
@@ -224,17 +236,17 @@ class FeasibilityReviewForm(forms.ModelForm):
             }),
         }
         labels = {
-            'decision': 'Feasibility Decision',
             'comments': 'Review Comments',
         }
 
     def clean(self):
         """Validate that comments are provided if rejected"""
         cleaned_data = super().clean()
-        decision = cleaned_data.get('decision')
+        is_feasible = cleaned_data.get('is_feasible')
         comments = cleaned_data.get('comments')
 
-        if decision == 'rejected' and not comments:
+        # Require comments if rejecting (is_feasible == False)
+        if is_feasible is False and not comments:
             raise forms.ValidationError(
                 "Please provide comments explaining why the application is not feasible."
             )

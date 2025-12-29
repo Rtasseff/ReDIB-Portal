@@ -176,8 +176,8 @@
                 {% csrf_token %}
 
                 <div class="mb-4">
-                    <label class="form-label"><strong>{{ form.decision.label }} *</strong></label>
-                    {% for radio in form.decision %}
+                    <label class="form-label"><strong>{{ form.is_feasible.label }} *</strong></label>
+                    {% for radio in form.is_feasible %}
                     <div class="form-check">
                         {{ radio.tag }}
                         <label class="form-check-label" for="{{ radio.id_for_label }}">
@@ -185,8 +185,8 @@
                         </label>
                     </div>
                     {% endfor %}
-                    {% if form.decision.errors %}
-                    <div class="text-danger small">{{ form.decision.errors }}</div>
+                    {% if form.is_feasible.errors %}
+                    <div class="text-danger small">{{ form.is_feasible.errors }}</div>
                     {% endif %}
                 </div>
 

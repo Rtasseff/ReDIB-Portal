@@ -367,7 +367,7 @@ def feasibility_queue(request):
     # Get pending reviews for these nodes
     pending_reviews = FeasibilityReview.objects.filter(
         node__in=user_nodes,
-        decision='pending'
+        is_feasible__isnull=True  # Pending = not yet decided
     ).select_related(
         'application__applicant',
         'application__call',
@@ -393,7 +393,7 @@ def feasibility_review(request, pk):
         FeasibilityReview,
         pk=pk,
         reviewer=request.user,
-        decision='pending'
+        is_feasible__isnull=True  # Pending = not yet decided
     )
 
     application = review.application
@@ -413,11 +413,11 @@ def feasibility_review(request, pk):
 
             # Check if all reviews are complete
             all_reviews = application.feasibility_reviews.all()
-            pending_count = all_reviews.filter(decision='pending').count()
+            pending_count = all_reviews.filter(is_feasible__isnull=True).count()
 
             if pending_count == 0:
                 # All reviews complete - check outcomes
-                rejected_count = all_reviews.filter(decision='rejected').count()
+                rejected_count = all_reviews.filter(is_feasible=False).count()
 
                 if rejected_count > 0:
                     # Any rejection = application rejected
@@ -449,9 +449,10 @@ def feasibility_review(request, pk):
                     logger = logging.getLogger(__name__)
                     logger.warning(f"Email notification failed: {e}")
 
+            decision_text = "Approved" if review.is_feasible else "Rejected"
             messages.success(
                 request,
-                f"Feasibility review submitted for {application.code}. Decision: {review.get_decision_display()}"
+                f"Feasibility review submitted for {application.code}. Decision: {decision_text}"
             )
             return redirect('applications:feasibility_queue')
     else:
