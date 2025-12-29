@@ -303,36 +303,44 @@ def application_submit(request, pk):
     application.status = 'under_feasibility_review'
     application.save()
 
-    # Send confirmation email
-    from communications.tasks import send_email_from_template
-    send_email_from_template.delay(
-        template_type='application_received',
-        recipient_email=request.user.email,
-        context_data={
-            'applicant_name': request.user.get_full_name(),
-            'application_code': application.code,
-            'call_code': application.call.code,
-        },
-        recipient_user_id=request.user.id,
-        related_application_id=application.id
-    )
-
-    # Send feasibility request emails
-    for review in application.feasibility_reviews.all():
+    # Send confirmation email (gracefully handle Celery unavailability)
+    try:
+        from communications.tasks import send_email_from_template
         send_email_from_template.delay(
-            template_type='feasibility_request',
-            recipient_email=review.reviewer.email,
+            template_type='application_received',
+            recipient_email=request.user.email,
             context_data={
-                'reviewer_name': review.reviewer.get_full_name(),
+                'applicant_name': request.user.get_full_name(),
                 'application_code': application.code,
-                'node_name': review.node.name,
+                'call_code': application.call.code,
             },
-            recipient_user_id=review.reviewer.id,
+            recipient_user_id=request.user.id,
             related_application_id=application.id
         )
 
+        # Send feasibility request emails
+        for review in application.feasibility_reviews.all():
+            send_email_from_template.delay(
+                template_type='feasibility_request',
+                recipient_email=review.reviewer.email,
+                context_data={
+                    'reviewer_name': review.reviewer.get_full_name(),
+                    'application_code': application.code,
+                    'node_name': review.node.name,
+                },
+                recipient_user_id=review.reviewer.id,
+                related_application_id=application.id
+            )
+        email_status = "You will receive confirmation by email."
+    except Exception as e:
+        # Celery/Redis not available - log and continue
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Email notification failed (Celery unavailable): {e}")
+        email_status = "(Email notifications disabled - Celery not running)"
+
     messages.success(
         request,
-        f"Application {application.code} submitted successfully! You will receive confirmation by email."
+        f"Application {application.code} submitted successfully! {email_status}"
     )
     return redirect('applications:detail', pk=application.pk)

@@ -181,34 +181,42 @@ def call_publish(request, pk):
     call.published_at = timezone.now()
     call.save()
 
-    # Send notification emails (async)
-    from communications.tasks import send_email_from_template
-    from core.models import User
+    # Send notification emails (async) - gracefully handle Celery unavailability
+    try:
+        from communications.tasks import send_email_from_template
+        from core.models import User
 
-    # Get all users who want call notifications
-    recipients = User.objects.filter(
-        receive_call_notifications=True
-    ).values_list('email', 'id')
+        # Get all users who want call notifications
+        recipients = User.objects.filter(
+            receive_call_notifications=True
+        ).values_list('email', 'id')
 
-    # Queue email for each recipient
-    for email, user_id in recipients:
-        context_data = {
-            'call_code': call.code,
-            'call_title': call.title,
-            'submission_end': call.submission_end,
-            'call_url': request.build_absolute_uri(f'/calls/{call.pk}/'),
-        }
+        # Queue email for each recipient
+        for email, user_id in recipients:
+            context_data = {
+                'call_code': call.code,
+                'call_title': call.title,
+                'submission_end': call.submission_end,
+                'call_url': request.build_absolute_uri(f'/calls/{call.pk}/'),
+            }
 
-        send_email_from_template.delay(
-            template_type='call_published',
-            recipient_email=email,
-            context_data=context_data,
-            recipient_user_id=user_id
-        )
+            send_email_from_template.delay(
+                template_type='call_published',
+                recipient_email=email,
+                context_data=context_data,
+                recipient_user_id=user_id
+            )
+        email_status = f"Notification emails queued for {recipients.count()} users."
+    except Exception as e:
+        # Celery/Redis not available - log and continue
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Email notification failed (Celery unavailable): {e}")
+        email_status = "(Email notifications disabled - Celery not running)"
 
     messages.success(
         request,
-        f"Call {call.code} published successfully. Notification emails queued for {recipients.count()} users."
+        f"Call {call.code} published successfully. {email_status}"
     )
     return redirect('calls:call_detail', pk=call.pk)
 
