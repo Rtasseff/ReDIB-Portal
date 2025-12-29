@@ -1,0 +1,232 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Review {{ application.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'applications:feasibility_queue' %}">Feasibility Reviews</a></li>
+            <li class="breadcrumb-item active">{{ application.code }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Feasibility Review: {{ application.code }}</h1>
+        <span class="badge bg-info fs-5">Node: {{ review.node.code }}</span>
+    </div>
+
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Important:</strong> Review the application details below and determine if this project is technically
+        feasible with your node's equipment and resources. If you reject, please provide detailed comments.
+    </div>
+
+    <!-- Application Overview -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Application Overview</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Call</dt>
+                <dd class="col-sm-9">{{ application.call.code }} - {{ application.call.name }}</dd>
+
+                <dt class="col-sm-3">Applicant</dt>
+                <dd class="col-sm-9">
+                    {{ application.applicant.get_full_name }}<br>
+                    <small class="text-muted">{{ application.applicant.organization|default:"—" }}</small>
+                </dd>
+
+                <dt class="col-sm-3">Submitted</dt>
+                <dd class="col-sm-9">{{ application.submitted_at|date:"F d, Y H:i" }}</dd>
+
+                <dt class="col-sm-3">Brief Description</dt>
+                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Equipment Requested (This Node Only) -->
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Equipment Requested at {{ review.node.code }}</h5>
+        </div>
+        <div class="card-body">
+            {% if requested_access %}
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Equipment</th>
+                            <th>Hours Requested</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in requested_access %}
+                        <tr>
+                            <td><strong>{{ access.equipment.name }}</strong></td>
+                            <td>{{ access.hours_requested }} hours</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No equipment requested at this node.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Project Details -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Project Information</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_title|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Project Type</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+
+                <dt class="col-sm-3">Subject Area</dt>
+                <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
+
+                <dt class="col-sm-3">Service Modality</dt>
+                <dd class="col-sm-9">{{ application.get_service_modality_display }}</dd>
+
+                <dt class="col-sm-3">Specialization</dt>
+                <dd class="col-sm-9">{{ application.get_specialization_area_display }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Scientific Content (Summary) -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Scientific Content</h5>
+        </div>
+        <div class="card-body">
+            <h6>Methodology and Experimental Design</h6>
+            <p class="text-pre-wrap">{{ application.methodology_description|default:"—" }}</p>
+
+            <h6 class="mt-3">Scientific Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—"|truncatewords:100 }}</p>
+        </div>
+    </div>
+
+    <!-- Declarations -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Declarations</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-6">Technical feasibility confirmed</dt>
+                <dd class="col-sm-6">
+                    {% if application.technical_feasibility_confirmed %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-6">Uses experimental animals</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_animals %}
+                        <span class="badge bg-info">Yes</span>
+                        {% if application.has_animal_ethics %}
+                            <span class="badge bg-success ms-1">Ethics Approved</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-6">Uses human subjects</dt>
+                <dd class="col-sm-6">
+                    {% if application.uses_humans %}
+                        <span class="badge bg-info">Yes</span>
+                        {% if application.has_human_ethics %}
+                            <span class="badge bg-success ms-1">Ethics Approved</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Feasibility Review Form -->
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Your Feasibility Decision</h5>
+        </div>
+        <div class="card-body">
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="form-label"><strong>{{ form.decision.label }} *</strong></label>
+                    {% for radio in form.decision %}
+                    <div class="form-check">
+                        {{ radio.tag }}
+                        <label class="form-check-label" for="{{ radio.id_for_label }}">
+                            {{ radio.choice_label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                    {% if form.decision.errors %}
+                    <div class="text-danger small">{{ form.decision.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.comments.id_for_label }}" class="form-label">
+                        <strong>{{ form.comments.label }}</strong>
+                    </label>
+                    {{ form.comments }}
+                    {% if form.comments.errors %}
+                    <div class="text-danger small">{{ form.comments.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        Provide comments on technical feasibility, resource availability, or any concerns.
+                        <strong>Required if rejecting.</strong>
+                    </small>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Your decision will be recorded immediately. If all nodes approve, the application proceeds to evaluation.
+                    If any node rejects, the application is rejected.
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'applications:feasibility_queue' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Queue
+                    </a>
+                    <button type="submit" class="btn btn-danger btn-lg"
+                            onclick="return confirm('Are you sure? This decision cannot be changed.')">
+                        <i class="bi bi-send"></i> Submit Feasibility Decision
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-pre-wrap {
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}

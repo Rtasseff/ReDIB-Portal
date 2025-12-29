@@ -21,9 +21,9 @@ urlpatterns = [
     # Stub URL for edit_step1 (redirects to step2 since step1 is only for create)
     path('<int:pk>/step1/', views.application_edit_step2, name='edit_step1'),
 
-    # Node coordinator views - stubs for Phase 3
-    path('feasibility/', views.my_applications, name='feasibility_queue'),
-    path('feasibility/<int:pk>/review/', views.my_applications, name='feasibility_review'),
+    # Node coordinator views - Phase 3: Feasibility Review
+    path('feasibility/', views.feasibility_queue, name='feasibility_queue'),
+    path('feasibility/<int:pk>/review/', views.feasibility_review, name='feasibility_review'),
 
     # Coordinator views - stubs for Phase 6
     path('resolution/', views.my_applications, name='resolution_dashboard'),

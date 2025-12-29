@@ -6,11 +6,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Q
 from calls.models import Call
+from core.decorators import node_coordinator_required
 from .models import Application, RequestedAccess, FeasibilityReview
 from .forms import (
     ApplicationStep1Form, ApplicationStep2Form, ApplicationStep3Form,
-    ApplicationStep4Form, ApplicationStep5Form, RequestedAccessFormSet
+    ApplicationStep4Form, ApplicationStep5Form, RequestedAccessFormSet,
+    FeasibilityReviewForm
 )
 
 
@@ -344,3 +347,120 @@ def application_submit(request, pk):
         f"Application {application.code} submitted successfully! {email_status}"
     )
     return redirect('applications:detail', pk=application.pk)
+
+
+# ============================================================================
+# Phase 3: Feasibility Review Views (Node Coordinators)
+# ============================================================================
+
+@node_coordinator_required
+def feasibility_queue(request):
+    """
+    Node coordinator's queue of pending feasibility reviews.
+
+    Shows all applications requiring feasibility review for nodes
+    where the current user is the director.
+    """
+    # Get nodes where user is director
+    user_nodes = request.user.directed_nodes.all()
+
+    # Get pending reviews for these nodes
+    pending_reviews = FeasibilityReview.objects.filter(
+        node__in=user_nodes,
+        decision='pending'
+    ).select_related(
+        'application__applicant',
+        'application__call',
+        'node'
+    ).order_by('application__submitted_at')
+
+    context = {
+        'pending_reviews': pending_reviews,
+        'user_nodes': user_nodes,
+    }
+    return render(request, 'applications/feasibility_queue.html', context)
+
+
+@node_coordinator_required
+def feasibility_review(request, pk):
+    """
+    Review an application for feasibility.
+
+    Node coordinators can approve or reject based on technical
+    feasibility and resource availability.
+    """
+    review = get_object_or_404(
+        FeasibilityReview,
+        pk=pk,
+        reviewer=request.user,
+        decision='pending'
+    )
+
+    application = review.application
+
+    # Get requested access for this node only
+    requested_access = application.requested_access.filter(
+        equipment__node=review.node
+    ).select_related('equipment')
+
+    if request.method == 'POST':
+        form = FeasibilityReviewForm(request.POST, instance=review)
+
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.reviewed_at = timezone.now()
+            review.save()
+
+            # Check if all reviews are complete
+            all_reviews = application.feasibility_reviews.all()
+            pending_count = all_reviews.filter(decision='pending').count()
+
+            if pending_count == 0:
+                # All reviews complete - check outcomes
+                rejected_count = all_reviews.filter(decision='rejected').count()
+
+                if rejected_count > 0:
+                    # Any rejection = application rejected
+                    application.status = 'rejected'
+                    application.save()
+                    status_msg = "rejected"
+                else:
+                    # All approved = move to pending evaluation
+                    application.status = 'pending_evaluation'
+                    application.save()
+                    status_msg = "approved and ready for evaluation"
+
+                # Send email to applicant
+                try:
+                    from communications.tasks import send_email_from_template
+                    send_email_from_template.delay(
+                        template_type='feasibility_complete',
+                        recipient_email=application.applicant.email,
+                        context_data={
+                            'applicant_name': application.applicant.get_full_name(),
+                            'application_code': application.code,
+                            'status': status_msg,
+                        },
+                        recipient_user_id=application.applicant.id,
+                        related_application_id=application.id
+                    )
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Email notification failed: {e}")
+
+            messages.success(
+                request,
+                f"Feasibility review submitted for {application.code}. Decision: {review.get_decision_display()}"
+            )
+            return redirect('applications:feasibility_queue')
+    else:
+        form = FeasibilityReviewForm(instance=review)
+
+    context = {
+        'form': form,
+        'review': review,
+        'application': application,
+        'requested_access': requested_access,
+    }
+    return render(request, 'applications/feasibility_review.html', context)

@@ -3,7 +3,7 @@ Forms for the applications app - 5-step application wizard.
 """
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Application, RequestedAccess
+from .models import Application, RequestedAccess, FeasibilityReview
 from core.models import Equipment
 
 
@@ -204,6 +204,39 @@ class ApplicationStep5Form(forms.ModelForm):
         if not cleaned_data.get('data_consent'):
             raise forms.ValidationError(
                 "You must consent to data processing to submit your application."
+            )
+
+        return cleaned_data
+
+
+class FeasibilityReviewForm(forms.ModelForm):
+    """Feasibility review by node coordinator"""
+
+    class Meta:
+        model = FeasibilityReview
+        fields = ['decision', 'comments']
+        widgets = {
+            'decision': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'comments': forms.Textarea(attrs={
+                'rows': 5,
+                'class': 'form-control',
+                'placeholder': 'Provide comments on technical feasibility, resource availability, or any concerns...'
+            }),
+        }
+        labels = {
+            'decision': 'Feasibility Decision',
+            'comments': 'Review Comments',
+        }
+
+    def clean(self):
+        """Validate that comments are provided if rejected"""
+        cleaned_data = super().clean()
+        decision = cleaned_data.get('decision')
+        comments = cleaned_data.get('comments')
+
+        if decision == 'rejected' and not comments:
+            raise forms.ValidationError(
+                "Please provide comments explaining why the application is not feasible."
             )
 
         return cleaned_data
