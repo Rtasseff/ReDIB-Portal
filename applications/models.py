@@ -24,9 +24,8 @@ class Application(models.Model):
         ('accepted', 'Accepted'),
         ('pending', 'Pending (Waiting List)'),
         ('rejected', 'Rejected'),
-        ('scheduled', 'Scheduled'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
+        ('declined_by_applicant', 'Declined by Applicant'),  # Phase 7
+        ('expired', 'Acceptance Expired'),  # Phase 7
     ]
 
     PROJECT_TYPES = [
@@ -159,6 +158,39 @@ class Application(models.Model):
     resolution_date = models.DateTimeField(null=True, blank=True)
     resolution_comments = models.TextField(blank=True, help_text='Coordinator comments on resolution')
 
+    # Phase 7: Acceptance & Handoff tracking
+    accepted_by_applicant = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text='Applicant acceptance: True=accepted, False=declined, None=pending'
+    )
+    accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When applicant accepted or declined'
+    )
+    acceptance_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Deadline for applicant to respond (resolution_date + 10 days)'
+    )
+    handoff_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When handoff email was sent to applicant + coordinators'
+    )
+
+    # Phase 8: Optional completion tracking
+    is_completed = models.BooleanField(
+        default=False,
+        help_text='Optional: Mark as completed for reporting purposes'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Optional: When marked as completed'
+    )
+
     # Timestamps
     submitted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -173,6 +205,7 @@ class Application(models.Model):
         return f"{self.code} - {self.brief_description}"
 
     # Valid state transitions based on design document section 6.1
+    # Updated for Phase 7: Simplified acceptance workflow
     VALID_TRANSITIONS = {
         'draft': ['submitted'],
         'submitted': ['under_feasibility_review', 'rejected_feasibility'],
@@ -181,12 +214,11 @@ class Application(models.Model):
         'pending_evaluation': ['under_evaluation'],
         'under_evaluation': ['evaluated'],
         'evaluated': ['accepted', 'pending', 'rejected'],
-        'accepted': ['scheduled'],
-        'pending': ['scheduled', 'rejected'],
+        'accepted': ['declined_by_applicant', 'expired'],  # Phase 7: Applicant can decline or expire
+        'pending': ['accepted', 'rejected'],  # Can be promoted from waiting list
         'rejected': [],  # Terminal state
-        'scheduled': ['in_progress'],
-        'in_progress': ['completed'],
-        'completed': [],  # Terminal state
+        'declined_by_applicant': [],  # Terminal state - Phase 7
+        'expired': [],  # Terminal state - Phase 7
     }
 
     def save(self, *args, **kwargs):
@@ -235,6 +267,50 @@ class Application(models.Model):
         """
         valid_next_states = self.VALID_TRANSITIONS.get(self.status, [])
         return new_status in valid_next_states
+
+    # Phase 7: Acceptance deadline helper methods
+    @property
+    def acceptance_deadline_passed(self):
+        """
+        Check if acceptance deadline has passed.
+
+        Returns:
+            Boolean indicating if deadline has passed
+        """
+        if not self.acceptance_deadline:
+            return False
+        from django.utils import timezone
+        return timezone.now() > self.acceptance_deadline
+
+    @property
+    def days_until_acceptance_deadline(self):
+        """
+        Calculate days remaining until acceptance deadline.
+
+        Returns:
+            Integer days remaining, or None if no deadline set
+        """
+        if not self.acceptance_deadline:
+            return None
+        from django.utils import timezone
+        delta = self.acceptance_deadline - timezone.now()
+        return delta.days
+
+    def calculate_acceptance_deadline(self):
+        """
+        Calculate acceptance deadline (resolution_date + 10 days).
+
+        Per REDIB-02-PDA section 6.1.6: "Applicants have a period of ten (10) days
+        from the publication of the resolution to accept or reject in writing
+        the access granted"
+
+        Returns:
+            DateTime object representing the deadline, or None if no resolution_date
+        """
+        if self.resolution_date:
+            from datetime import timedelta
+            return self.resolution_date + timedelta(days=10)
+        return None
 
     def get_next_valid_states(self):
         """

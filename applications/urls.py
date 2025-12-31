@@ -31,4 +31,9 @@ urlpatterns = [
     path('resolution/application/<int:application_id>/', views.application_resolution, name='application_resolution'),
     path('resolution/call/<int:call_id>/bulk/', views.bulk_resolution, name='bulk_resolution'),
     path('resolution/call/<int:call_id>/finalize/', views.finalize_resolution, name='finalize_resolution'),
+
+    # Phase 7: Acceptance & Handoff
+    path('<int:pk>/accept/', views.application_acceptance, name='acceptance'),
+    path('handoff/', views.handoff_dashboard, name='handoff_dashboard'),
+    path('<int:pk>/mark-completed/', views.mark_completed, name='mark_completed'),
 ]

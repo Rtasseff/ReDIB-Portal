@@ -11,7 +11,20 @@ from core.models import Equipment
 
 
 class AccessGrant(models.Model):
-    """Granted access after approval"""
+    """
+    DEPRECATED: This model is no longer used as of Phase 7 simplification.
+
+    Acceptance and handoff tracking is now done directly on the Application model
+    (see Application.accepted_by_applicant, acceptance_deadline, handoff_email_sent_at).
+
+    This model is kept for historical data only and will be removed in a future version.
+
+    DO NOT create new AccessGrant instances.
+
+    ---
+
+    Legacy model: Granted access after approval (pre-Phase 7)
+    """
 
     application = models.ForeignKey(
         Application,

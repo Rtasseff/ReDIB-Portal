@@ -408,6 +408,108 @@ Thank you for your participation.
 Best regards,
 ReDIB COA Team''',
                 'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
+            },
+            # Phase 7: Acceptance & Handoff templates
+            {
+                'template_type': 'handoff_notification',
+                'subject': 'ReDIB COA Access Approved - Application {{ application_code }} Ready for Scheduling',
+                'html_content': '''<html><body>
+<h2>ReDIB COA Access Approved - Ready for Scheduling</h2>
+
+<p>Dear {{ applicant_name }} and {{ node_names }} Team,</p>
+
+<p>This is to confirm that COA application <strong>{{ application_code }}</strong> has been approved by the evaluation committee and accepted by the applicant.</p>
+
+<h3>APPLICATION DETAILS</h3>
+<ul>
+<li><strong>Application Code:</strong> {{ application_code }}</li>
+<li><strong>Applicant:</strong> {{ applicant_name }} ({{ applicant_entity }})</li>
+<li><strong>Email:</strong> {{ applicant_email }}</li>
+<li><strong>Phone:</strong> {{ applicant_phone }}</li>
+<li><strong>Project:</strong> {{ project_title }}</li>
+<li><strong>Brief Description:</strong> {{ brief_description }}</li>
+</ul>
+
+<h3>REQUESTED ACCESS</h3>
+<p><strong>Service Modality:</strong> {{ service_modality }}</p>
+{% for access in requested_access %}
+<p>- <strong>{{ access.node_name }}</strong> / {{ access.equipment_name }}: {{ access.hours_requested }} hours requested</p>
+{% endfor %}
+
+<h3>NEXT STEPS</h3>
+<p>Please coordinate directly to schedule the access time. The applicant and node team should arrange mutually convenient dates for the requested work.</p>
+
+<p>For questions, contact: info@redib.net</p>
+
+<hr>
+<p><small>This is an automated notification from the ReDIB COA Management System.</small></p>
+</body></html>''',
+                'text_content': '''ReDIB COA Access Approved - Ready for Scheduling
+
+Dear {{ applicant_name }} and {{ node_names }} Team,
+
+This is to confirm that COA application {{ application_code }} has been approved by the evaluation committee and accepted by the applicant.
+
+APPLICATION DETAILS
+- Application Code: {{ application_code }}
+- Applicant: {{ applicant_name }} ({{ applicant_entity }})
+- Email: {{ applicant_email }}
+- Phone: {{ applicant_phone }}
+- Project: {{ project_title }}
+- Brief Description: {{ brief_description }}
+
+REQUESTED ACCESS
+Service Modality: {{ service_modality }}
+{% for access in requested_access %}- {{ access.node_name }} / {{ access.equipment_name }}: {{ access.hours_requested }} hours requested
+{% endfor %}
+
+NEXT STEPS
+Please coordinate directly to schedule the access time. The applicant and node team should arrange mutually convenient dates for the requested work.
+
+For questions, contact: info@redib.net
+
+---
+This is an automated notification from the ReDIB COA Management System.''',
+                'available_variables': '''Variables: applicant_name, applicant_entity, applicant_email, applicant_phone, application_code, project_title, brief_description, service_modality, node_names, requested_access (list)'''
+            },
+            {
+                'template_type': 'acceptance_expired',
+                'subject': 'Action Required: Acceptance Deadline Expired for Application {{ application_code }}',
+                'html_content': '''<html><body>
+<h2>Acceptance Deadline Expired</h2>
+
+<p>Dear {{ applicant_name }},</p>
+
+<p>This is to inform you that the acceptance deadline for your approved COA application <strong>{{ application_code }}</strong> has expired.</p>
+
+<p><strong>Deadline was:</strong> {{ deadline }}</p>
+
+<p>Since we did not receive your acceptance or decline response within the required 10-day period, this application has been automatically marked as expired and the access grant is no longer available.</p>
+
+<p>If you would like to request access in the future, please apply during the next open call period.</p>
+
+<p>If you believe this is an error, please contact us at info@redib.net</p>
+
+<hr>
+<p><small>This is an automated notification from the ReDIB COA Management System.</small></p>
+</body></html>''',
+                'text_content': '''Acceptance Deadline Expired
+
+Dear {{ applicant_name }},
+
+This is to inform you that the acceptance deadline for your approved COA application {{ application_code }} has expired.
+
+Deadline was: {{ deadline }}
+
+Since we did not receive your acceptance or decline response within the required 10-day period, this application has been automatically marked as expired and the access grant is no longer available.
+
+If you would like to request access in the future, please apply during the next open call period.
+
+If you believe this is an error, please contact us at info@redib.net
+
+---
+This is an automated notification from the ReDIB COA Management System.''',
+                'available_variables': '''Variables: applicant_name, application_code, deadline'''
             }
         ]
 

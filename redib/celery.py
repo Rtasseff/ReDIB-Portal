@@ -29,7 +29,7 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=9, minute=0),  # Daily at 9 AM
     },
     'check-acceptance-deadlines': {
-        'task': 'access.tasks.process_acceptance_deadlines',
+        'task': 'applications.tasks.process_acceptance_deadlines',  # Updated for Phase 7
         'schedule': crontab(hour=10, minute=0),  # Daily at 10 AM
     },
     'send-publication-followups': {

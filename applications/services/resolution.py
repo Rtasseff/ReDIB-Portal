@@ -377,6 +377,14 @@ class ResolutionService:
             'rejected': resolved_apps.filter(resolution='rejected').count(),
         }
 
+        # Phase 7: Set acceptance deadline for accepted applications
+        # Per REDIB-02-PDA section 6.1.6: "10 days to accept or reject"
+        from datetime import timedelta
+        for application in resolved_apps.filter(resolution='accepted'):
+            if not application.acceptance_deadline and application.resolution_date:
+                application.acceptance_deadline = application.resolution_date + timedelta(days=10)
+                application.save()
+
         # Lock call
         self.call.is_resolution_locked = True
         self.call.save()

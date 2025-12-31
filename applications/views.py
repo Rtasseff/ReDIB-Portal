@@ -715,3 +715,224 @@ def finalize_resolution(request, call_id):
     except ValidationError as e:
         messages.error(request, str(e))
         return redirect('applications:call_resolution_detail', call_id=call.id)
+
+
+# =============================================================================
+# Phase 7: Acceptance & Handoff Views
+# =============================================================================
+
+@login_required
+def application_acceptance(request, pk):
+    """
+    View for applicant to accept or decline approved application.
+
+    GET: Show application details and accept/decline form
+    POST: Process acceptance or decline action
+
+    Permission: Must be the applicant
+    """
+    from communications.tasks import send_email_from_template
+
+    # Get application - must be applicant
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user
+    )
+
+    # Check if already responded or wrong status
+    if application.status != 'accepted':
+        messages.warning(request,
+            f"This application is in '{application.get_status_display()}' status and cannot be accepted/declined."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if application.accepted_by_applicant is not None:
+        status_msg = "accepted" if application.accepted_by_applicant else "declined"
+        messages.info(request, f"You have already {status_msg} this application.")
+        return redirect('applications:detail', pk=application.pk)
+
+    # Check if deadline passed
+    if application.acceptance_deadline_passed:
+        messages.error(request,
+            f"The acceptance deadline ({application.acceptance_deadline.date()}) has passed. "
+            "This application will be marked as expired."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'accept':
+            # Accept application and send handoff email
+            application.accepted_by_applicant = True
+            application.accepted_at = timezone.now()
+            application.save()
+
+            # Send handoff email to applicant + node coordinators
+            _send_handoff_email(application)
+            application.handoff_email_sent_at = timezone.now()
+            application.save()
+
+            messages.success(request,
+                "You have accepted the access grant. Handoff email sent to node coordinators."
+            )
+            return redirect('applications:detail', pk=application.pk)
+
+        elif action == 'decline':
+            # Decline application
+            decline_reason = request.POST.get('decline_reason', '')
+            application.status = 'declined_by_applicant'
+            application.accepted_by_applicant = False
+            application.accepted_at = timezone.now()
+            if decline_reason:
+                application.resolution_comments += f"\n\n[DECLINED BY APPLICANT]\n{decline_reason}"
+            application.save()
+
+            messages.info(request, "You have declined this access grant.")
+            return redirect('applications:detail', pk=application.pk)
+
+    # GET: Show acceptance form
+    requested_access = application.requested_access.select_related(
+        'equipment__node'
+    ).order_by('equipment__node__code')
+
+    context = {
+        'application': application,
+        'requested_access': requested_access,
+        'days_remaining': application.days_until_acceptance_deadline,
+        'deadline': application.acceptance_deadline,
+    }
+    return render(request, 'applications/acceptance_form.html', context)
+
+
+def _send_handoff_email(application):
+    """Helper function to send handoff email to applicant and node coordinators."""
+    from communications.tasks import send_email_from_template
+    from core.models import UserRole
+
+    # Get all nodes involved
+    nodes = set()
+    requested_access_list = []
+    for req_access in application.requested_access.select_related('equipment__node'):
+        nodes.add(req_access.equipment.node)
+        requested_access_list.append({
+            'node': req_access.equipment.node.name,
+            'equipment': req_access.equipment.name,
+            'hours': float(req_access.hours_requested),
+        })
+
+    # Build email context
+    context = {
+        'applicant_name': application.applicant.get_full_name(),
+        'applicant_entity': application.applicant_entity,
+        'applicant_email': application.applicant.email,
+        'applicant_phone': application.applicant_phone or 'Not provided',
+        'application_code': application.code,
+        'project_title': application.project_title,
+        'brief_description': application.brief_description,
+        'service_modality': application.get_service_modality_display() if application.service_modality else 'Not specified',
+        'node_names': ', '.join([n.name for n in nodes]),
+        'requested_access': requested_access_list,
+    }
+
+    # Send to applicant
+    send_email_from_template(
+        template_type='handoff_notification',
+        recipient_email=application.applicant.email,
+        context_data=context,
+        recipient_user_id=application.applicant.id,
+        related_application_id=application.id
+    )
+
+    # Send to node directors
+    for node in nodes:
+        node_directors = UserRole.objects.filter(
+            node=node,
+            role='node_director'
+        ).select_related('user')
+
+        for user_role in node_directors:
+            send_email_from_template(
+                template_type='handoff_notification',
+                recipient_email=user_role.user.email,
+                context_data=context,
+                recipient_user_id=user_role.user.id,
+                related_application_id=application.id
+            )
+
+
+@login_required
+@role_required('coordinator')
+def handoff_dashboard(request):
+    """
+    Coordinator view of applications that have been handed off to nodes.
+
+    Shows applications where:
+    - accepted_by_applicant=True
+    - handoff_email_sent_at is not None
+
+    Allows filtering by completion status.
+    """
+    from django.db.models import Prefetch
+
+    # Get all accepted and handed-off applications
+    handed_off_apps = (
+        Application.objects
+        .filter(
+            status='accepted',
+            accepted_by_applicant=True,
+            handoff_email_sent_at__isnull=False
+        )
+        .select_related('applicant', 'call')
+        .prefetch_related(
+            Prefetch(
+                'requested_access',
+                queryset=RequestedAccess.objects.select_related('equipment__node')
+            )
+        )
+        .order_by('-handoff_email_sent_at')
+    )
+
+    # Optional: Filter by completion status
+    show_completed = request.GET.get('show_completed', 'all')
+    if show_completed == 'incomplete':
+        handed_off_apps = handed_off_apps.filter(is_completed=False)
+    elif show_completed == 'complete':
+        handed_off_apps = handed_off_apps.filter(is_completed=True)
+
+    context = {
+        'applications': handed_off_apps,
+        'show_completed': show_completed,
+    }
+    return render(request, 'applications/handoff_dashboard.html', context)
+
+
+@login_required
+@role_required('coordinator')
+@transaction.atomic
+def mark_completed(request, pk):
+    """
+    Optional: Mark application as completed for reporting purposes.
+
+    POST only: Set is_completed=True, completed_at=now
+    """
+    if request.method != 'POST':
+        return redirect('applications:handoff_dashboard')
+
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        status='accepted',
+        accepted_by_applicant=True
+    )
+
+    if not application.is_completed:
+        application.is_completed = True
+        application.completed_at = timezone.now()
+        application.save()
+        messages.success(request, f"Application {application.code} marked as completed.")
+    else:
+        messages.info(request, f"Application {application.code} is already marked as completed.")
+
+    return redirect('applications:handoff_dashboard')
