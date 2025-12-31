@@ -38,6 +38,47 @@ redib/
 └── static/             # CSS, JS, images
 ```
 
+## Current Implementation Status
+
+### ✅ Completed Phases (Production-Ready)
+
+- **Phase 0**: Foundation & Dashboard ✅
+  - User authentication & role-based access control
+  - Base templates and navigation
+
+- **Phase 1**: Call Management ✅
+  - Create and publish COA calls
+  - Equipment allocation management
+  - Public call listings
+
+- **Phase 2**: Application Submission ✅
+  - 5-step wizard workflow
+  - **5 applicant information fields** (name, ORCID, entity, email, phone)
+  - **7 project types** (expanded from 5)
+  - **20 AEI subject area classifications** (expanded from 13)
+  - Auto-population from user profile
+  - Equipment access requests
+
+- **Phase 3**: Feasibility Review ✅
+  - Multi-node technical feasibility reviews
+  - Approval/rejection workflow
+  - Automated state transitions
+  - Email notifications
+
+**All completed phases have comprehensive automated test suites (115 tests total).**
+
+### 🔄 Pending Phases
+
+- Phase 4: Evaluator Assignment
+- Phase 5: Evaluation Process
+- Phase 6: Resolution & Prioritization
+- Phase 7: Acceptance & Scheduling
+- Phase 8: Execution & Completion
+- Phase 9: Publication Follow-up
+- Phase 10: Reporting & Statistics
+
+---
+
 ## Quick Start
 
 ### Development Setup (Local)
@@ -152,8 +193,31 @@ python manage.py migrate
 
 ### Running Tests
 
+**Automated Test Suites** (115 tests total):
 ```bash
-python manage.py test
+# Specification validation (63 tests)
+python tests/test_application_form_spec.py
+
+# Phase 1 & 2 workflow (23 tests)
+python tests/test_phase1_phase2_workflow.py
+
+# Phase 3 workflow (29 tests)
+python tests/test_phase3_feasibility_review.py
+```
+
+See [TEST.md](TEST.md) for detailed testing guide and [docs/test-reports/](docs/test-reports/) for test reports.
+
+### Populating Test Data
+
+```bash
+# Populate equipment (17 items across 4 nodes)
+python manage.py populate_redib_equipment
+
+# Seed development data (calls, applications, evaluations)
+python manage.py seed_dev_data
+
+# Clear and rebuild test data
+python manage.py seed_dev_data --clear
 ```
 
 ## Environment Variables
@@ -179,10 +243,22 @@ After deployment, perform these initial setup tasks:
 
 ## Documentation
 
-For detailed information, see:
-- [System Design Document](redib-coa-system-design.md) - Complete architecture and requirements
-- [API Documentation](#) - Coming soon
-- [User Guide](#) - Coming soon
+### Core Documentation
+- **[TEST.md](TEST.md)** - Testing guide with automated and manual testing procedures
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for development
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
+
+### Reference Materials (`/docs/reference/`)
+- **[System Design Document](docs/reference/redib-coa-system-design.md)** - Complete architecture and requirements
+- **[Application Form Specification](docs/reference/coa-application-form-spec.md)** - Detailed form specification
+- **Official Application Form (DOCX)** - Reference form in `docs/reference/`
+
+### Test Reports (`/docs/test-reports/`)
+- **[Phase 1 & 2 Test Report](docs/test-reports/PHASE1_PHASE2_TEST_REPORT.md)** - Call Management & Application Submission validation
+- **[Phase 3 Test Report](docs/test-reports/PHASE3_TEST_REPORT.md)** - Feasibility Review validation
+
+### Historical Documentation (`/archive/`)
+- Old validation reports and historical documentation
 
 ## License
 

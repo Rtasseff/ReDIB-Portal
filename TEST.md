@@ -1,4 +1,87 @@
-Based on the ReDIB documentation, here's a step-by-step end-to-end test plan that follows the actual COA workflow. I've organized it into phases with natural pause points for building views.
+# ReDIB COA System - Testing Guide
+
+This document contains both automated and manual testing procedures for the ReDIB COA portal.
+
+---
+
+## Automated Testing
+
+### Test Suites Available
+
+The following automated test scripts are available in the `/tests/` directory:
+
+#### 1. Application Form Specification Validation
+**File**: `tests/test_application_form_spec.py`
+**Tests**: 63 validation tests
+**Purpose**: Validates that the application form implementation exactly matches the official DOCX specification.
+
+**Coverage**:
+- ✅ Model fields (5 applicant fields)
+- ✅ Project types (7 types)
+- ✅ Subject areas (20 AEI classifications)
+- ✅ Form validation
+- ✅ Template rendering
+
+**Run**:
+```bash
+python tests/test_application_form_spec.py
+```
+
+#### 2. Phase 1 & 2 End-to-End Workflow
+**File**: `tests/test_phase1_phase2_workflow.py`
+**Tests**: 23 integration tests
+**Purpose**: Validates complete call creation and application submission workflows.
+
+**Coverage**:
+- ✅ Call management (Phase 1)
+- ✅ Equipment allocation
+- ✅ Application submission (Phase 2)
+- ✅ 5-step wizard workflow
+- ✅ Database persistence
+
+**Run**:
+```bash
+python tests/test_phase1_phase2_workflow.py
+```
+
+#### 3. Phase 3 Feasibility Review Workflow
+**File**: `tests/test_phase3_feasibility_review.py`
+**Tests**: 29 workflow tests
+**Purpose**: Validates feasibility review process and state transitions.
+
+**Coverage**:
+- ✅ Multi-node review creation
+- ✅ Approval workflow
+- ✅ Rejection workflow
+- ✅ State machine compliance
+- ✅ Node coordinator permissions
+
+**Run**:
+```bash
+python tests/test_phase3_feasibility_review.py
+```
+
+### Test Reports
+
+Detailed test reports are available in `/docs/test-reports/`:
+- `PHASE1_PHASE2_TEST_REPORT.md` - Phases 1 & 2 validation report
+- `PHASE3_TEST_REPORT.md` - Phase 3 validation report
+
+### Running All Tests
+
+To run all automated tests:
+```bash
+python tests/test_application_form_spec.py
+python tests/test_phase1_phase2_workflow.py
+python tests/test_phase3_feasibility_review.py
+```
+
+Expected output: **115 total tests passed (63 + 23 + 29)**
+
+---
+
+## Manual Testing Guide
+
 
 ---
 
