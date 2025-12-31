@@ -431,8 +431,8 @@ def feasibility_review(request, pk):
                 rejected_count = all_reviews.filter(is_feasible=False).count()
 
                 if rejected_count > 0:
-                    # Any rejection = application rejected
-                    application.status = 'rejected'
+                    # Any rejection = application rejected (feasibility)
+                    application.status = 'rejected_feasibility'
                     application.save()
                     status_msg = "rejected"
                 else:
