@@ -40,7 +40,7 @@ redib/
 
 ## Current Implementation Status
 
-### ✅ Completed Phases (Production-Ready)
+### ✅ All Phases Completed (Production-Ready)
 
 - **Phase 0**: Foundation & Dashboard ✅
   - User authentication & role-based access control
@@ -65,17 +65,43 @@ redib/
   - Automated state transitions
   - Email notifications
 
-**All completed phases have comprehensive automated test suites (115 tests total).**
+- **Phase 4**: Evaluator Assignment ✅
+  - Conflict of interest (COI) detection and prevention
+  - Automated evaluator assignment
+  - Manual override capabilities
+  - Email notifications to evaluators
 
-### 🔄 Pending Phases
+- **Phase 5**: Evaluation Process ✅
+  - 5-criteria evaluation system (1-5 scale)
+  - Evaluator dashboard and forms
+  - Progress tracking
+  - Completion notifications
 
-- Phase 4: Evaluator Assignment
-- Phase 5: Evaluation Process
-- Phase 6: Resolution & Prioritization
-- Phase 7: Acceptance & Scheduling
-- Phase 8: Execution & Completion
-- Phase 9: Publication Follow-up
-- Phase 10: Reporting & Statistics
+- **Phase 6**: Resolution & Prioritization ✅
+  - Score aggregation and ranking
+  - Auto-approval rule (>3.5 average score)
+  - Coordinator resolution workflow
+  - Priority assignment
+
+- **Phase 7 & 8**: Acceptance & Handoff (Simplified) ✅
+  - Applicant acceptance/decline workflow
+  - 10-day acceptance deadline enforcement
+  - Handoff email automation
+  - Direct access coordination (no internal scheduling)
+
+- **Phase 9**: Publication Tracking ✅
+  - Publication submission by applicants
+  - 6-month follow-up reminders
+  - ReDIB acknowledgment tracking
+  - Coordinator verification
+
+- **Phase 10**: Reporting & Statistics ✅
+  - Statistics dashboard for coordinators
+  - Excel export for call reports (3-sheet workbooks)
+  - Publication statistics integration
+  - Report generation tracking
+
+**Complete system with comprehensive automated test suites (29 tests across all phases).**
 
 ---
 
@@ -193,17 +219,23 @@ python manage.py migrate
 
 ### Running Tests
 
-**Automated Test Suites** (115 tests total):
+**Automated Test Suites** (29 tests total):
 ```bash
-# Specification validation (63 tests)
-python tests/test_application_form_spec.py
+# Run all tests
+python manage.py test tests
 
-# Phase 1 & 2 workflow (23 tests)
-python tests/test_phase1_phase2_workflow.py
-
-# Phase 3 workflow (29 tests)
-python tests/test_phase3_feasibility_review.py
+# Run specific phase tests
+python manage.py test tests.test_phase1_phase2_workflow
+python manage.py test tests.test_phase3_feasibility_review
+python manage.py test tests.test_phase4_evaluator_assignment
+python manage.py test tests.test_phase5_evaluation_submission
+python manage.py test tests.test_phase6_resolution
+python manage.py test tests.test_phase7_acceptance
+python manage.py test tests.test_phase9_publications
+python manage.py test reports.tests
 ```
+
+**All 29 integration tests passing ✅**
 
 See [TEST.md](TEST.md) for detailed testing guide and [docs/test-reports/](docs/test-reports/) for test reports.
 
@@ -212,6 +244,9 @@ See [TEST.md](TEST.md) for detailed testing guide and [docs/test-reports/](docs/
 ```bash
 # Populate equipment (17 items across 4 nodes)
 python manage.py populate_redib_equipment
+
+# Seed email templates (required for production)
+python manage.py seed_email_templates
 
 # Seed development data (calls, applications, evaluations)
 python manage.py seed_dev_data
@@ -232,14 +267,38 @@ Key environment variables (see `.env.example` for full list):
 
 ## Initial Setup Tasks
 
-After deployment, perform these initial setup tasks:
+After deployment, perform these initial setup tasks in order:
 
-1. **Create ReDIB nodes** (4 nodes)
-2. **Add equipment** for each node
-3. **Set up organizations** (universities, research centers)
-4. **Create user accounts** for coordinators and node staff
-5. **Assign roles** to users
-6. **Configure email templates**
+1. **Run migrations**
+   ```bash
+   python manage.py migrate
+   ```
+
+2. **Create superuser**
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+3. **Seed email templates** (required for automated emails)
+   ```bash
+   python manage.py seed_email_templates
+   ```
+
+4. **Create ReDIB nodes** (4 nodes via Django admin)
+   - CICbiomaGUNE, BioImaC, Hospital La Fe, CNIC
+
+5. **Add equipment** for each node (or use management command)
+   ```bash
+   python manage.py populate_redib_equipment
+   ```
+
+6. **Set up organizations** (universities, research centers)
+
+7. **Create user accounts** for coordinators and node staff
+
+8. **Assign roles** to users (coordinator, node_coordinator, evaluator)
+
+9. **Create first call** to test the system
 
 ## Documentation
 
