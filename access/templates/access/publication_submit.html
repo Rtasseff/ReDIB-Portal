@@ -1,0 +1,165 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Submit Publication - ReDIB{% endblock %}
+
+{% block sidebar_my_apps_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-journal-text"></i> Submit Publication</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'access:publication_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Publications
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Publication Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Publication Reporting:</strong> Please report any publications resulting from your use of ReDIB COA resources.
+                    Publications must acknowledge ReDIB support per regulatory requirements.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.application.id_for_label }}" class="form-label">
+                            {{ form.application.label }} *
+                        </label>
+                        {{ form.application }}
+                        {% if form.application.errors %}
+                        <div class="text-danger small">{{ form.application.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="text-primary mb-3">Publication Details</h6>
+
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            {{ form.title.label }} *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="text-danger small">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.authors.id_for_label }}" class="form-label">
+                            {{ form.authors.label }} *
+                        </label>
+                        {{ form.authors }}
+                        {% if form.authors.errors %}
+                        <div class="text-danger small">{{ form.authors.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">List all authors as they appear in the publication</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.journal.id_for_label }}" class="form-label">
+                                {{ form.journal.label }} *
+                            </label>
+                            {{ form.journal }}
+                            {% if form.journal.errors %}
+                            <div class="text-danger small">{{ form.journal.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.publication_date.id_for_label }}" class="form-label">
+                                {{ form.publication_date.label }} *
+                            </label>
+                            {{ form.publication_date }}
+                            {% if form.publication_date.errors %}
+                            <div class="text-danger small">{{ form.publication_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.doi.id_for_label }}" class="form-label">
+                            {{ form.doi.label }}
+                        </label>
+                        {{ form.doi }}
+                        {% if form.doi.errors %}
+                        <div class="text-danger small">{{ form.doi.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Digital Object Identifier (optional but recommended)</small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="text-primary mb-3">ReDIB Acknowledgment</h6>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.redib_acknowledged }}
+                            <label class="form-check-label" for="{{ form.redib_acknowledged.id_for_label }}">
+                                {{ form.redib_acknowledged.label }} *
+                            </label>
+                        </div>
+                        {% if form.redib_acknowledged.errors %}
+                        <div class="text-danger small">{{ form.redib_acknowledged.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.redib_acknowledged.help_text }}</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.acknowledgment_text.id_for_label }}" class="form-label">
+                            {{ form.acknowledgment_text.label }}
+                        </label>
+                        {{ form.acknowledgment_text }}
+                        {% if form.acknowledgment_text.errors %}
+                        <div class="text-danger small">{{ form.acknowledgment_text.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.acknowledgment_text.help_text }}</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Required Acknowledgment:</strong> All publications must acknowledge ReDIB support.
+                        Example: "This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU)."
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'access:publication_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Submit Publication
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Help</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">Why Report Publications?</h6>
+                <p class="small">Reporting publications helps ReDIB demonstrate the impact of its resources and is required per regulatory agreements.</p>
+
+                <h6 class="text-primary mt-3">What to Report?</h6>
+                <p class="small">Report any peer-reviewed publications, conference papers, preprints, or other scholarly outputs that used ReDIB COA resources.</p>
+
+                <h6 class="text-primary mt-3">Need Help?</h6>
+                <p class="small">Contact ReDIB coordinators at <a href="mailto:redib@csic.es">redib@csic.es</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

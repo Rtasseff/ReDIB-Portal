@@ -95,43 +95,48 @@ def send_publication_followups():
 
     Based on design section 6.2: "6 months after completion → Send publication follow-up email"
 
-    Sends follow-up to completed grants without publications.
+    Sends follow-up to accepted applications ~6 months after handoff without publications.
     """
+    from applications.models import Application
+
     now = timezone.now()
     six_months_ago = now - timedelta(days=180)
 
-    # Find completed grants from ~6 months ago without publications
-    completed_grants = AccessGrant.objects.filter(
-        completed_at__isnull=False,
-        completed_at__lte=six_months_ago,
-        completed_at__gte=six_months_ago - timedelta(days=7),  # Weekly window
-        publications__isnull=True  # No publications reported
-    ).select_related('application', 'application__applicant', 'equipment', 'equipment__node')
+    # Find accepted applications from ~6 months ago without publications
+    # Use handoff_email_sent_at as the "completion" timestamp
+    completed_applications = Application.objects.filter(
+        status='accepted',
+        accepted_by_applicant=True,  # Applicant accepted the grant
+        handoff_email_sent_at__isnull=False,  # Handoff occurred
+        handoff_email_sent_at__lte=six_months_ago,  # ~6 months ago
+        handoff_email_sent_at__gte=six_months_ago - timedelta(days=7),  # Weekly window
+        publications__isnull=True  # No publications reported yet
+    ).select_related('applicant')
 
     followups_sent = 0
 
-    for grant in completed_grants:
+    for application in completed_applications:
         # Check if user wants reminders
-        if hasattr(grant.application.applicant, 'notification_preferences'):
-            prefs = grant.application.applicant.notification_preferences
+        if hasattr(application.applicant, 'notification_preferences'):
+            prefs = application.applicant.notification_preferences
             if not prefs.notify_application_updates:
                 continue
 
+        # Build email context
         context = {
-            'applicant_name': grant.application.applicant.get_full_name(),
-            'application_code': grant.application.code,
-            'equipment_name': grant.equipment.name,
-            'node_name': grant.equipment.node.name,
-            'completed_date': grant.completed_at,
-            'acknowledgment_text': grant.equipment.node.acknowledgment_text,
+            'applicant_name': application.applicant.get_full_name(),
+            'application_code': application.code,
+            'project_title': application.project_title or application.brief_description,
+            'handoff_date': application.handoff_email_sent_at,
+            'acknowledgment_text': 'This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU).',
         }
 
         send_email_from_template(
             template_type='publication_followup',
-            recipient_email=grant.application.applicant.email,
+            recipient_email=application.applicant.email,
             context_data=context,
-            recipient_user_id=grant.application.applicant.id,
-            related_application_id=grant.application.id
+            recipient_user_id=application.applicant.id,
+            related_application_id=application.id
         )
 
         followups_sent += 1

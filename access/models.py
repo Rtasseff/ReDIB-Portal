@@ -107,10 +107,13 @@ class AccessGrant(models.Model):
 class Publication(models.Model):
     """Publications resulting from COA access"""
 
-    access_grant = models.ForeignKey(
-        AccessGrant,
+    application = models.ForeignKey(
+        'applications.Application',
         on_delete=models.CASCADE,
-        related_name='publications'
+        related_name='publications',
+        help_text='Application that resulted in this publication',
+        null=True,  # Temporarily nullable for migration
+        blank=True
     )
 
     title = models.CharField(max_length=500)

@@ -510,6 +510,69 @@ If you believe this is an error, please contact us at info@redib.net
 ---
 This is an automated notification from the ReDIB COA Management System.''',
                 'available_variables': '''Variables: applicant_name, application_code, deadline'''
+            },
+            {
+                'template_type': 'publication_followup',
+                'subject': 'ReDIB COA - Publication Follow-up for Application {{ application_code }}',
+                'text_content': '''Dear {{ applicant_name }},
+
+We hope your research using ReDIB COA resources was successful!
+
+It has been approximately 6 months since your access was granted for application {{ application_code }} - "{{ project_title }}".
+
+We would greatly appreciate it if you could report any publications that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.
+
+If your work has resulted in publications, please log in to the ReDIB portal and submit publication details.
+
+IMPORTANT REMINDER:
+Per regulatory requirements, all publications must acknowledge ReDIB support with the following text:
+
+"{{ acknowledgment_text }}"
+
+If you have not yet published results or if your research is still ongoing, you can disregard this message for now. We may follow up again in the future.
+
+Thank you for using ReDIB COA resources and for helping us track the impact of our services!
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Management System.''',
+                'html_content': '''<html><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+
+<h2 style="color: #2c5282;">ReDIB COA - Publication Follow-up</h2>
+
+<p>Dear <strong>{{ applicant_name }}</strong>,</p>
+
+<p>We hope your research using ReDIB COA resources was successful!</p>
+
+<p>It has been approximately <strong>6 months</strong> since your access was granted for application <strong>{{ application_code }}</strong> - "{{ project_title }}".</p>
+
+<p>We would greatly appreciate it if you could <strong>report any publications</strong> that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.</p>
+
+<p>If your work has resulted in publications, please <a href="/publications/submit/" style="color: #2c5282; text-decoration: underline;">log in to the ReDIB portal and submit publication details</a>.</p>
+
+<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #92400e;">IMPORTANT REMINDER:</h3>
+    <p style="margin-bottom: 0;">Per regulatory requirements, all publications must acknowledge ReDIB support with the following text:</p>
+    <p style="font-style: italic; margin-top: 10px; padding-left: 10px; border-left: 3px solid #d97706;">
+        "{{ acknowledgment_text }}"
+    </p>
+</div>
+
+<p><em>If you have not yet published results or if your research is still ongoing, you can disregard this message for now. We may follow up again in the future.</em></p>
+
+<p>Thank you for using ReDIB COA resources and for helping us track the impact of our services!</p>
+
+<p>Best regards,<br>
+<strong>The ReDIB COA Team</strong></p>
+
+<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+<p style="font-size: 12px; color: #718096;">This is an automated reminder from the ReDIB COA Management System.</p>
+
+</body></html>''',
+                'available_variables': '''Variables: applicant_name, application_code, project_title, handoff_date, acknowledgment_text'''
             }
         ]
 

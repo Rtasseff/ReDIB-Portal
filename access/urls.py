@@ -1,25 +1,13 @@
 """
-URL configuration for access app.
-Stub URLs for Phase 1 testing - full implementation in Phases 7-9.
+URL configuration for access app - Phase 9: Publication Tracking.
 """
 from django.urls import path
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from . import views
 
 app_name = 'access'
 
-
-@login_required
-def stub_view(request):
-    from django.contrib import messages
-    messages.info(request, "Access management coming in Phases 7-9!")
-    return render(request, 'applications/coming_soon.html', {
-        'feature': 'Access Management & Scheduling',
-        'phase': 'Phases 7-9'
-    })
-
-
 urlpatterns = [
-    path('scheduling/', stub_view, name='node_scheduling'),
-    path('tracking/', stub_view, name='access_tracking'),
+    # Phase 9: Publication tracking
+    path('publications/', views.publication_list, name='publication_list'),
+    path('publications/submit/', views.publication_submit, name='publication_submit'),
 ]

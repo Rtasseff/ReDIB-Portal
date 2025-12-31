@@ -1,0 +1,130 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}My Publications - ReDIB{% endblock %}
+
+{% block sidebar_my_apps_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-journal-text"></i> My Publications</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'access:publication_submit' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Submit Publication
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if publications %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>Application</th>
+                <th>Journal</th>
+                <th>Publication Date</th>
+                <th>Reported</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pub in publications %}
+            <tr>
+                <td>
+                    <strong>{{ pub.title }}</strong>
+                    {% if pub.doi %}
+                    <br>
+                    <small class="text-muted">
+                        <i class="bi bi-link-45deg"></i>
+                        <a href="https://doi.org/{{ pub.doi }}" target="_blank">{{ pub.doi }}</a>
+                    </small>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'applications:detail' pub.application.pk %}">
+                        {{ pub.application.code }}
+                    </a>
+                </td>
+                <td>{{ pub.journal }}</td>
+                <td>{{ pub.publication_date|date:"M Y" }}</td>
+                <td>{{ pub.reported_at|date:"M d, Y" }}</td>
+                <td>
+                    {% if pub.verified %}
+                    <span class="badge bg-success" title="Verified by ReDIB coordinator">
+                        <i class="bi bi-check-circle-fill"></i> Verified
+                    </span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark" title="Pending coordinator verification">
+                        <i class="bi bi-clock"></i> Pending Review
+                    </span>
+                    {% endif %}
+
+                    {% if pub.redib_acknowledged %}
+                    <br>
+                    <span class="badge bg-info mt-1" title="ReDIB acknowledged in publication">
+                        <i class="bi bi-bookmark-check"></i> Acknowledged
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3">
+    <p class="text-muted">
+        <i class="bi bi-info-circle"></i>
+        Total: {{ publications.count }} publication{{ publications.count|pluralize }}
+    </p>
+</div>
+
+<div class="alert alert-info mt-4">
+    <h6><i class="bi bi-info-circle"></i> About Publication Verification</h6>
+    <p class="mb-0 small">
+        Publications are reviewed by ReDIB coordinators to verify the acknowledgment and link to your application.
+        Verified publications contribute to ReDIB's impact metrics and reporting to funding agencies.
+    </p>
+</div>
+
+{% else %}
+<div class="alert alert-info">
+    <h4 class="alert-heading"><i class="bi bi-info-circle"></i> No Publications Yet</h4>
+    <p>You haven't reported any publications yet. If you have published research resulting from your use of ReDIB COA resources, please submit it here.</p>
+    <hr>
+    <p class="mb-0">
+        <strong>Remember:</strong> All publications using ReDIB resources must acknowledge ReDIB support per regulatory requirements.
+    </p>
+    <div class="mt-3">
+        <a href="{% url 'access:publication_submit' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Submit Your First Publication
+        </a>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Why Report Publications?</h6>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li>Demonstrates the scientific impact of ReDIB resources</li>
+            <li>Required per regulatory agreements with funding agencies</li>
+            <li>Helps ReDIB secure continued funding and support</li>
+            <li>Contributes to the broader research community visibility</li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

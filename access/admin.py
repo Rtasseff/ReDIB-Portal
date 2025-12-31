@@ -7,12 +7,6 @@ from simple_history.admin import SimpleHistoryAdmin
 from .models import AccessGrant, Publication
 
 
-class PublicationInline(admin.TabularInline):
-    model = Publication
-    extra = 0
-    fields = ['title', 'journal', 'publication_date', 'redib_acknowledged', 'verified']
-
-
 @admin.register(AccessGrant)
 class AccessGrantAdmin(SimpleHistoryAdmin):
     list_display = [
@@ -27,7 +21,6 @@ class AccessGrantAdmin(SimpleHistoryAdmin):
     list_filter = ['equipment__node', 'accepted_by_user', 'completed_at']
     search_fields = ['application__code', 'equipment__name']
     ordering = ['-created_at']
-    inlines = [PublicationInline]
     readonly_fields = ['created_at', 'updated_at', 'hours_utilization_rate']
 
     fieldsets = (
