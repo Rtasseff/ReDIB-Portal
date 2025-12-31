@@ -66,8 +66,11 @@ def evaluation_detail(request, pk):
     """
     View and submit evaluation for a specific application.
     Phase 4: View application details (read-only)
-    Phase 5: Submit evaluation scores and comments
+    Phase 5: Submit evaluation scores and comments (IMPLEMENTED)
     """
+    from .forms import EvaluationForm
+    from .utils import get_blind_application_data, is_evaluation_locked, check_and_transition_application
+
     evaluation = get_object_or_404(
         Evaluation.objects.select_related(
             'application',
@@ -79,14 +82,55 @@ def evaluation_detail(request, pk):
         evaluator=request.user
     )
 
+    # Check if evaluation is locked
+    is_locked, lock_reason = is_evaluation_locked(evaluation)
+
+    # Calculate days until deadline
+    deadline = evaluation.application.call.evaluation_deadline
+    days_until_deadline = (deadline - timezone.now()).days if deadline else None
+
+    if request.method == 'POST' and not is_locked:
+        form = EvaluationForm(request.POST, instance=evaluation)
+        if form.is_valid():
+            form.save()  # Model auto-calculates total_score and sets completed_at
+
+            # Check if all evaluations complete and trigger state transition
+            result = check_and_transition_application(evaluation.application)
+
+            messages.success(
+                request,
+                f'Evaluation submitted successfully. Your score: {evaluation.total_score:.2f}/5.00'
+            )
+
+            # Additional message if all evaluations are now complete
+            if result['all_complete'] and result['transitioned']:
+                messages.info(
+                    request,
+                    f'All {result["total"]} evaluations for {evaluation.application.code} are now complete. '
+                    f'The coordinator has been notified.'
+                )
+
+            return redirect('evaluations:my_evaluations')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = EvaluationForm(instance=evaluation)
+
+    # Get blind application data (hide applicant identity)
+    blind_application = get_blind_application_data(evaluation.application)
+
     context = {
         'evaluation': evaluation,
-        'application': evaluation.application,
-        'is_complete': evaluation.is_complete,
-        'is_past_deadline': evaluation.application.call.evaluation_deadline < timezone.now(),
+        'application': blind_application,
+        'form': form,
+        'is_locked': is_locked,
+        'lock_reason': lock_reason,
+        'is_past_deadline': deadline < timezone.now() if deadline else False,
+        'days_until_deadline': days_until_deadline,
+        'deadline': deadline,
     }
 
-    return render(request, 'evaluations/evaluation_detail.html', context)
+    return render(request, 'evaluations/evaluation_form.html', context)
 
 
 @login_required

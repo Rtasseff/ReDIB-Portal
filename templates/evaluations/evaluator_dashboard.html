@@ -1,0 +1,164 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}My Evaluations - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>My Evaluations</h2>
+    <p class="text-muted">Applications assigned to you for evaluation</p>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Pending</h5>
+                    <p class="card-text display-4">{{ pending_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Overdue</h5>
+                    <p class="card-text display-4">{{ overdue_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Completed</h5>
+                    <p class="card-text display-4">{{ completed_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Evaluations -->
+    {% if overdue %}
+    <div class="card mb-4 border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Overdue Evaluations</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>Call</th>
+                            <th>Assigned</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for evaluation in overdue %}
+                        <tr>
+                            <td>{{ evaluation.application.code }}</td>
+                            <td>{{ evaluation.application.call.code }}</td>
+                            <td>{{ evaluation.assigned_at|date:"M d, Y" }}</td>
+                            <td class="text-danger">{{ evaluation.application.call.evaluation_deadline|date:"M d, Y" }}</td>
+                            <td><span class="badge bg-danger">Overdue</span></td>
+                            <td>
+                                <a href="{% url 'evaluations:evaluation_detail' evaluation.pk %}" class="btn btn-sm btn-warning">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Evaluations -->
+    {% if upcoming %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">Pending Evaluations</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>Call</th>
+                            <th>Assigned</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for evaluation in upcoming %}
+                        <tr>
+                            <td>{{ evaluation.application.code }}</td>
+                            <td>{{ evaluation.application.call.code }}</td>
+                            <td>{{ evaluation.assigned_at|date:"M d, Y" }}</td>
+                            <td>{{ evaluation.application.call.evaluation_deadline|date:"M d, Y" }}</td>
+                            <td><span class="badge bg-warning">Pending</span></td>
+                            <td>
+                                <a href="{% url 'evaluations:evaluation_detail' evaluation.pk %}" class="btn btn-sm btn-primary">Evaluate</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Completed Evaluations -->
+    {% if completed %}
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Completed Evaluations</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>Call</th>
+                            <th>Assigned</th>
+                            <th>Completed</th>
+                            <th>Your Score</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for evaluation in completed %}
+                        <tr>
+                            <td>{{ evaluation.application.code }}</td>
+                            <td>{{ evaluation.application.call.code }}</td>
+                            <td>{{ evaluation.assigned_at|date:"M d, Y" }}</td>
+                            <td>{{ evaluation.completed_at|date:"M d, Y" }}</td>
+                            <td><strong>{{ evaluation.total_score|floatformat:2 }}</strong> / 5.00</td>
+                            <td>
+                                <a href="{% url 'evaluations:evaluation_detail' evaluation.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- No Evaluations -->
+    {% if not upcoming and not overdue and not completed %}
+    <div class="alert alert-info">
+        <h5>No Evaluations Assigned</h5>
+        <p>You don't have any evaluations assigned to you at this time.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

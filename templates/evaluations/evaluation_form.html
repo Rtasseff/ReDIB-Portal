@@ -1,0 +1,257 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Evaluate {{ application.code }} - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Evaluation: {{ application.code }}</h2>
+            <p class="text-muted">Call: {{ evaluation.application.call.code }}</p>
+        </div>
+    </div>
+
+    <!-- Deadline Warning -->
+    {% if days_until_deadline and days_until_deadline < 7 and days_until_deadline > 0 %}
+    <div class="alert alert-warning" role="alert">
+        <strong>Deadline Approaching!</strong>
+        {{ days_until_deadline }} day{{ days_until_deadline|pluralize }} remaining until evaluation deadline
+        ({{ deadline|date:"F d, Y" }})
+    </div>
+    {% elif is_past_deadline %}
+    <div class="alert alert-danger" role="alert">
+        <strong>Deadline Passed!</strong>
+        The evaluation deadline was {{ deadline|date:"F d, Y" }}.
+        This evaluation can no longer be edited.
+    </div>
+    {% endif %}
+
+    <!-- Locked Message -->
+    {% if is_locked %}
+    <div class="alert alert-info" role="alert">
+        <strong>Evaluation {{ lock_reason|title }}!</strong>
+        {% if lock_reason == 'completed' %}
+        This evaluation has been submitted and cannot be edited.
+        {% else %}
+        The deadline has passed and evaluations can no longer be submitted.
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Application Details (Blind - No Applicant Identity) -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Application Details (Blind Review)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Application Code:</strong> {{ application.code }}</p>
+                            <p><strong>Brief Description:</strong> {{ application.brief_description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Project Type:</strong> {{ application.project_type }}</p>
+                            <p><strong>Subject Area:</strong> {{ application.subject_area }}</p>
+                            <p><strong>Specialization:</strong> {{ application.specialization_area }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Requests -->
+                    <div class="mt-3">
+                        <h6>Requested Equipment:</h6>
+                        <ul>
+                        {% for access in application.requested_equipment %}
+                            <li>{{ access.equipment.name }} ({{ access.equipment.node.code }}) - {{ access.hours_requested }} hours</li>
+                        {% empty %}
+                            <li>No equipment requests specified</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scientific Content -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Scientific Content for Evaluation</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Scientific Relevance -->
+                    <div class="mb-4">
+                        <h6>1. Scientific Relevance and Originality</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.scientific_relevance|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Methodology -->
+                    <div class="mb-4">
+                        <h6>2. Methodology and Experimental Design</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.methodology_description|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Expected Contributions -->
+                    <div class="mb-4">
+                        <h6>3. Expected Contributions and Results</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.expected_contributions|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Impact and Strengths -->
+                    <div class="mb-4">
+                        <h6>4. Impact and Strengths</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.impact_strengths|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Opportunity Criteria -->
+                    <div class="mb-4">
+                        <h6>5. Opportunity Criteria</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.opportunity_criteria|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluation Form or Display -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Your Evaluation</h5>
+                </div>
+                <div class="card-body">
+                    {% if is_locked %}
+                        <!-- Display completed scores (read-only) -->
+                        <div class="alert alert-success">
+                            <strong>Your Evaluation</strong> (Submitted {{ evaluation.completed_at|date:"F d, Y" }})
+                        </div>
+
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Criterion</th>
+                                    <th width="100">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Scientific Relevance and Originality</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_relevance }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Methodology and Experimental Design</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_methodology }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Expected Contributions and Results</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_contributions }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Impact and Strengths</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_impact }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Opportunity Criteria</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_opportunity }}</strong></td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td><strong>TOTAL SCORE</strong></td>
+                                    <td class="text-center"><strong>{{ evaluation.total_score|floatformat:2 }} / 5.00</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        {% if evaluation.comments %}
+                        <div class="mt-3">
+                            <h6>Your Comments:</h6>
+                            <div class="bg-light p-3 rounded">
+                                {{ evaluation.comments|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <a href="{% url 'evaluations:my_evaluations' %}" class="btn btn-secondary mt-3">Back to My Evaluations</a>
+                    {% else %}
+                        <!-- Editable form -->
+                        <form method="post" id="evaluationForm">
+                            {% csrf_token %}
+
+                            <p class="alert alert-info">
+                                Rate each criterion on a scale of 1 to 5, where:
+                                <strong>1 = Poor</strong>,
+                                <strong>2 = Below Average</strong>,
+                                <strong>3 = Average</strong>,
+                                <strong>4 = Good</strong>,
+                                <strong>5 = Excellent</strong>
+                            </p>
+
+                            <!-- Score Fields -->
+                            {% for field in form %}
+                                {% if 'score_' in field.name %}
+                                <div class="mb-4 p-3 border rounded">
+                                    <label class="form-label"><strong>{{ field.label }}</strong></label>
+                                    <p class="text-muted small">{{ field.help_text }}</p>
+
+                                    <div class="btn-group" role="group">
+                                        {% for choice_value, choice_label in field.field.widget.choices %}
+                                        <input type="radio" class="btn-check" name="{{ field.name }}"
+                                               id="{{ field.name }}_{{ choice_value }}" value="{{ choice_value }}"
+                                               {% if field.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                               required>
+                                        <label class="btn btn-outline-primary" for="{{ field.name }}_{{ choice_value }}">
+                                            {{ choice_label }}
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if field.errors %}
+                                    <div class="text-danger mt-2">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Comments Field -->
+                            <div class="mb-4">
+                                <label for="{{ form.comments.id_for_label }}" class="form-label">
+                                    <strong>{{ form.comments.label }}</strong>
+                                </label>
+                                <p class="text-muted small">{{ form.comments.help_text }}</p>
+                                {{ form.comments }}
+                                {% if form.comments.errors %}
+                                <div class="text-danger mt-2">{{ form.comments.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Non-field errors -->
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
+
+                            <!-- Submit Buttons -->
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'evaluations:my_evaluations' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-success btn-lg">Submit Evaluation</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

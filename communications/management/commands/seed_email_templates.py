@@ -205,6 +205,122 @@ This is an automated reminder from the ReDIB COA Portal.
     "deadline": "Evaluation deadline (datetime object)"
 }
                 '''
+            },
+            {
+                'template_type': 'evaluations_complete',
+                'subject': 'ReDIB COA: All Evaluations Complete for {{ application_code }}',
+                'html_content': '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #27ae60; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .success-box { background-color: #d5f4e6; border-left: 4px solid #27ae60; padding: 15px; margin: 15px 0; }
+        .score-display { font-size: 24px; font-weight: bold; color: #27ae60; text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>All Evaluations Complete</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+
+            <p>All evaluations have been completed for application <strong>{{ application_code }}</strong> in call <strong>{{ call_code }}</strong>.</p>
+
+            <div class="success-box">
+                <p><strong>Application:</strong> {{ application_code }}</p>
+                <p><strong>Applicant:</strong> {{ applicant_name }}</p>
+                <p><strong>Brief Description:</strong> {{ brief_description }}</p>
+                <p><strong>Call:</strong> {{ call_code }}</p>
+                <p><strong>Number of Evaluations:</strong> {{ num_evaluations }}</p>
+            </div>
+
+            <div class="score-display">
+                Average Score: {{ average_score }} / 5.00
+            </div>
+
+            <p>The application status has been automatically updated to <strong>EVALUATED</strong> and is now ready for your resolution.</p>
+
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">Review Application & Decide</a>
+            </p>
+
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+                <li>Review individual evaluator scores and comments</li>
+                <li>Decide on resolution (Accept, Reject, or Waiting List)</li>
+                <li>Notify the applicant of the decision</li>
+            </ul>
+
+            <p>Thank you for coordinating the ReDIB COA process.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
+                ''',
+                'text_content': '''
+Dear {{ coordinator_name }},
+
+All evaluations have been completed for application {{ application_code }} in call {{ call_code }}.
+
+Application Details:
+- Application: {{ application_code }}
+- Applicant: {{ applicant_name }}
+- Brief Description: {{ brief_description }}
+- Call: {{ call_code }}
+- Number of Evaluations: {{ num_evaluations }}
+
+AVERAGE SCORE: {{ average_score }} / 5.00
+
+The application status has been automatically updated to EVALUATED and is now ready for your resolution.
+
+Review Application & Decide:
+{{ application_url }}
+
+Next Steps:
+- Review individual evaluator scores and comments
+- Decide on resolution (Accept, Reject, or Waiting List)
+- Notify the applicant of the decision
+
+Thank you for coordinating the ReDIB COA process.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated notification from the ReDIB COA Portal.
+Please do not reply to this email.
+                ''',
+                'available_variables': '''
+{
+    "coordinator_name": "Full name of the coordinator",
+    "application_code": "Application unique code",
+    "applicant_name": "Name of the applicant",
+    "brief_description": "Brief description of the application",
+    "call_code": "Call code",
+    "average_score": "Average score across all evaluations (rounded to 2 decimals)",
+    "num_evaluations": "Number of completed evaluations",
+    "application_url": "URL to view the application"
+}
+                '''
             }
         ]
 

@@ -250,4 +250,69 @@ def assign_evaluators_to_call(call_id, num_evaluators=2):
         call.status = 'closed'
         call.save()
 
+    # Transition applications to 'under_evaluation' status (Phase 5)
+    for application in eligible_applications:
+        if application.status == 'pending_evaluation':
+            application.status = 'under_evaluation'
+            application.save()
+
     return results
+
+
+@shared_task
+def notify_coordinator_evaluations_complete(application_id, average_score):
+    """
+    Notify coordinator(s) when all evaluations for an application are complete.
+    Triggered automatically when the last evaluation is submitted.
+
+    Args:
+        application_id: ID of the application
+        average_score: Average score across all evaluations
+
+    Returns:
+        Number of notifications sent
+    """
+    from applications.models import Application
+    from core.models import User
+
+    application = Application.objects.select_related('call', 'applicant').get(id=application_id)
+
+    # Get all active coordinators
+    coordinators = User.objects.filter(
+        roles__role='coordinator',
+        roles__is_active=True
+    ).distinct()
+
+    notifications_sent = 0
+
+    for coordinator in coordinators:
+        # Check notification preferences
+        if hasattr(coordinator, 'notification_preferences'):
+            prefs = coordinator.notification_preferences
+            if not prefs.notify_application_updates:
+                continue
+
+        # Prepare email context
+        context = {
+            'coordinator_name': coordinator.get_full_name(),
+            'application_code': application.code,
+            'applicant_name': application.applicant_name,
+            'call_code': application.call.code,
+            'average_score': round(average_score, 2),
+            'num_evaluations': application.evaluations.count(),
+            'application_url': f'/applications/{application.id}/',
+            'brief_description': application.brief_description,
+        }
+
+        # Send notification email
+        send_email_from_template(
+            template_type='evaluations_complete',
+            recipient_email=coordinator.email,
+            context_data=context,
+            recipient_user_id=coordinator.id,
+            related_application_id=application.id
+        )
+
+        notifications_sent += 1
+
+    return notifications_sent
