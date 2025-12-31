@@ -309,3 +309,107 @@ class FeasibilityReviewForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+# =============================================================================
+# Phase 6: Resolution Forms
+# =============================================================================
+
+class ApplicationResolutionForm(forms.ModelForm):
+    """
+    Form for coordinators to apply resolution to individual applications.
+
+    Business Rules (Critical):
+    - Competitive funding apps CANNOT be rejected (choice removed dynamically)
+    - Resolution comments are recommended but not required
+    """
+
+    class Meta:
+        model = Application
+        fields = ['resolution', 'resolution_comments']
+        widgets = {
+            'resolution': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'resolution_comments': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Optional: Add comments about this resolution decision...'
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        """
+        Customize form based on application properties.
+
+        If application has competitive funding, remove 'rejected' option.
+        """
+        # Extract application instance from kwargs
+        self.application = kwargs.pop('application', None)
+        super().__init__(*args, **kwargs)
+
+        # Remove 'rejected' choice if has_competitive_funding
+        if self.application and self.application.has_competitive_funding:
+            # Filter out rejected option
+            original_choices = self.fields['resolution'].choices
+            filtered_choices = [
+                choice for choice in original_choices
+                if choice[0] in ['accepted', 'pending']
+            ]
+            self.fields['resolution'].choices = filtered_choices
+
+            # Add help text
+            self.fields['resolution'].help_text = (
+                "This application has competitive funding and cannot be rejected. "
+                "It must be either accepted or marked as pending."
+            )
+
+    def clean(self):
+        """
+        Validate resolution business rules.
+        """
+        cleaned_data = super().clean()
+        resolution = cleaned_data.get('resolution')
+
+        # Validate: competitive funding cannot be rejected
+        if self.application and self.application.has_competitive_funding:
+            if resolution == 'rejected':
+                raise forms.ValidationError(
+                    "Applications with competitive funding cannot be rejected. "
+                    "They must be either accepted or marked as pending."
+                )
+
+        return cleaned_data
+
+
+class BulkResolutionForm(forms.Form):
+    """
+    Form for bulk auto-allocation of resolutions by priority.
+
+    Allows coordinator to set threshold score and auto-pending behavior.
+    """
+
+    threshold_score = forms.DecimalField(
+        min_value=1.0,
+        max_value=5.0,
+        initial=3.0,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.1',
+            'placeholder': '3.0'
+        }),
+        help_text="Minimum score for acceptance (1.0-5.0). Applications below this threshold will be rejected."
+    )
+
+    auto_pending = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        help_text="Automatically mark applications as 'pending' when hours are exhausted (instead of rejected)"
+    )
+
+    def clean_threshold_score(self):
+        """Validate threshold score is within valid range."""
+        threshold = self.cleaned_data.get('threshold_score')
+        if threshold < 1.0 or threshold > 5.0:
+            raise forms.ValidationError("Threshold score must be between 1.0 and 5.0")
+        return threshold

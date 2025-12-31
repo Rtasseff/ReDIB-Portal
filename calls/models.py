@@ -40,6 +40,12 @@ class Call(models.Model):
     # Publication
     published_at = models.DateTimeField(null=True, blank=True)
 
+    # Resolution (Phase 6)
+    is_resolution_locked = models.BooleanField(
+        default=False,
+        help_text='Prevent resolution changes after finalization (Phase 6)'
+    )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -321,6 +321,93 @@ Please do not reply to this email.
     "application_url": "URL to view the application"
 }
                 '''
+            },
+            # Phase 6: Resolution Notifications
+            {
+                'template_type': 'resolution_accepted',
+                'subject': 'ReDIB COA: Application {{ application_code }} Accepted',
+                'html_content': '''<html><body>
+<h2>Application Accepted</h2>
+<p>Dear {{ applicant_name }},</p>
+<p>Congratulations! Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been <strong>ACCEPTED</strong>.</p>
+<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p><strong>Hours Granted:</strong> {{ hours_granted }} hours</p>
+<p>{{ resolution_comments }}</p>
+<p>Next steps will be provided soon.</p>
+<p>Best regards,<br>ReDIB COA Team</p>
+</body></html>''',
+                'text_content': '''Application Accepted
+
+Dear {{ applicant_name }},
+
+Congratulations! Your application {{ application_code }} for call {{ call_code }} has been ACCEPTED.
+
+Final Score: {{ final_score }}/5.00
+Hours Granted: {{ hours_granted }} hours
+
+{{ resolution_comments }}
+
+Next steps will be provided soon.
+
+Best regards,
+ReDIB COA Team''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
+            },
+            {
+                'template_type': 'resolution_pending',
+                'subject': 'ReDIB COA: Application {{ application_code }} Pending',
+                'html_content': '''<html><body>
+<h2>Application Pending (Waiting List)</h2>
+<p>Dear {{ applicant_name }},</p>
+<p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been marked as <strong>PENDING</strong> (waiting list).</p>
+<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p>{{ resolution_comments }}</p>
+<p>You will be notified if hours become available.</p>
+<p>Best regards,<br>ReDIB COA Team</p>
+</body></html>''',
+                'text_content': '''Application Pending (Waiting List)
+
+Dear {{ applicant_name }},
+
+Your application {{ application_code }} for call {{ call_code }} has been marked as PENDING (waiting list).
+
+Final Score: {{ final_score }}/5.00
+
+{{ resolution_comments }}
+
+You will be notified if hours become available.
+
+Best regards,
+ReDIB COA Team''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
+            },
+            {
+                'template_type': 'resolution_rejected',
+                'subject': 'ReDIB COA: Application {{ application_code }} Resolution',
+                'html_content': '''<html><body>
+<h2>Application Resolution</h2>
+<p>Dear {{ applicant_name }},</p>
+<p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} was not accepted at this time.</p>
+<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p>{{ resolution_comments }}</p>
+<p>Thank you for your participation.</p>
+<p>Best regards,<br>ReDIB COA Team</p>
+</body></html>''',
+                'text_content': '''Application Resolution
+
+Dear {{ applicant_name }},
+
+Your application {{ application_code }} for call {{ call_code }} was not accepted at this time.
+
+Final Score: {{ final_score }}/5.00
+
+{{ resolution_comments }}
+
+Thank you for your participation.
+
+Best regards,
+ReDIB COA Team''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
             }
         ]
 

@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 from calls.models import Call
-from core.decorators import node_coordinator_required
+from core.decorators import node_coordinator_required, role_required
 from .models import Application, RequestedAccess, FeasibilityReview
 from .forms import (
     ApplicationStep1Form, ApplicationStep2Form, ApplicationStep3Form,
@@ -476,3 +476,242 @@ def feasibility_review(request, pk):
         'requested_access': requested_access,
     }
     return render(request, 'applications/feasibility_review.html', context)
+
+
+# =============================================================================
+# Phase 6: Resolution Views
+# =============================================================================
+
+@login_required
+@role_required('coordinator')
+def resolution_dashboard(request):
+    """
+    Resolution dashboard showing calls ready for coordinator review.
+
+    Lists calls that have:
+    - Evaluation deadline passed
+    - At least one application in 'evaluated' status
+    """
+    from django.db.models import Count, Avg
+    from django.utils import timezone
+    from calls.models import Call
+
+    now = timezone.now()
+
+    # Get calls with evaluation deadline passed
+    calls = (
+        Call.objects
+        .filter(evaluation_deadline__lt=now)
+        .annotate(
+            total_apps=Count('applications'),
+            evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
+            avg_score=Avg('applications__final_score')
+        )
+        .filter(evaluated_apps__gt=0)  # Only calls with apps to resolve
+        .order_by('-evaluation_deadline')
+    )
+
+    # Add resolution summary for each call
+    from applications.services import ResolutionService
+    calls_with_stats = []
+    for call in calls:
+        service = ResolutionService(call)
+        stats = service.get_resolution_summary()
+        calls_with_stats.append({
+            'call': call,
+            'stats': stats
+        })
+
+    context = {
+        'calls_with_stats': calls_with_stats,
+    }
+    return render(request, 'applications/resolution/dashboard.html', context)
+
+
+@login_required
+@role_required('coordinator')
+def call_resolution_detail(request, call_id):
+    """
+    Prioritized list of applications for resolution.
+
+    Shows applications sorted by priority (score DESC, code ASC) with:
+    - Hours availability per equipment
+    - Current resolution status
+    - Actions to set resolution
+    """
+    from calls.models import Call
+    from applications.services import ResolutionService
+
+    call = get_object_or_404(Call, pk=call_id)
+    service = ResolutionService(call)
+
+    # Get prioritized applications
+    applications = service.get_prioritized_applications()
+
+    # Get hours availability
+    hours_availability = service.calculate_hours_availability()
+
+    # Get resolution summary
+    summary = service.get_resolution_summary()
+
+    context = {
+        'call': call,
+        'applications': applications,
+        'hours_availability': hours_availability,
+        'summary': summary,
+    }
+    return render(request, 'applications/resolution/call_detail.html', context)
+
+
+@login_required
+@role_required('coordinator')
+def application_resolution(request, application_id):
+    """
+    AJAX endpoint for individual application resolution.
+
+    GET: Return application details as JSON
+    POST: Apply resolution and return result
+    """
+    import json
+    from django.http import JsonResponse
+    from applications.forms import ApplicationResolutionForm
+    from applications.services import ResolutionService
+
+    application = get_object_or_404(Application, pk=application_id)
+    service = ResolutionService(application.call)
+
+    if request.method == 'GET':
+        # Return application details
+        can_accept, reason, details = service.can_accept_application(application)
+
+        data = {
+            'id': application.id,
+            'code': application.code,
+            'applicant_name': application.applicant_name,
+            'brief_description': application.brief_description,
+            'final_score': float(application.final_score) if application.final_score else None,
+            'has_competitive_funding': application.has_competitive_funding,
+            'current_resolution': application.resolution,
+            'resolution_comments': application.resolution_comments,
+            'can_accept': can_accept,
+            'acceptance_reason': reason,
+            'acceptance_details': details,
+            'requested_access': [
+                {
+                    'equipment': ra.equipment.name,
+                    'hours_requested': float(ra.hours_requested),
+                    'hours_granted': float(ra.hours_granted) if ra.hours_granted else None,
+                }
+                for ra in application.requested_access.select_related('equipment').all()
+            ]
+        }
+        return JsonResponse(data)
+
+    elif request.method == 'POST':
+        # Apply resolution
+        form = ApplicationResolutionForm(request.POST, instance=application, application=application)
+
+        if form.is_valid():
+            resolution = form.cleaned_data['resolution']
+            comments = form.cleaned_data['resolution_comments']
+
+            try:
+                result = service.apply_resolution(
+                    application,
+                    resolution,
+                    comments,
+                    request.user
+                )
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Resolution applied: {resolution}',
+                    'result': result
+                })
+            except ValidationError as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=400)
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            }, status=400)
+
+
+@login_required
+@role_required('coordinator')
+def bulk_resolution(request, call_id):
+    """
+    AJAX endpoint for bulk auto-allocation of resolutions.
+
+    POST: Apply bulk resolution and return summary
+    """
+    from django.http import JsonResponse
+    from applications.forms import BulkResolutionForm
+    from applications.services import ResolutionService
+    from calls.models import Call
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    call = get_object_or_404(Call, pk=call_id)
+    service = ResolutionService(call)
+
+    form = BulkResolutionForm(request.POST)
+
+    if form.is_valid():
+        threshold_score = form.cleaned_data['threshold_score']
+        auto_pending = form.cleaned_data['auto_pending']
+
+        try:
+            result = service.bulk_auto_allocate(
+                threshold_score=threshold_score,
+                auto_pending=auto_pending
+            )
+            return JsonResponse({
+                'success': True,
+                'message': f'Bulk resolution complete',
+                'result': result
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    else:
+        return JsonResponse({
+            'success': False,
+            'errors': form.errors
+        }, status=400)
+
+
+@login_required
+@role_required('coordinator')
+def finalize_resolution(request, call_id):
+    """
+    Finalize call resolution and trigger notifications.
+
+    POST: Lock call and send notification emails
+    """
+    from calls.models import Call
+    from applications.services import ResolutionService
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method')
+        return redirect('applications:resolution_dashboard')
+
+    call = get_object_or_404(Call, pk=call_id)
+    service = ResolutionService(call)
+
+    try:
+        result = service.finalize_resolution(request.user)
+        messages.success(
+            request,
+            f'Resolution finalized for {call.code}. '
+            f'{result["statistics"]["total"]} notifications sent.'
+        )
+        return redirect('applications:resolution_dashboard')
+    except ValidationError as e:
+        messages.error(request, str(e))
+        return redirect('applications:call_resolution_detail', call_id=call.id)

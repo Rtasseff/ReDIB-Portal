@@ -271,6 +271,14 @@ class RequestedAccess(models.Model):
         decimal_places=1,
         validators=[MinValueValidator(0)]
     )
+    hours_granted = models.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text="Hours allocated during resolution (Phase 6)"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

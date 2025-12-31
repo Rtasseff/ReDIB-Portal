@@ -25,6 +25,10 @@ urlpatterns = [
     path('feasibility/', views.feasibility_queue, name='feasibility_queue'),
     path('feasibility/<int:pk>/review/', views.feasibility_review, name='feasibility_review'),
 
-    # Coordinator views - stubs for Phase 6
-    path('resolution/', views.my_applications, name='resolution_dashboard'),
+    # Coordinator views - Phase 6: Resolution
+    path('resolution/', views.resolution_dashboard, name='resolution_dashboard'),
+    path('resolution/call/<int:call_id>/', views.call_resolution_detail, name='call_resolution_detail'),
+    path('resolution/application/<int:application_id>/', views.application_resolution, name='application_resolution'),
+    path('resolution/call/<int:call_id>/bulk/', views.bulk_resolution, name='bulk_resolution'),
+    path('resolution/call/<int:call_id>/finalize/', views.finalize_resolution, name='finalize_resolution'),
 ]
