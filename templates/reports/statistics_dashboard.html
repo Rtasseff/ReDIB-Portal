@@ -1,0 +1,199 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Statistics & Reports - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-graph-up"></i> Statistics & Reports</h1>
+</div>
+
+<!-- Overall Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total Calls</h6>
+                <h2 class="card-title">{{ total_calls }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total Applications</h6>
+                <h2 class="card-title">{{ total_applications }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Publications Reported</h6>
+                <h2 class="card-title">{{ total_publications }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Pending Evaluations</h6>
+                <h2 class="card-title">{{ pending_evaluations }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Call Stats -->
+{% if current_call_stats %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Current Call: {{ current_call_stats.call.code }}</h5>
+                <a href="{% url 'reports:export_call_report' current_call_stats.call.id %}"
+                   class="btn btn-sm btn-primary">
+                    <i class="bi bi-download"></i> Download Excel Report
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Total Applications:</strong> {{ current_call_stats.total_apps }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Average Score:</strong>
+                        {% if current_call_stats.avg_score %}
+                            {{ current_call_stats.avg_score|floatformat:2 }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Acceptance Rate:</strong> {{ current_call_stats.acceptance_rate|floatformat:1 }}%
+                    </div>
+                </div>
+
+                <h6>Applications by Status</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in current_call_stats.by_status %}
+                        <tr>
+                            <td>{{ stat.status }}</td>
+                            <td>{{ stat.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Publication Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-journal-text"></i> Publication Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Total Publications:</strong> {{ pub_stats.total }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>With Acknowledgment:</strong> {{ pub_stats.acknowledged }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Acknowledgment Rate:</strong> {{ pub_stats.ack_rate|floatformat:1 }}%
+                    </div>
+                </div>
+
+                {% if recent_publications %}
+                <h6>Recent Publications</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Application</th>
+                            <th>Reported By</th>
+                            <th>Reported</th>
+                            <th>Acknowledged</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pub in recent_publications %}
+                        <tr>
+                            <td>{{ pub.title|truncatewords:10 }}</td>
+                            <td>{{ pub.application.code }}</td>
+                            <td>{{ pub.reported_by.get_full_name }}</td>
+                            <td>{{ pub.reported_at|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if pub.redib_acknowledged %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-warning">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Applications -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Applications</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Call</th>
+                            <th>Applicant</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in recent_apps %}
+                        <tr>
+                            <td><a href="{% url 'applications:detail' app.pk %}">{{ app.code|default:"DRAFT" }}</a></td>
+                            <td>{{ app.call.code }}</td>
+                            <td>{{ app.applicant.get_full_name }}</td>
+                            <td>{{ app.submitted_at|date:"Y-m-d H:i"|default:"—" }}</td>
+                            <td><span class="badge bg-secondary">{{ app.get_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mt-3">
+    <div class="col-12">
+        <a href="{% url 'reports:history' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history"></i> View Report History
+        </a>
+    </div>
+</div>
+
+{% endblock %}

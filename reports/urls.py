@@ -1,24 +1,13 @@
 """
-URL configuration for reports app.
-Stub URLs for Phase 1 testing - full implementation in Phase 10.
+URL configuration for reports app - Phase 10: Reporting & Statistics.
 """
 from django.urls import path
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from . import views
 
 app_name = 'reports'
 
-
-@login_required
-def stub_view(request):
-    from django.contrib import messages
-    messages.info(request, "Statistics and reports coming in Phase 10!")
-    return render(request, 'applications/coming_soon.html', {
-        'feature': 'Statistics & Reports',
-        'phase': 'Phase 10'
-    })
-
-
 urlpatterns = [
-    path('', stub_view, name='statistics'),
+    path('', views.statistics_dashboard, name='statistics'),
+    path('call/<int:call_id>/export/', views.export_call_report, name='export_call_report'),
+    path('history/', views.report_history, name='history'),
 ]
