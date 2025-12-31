@@ -22,9 +22,9 @@ class FeasibilityReviewInline(admin.TabularInline):
 
 @admin.register(Application)
 class ApplicationAdmin(SimpleHistoryAdmin):
-    list_display = ['code', 'applicant', 'call', 'status', 'resolution', 'final_score', 'submitted_at']
+    list_display = ['code', 'applicant_name', 'applicant_entity', 'call', 'status', 'resolution', 'final_score', 'submitted_at']
     list_filter = ['status', 'resolution', 'call', 'subject_area', 'service_modality']
-    search_fields = ['code', 'brief_description', 'applicant__email', 'project_title']
+    search_fields = ['code', 'brief_description', 'applicant__email', 'applicant_name', 'applicant_email', 'project_title']
     ordering = ['-submitted_at', '-created_at']
     inlines = [RequestedAccessInline, FeasibilityReviewInline]
     readonly_fields = ['code', 'final_score', 'submitted_at', 'created_at', 'updated_at']
@@ -32,6 +32,13 @@ class ApplicationAdmin(SimpleHistoryAdmin):
     fieldsets = (
         ('Basic Information', {
             'fields': ('code', 'call', 'applicant', 'status', 'brief_description', 'submitted_at')
+        }),
+        ('Applicant Details', {
+            'fields': (
+                'applicant_name', 'applicant_orcid', 'applicant_entity',
+                'applicant_email', 'applicant_phone'
+            ),
+            'classes': ('collapse',)
         }),
         ('Funding Source', {
             'fields': (

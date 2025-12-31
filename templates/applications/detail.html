@@ -77,8 +77,20 @@
                     <a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a> - {{ application.call.name }}
                 </dd>
 
-                <dt class="col-sm-3">Applicant</dt>
-                <dd class="col-sm-9">{{ application.applicant.get_full_name }} ({{ application.applicant.email }})</dd>
+                <dt class="col-sm-3">Applicant Name</dt>
+                <dd class="col-sm-9">{{ application.applicant_name|default:"—" }}</dd>
+
+                <dt class="col-sm-3">ORCID</dt>
+                <dd class="col-sm-9">{{ application.applicant_orcid|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Entity</dt>
+                <dd class="col-sm-9">{{ application.applicant_entity|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">{{ application.applicant_email|default:"—" }}</dd>
+
+                <dt class="col-sm-3">Phone</dt>
+                <dd class="col-sm-9">{{ application.applicant_phone|default:"—" }}</dd>
 
                 <dt class="col-sm-3">Brief Description</dt>
                 <dd class="col-sm-9">{{ application.brief_description }}</dd>

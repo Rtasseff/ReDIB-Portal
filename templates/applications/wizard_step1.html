@@ -38,6 +38,71 @@
                     <form method="post">
                         {% csrf_token %}
 
+                        <!-- Applicant Information Section -->
+                        <h6 class="text-primary mb-3">Applicant Information</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.applicant_name.id_for_label }}" class="form-label">
+                                    {{ form.applicant_name.label }} *
+                                </label>
+                                {{ form.applicant_name }}
+                                {% if form.applicant_name.errors %}
+                                <div class="text-danger small">{{ form.applicant_name.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.applicant_name.help_text }}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.applicant_orcid.id_for_label }}" class="form-label">
+                                    {{ form.applicant_orcid.label }}
+                                </label>
+                                {{ form.applicant_orcid }}
+                                {% if form.applicant_orcid.errors %}
+                                <div class="text-danger small">{{ form.applicant_orcid.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.applicant_orcid.help_text }}</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.applicant_entity.id_for_label }}" class="form-label">
+                                {{ form.applicant_entity.label }} *
+                            </label>
+                            {{ form.applicant_entity }}
+                            {% if form.applicant_entity.errors %}
+                            <div class="text-danger small">{{ form.applicant_entity.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.applicant_entity.help_text }}</small>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.applicant_email.id_for_label }}" class="form-label">
+                                    {{ form.applicant_email.label }} *
+                                </label>
+                                {{ form.applicant_email }}
+                                {% if form.applicant_email.errors %}
+                                <div class="text-danger small">{{ form.applicant_email.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.applicant_email.help_text }}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.applicant_phone.id_for_label }}" class="form-label">
+                                    {{ form.applicant_phone.label }} *
+                                </label>
+                                {{ form.applicant_phone }}
+                                {% if form.applicant_phone.errors %}
+                                <div class="text-danger small">{{ form.applicant_phone.errors }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.applicant_phone.help_text }}</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Brief Description Section -->
+                        <h6 class="text-primary mb-3">Project Summary</h6>
+
                         <div class="mb-4">
                             <label for="{{ form.brief_description.id_for_label }}" class="form-label">
                                 {{ form.brief_description.label }} *

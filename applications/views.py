@@ -73,19 +73,30 @@ def application_create(request, call_pk):
         return redirect('applications:edit_step2', pk=existing_draft.pk)
 
     if request.method == 'POST':
-        form = ApplicationStep1Form(request.POST)
+        form = ApplicationStep1Form(request.POST, user=request.user)
 
         if form.is_valid():
             application = form.save(commit=False)
             application.call = call
             application.applicant = request.user
             application.status = 'draft'
+
+            # Auto-populate applicant fields from user profile if not provided
+            if not application.applicant_name:
+                application.applicant_name = request.user.get_full_name() or f"{request.user.first_name} {request.user.last_name}".strip()
+            if not application.applicant_email:
+                application.applicant_email = request.user.email
+            if not application.applicant_entity and hasattr(request.user, 'organization') and request.user.organization:
+                application.applicant_entity = request.user.organization
+            if not application.applicant_phone and hasattr(request.user, 'phone') and request.user.phone:
+                application.applicant_phone = request.user.phone
+
             application.save()
 
             messages.success(request, "Application draft created. Continue to step 2.")
             return redirect('applications:edit_step2', pk=application.pk)
     else:
-        form = ApplicationStep1Form()
+        form = ApplicationStep1Form(user=request.user)
 
     context = {
         'form': form,

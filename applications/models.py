@@ -30,28 +30,37 @@ class Application(models.Model):
     ]
 
     PROJECT_TYPES = [
-        ('national_public', 'National Public Competitive Project'),
-        ('international', 'International Project'),
-        ('regional', 'Regional Project'),
-        ('private', 'Private Funding'),
+        ('national', 'National'),
+        ('international_non_european', 'International, non-European'),
+        ('regional', 'Regional'),
+        ('european', 'European'),
+        ('internal', 'Internal'),
+        ('private', 'Private'),
         ('other', 'Other'),
     ]
 
     # Spanish AEI (Agencia Estatal de Investigación) subject area classification
     SUBJECT_AREAS = [
-        ('phy', 'PHY - Physics'),
-        ('che', 'CHE - Chemistry'),
-        ('mat', 'MAT - Materials Science and Technology'),
-        ('ear', 'EAR - Earth Sciences'),
-        ('bio', 'BIO - Biology'),
-        ('med', 'MED - Medicine'),
-        ('agr', 'AGR - Agricultural Sciences'),
-        ('eng', 'ENG - Engineering and Architecture'),
-        ('soc', 'SOC - Social Sciences'),
-        ('eco', 'ECO - Economics'),
-        ('law', 'LAW - Law'),
-        ('hum', 'HUM - Humanities'),
-        ('other', 'Other'),
+        ('cso', 'CSO - Social Sciences'),
+        ('der', 'DER - Law'),
+        ('eco', 'ECO - Economy'),
+        ('mlp', 'MLP - Mind, language and thought'),
+        ('fla', 'FLA - Culture: Philology, literature and art'),
+        ('pha', 'PHA - Studies in history and archaeology'),
+        ('edu', 'EDU - Educational Sciences'),
+        ('psi', 'PSI - Psychology'),
+        ('mtm', 'MTM - Mathematical Sciences'),
+        ('fis', 'FIS - Physical Sciences'),
+        ('pin', 'PIN - Industrial production, engineering'),
+        ('tic', 'TIC - Information and communications technologies'),
+        ('eyt', 'EYT - Energy and Transport'),
+        ('ctq', 'CTQ - Chemical sciences and technologies'),
+        ('mat', 'MAT - Materials Sciences and Technology'),
+        ('ctm', 'CTM - Environmental science and technology'),
+        ('caa', 'CAA - Agricultural sciences'),
+        ('bio', 'BIO - Biosciences and biotechnology'),
+        ('bme', 'BME - Biomedicine'),
+        ('other', 'Other (specify)'),
     ]
 
     SERVICE_MODALITIES = [
@@ -79,6 +88,13 @@ class Application(models.Model):
     code = models.CharField(max_length=30, unique=True, help_text='Auto-generated application code')
     status = models.CharField(max_length=30, choices=APPLICATION_STATUSES, default='draft')
     brief_description = models.CharField(max_length=100, help_text='One-line description')
+
+    # Applicant information (snapshot at submission time)
+    applicant_name = models.CharField(max_length=200, blank=True, help_text='Auto-filled from user profile')
+    applicant_orcid = models.CharField(max_length=20, blank=True, help_text='Optional ORCID identifier')
+    applicant_entity = models.CharField(max_length=200, blank=True, help_text='Institution/organization')
+    applicant_email = models.EmailField(blank=True, help_text='Contact email')
+    applicant_phone = models.CharField(max_length=30, blank=True, help_text='Contact phone')
 
     # Funding source
     project_title = models.CharField(max_length=300, blank=True)

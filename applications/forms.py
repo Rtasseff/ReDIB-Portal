@@ -8,12 +8,39 @@ from core.models import Equipment
 
 
 class ApplicationStep1Form(forms.ModelForm):
-    """Step 1: Basic Info & Brief Description"""
+    """Step 1: Applicant Information & Brief Description"""
 
     class Meta:
         model = Application
-        fields = ['brief_description']
+        fields = [
+            'applicant_name',
+            'applicant_orcid',
+            'applicant_entity',
+            'applicant_email',
+            'applicant_phone',
+            'brief_description'
+        ]
         widgets = {
+            'applicant_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Full name'
+            }),
+            'applicant_orcid': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'ORCID identifier (optional)'
+            }),
+            'applicant_entity': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Institution or organization'
+            }),
+            'applicant_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contact email'
+            }),
+            'applicant_phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contact phone number'
+            }),
             'brief_description': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'One-line summary of your project (max 100 characters)',
@@ -21,11 +48,41 @@ class ApplicationStep1Form(forms.ModelForm):
             }),
         }
         labels = {
+            'applicant_name': 'Name and Surname',
+            'applicant_orcid': 'ORCID',
+            'applicant_entity': 'Entity',
+            'applicant_email': 'Email',
+            'applicant_phone': 'Phone',
             'brief_description': 'Brief Description'
         }
         help_texts = {
+            'applicant_name': 'Your full name',
+            'applicant_orcid': 'Optional ORCID identifier',
+            'applicant_entity': 'Your institution or organization',
+            'applicant_email': 'Contact email address',
+            'applicant_phone': 'Contact phone number',
             'brief_description': 'Provide a concise summary of your research project'
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Auto-populate applicant fields from user profile if creating new application
+        if user and not self.instance.pk:
+            self.initial['applicant_name'] = user.get_full_name() or f"{user.first_name} {user.last_name}".strip()
+            self.initial['applicant_email'] = user.email
+            if hasattr(user, 'organization') and user.organization:
+                self.initial['applicant_entity'] = user.organization
+            if hasattr(user, 'phone') and user.phone:
+                self.initial['applicant_phone'] = user.phone
+
+        # Make all fields required except ORCID
+        self.fields['applicant_name'].required = True
+        self.fields['applicant_orcid'].required = False
+        self.fields['applicant_entity'].required = True
+        self.fields['applicant_email'].required = True
+        self.fields['applicant_phone'].required = True
 
 
 class ApplicationStep2Form(forms.ModelForm):
