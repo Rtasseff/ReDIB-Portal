@@ -1,0 +1,245 @@
+"""
+Django management command to seed email templates for Phase 4.
+Usage: python manage.py seed_email_templates
+"""
+
+from django.core.management.base import BaseCommand
+from communications.models import EmailTemplate
+
+
+class Command(BaseCommand):
+    help = 'Seed email templates for ReDIB COA portal - Phase 4'
+
+    def handle(self, *args, **options):
+        templates_data = [
+            {
+                'template_type': 'evaluation_assigned',
+                'subject': 'ReDIB COA: Evaluation Assignment for {{ call_code }}',
+                'html_content': '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Evaluation Assignment</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ evaluator_name }},</p>
+
+            <p>You have been assigned to evaluate an application for the ReDIB Competitive Open Access call <strong>{{ call_code }}</strong>.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Call:</strong> {{ call_code }}</p>
+                <p><strong>Evaluation Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+            </div>
+
+            <p>Please access the ReDIB COA Portal to review the application and submit your evaluation:</p>
+
+            <p style="text-align: center;">
+                <a href="{{ evaluation_url }}" class="button">View Application & Submit Evaluation</a>
+            </p>
+
+            <p><strong>Important Notes:</strong></p>
+            <ul>
+                <li>Evaluations are blind - applicant identity is hidden</li>
+                <li>Please score the application on 5 criteria (1-5 scale)</li>
+                <li>Your evaluation must be submitted by the deadline above</li>
+                <li>You will receive a reminder 7 days before the deadline</li>
+            </ul>
+
+            <p>If you have any questions or conflicts of interest, please contact the ReDIB coordinator immediately.</p>
+
+            <p>Thank you for your participation in the evaluation process.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
+                ''',
+                'text_content': '''
+Dear {{ evaluator_name }},
+
+You have been assigned to evaluate an application for the ReDIB Competitive Open Access call {{ call_code }}.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Call: {{ call_code }}
+- Evaluation Deadline: {{ deadline|date:"F d, Y" }}
+
+Please access the ReDIB COA Portal to review the application and submit your evaluation:
+{{ evaluation_url }}
+
+Important Notes:
+- Evaluations are blind - applicant identity is hidden
+- Please score the application on 5 criteria (1-5 scale)
+- Your evaluation must be submitted by the deadline above
+- You will receive a reminder 7 days before the deadline
+
+If you have any questions or conflicts of interest, please contact the ReDIB coordinator immediately.
+
+Thank you for your participation in the evaluation process.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.
+                ''',
+                'available_variables': '''
+{
+    "evaluator_name": "Full name of the evaluator",
+    "application_code": "Application unique code (e.g., APP-2025-001)",
+    "call_code": "Call code (e.g., COA-2025-01)",
+    "deadline": "Evaluation deadline (datetime object)",
+    "evaluation_url": "URL to the evaluation form"
+}
+                '''
+            },
+            {
+                'template_type': 'evaluation_reminder',
+                'subject': 'ReDIB COA: Evaluation Reminder for {{ application_code }}',
+                'html_content': '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e74c3c; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .warning-box { background-color: #fef5e7; border-left: 4px solid: #f39c12; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Evaluation Deadline Approaching</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ evaluator_name }},</p>
+
+            <p>This is a friendly reminder that your evaluation for application <strong>{{ application_code }}</strong> is due soon.</p>
+
+            <div class="warning-box">
+                <p><strong>Application:</strong> {{ application_code }} - {{ application_title }}</p>
+                <p><strong>Call:</strong> {{ call_code }}</p>
+                <p><strong>Days Remaining:</strong> {{ days_remaining }} days</p>
+                <p><strong>Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+            </div>
+
+            <p>Please submit your evaluation as soon as possible:</p>
+
+            <p style="text-align: center;">
+                <a href="{{ evaluation_url }}" class="button">Complete Evaluation</a>
+            </p>
+
+            <p>Thank you for your timely participation.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+        </div>
+    </div>
+</body>
+</html>
+                ''',
+                'text_content': '''
+Dear {{ evaluator_name }},
+
+This is a friendly reminder that your evaluation for application {{ application_code }} is due soon.
+
+Application Details:
+- Application: {{ application_code }} - {{ application_title }}
+- Call: {{ call_code }}
+- Days Remaining: {{ days_remaining }} days
+- Deadline: {{ deadline|date:"F d, Y" }}
+
+Please submit your evaluation as soon as possible.
+
+Thank you for your timely participation.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+                ''',
+                'available_variables': '''
+{
+    "evaluator_name": "Full name of the evaluator",
+    "application_code": "Application unique code",
+    "application_title": "Brief description of the application",
+    "call_code": "Call code",
+    "days_remaining": "Number of days until deadline",
+    "deadline": "Evaluation deadline (datetime object)"
+}
+                '''
+            }
+        ]
+
+        created_count = 0
+        updated_count = 0
+
+        for template_data in templates_data:
+            template, created = EmailTemplate.objects.update_or_create(
+                template_type=template_data['template_type'],
+                defaults={
+                    'subject': template_data['subject'],
+                    'html_content': template_data['html_content'],
+                    'text_content': template_data['text_content'],
+                    'available_variables': template_data['available_variables'],
+                    'is_active': True
+                }
+            )
+
+            if created:
+                created_count += 1
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'Created template: {template.get_template_type_display()}'
+                    )
+                )
+            else:
+                updated_count += 1
+                self.stdout.write(
+                    self.style.WARNING(
+                        f'Updated template: {template.get_template_type_display()}'
+                    )
+                )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'\nCompleted: {created_count} created, {updated_count} updated'
+            )
+        )
