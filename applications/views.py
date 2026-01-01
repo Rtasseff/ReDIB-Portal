@@ -2,6 +2,7 @@
 Views for the applications app - 5-step application wizard.
 """
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -334,6 +335,11 @@ def application_submit(request, pk):
 
         # Send feasibility request emails
         for review in application.feasibility_reviews.all():
+            # Build absolute URL for the review
+            review_url = request.build_absolute_uri(
+                reverse('applications:feasibility_review', kwargs={'pk': review.pk})
+            )
+
             send_email_from_template.delay(
                 template_type='feasibility_request',
                 recipient_email=review.reviewer.email,
@@ -341,6 +347,7 @@ def application_submit(request, pk):
                     'reviewer_name': review.reviewer.get_full_name(),
                     'application_code': application.code,
                     'node_name': review.node.name,
+                    'review_url': review_url,
                 },
                 recipient_user_id=review.reviewer.id,
                 related_application_id=application.id

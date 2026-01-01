@@ -13,6 +13,105 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         templates_data = [
             {
+                'template_type': 'feasibility_request',
+                'subject': 'ReDIB COA: New Application for Equipment at {{ node_name }}',
+                'html_content': '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>New Application - Feasibility Review Required</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ reviewer_name }},</p>
+
+            <p>A new application has been submitted requesting equipment at <strong>{{ node_name }}</strong>.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Your Node:</strong> {{ node_name }}</p>
+            </div>
+
+            <p>As the node coordinator, please review this application to assess the technical feasibility of providing the requested equipment access.</p>
+
+            <p style="text-align: center;">
+                <a href="{{ review_url }}" class="button">Review Application</a>
+            </p>
+
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+                <li>Review the application details and requested equipment</li>
+                <li>Assess technical feasibility at your node</li>
+                <li>Approve or reject the feasibility request with comments</li>
+            </ul>
+
+            <p>Your timely response helps ensure applications progress smoothly through the evaluation process.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
+                ''',
+                'text_content': '''
+Dear {{ reviewer_name }},
+
+A new application has been submitted requesting equipment at {{ node_name }}.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Your Node: {{ node_name }}
+
+As the node coordinator, please review this application to assess the technical feasibility of providing the requested equipment access.
+
+Review Application:
+{{ review_url }}
+
+Next Steps:
+- Review the application details and requested equipment
+- Assess technical feasibility at your node
+- Approve or reject the feasibility request with comments
+
+Your timely response helps ensure applications progress smoothly through the evaluation process.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.
+                ''',
+                'available_variables': '''
+{
+    "reviewer_name": "Full name of the node coordinator",
+    "application_code": "Application unique code (e.g., COA-2025-01-APP-001)",
+    "node_name": "Name of the node (e.g., CIC biomaGUNE)",
+    "review_url": "URL to the feasibility review page"
+}
+                '''
+            },
+            {
                 'template_type': 'evaluation_assigned',
                 'subject': 'ReDIB COA: Evaluation Assignment for {{ call_code }}',
                 'html_content': '''
