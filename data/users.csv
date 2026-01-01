@@ -1,0 +1,9 @@
+email,first_name,last_name,organization_name,orcid,phone,position,is_staff,is_active,roles
+coordinator@redib.net,Maria,Coordinator,ReDIB ICTS,,+34 900 000 001,ReDIB Coordinator,TRUE,TRUE,coordinator
+node.cic@redib.net,Juan,Garcia,CIC biomaGUNE,0000-0002-1234-5678,+34 943 000 001,Node Coordinator,FALSE,TRUE,node_coordinator:CIC-biomaGUNE
+node.cnic@redib.net,Ana,Martinez,Centro Nacional de Investigaciones Cardiovasculares,,+34 914 000 001,Node Coordinator,FALSE,TRUE,node_coordinator:TRIMA-CNIC
+node.bioimac@redib.net,Carlos,Lopez,BioImaC Biomedical Imaging Center,,+34 963 000 001,Node Coordinator,FALSE,TRUE,node_coordinator:BioImaC
+node.lafe@redib.net,Laura,Rodriguez,Hospital Universitario y Politécnico La Fe,,+34 961 000 001,Node Coordinator,FALSE,TRUE,node_coordinator:Imaging La Fe
+evaluator1@redib.net,Pedro,Sanchez,Universidad Complutense de Madrid,0000-0003-2345-6789,+34 913 000 001,Senior Researcher,FALSE,TRUE,evaluator:preclinical
+evaluator2@redib.net,Isabel,Fernandez,Universitat de Barcelona,0000-0004-3456-7890,+34 934 000 001,Principal Investigator,FALSE,TRUE,evaluator:clinical
+evaluator3@redib.net,Miguel,Torres,Universidad de Valencia,,+34 963 100 001,Research Professor,FALSE,TRUE,evaluator:radiotracers

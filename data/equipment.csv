@@ -1,0 +1,18 @@
+node_code,name,category,description,technical_specs,is_essential,is_active
+BioImaC,MRI 1 T,mri,,,TRUE,TRUE
+BioImaC,Cyclotron,cyclotron,,,TRUE,TRUE
+BioImaC,Radiochemistry Lab,other,,,TRUE,TRUE
+CIC-biomaGUNE,MRI 7 T,mri,,,TRUE,TRUE
+CIC-biomaGUNE,MRI 11.7 T,mri,,,TRUE,TRUE
+CIC-biomaGUNE,PET-CT,pet_ct,,,TRUE,TRUE
+CIC-biomaGUNE,SPECT-CT,spect,,,TRUE,TRUE
+CIC-biomaGUNE,PET-SPECT-CT-OI,other,,,TRUE,TRUE
+CIC-biomaGUNE,Cyclotron,cyclotron,,,TRUE,TRUE
+CIC-biomaGUNE,Radiochemistry Lab,other,,,TRUE,TRUE
+Imaging La Fe,MRI 3 T,mri,,,TRUE,TRUE
+Imaging La Fe,PET-MRI,pet_mri,,,TRUE,TRUE
+TRIMA-CNIC,MRI 3 T,mri,,,TRUE,TRUE
+TRIMA-CNIC,MRI 7 T,mri,,,TRUE,TRUE
+TRIMA-CNIC,PET-CT,pet_ct,,,TRUE,TRUE
+TRIMA-CNIC,SPECT-CT,spect,,,TRUE,TRUE
+TRIMA-CNIC,Multidetector-CT,ct,,,TRUE,TRUE

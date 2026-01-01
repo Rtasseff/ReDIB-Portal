@@ -35,7 +35,11 @@ redib/
 ├── communications/     # Email templates and sending
 ├── reports/            # Reporting and exports
 ├── templates/          # HTML templates
-└── static/             # CSS, JS, images
+├── static/             # CSS, JS, images
+└── data/               # CSV fixture files for initial data
+    ├── nodes.csv       # ReDIB network nodes (4 nodes)
+    ├── equipment.csv   # Equipment at each node (17 items)
+    └── users.csv       # Core users (coordinators, evaluators, 8 users)
 ```
 
 ## Current Implementation Status
@@ -239,11 +243,27 @@ python manage.py test reports.tests
 
 See [TEST.md](TEST.md) for detailed testing guide and [docs/test-reports/](docs/test-reports/) for test reports.
 
-### Populating Test Data
+### Populating Initial Data
 
 ```bash
-# Populate equipment (17 items across 4 nodes)
+# Populate nodes (4 ReDIB ICTS nodes from CSV)
+python manage.py populate_redib_nodes
+
+# Populate equipment (17 items across 4 nodes from CSV)
 python manage.py populate_redib_equipment
+
+# Populate users (core staff: coordinators, node coordinators, evaluators)
+python manage.py populate_redib_users
+
+# Sync mode: Mark orphaned records as inactive (safe, no deletions)
+python manage.py populate_redib_nodes --sync
+python manage.py populate_redib_equipment --sync
+python manage.py populate_redib_users --sync
+
+# Use custom CSV files (optional)
+python manage.py populate_redib_nodes --csv /path/to/custom_nodes.csv
+python manage.py populate_redib_equipment --csv /path/to/custom_equipment.csv
+python manage.py populate_redib_users --csv /path/to/custom_users.csv
 
 # Seed email templates (required for production)
 python manage.py seed_email_templates
@@ -254,6 +274,26 @@ python manage.py seed_dev_data
 # Clear and rebuild test data
 python manage.py seed_dev_data --clear
 ```
+
+**CSV Data Files:**
+- `/data/nodes.csv` - ReDIB network nodes (4 nodes)
+- `/data/equipment.csv` - Equipment at each node (17 items)
+- `/data/users.csv` - Core users (coordinators, evaluators, 8 users)
+
+These CSV files can be edited to customize your deployment.
+
+**Sync Mode:**
+When using `--sync`, records in the database but not in the CSV will be marked as `is_active=False`. This is safer than deletion and allows you to:
+- Keep historical data intact (no deletions)
+- Reactivate items by adding them back to the CSV
+- Maintain referential integrity with existing data
+- Audit trail of all changes
+
+**Important Notes:**
+- User sync mode excludes superusers (they're never deactivated)
+- New users get default password "changeme123" (must be changed on first login)
+- User roles support multiple formats: `coordinator`, `node_coordinator:NODE_CODE`, `evaluator:AREA`
+- Organizations are auto-created if they don't exist
 
 ## Environment Variables
 
@@ -284,21 +324,26 @@ After deployment, perform these initial setup tasks in order:
    python manage.py seed_email_templates
    ```
 
-4. **Create ReDIB nodes** (4 nodes via Django admin)
-   - CICbiomaGUNE, BioImaC, Hospital La Fe, CNIC
+4. **Populate ReDIB nodes** (4 nodes from CSV: BioImaC, CIC-biomaGUNE, Imaging La Fe, TRIMA-CNIC)
+   ```bash
+   python manage.py populate_redib_nodes
+   ```
 
-5. **Add equipment** for each node (or use management command)
+5. **Populate equipment** (17 items across 4 nodes from CSV)
    ```bash
    python manage.py populate_redib_equipment
    ```
 
-6. **Set up organizations** (universities, research centers)
+6. **Populate core users** (coordinators, node coordinators, evaluators from CSV)
+   ```bash
+   python manage.py populate_redib_users
+   ```
 
-7. **Create user accounts** for coordinators and node staff
+   Default password for all users is "changeme123" - users must change on first login.
 
-8. **Assign roles** to users (coordinator, node_coordinator, evaluator)
+   **Note:** You can customize the CSV files in `/data/` directory for your deployment.
 
-9. **Create first call** to test the system
+7. **Create first call** to test the system
 
 ## Documentation
 
