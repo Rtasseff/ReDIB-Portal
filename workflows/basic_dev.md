@@ -12,6 +12,9 @@ python manage.py seed_email_templates
 python manage.py populate_redib_nodes
 python manage.py populate_redib_users
 python manage.py populate_redib_equipment
+python manage.py runserver
 
+   - Application: http://localhost:8000
+   - Admin: http://localhost:8000/admin
 
 
