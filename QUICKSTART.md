@@ -24,46 +24,16 @@ A complete Django-based Competitive Open Access (COA) management system with:
 
 ## Current Status
 
-### ✅ Complete Implementation (All Phases 0-10)
+The ReDIB COA Portal is **fully implemented and production-ready** with all 10 development phases complete:
 
-The ReDIB COA Portal is **fully implemented and production-ready**:
+- ✅ Complete application workflow from submission to completion
+- ✅ Automated evaluator assignment with conflict-of-interest detection
+- ✅ Multi-criteria evaluation system with score aggregation
+- ✅ Publication tracking and reporting
+- ✅ 29 integration tests covering all phases
+- ✅ Ready for production deployment
 
-1. **Core Infrastructure** ✅
-   - User authentication & role-based access control
-   - Django admin interfaces for all models
-   - Docker & Docker Compose configuration
-   - Celery + Redis for background tasks
-   - Email notification system
-
-2. **Application Workflow** (Phases 1-3) ✅
-   - Call management with equipment allocation
-   - 5-step application submission wizard
-   - Multi-node feasibility review
-   - Automated email notifications
-
-3. **Evaluation System** (Phases 4-5) ✅
-   - Automated evaluator assignment with COI detection
-   - 5-criteria evaluation system (1-5 scale)
-   - Evaluator dashboard and forms
-   - Progress tracking and notifications
-
-4. **Resolution & Access** (Phases 6-8) ✅
-   - Score aggregation and auto-approval rules
-   - Coordinator resolution workflow
-   - Applicant acceptance/decline with 10-day deadlines
-   - Handoff email automation
-
-5. **Publication & Reporting** (Phases 9-10) ✅
-   - Publication tracking with 6-month follow-ups
-   - ReDIB acknowledgment verification
-   - Statistics dashboard for coordinators
-   - Excel export for call reports
-
-6. **Automated Testing** ✅
-   - 29 integration tests covering all phases
-   - All tests passing ✅
-
-### 🚀 Ready for Production Deployment
+See [README.md](README.md) for complete feature list and technical details.
 
 ## How to Use
 
@@ -118,107 +88,43 @@ The ReDIB COA Portal is **fully implemented and production-ready**:
 
 ## Initial Data Setup
 
-After creating a superuser, use the Django admin to set up:
+After creating a superuser, load the required data using management commands:
 
-1. **Create the 4 ReDIB Nodes**
-   - CICbiomaGUNE (code: CICBIO)
-   - BioImaC (code: BIOIMAC)
-   - Hospital La Fe (code: LAFE)
-   - CNIC (code: CNIC)
+```bash
+# Load email templates
+python manage.py seed_email_templates
 
-2. **Add Equipment** to each node
-   - MRI scanners (7T, 3T, 1T)
-   - PET-CT systems
-   - Cyclotrons
-   - Other imaging equipment
+# Load ReDIB nodes (must run first)
+python manage.py populate_redib_nodes
 
-3. **Create Organizations**
-   - Universities
-   - Research centers
-   - Hospitals
+# Load users (requires nodes)
+python manage.py populate_redib_users
 
-4. **Create Users** and assign roles
-   - Node coordinators for each node
-   - Evaluators (10+ external experts)
-   - ReDIB network coordinator
+# Load equipment (requires nodes)
+python manage.py populate_redib_equipment
+```
 
-5. **Create a test Call**
-   - Set dates
-   - Allocate equipment hours
-   - Publish to make it available
+**For comprehensive setup instructions**, see [SETUP_GUIDE.md](SETUP_GUIDE.md).
+
+**For test data**, use: `python manage.py seed_dev_data --clear`
 
 ## Project Structure
 
-```
-ReDIB-Portal/
-├── core/               # Users, organizations, nodes, equipment
-│   ├── models.py       # Organization, Node, Equipment, User, UserRole
-│   └── admin.py
-├── calls/              # Call management
-│   ├── models.py       # Call, CallEquipmentAllocation
-│   └── admin.py
-├── applications/       # Application workflow
-│   ├── models.py       # Application, RequestedAccess, FeasibilityReview
-│   └── admin.py
-├── evaluations/        # Evaluation system
-│   ├── models.py       # Evaluation
-│   └── admin.py
-├── access/             # Access grants and publications
-│   ├── models.py       # AccessGrant, Publication
-│   └── admin.py
-├── communications/     # Email system (to be implemented)
-├── reports/            # Reporting module (to be implemented)
-├── templates/          # HTML templates
-│   ├── base.html
-│   └── home.html
-├── static/             # CSS, JS, images
-│   └── css/main.css
-├── redib/              # Django project settings
-│   ├── settings.py     # All configuration
-│   ├── celery.py       # Celery configuration
-│   └── urls.py
-├── docker-compose.yml      # Production Docker setup
-├── docker-compose.dev.yml  # Development Docker setup
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
+The project is organized into 7 Django apps:
 
-## Deployment Checklist
+- **core/** - Users, organizations, nodes, equipment
+- **calls/** - Call management and equipment allocation
+- **applications/** - Application workflow and feasibility review
+- **evaluations/** - Evaluation system and scoring
+- **access/** - Access grants and publications
+- **communications/** - Email system and notifications
+- **reports/** - Statistics and Excel exports
 
-Ready to deploy? Follow these steps:
+For detailed structure, see [README.md](README.md#project-structure).
 
-1. **Environment Setup**
-   - Set up production server (VPS, cloud instance, etc.)
-   - Configure domain name and SSL certificate
-   - Set environment variables (see `.env.example`)
+## Deployment
 
-2. **Database Setup**
-   - Create PostgreSQL database
-   - Run migrations: `python manage.py migrate`
-   - Create superuser: `python manage.py createsuperuser`
-
-3. **Initial Data**
-   - Seed email templates: `python manage.py seed_email_templates`
-   - Populate equipment: `python manage.py populate_redib_equipment`
-   - Create nodes, organizations, and user accounts via Django admin
-
-4. **Services**
-   - Start Redis for Celery
-   - Start Celery worker: `celery -A redib worker -l info`
-   - Start Celery beat: `celery -A redib beat -l info`
-   - Configure email settings (SMTP)
-
-5. **Static Files**
-   - Collect static files: `python manage.py collectstatic`
-   - Configure web server (nginx/Apache) to serve static files
-
-6. **Monitoring & Backups**
-   - Set up database backups
-   - Configure error logging
-   - Monitor Celery tasks
-
-See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed deployment instructions.
+For production deployment, see the comprehensive deployment guide in [README.md](README.md#production-deployment) and [SETUP_GUIDE.md](SETUP_GUIDE.md).
 
 ## Key Design Decisions
 
@@ -247,11 +153,10 @@ See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed deployment instructions.
 - Update settings.py to use new ACCOUNT_LOGIN_METHODS format (optional)
 - Does not affect functionality
 
-## Support
+## Additional Documentation
 
-For questions about the system design, see `redib-coa-system-design.md`
-
-For Django help, see https://docs.djangoproject.com/
-
-For deployment help, refer to the Django deployment checklist:
-https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+- **Detailed Setup**: [SETUP_GUIDE.md](SETUP_GUIDE.md)
+- **Testing Guide**: [TESTING.md](TESTING.md)
+- **Development Workflows**: [DEVELOPMENT.md](DEVELOPMENT.md)
+- **System Design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md)
+- **Complete Documentation**: [README.md](README.md)

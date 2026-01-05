@@ -70,137 +70,131 @@ python manage.py runserver
 
 ## Initial Data Setup
 
-After logging in to the admin, set up the core data:
+After creating the database and superuser, load the required production data using the provided management commands.
 
-### Create the 4 ReDIB Nodes
+**IMPORTANT**: Commands must be run in the specific order below due to data dependencies.
 
-Navigate to **Core > Nodes** and create:
+### Step 1: Load Email Templates
 
-1. **CIC biomaGUNE**
-   - Code: `CICBIO`
-   - Name: `CIC biomaGUNE`
-   - Location: `San Sebastián, Spain`
-   - Director: (assign after creating users)
+Load all required email templates (no dependencies):
 
-2. **BioImaC**
-   - Code: `BIOIMAC`
-   - Name: `Biomedical Imaging Center (BioImaC)`
-   - Location: `Murcia, Spain`
-
-3. **La Fe**
-   - Code: `LAFE`
-   - Name: `Hospital La Fe`
-   - Location: `Valencia, Spain`
-
-4. **CNIC**
-   - Code: `CNIC`
-   - Name: `Centro Nacional de Investigaciones Cardiovasculares`
-   - Location: `Madrid, Spain`
-
-### Add Equipment to Nodes
-
-For each node, navigate to **Core > Equipment** and add imaging equipment:
-
-**Example for CIC biomaGUNE**:
-- MRI 7T (category: MRI, is_essential: Yes)
-- PET-CT (category: PET-CT, is_essential: Yes)
-- etc.
-
-### Create Organizations
-
-Navigate to **Core > Organizations** and add:
-- Universities
-- Research centers
-- Hospitals
-- Companies
-
-### Create Email Templates
-
-Navigate to **Communications > Email Templates** and create templates for all 13 types:
-
-**Required templates**:
-1. call_published
-2. application_received
-3. feasibility_request
-4. feasibility_reminder
-5. feasibility_rejected
-6. evaluation_assigned
-7. evaluation_reminder
-8. resolution_accepted
-9. resolution_pending
-10. resolution_rejected
-11. acceptance_reminder
-12. access_scheduled
-13. publication_followup
-
-**Template example** (application_received):
-
-**Subject**: `Your Application {{ application.code }} Has Been Received`
-
-**HTML Content**:
-```html
-<p>Dear {{ applicant.first_name }},</p>
-
-<p>Thank you for submitting your COA application to ReDIB.</p>
-
-<p><strong>Application Details:</strong></p>
-<ul>
-  <li>Application Code: {{ application.code }}</li>
-  <li>Call: {{ call.title }}</li>
-  <li>Submitted: {{ application.submitted_at }}</li>
-</ul>
-
-<p>Your application is now under review. You will be notified of any updates.</p>
-
-<p>Best regards,<br>ReDIB Team</p>
+```bash
+python manage.py seed_email_templates
 ```
 
-**Text Content**: (similar, plain text version)
+This creates all 10 required email templates:
+- call_published
+- application_received
+- feasibility_request
+- feasibility_reminder
+- feasibility_rejected
+- evaluation_assigned
+- evaluation_reminder
+- resolution_accepted / resolution_pending / resolution_rejected
+- acceptance_reminder
+- access_scheduled
+- publication_followup
+
+### Step 2: Load ReDIB Nodes (REQUIRED FIRST)
+
+**This must run before loading users or equipment.**
+
+```bash
+python manage.py populate_redib_nodes
+```
+
+Loads 4 ReDIB nodes from `data/nodes.csv`:
+- **CIC biomaGUNE** (CICBIO) - San Sebastián
+- **BioImaC** (BIOIMAC) - Murcia
+- **La Fe** (LAFE) - Valencia
+- **CNIC** (CNIC) - Madrid
+
+### Step 3: Load ReDIB Users
+
+**Requires nodes to exist** (depends on Step 2):
+
+```bash
+python manage.py populate_redib_users
+```
+
+Loads 8 core staff from `data/users.csv`:
+- ReDIB Coordinator
+- Node Coordinators (one per node)
+- Evaluators with assigned research areas
+- All users created with role assignments
+
+### Step 4: Load Equipment
+
+**Requires nodes to exist** (depends on Step 2):
+
+```bash
+python manage.py populate_redib_equipment
+```
+
+Loads 17 imaging devices from `data/equipment.csv`:
+- MRI scanners (3T, 7T)
+- PET-CT scanners
+- Cyclotrons
+- Optical imaging equipment
+- And more...
+
+### Updating Data with Sync Mode
+
+To update existing data without deleting records, use `--sync` mode:
+
+```bash
+# Update nodes without deleting
+python manage.py populate_redib_nodes --sync
+
+# Update users without deleting
+python manage.py populate_redib_users --sync
+
+# Update equipment without deleting
+python manage.py populate_redib_equipment --sync
+```
+
+**Use sync mode** when:
+- Adding new nodes/users/equipment to existing data
+- Updating information for existing records
+- Preserving relationships and historical data
+
+### CSV Data Sources
+
+All data is loaded from CSV files in the `data/` directory:
+- `data/nodes.csv` - 4 ReDIB network nodes
+- `data/users.csv` - 8 core staff members
+- `data/equipment.csv` - 17 imaging devices
+
+You can edit these CSV files to customize the data before loading.
 
 ---
 
-## Create Test Data (Optional)
+## Quick Test Data Setup (Recommended)
 
-### Create a Test Call
+Instead of creating test data manually, use the `seed_dev_data` command to automatically create a complete test environment:
 
-Navigate to **Calls > Calls** and create:
+```bash
+python manage.py seed_dev_data --clear
+```
 
-- **Code**: `COA-2025-01`
-- **Title**: `First Quarter 2025 COA Call`
-- **Status**: `draft` (change to `open` when ready)
-- **Submission start**: Future date
-- **Submission end**: Future date + 30 days
-- **Evaluation deadline**: Future date + 45 days
-- **Execution start**: Future date + 60 days
-- **Execution end**: Future date + 365 days
+This creates:
+- **8 test users** with different roles (all password: `testpass123`)
+- **2 nodes** (CICBIO and CNIC) with 4 equipment items
+- **2 calls** (one resolved, one open)
+- **4 applications** in different states (draft, feasibility review, rejected, completed)
+- **Complete workflow** examples with evaluations, grants, and publications
 
-Then add **Equipment Allocations** inline:
-- For each equipment, specify hours offered (e.g., 100 hours)
+**Test user accounts:**
+- `admin@test.redib.net` - Administrator
+- `coordinator@test.redib.net` - ReDIB Coordinator
+- `cic@test.redib.net` - Node Coordinator for CICBIO
+- `cnic@test.redib.net` - Node Coordinator for CNIC
+- `eval1@test.redib.net` - Evaluator (preclinical)
+- `eval2@test.redib.net` - Evaluator (clinical)
+- `applicant1@test.redib.net` - Applicant
+- `applicant2@test.redib.net` - Applicant
 
-### Create Test Users
-
-Navigate to **Core > Users** and create:
-
-1. **Test Applicant**
-   - Email: `applicant@example.com`
-   - First/Last name
-   - Organization: (select one)
-
-2. **Test Evaluator**
-   - Email: `evaluator@example.com`
-   - First/Last name
-
-3. **Test Node Coordinator**
-   - Email: `coordinator@example.com`
-   - First/Last name
-
-### Assign User Roles
-
-Navigate to **Core > User Roles** and assign:
-
-- Test Applicant → Role: `Applicant`
-- Test Evaluator → Role: `Evaluator`, Area: `Preclinical`
-- Test Node Coordinator → Role: `Node Coordinator`, Node: `CICBIO`
+See `archive/TEST_SETUP.md` for detailed information about the test data structure.
 
 ---
 
@@ -279,34 +273,6 @@ For basic testing, Redis is optional - the app uses in-memory caching instead.
 
 ---
 
-## Quick Test Data Setup (Recommended)
-
-Instead of manually creating test data, use the **seed_dev_data** command to automatically create a complete test environment:
-
-```bash
-python manage.py seed_dev_data --clear
-```
-
-This creates:
-- **8 test users** with different roles (all password: `testpass123`)
-- **2 nodes** (CICBIO and CNIC) with 4 equipment items
-- **2 calls** (one resolved, one open)
-- **4 applications** in different states (draft, feasibility review, rejected, completed)
-- **Complete workflow** examples with evaluations, grants, and publications
-
-**Test user accounts:**
-- `admin@test.redib.net` - Administrator
-- `coordinator@test.redib.net` - ReDIB Coordinator
-- `cic@test.redib.net` - Node Coordinator for CICBIO
-- `cnic@test.redib.net` - Node Coordinator for CNIC
-- `eval1@test.redib.net` - Evaluator (preclinical)
-- `eval2@test.redib.net` - Evaluator (clinical)
-- `applicant1@test.redib.net` - Applicant
-- `applicant2@test.redib.net` - Applicant
-
-See **TEST_SETUP.md** for detailed information about the test data.
-
----
 
 ## Next Steps
 
@@ -322,10 +288,11 @@ Once you have the test data loaded:
 
 ## Getting Help
 
-- **Design Document**: See `redib-coa-system-design.md`
-- **Changelog**: See `CHANGELOG.md`
-- **Validation**: See `VALIDATION_SUMMARY.md`
-- **Quick Start**: See `QUICKSTART.md`
+- **Development Workflows**: See [DEVELOPMENT.md](DEVELOPMENT.md)
+- **Testing Guide**: See [TESTING.md](TESTING.md)
+- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md)
+- **System Design**: See [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md)
+- **Archived Docs**: See [archive/](archive/) for historical documentation
 
 ---
 

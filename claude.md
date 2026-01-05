@@ -101,7 +101,9 @@ python manage.py seed_dev_data --clear
 ```
 
 ### Database Purge for Testing
-When you need a clean slate for end-to-end testing:
+When you need a clean slate for end-to-end testing, see [DEVELOPMENT.md](DEVELOPMENT.md) for complete database reset procedures.
+
+**Quick reference:**
 ```bash
 # 1. Drop and recreate database (Docker)
 docker-compose -f docker-compose.dev.yml down -v
@@ -116,10 +118,10 @@ python manage.py createsuperuser
 # 4. Seed email templates (REQUIRED)
 python manage.py seed_email_templates
 
-# 5. Populate nodes, equipment, users
+# 5. Populate nodes (MUST be first), then users and equipment
 python manage.py populate_redib_nodes
-python manage.py populate_redib_equipment
 python manage.py populate_redib_users
+python manage.py populate_redib_equipment
 ```
 
 **IMPORTANT:** Never use `find` commands that delete migrations without excluding `venv/`:
@@ -228,15 +230,20 @@ user.has_role('evaluator', area='preclinical')
 ## Documentation
 
 ### Core Docs
-- `README.md` - Main project documentation
-- `TEST.md` - Testing guide
-- `QUICKSTART.md` - Quick start guide
-- `SETUP_GUIDE.md` - Detailed setup
+- [README.md](README.md) - Main project documentation and overview
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide for new users
+- [SETUP_GUIDE.md](SETUP_GUIDE.md) - Detailed setup and configuration
+- [TESTING.md](TESTING.md) - Testing procedures and guidelines
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Development workflows and common commands
 
 ### Reference Materials
-- `docs/reference/redib-coa-system-design.md` - Complete architecture
-- `docs/reference/coa-application-form-spec.md` - Form specification
-- `docs/test-reports/` - Test validation reports
+- [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md) - Complete system architecture
+- [docs/reference/coa-application-form-spec.md](docs/reference/coa-application-form-spec.md) - Application form specification
+- [docs/test-reports/](docs/test-reports/) - Test validation reports
+
+### Archived Documentation
+- [archive/dev-docs/](archive/dev-docs/) - Development-phase documentation (PROJECT_STRUCTURE.md, design decisions)
+- [archive/](archive/) - Historical documentation (CHANGELOG.md, etc.)
 
 ## Current Focus: Testing Phase
 

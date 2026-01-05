@@ -18,39 +18,50 @@ Comprehensive test reports for each phase:
 ## Related Documentation
 
 ### Root Directory
-- `README.md` - Main project README with setup instructions
-- `TEST.md` - Testing guide and workflow validation
-- `QUICKSTART.md` - Quick start guide for development
-- `SETUP_GUIDE.md` - Detailed setup instructions
+- [README.md](../README.md) - Main project documentation and overview
+- [QUICKSTART.md](../QUICKSTART.md) - Quick start guide for new users
+- [SETUP_GUIDE.md](../SETUP_GUIDE.md) - Detailed setup and configuration
+- [TESTING.md](../TESTING.md) - Testing procedures and guidelines
+- [DEVELOPMENT.md](../DEVELOPMENT.md) - Development workflows and common commands
 
 ### Archive Directory (`../archive/`)
-Historical documentation and old validation reports.
+- `../archive/` - Historical documentation (CHANGELOG.md, old validation reports)
+- `../archive/dev-docs/` - Development-phase documentation (PROJECT_STRUCTURE.md, design decisions)
 
 ## Test Scripts
 
 All automated test scripts are located in `/tests/`:
-- `test_application_form_spec.py` - Application form specification validation
-- `test_phase1_phase2_workflow.py` - End-to-end workflow for Phases 1 & 2
-- `test_phase3_feasibility_review.py` - Feasibility review workflow validation
+- `test_phase1_phase2_workflow.py` - Call Management & Application Submission
+- `test_phase3_feasibility_review.py` - Feasibility Review
+- `test_phase4_evaluator_assignment.py` - Evaluator Assignment
+- `test_phase5_evaluation_submission.py` - Evaluation Process
+- `test_phase6_resolution.py` - Resolution & Prioritization
+- `test_phase7_acceptance.py` - Acceptance & Handoff
+- `test_phase9_publications.py` - Publication Tracking
+- `reports/tests.py` - Reporting & Statistics
+
+**Total:** 29 integration tests across all phases.
 
 ## Current Implementation Status
 
-### ✅ Completed Phases (Phases 0-3)
+### ✅ All Phases Complete (Production-Ready)
+
+All 10 development phases have been completed and validated with comprehensive test coverage:
+
 - **Phase 0**: Foundation & Dashboard
 - **Phase 1**: Call Management
 - **Phase 2**: Application Submission (5-step wizard)
 - **Phase 3**: Feasibility Review
+- **Phase 4**: Evaluator Assignment (COI detection)
+- **Phase 5**: Evaluation Process (5 criteria, 1-5 scale)
+- **Phase 6**: Resolution & Prioritization
+- **Phase 7**: Acceptance & Handoff
+- **Phase 9**: Publication Tracking
+- **Phase 10**: Reporting & Statistics
 
-All phases have been independently tested and validated with automated test suites.
+**Current Phase:** Comprehensive testing and validation.
 
-### 🔄 Pending Phases (Phases 4-10)
-- Phase 4: Evaluator Assignment
-- Phase 5: Evaluation Process
-- Phase 6: Resolution & Prioritization
-- Phase 7: Acceptance & Scheduling
-- Phase 8: Execution & Completion
-- Phase 9: Publication Follow-up
-- Phase 10: Reporting & Statistics
+Total automated tests: **29 integration tests** covering all workflow phases.
 
 ## Key Features Implemented
 
@@ -70,17 +81,22 @@ All phases have been independently tested and validated with automated test suit
 
 ## Running Tests
 
-All test scripts can be run independently:
+See [TESTING.md](../TESTING.md) for comprehensive testing documentation.
 
+**Quick reference:**
 ```bash
-# Specification validation
-python tests/test_application_form_spec.py
+# Run all tests
+python manage.py test tests
 
-# Phase 1 & 2 workflow
-python tests/test_phase1_phase2_workflow.py
-
-# Phase 3 workflow
-python tests/test_phase3_feasibility_review.py
+# Run specific phase tests
+python manage.py test tests.test_phase1_phase2_workflow
+python manage.py test tests.test_phase3_feasibility_review
+python manage.py test tests.test_phase4_evaluator_assignment
+python manage.py test tests.test_phase5_evaluation_submission
+python manage.py test tests.test_phase6_resolution
+python manage.py test tests.test_phase7_acceptance
+python manage.py test tests.test_phase9_publications
+python manage.py test reports.tests
 ```
 
 ## Documentation Maintenance

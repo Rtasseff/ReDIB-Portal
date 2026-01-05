@@ -52,6 +52,8 @@ class Node(models.Model):
     )
 
     # Leadership
+    # We may not want this as from the pov of the COA portal the director may not be relevant
+    # A manager/adminstrator or coordinator role may be more appropriate
     director = models.ForeignKey(
         'User',
         on_delete=models.PROTECT,
