@@ -128,7 +128,7 @@ class ResolutionService:
         }
 
     @transaction.atomic
-    def bulk_auto_allocate(self, threshold_score=3.0, auto_pending=False):
+    def bulk_auto_allocate(self, threshold_score=9.0, auto_pending=False):
         """
         Auto-allocate applications by priority based on score threshold.
 
@@ -140,7 +140,7 @@ class ResolutionService:
            - Else: REJECT or PENDING (if auto_pending enabled)
 
         Args:
-            threshold_score: Decimal (minimum score for acceptance, default 3.0)
+            threshold_score: Decimal (minimum score for acceptance, default 9.0 out of 12 - 75%)
             auto_pending: bool (auto-set to pending instead of reject, default False)
 
         Returns:

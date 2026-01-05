@@ -99,7 +99,7 @@ def evaluation_detail(request, pk):
 
             messages.success(
                 request,
-                f'Evaluation submitted successfully. Your score: {evaluation.total_score:.2f}/5.00'
+                f'Evaluation submitted successfully. Your score: {evaluation.total_score:.0f}/12'
             )
 
             # Additional message if all evaluations are now complete

@@ -43,10 +43,16 @@ def check_and_transition_application(application):
         average_score = avg_result['avg']
         result['average_score'] = average_score
 
+        # Save final score to application
+        application.final_score = average_score
+
         # Transition state if currently under_evaluation
         if application.status == 'under_evaluation':
             application.status = 'evaluated'
-            application.save()
+
+        application.save()
+
+        if application.status == 'evaluated':
             result['transitioned'] = True
 
             # Trigger notification to coordinator (async)
