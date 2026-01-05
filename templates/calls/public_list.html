@@ -31,11 +31,6 @@
                         <strong>Equipment Available:</strong><br>
                         {{ call.equipment_allocations.count }} item{{ call.equipment_allocations.count|pluralize }}
                     </div>
-
-                    <div class="mb-2">
-                        <strong>Total Hours:</strong><br>
-                        {{ call.total_hours_offered }} hours
-                    </div>
                 </div>
                 <div class="card-footer bg-white">
                     <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-primary btn-sm w-100 mb-2">

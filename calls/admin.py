@@ -10,7 +10,8 @@ from .models import Call, CallEquipmentAllocation
 class CallEquipmentAllocationInline(admin.TabularInline):
     model = CallEquipmentAllocation
     extra = 1
-    fields = ['equipment', 'hours_offered']
+    fields = ['equipment']
+    readonly_fields = ['total_approved_hours']
 
 
 @admin.register(Call)
@@ -38,9 +39,9 @@ class CallAdmin(SimpleHistoryAdmin):
 
 @admin.register(CallEquipmentAllocation)
 class CallEquipmentAllocationAdmin(SimpleHistoryAdmin):
-    list_display = ['call', 'equipment', 'hours_offered', 'hours_allocated', 'hours_available']
+    list_display = ['call', 'equipment', 'total_approved_hours']
     list_filter = ['call', 'equipment__node']
     search_fields = ['call__code', 'equipment__name']
     ordering = ['call', 'equipment']
 
-    readonly_fields = ['hours_allocated', 'hours_available']
+    readonly_fields = ['total_approved_hours']

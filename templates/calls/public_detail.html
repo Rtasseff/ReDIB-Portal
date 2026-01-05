@@ -52,13 +52,9 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <strong><i class="bi bi-play-circle"></i> Execution Period:</strong><br>
                             {{ call.execution_start|date:"F d, Y" }} - {{ call.execution_end|date:"F d, Y" }}
-                        </div>
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-clock"></i> Total Hours Offered:</strong><br>
-                            {{ call.total_hours_offered }} hours
                         </div>
                     </div>
 
@@ -95,7 +91,6 @@
                                     <th>Node</th>
                                     <th>Equipment</th>
                                     <th>Category</th>
-                                    <th>Hours Offered</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -107,7 +102,6 @@
                                     </td>
                                     <td>{{ alloc.equipment.name }}</td>
                                     <td><span class="badge bg-secondary">{{ alloc.equipment.get_category_display }}</span></td>
-                                    <td><strong>{{ alloc.hours_offered }}</strong> hours</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

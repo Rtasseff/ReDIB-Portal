@@ -67,7 +67,7 @@ def generate_call_report_excel(call):
     ws2 = wb.create_sheet("Applications")
     ws2.append([
         'Code', 'Applicant', 'Institution', 'Status', 'Final Score',
-        'Resolution', 'Hours Requested', 'Hours Granted'
+        'Resolution', 'Hours Requested'
     ])
 
     for app in apps.select_related('applicant').prefetch_related('requested_access'):
@@ -75,7 +75,6 @@ def generate_call_report_excel(call):
         total_requested = app.requested_access.aggregate(
             total=Sum('hours_requested')
         )['total'] or 0
-        total_granted = app.hours_granted or 0
 
         ws2.append([
             app.code or 'DRAFT',
@@ -85,28 +84,21 @@ def generate_call_report_excel(call):
             float(app.final_score) if app.final_score else None,
             app.get_resolution_display() if app.resolution else '',
             float(total_requested),
-            float(total_granted),
         ])
 
-    # Sheet 3: Equipment Utilization
-    ws3 = wb.create_sheet("Equipment Utilization")
+    # Sheet 3: Equipment Summary
+    ws3 = wb.create_sheet("Equipment Summary")
     ws3.append([
-        'Equipment', 'Node', 'Hours Offered', 'Hours Granted',
-        'Hours Available', 'Utilization %'
+        'Equipment', 'Node', 'Total Approved Hours'
     ])
 
     for allocation in call.equipment_allocations.select_related('equipment__node').all():
-        hours_granted = allocation.hours_allocated  # Uses aggregation property from model
-        hours_available = allocation.hours_available
-        utilization = (hours_granted / float(allocation.hours_offered) * 100) if allocation.hours_offered > 0 else 0
+        total_approved = allocation.total_approved_hours  # Sum of hours_requested from accepted apps
 
         ws3.append([
             allocation.equipment.name,
             allocation.equipment.node.code,
-            float(allocation.hours_offered),
-            float(hours_granted),
-            float(hours_available),
-            f"{utilization:.1f}%",
+            float(total_approved),
         ])
 
     return wb

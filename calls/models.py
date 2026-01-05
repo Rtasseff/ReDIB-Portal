@@ -70,15 +70,19 @@ class Call(models.Model):
         )
 
     @property
-    def total_hours_offered(self):
-        """Calculate total hours offered across all equipment"""
-        return self.equipment_allocations.aggregate(
-            total=models.Sum('hours_offered')
+    def total_approved_hours(self):
+        """Calculate total approved hours across all equipment in this call"""
+        from applications.models import RequestedAccess
+        return RequestedAccess.objects.filter(
+            application__call=self,
+            application__resolution='accepted'
+        ).aggregate(
+            total=models.Sum('hours_requested')
         )['total'] or 0
 
 
 class CallEquipmentAllocation(models.Model):
-    """Hours offered per equipment per call"""
+    """Equipment available per call"""
 
     call = models.ForeignKey(
         Call,
@@ -89,12 +93,6 @@ class CallEquipmentAllocation(models.Model):
         Equipment,
         on_delete=models.CASCADE,
         related_name='call_allocations'
-    )
-    hours_offered = models.DecimalField(
-        max_digits=6,
-        decimal_places=1,
-        validators=[MinValueValidator(0)],
-        help_text='Total hours available for this call'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -108,12 +106,12 @@ class CallEquipmentAllocation(models.Model):
         verbose_name = 'Equipment Allocation'
 
     def __str__(self):
-        return f"{self.call.code} - {self.equipment.name}: {self.hours_offered}h"
+        return f"{self.call.code} - {self.equipment.name}"
 
     @property
-    def hours_allocated(self):
-        """Calculate hours already allocated to accepted applications"""
-        from applications.models import RequestedAccess, Application
+    def total_approved_hours(self):
+        """Calculate total approved hours for this equipment in this call"""
+        from applications.models import RequestedAccess
         return RequestedAccess.objects.filter(
             equipment=self.equipment,
             application__call=self.call,
@@ -121,8 +119,3 @@ class CallEquipmentAllocation(models.Model):
         ).aggregate(
             total=models.Sum('hours_requested')
         )['total'] or 0
-
-    @property
-    def hours_available(self):
-        """Calculate remaining available hours"""
-        return self.hours_offered - self.hours_allocated

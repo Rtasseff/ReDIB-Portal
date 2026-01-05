@@ -79,18 +79,13 @@ class CallForm(forms.ModelForm):
 
 
 class CallEquipmentAllocationForm(forms.ModelForm):
-    """Form for allocating equipment hours to a call."""
+    """Form for allocating equipment to a call."""
 
     class Meta:
         model = CallEquipmentAllocation
-        fields = ['equipment', 'hours_offered']
+        fields = ['equipment']
         widgets = {
             'equipment': forms.Select(attrs={'class': 'form-select'}),
-            'hours_offered': forms.NumberInput(attrs={
-                'step': '0.5',
-                'min': '0',
-                'class': 'form-control'
-            }),
         }
 
 

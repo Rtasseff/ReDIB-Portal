@@ -48,67 +48,12 @@ class ResolutionService:
             .order_by('-final_score', 'code')
         )
 
-    def calculate_hours_availability(self):
-        """
-        Calculate hours availability per equipment type.
-
-        Returns:
-            dict: {equipment_id: {
-                'equipment': Equipment instance,
-                'offered': Decimal (hours from CallEquipmentAllocation),
-                'allocated': Decimal (sum of hours_granted),
-                'remaining': Decimal (offered - allocated),
-                'over_allocated': bool (True if allocated > offered)
-            }}
-        """
-        from applications.models import RequestedAccess
-        from core.models import Equipment
-
-        # Get hours offered per equipment for this call
-        hours_offered = {}
-        for allocation in self.call.equipment_allocations.select_related('equipment'):
-            hours_offered[allocation.equipment.id] = {
-                'equipment': allocation.equipment,
-                'offered': allocation.hours_offered,
-                'allocated': Decimal('0.0'),
-                'remaining': allocation.hours_offered,
-                'over_allocated': False
-            }
-
-        # Calculate hours already allocated (hours_granted)
-        hours_allocated = (
-            RequestedAccess.objects
-            .filter(
-                application__call=self.call,
-                application__resolution__in=['accepted', 'pending'],
-                hours_granted__isnull=False
-            )
-            .values('equipment')
-            .annotate(total=Sum('hours_granted'))
-        )
-
-        # Update allocated and remaining hours
-        for item in hours_allocated:
-            equipment_id = item['equipment']
-            if equipment_id in hours_offered:
-                allocated = item['total'] or Decimal('0.0')
-                hours_offered[equipment_id]['allocated'] = allocated
-                hours_offered[equipment_id]['remaining'] = (
-                    hours_offered[equipment_id]['offered'] - allocated
-                )
-                hours_offered[equipment_id]['over_allocated'] = (
-                    allocated > hours_offered[equipment_id]['offered']
-                )
-
-        return hours_offered
-
     def can_accept_application(self, application):
         """
-        Check if application can be accepted based on hours availability.
+        Check if application can be accepted.
 
-        Auto-Approval Rule (CRITICAL):
-        Applications with has_competitive_funding=True can ALWAYS be accepted,
-        even if hours are exhausted (over-allocation allowed).
+        Auto-Approval Rule:
+        Applications with has_competitive_funding=True are auto-approved.
 
         Args:
             application: Application instance
@@ -122,43 +67,8 @@ class ResolutionService:
                 'message': 'Auto-approved (competitive funding)'
             })
 
-        # Check hours availability for each equipment request
-        hours_availability = self.calculate_hours_availability()
-        can_accept = True
-        insufficient_hours = []
-
-        for requested_access in application.requested_access.select_related('equipment'):
-            equipment_id = requested_access.equipment.id
-            hours_requested = requested_access.hours_requested
-
-            if equipment_id not in hours_availability:
-                can_accept = False
-                insufficient_hours.append({
-                    'equipment': requested_access.equipment.name,
-                    'requested': hours_requested,
-                    'available': Decimal('0.0'),
-                    'reason': 'Equipment not in call allocation'
-                })
-                continue
-
-            hours_remaining = hours_availability[equipment_id]['remaining']
-
-            if hours_requested > hours_remaining:
-                can_accept = False
-                insufficient_hours.append({
-                    'equipment': requested_access.equipment.name,
-                    'requested': hours_requested,
-                    'available': hours_remaining,
-                    'reason': 'Insufficient hours remaining'
-                })
-
-        if can_accept:
-            return (True, 'hours_available', {'message': 'Sufficient hours available'})
-        else:
-            return (False, 'insufficient_hours', {
-                'message': 'Insufficient hours for one or more equipment types',
-                'details': insufficient_hours
-            })
+        # All other applications can be accepted
+        return (True, 'accepted', {'message': 'Application can be accepted'})
 
     @transaction.atomic
     def apply_resolution(self, application, resolution, comments='', user=None):
@@ -167,9 +77,7 @@ class ResolutionService:
 
         Business Rules:
         1. Competitive funding apps CANNOT be rejected (validation error)
-        2. Hours must be available for acceptance (unless competitive funding)
-        3. Resolution sets: resolution, resolution_date, resolution_comments, status
-        4. Hours_granted set for each RequestedAccess
+        2. Resolution sets: resolution, resolution_date, resolution_comments, status
 
         Args:
             application: Application instance
@@ -190,15 +98,6 @@ class ResolutionService:
                 "They must be either accepted or marked as pending."
             )
 
-        # Validate: hours availability for acceptance (unless competitive funding)
-        if resolution in ['accepted', 'pending']:
-            can_accept, reason, details = self.can_accept_application(application)
-            if resolution == 'accepted' and not can_accept and not application.has_competitive_funding:
-                raise ValidationError(
-                    f"Cannot accept application: {details['message']}. "
-                    f"Consider marking as 'pending' instead."
-                )
-
         # Update resolution fields
         application.resolution = resolution
         application.resolution_date = timezone.now()
@@ -212,18 +111,12 @@ class ResolutionService:
         elif resolution == 'rejected':
             application.status = 'rejected'
 
-        # Set hours_granted for accepted/pending applications
-        if resolution in ['accepted', 'pending']:
-            for requested_access in application.requested_access.all():
-                requested_access.hours_granted = requested_access.hours_requested
-                requested_access.save()
-        else:
-            # Rejected applications get no hours
-            for requested_access in application.requested_access.all():
-                requested_access.hours_granted = None
-                requested_access.save()
-
         application.save()
+
+        # Calculate total requested hours for response
+        total_hours = application.requested_access.aggregate(
+            total=Sum('hours_requested')
+        )['total'] or Decimal('0.0')
 
         return {
             'success': True,
@@ -231,27 +124,24 @@ class ResolutionService:
             'application_code': application.code,
             'resolution': resolution,
             'status': application.status,
-            'hours_granted': application.requested_access.aggregate(
-                total=Sum('hours_granted')
-            )['total'] or Decimal('0.0')
+            'total_requested_hours': total_hours
         }
 
     @transaction.atomic
-    def bulk_auto_allocate(self, threshold_score=3.0, auto_pending=True):
+    def bulk_auto_allocate(self, threshold_score=3.0, auto_pending=False):
         """
-        Auto-allocate applications by priority until hours exhausted.
+        Auto-allocate applications by priority based on score threshold.
 
         Allocation Logic:
         1. Get prioritized applications (score DESC, code ASC)
         2. For each application:
-           - If has_competitive_funding: ACCEPT (even if hours exhausted)
-           - Elif score >= threshold AND hours available: ACCEPT
-           - Elif score >= threshold AND hours exhausted: PENDING (if auto_pending)
-           - Else: REJECT
+           - If has_competitive_funding: ACCEPT
+           - Elif score >= threshold: ACCEPT
+           - Else: REJECT or PENDING (if auto_pending enabled)
 
         Args:
             threshold_score: Decimal (minimum score for acceptance, default 3.0)
-            auto_pending: bool (auto-set to pending when hours exhausted, default True)
+            auto_pending: bool (auto-set to pending instead of reject, default False)
 
         Returns:
             dict with allocation summary
@@ -282,51 +172,36 @@ class ResolutionService:
                 continue
 
             # Check score threshold
-            if application.final_score < threshold_score:
-                result = self.apply_resolution(application, 'rejected',
-                    comments=f'Score below threshold ({threshold_score})')
-                results['rejected'] += 1
-                results['details'].append({
-                    'application_code': application.code,
-                    'resolution': 'rejected',
-                    'reason': f'Score below threshold ({threshold_score})',
-                    'score': application.final_score
-                })
-                continue
-
-            # Check hours availability
-            can_accept, reason, details = self.can_accept_application(application)
-
-            if can_accept:
+            if application.final_score >= threshold_score:
                 result = self.apply_resolution(application, 'accepted',
                     comments=f'Auto-allocated (score: {application.final_score})')
                 results['accepted'] += 1
                 results['details'].append({
                     'application_code': application.code,
                     'resolution': 'accepted',
-                    'reason': 'Hours available',
+                    'reason': f'Score above threshold ({threshold_score})',
                     'score': application.final_score
                 })
             else:
-                # Hours exhausted
+                # Score below threshold
                 if auto_pending:
                     result = self.apply_resolution(application, 'pending',
-                        comments=f'Pending (hours exhausted, score: {application.final_score})')
+                        comments=f'Pending (score: {application.final_score})')
                     results['pending'] += 1
                     results['details'].append({
                         'application_code': application.code,
                         'resolution': 'pending',
-                        'reason': 'Hours exhausted',
+                        'reason': f'Score below threshold ({threshold_score})',
                         'score': application.final_score
                     })
                 else:
                     result = self.apply_resolution(application, 'rejected',
-                        comments=f'Rejected (hours exhausted, score: {application.final_score})')
+                        comments=f'Score below threshold ({threshold_score})')
                     results['rejected'] += 1
                     results['details'].append({
                         'application_code': application.code,
                         'resolution': 'rejected',
-                        'reason': 'Hours exhausted',
+                        'reason': f'Score below threshold ({threshold_score})',
                         'score': application.final_score
                     })
 

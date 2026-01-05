@@ -131,8 +131,7 @@
                 <table class="table table-bordered" id="equipment-formset">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 50%;">Equipment</th>
-                            <th style="width: 30%;">Hours Offered</th>
+                            <th style="width: 80%;">Equipment</th>
                             <th style="width: 20%;">Delete</th>
                         </tr>
                     </thead>
@@ -143,12 +142,6 @@
                                 {{ form.equipment }}
                                 {% if form.equipment.errors %}
                                 <div class="text-danger small">{{ form.equipment.errors }}</div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ form.hours_offered }}
-                                {% if form.hours_offered.errors %}
-                                <div class="text-danger small">{{ form.hours_offered.errors }}</div>
                                 {% endif %}
                             </td>
                             <td class="text-center">

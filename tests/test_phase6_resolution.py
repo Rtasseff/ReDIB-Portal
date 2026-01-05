@@ -5,7 +5,7 @@ Independent validation test for Phase 6: Resolution & Prioritization.
 Critical Business Rules Tested:
 1. Auto-approval rule: Competitive funding apps CANNOT be rejected
 2. Prioritization: PRIMARY by final_score DESC, SECONDARY by code ASC
-3. Hours allocation: Track available hours, allocate to accepted apps
+3. Hours tracking: Track total approved hours (sum of hours_requested from accepted apps)
 4. State transitions: evaluated → accepted/pending/rejected
 5. Finalization: Lock call and trigger notifications
 """
@@ -48,8 +48,8 @@ class Phase6Tester:
         print("CLEANUP: Removing previous Phase 6 test data")
         print("=" * 60)
 
-        # Delete test applications
-        Application.objects.filter(code__startswith='PHASE6-TEST').delete()
+        # Delete test applications (must delete before calls due to protected FK)
+        Application.objects.filter(code__startswith='PHASE6').delete()
 
         # Delete test call
         Call.objects.filter(code__startswith='PHASE6-TEST').delete()
@@ -128,11 +128,10 @@ class Phase6Tester:
             description='Test call for Phase 6'
         )
 
-        # Create equipment allocation (100 hours available)
+        # Create equipment allocation
         self.allocation = CallEquipmentAllocation.objects.create(
             call=self.call,
-            equipment=self.equipment,
-            hours_offered=Decimal('100.0')
+            equipment=self.equipment
         )
 
         print("✓ Created test environment\n")
@@ -244,10 +243,10 @@ class Phase6Tester:
         self.log_test("2.2", idx_001 < idx_002,
                       f"Tie-breaking by code ASC (APP-001 rank {idx_001+1}, APP-002 rank {idx_002+1})")
 
-    def test_3_hours_allocation(self):
-        """Test 3: Hours Allocation Logic"""
+    def test_3_hours_tracking(self):
+        """Test 3: Total Approved Hours Tracking"""
         print("\n" + "=" * 60)
-        print("TEST 3: Hours Allocation")
+        print("TEST 3: Total Approved Hours Tracking")
         print("=" * 60)
 
         # Clean up applications from previous tests to reset hours
@@ -255,11 +254,11 @@ class Phase6Tester:
 
         service = ResolutionService(self.call)
 
-        # Test 3.1: Calculate hours availability
-        hours_avail = service.calculate_hours_availability()
-        equipment_id = self.equipment.id
-        self.log_test("3.1", equipment_id in hours_avail and hours_avail[equipment_id]['offered'] == Decimal('100.0'),
-                      f"Hours offered calculated: {hours_avail[equipment_id]['offered']} hours")
+        # Test 3.1: Initial approved hours is zero
+        self.allocation.refresh_from_db()
+        initial_hours = self.allocation.total_approved_hours
+        self.log_test("3.1", initial_hours == 0,
+                      f"Initial approved hours: {initial_hours}")
 
         # Create and accept application
         app = Application.objects.create(
@@ -268,7 +267,7 @@ class Phase6Tester:
             code='PHASE6-TEST-HOURS-01',
             applicant_name='Hours Test',
             applicant_email='hours@test.com',
-            brief_description='Hours allocation test',
+            brief_description='Hours tracking test',
             status='evaluated',
             final_score=Decimal('4.0'),
             submitted_at=timezone.now()
@@ -282,16 +281,16 @@ class Phase6Tester:
         # Apply resolution
         result = service.apply_resolution(app, 'accepted', 'Test')
 
-        # Test 3.2: Hours granted set correctly
-        req.refresh_from_db()
-        self.log_test("3.2", req.hours_granted == Decimal('60.0'),
-                      f"Hours granted set: {req.hours_granted}")
+        # Test 3.2: Application accepted successfully
+        app.refresh_from_db()
+        self.log_test("3.2", app.status == 'accepted' and app.resolution == 'accepted',
+                      f"Application accepted (status: {app.status})")
 
-        # Test 3.3: Remaining hours calculated
-        hours_avail = service.calculate_hours_availability()
-        remaining = hours_avail[equipment_id]['remaining']
-        self.log_test("3.3", remaining == Decimal('40.0'),
-                      f"Remaining hours: {remaining} (100 - 60)")
+        # Test 3.3: Total approved hours calculated correctly
+        self.allocation.refresh_from_db()
+        approved_hours = self.allocation.total_approved_hours
+        self.log_test("3.3", approved_hours == Decimal('60.0'),
+                      f"Total approved hours: {approved_hours}")
 
     def test_4_bulk_resolution(self):
         """Test 4: Bulk Auto-Allocation"""
@@ -302,13 +301,13 @@ class Phase6Tester:
         # Clean up applications from previous tests to reset hours
         Application.objects.filter(call=self.call).delete()
 
-        # Create 5 apps: 2 high score, 2 medium, 1 low
+        # Create 5 apps: Apps with score >= 3.0 accepted, below pending (with auto_pending=True)
         apps_data = [
-            ('PHASE6-BULK-01', Decimal('5.0'), Decimal('30.0'), False),
-            ('PHASE6-BULK-02', Decimal('4.5'), Decimal('30.0'), False),
-            ('PHASE6-BULK-03', Decimal('3.5'), Decimal('30.0'), False),  # Will get pending
-            ('PHASE6-BULK-04', Decimal('3.0'), Decimal('30.0'), False),  # Will get pending
-            ('PHASE6-BULK-05', Decimal('2.0'), Decimal('30.0'), False),  # Will get rejected
+            ('PHASE6-BULK-01', Decimal('5.0'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-02', Decimal('4.5'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-03', Decimal('3.5'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-04', Decimal('3.0'), Decimal('30.0'), False),  # Will be accepted (at threshold)
+            ('PHASE6-BULK-05', Decimal('2.0'), Decimal('30.0'), False),  # Will get pending (below threshold)
         ]
 
         for code, score, hours, comp_funding in apps_data:
@@ -333,14 +332,14 @@ class Phase6Tester:
         service = ResolutionService(self.call)
         result = service.bulk_auto_allocate(threshold_score=Decimal('3.0'), auto_pending=True)
 
-        # Test 4.1: Correct counts
-        self.log_test("4.1", result['accepted'] >= 2,
+        # Test 4.1: Correct counts (4 accepted with score >= 3.0, 1 pending with score < 3.0)
+        self.log_test("4.1", result['accepted'] == 4 and result['pending'] == 1,
                       f"Accepted: {result['accepted']}, Pending: {result['pending']}, Rejected: {result['rejected']}")
 
-        # Test 4.2: Low score rejected
+        # Test 4.2: Low score app marked as pending (with auto_pending=True)
         app_05 = Application.objects.get(code='PHASE6-BULK-05')
-        self.log_test("4.2", app_05.resolution == 'rejected',
-                      f"Low score app rejected (score: {app_05.final_score})")
+        self.log_test("4.2", app_05.resolution == 'pending',
+                      f"Low score app set to pending (score: {app_05.final_score})")
 
     def test_5_finalization(self):
         """Test 5: Finalization and Locking"""
@@ -385,7 +384,7 @@ class Phase6Tester:
 
         self.test_1_auto_approval_rule()
         self.test_2_prioritization()
-        self.test_3_hours_allocation()
+        self.test_3_hours_tracking()
         self.test_4_bulk_resolution()
         self.test_5_finalization()
 

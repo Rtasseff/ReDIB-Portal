@@ -155,7 +155,6 @@
                             <th>Node</th>
                             <th>Equipment</th>
                             <th>Hours Requested</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -164,13 +163,6 @@
                             <td>{{ access.equipment.node.code }}</td>
                             <td>{{ access.equipment.name }}</td>
                             <td>{{ access.hours_requested }}</td>
-                            <td>
-                                {% if access.hours_granted %}
-                                    <span class="badge bg-success">{{ access.hours_granted }} hours granted</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Pending</span>
-                                {% endif %}
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
