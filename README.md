@@ -211,98 +211,9 @@ redib/
 - **AccessGrant**: Approved access with scheduling and usage tracking
 - **Publication**: Publications resulting from COA access
 
-## Development Workflow
+## Development
 
-### Running Celery (for background tasks)
-
-```bash
-# Worker
-celery -A redib worker -l info
-
-# Beat (scheduled tasks)
-celery -A redib beat -l info
-```
-
-### Creating Migrations
-
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### Running Tests
-
-**Automated Test Suites** (29 tests total):
-```bash
-# Run all tests
-python manage.py test tests
-
-# Run specific phase tests
-python manage.py test tests.test_phase1_phase2_workflow
-python manage.py test tests.test_phase3_feasibility_review
-python manage.py test tests.test_phase4_evaluator_assignment
-python manage.py test tests.test_phase5_evaluation_submission
-python manage.py test tests.test_phase6_resolution
-python manage.py test tests.test_phase7_acceptance
-python manage.py test tests.test_phase9_publications
-python manage.py test reports.tests
-```
-
-**All 29 integration tests passing ✅**
-
-See [TEST.md](TEST.md) for detailed testing guide and [docs/test-reports/](docs/test-reports/) for test reports.
-
-### Populating Initial Data
-
-```bash
-# Populate nodes (4 ReDIB ICTS nodes from CSV)
-python manage.py populate_redib_nodes
-
-# Populate equipment (17 items across 4 nodes from CSV)
-python manage.py populate_redib_equipment
-
-# Populate users (core staff: coordinators, node coordinators, evaluators)
-python manage.py populate_redib_users
-
-# Sync mode: Mark orphaned records as inactive (safe, no deletions)
-python manage.py populate_redib_nodes --sync
-python manage.py populate_redib_equipment --sync
-python manage.py populate_redib_users --sync
-
-# Use custom CSV files (optional)
-python manage.py populate_redib_nodes --csv /path/to/custom_nodes.csv
-python manage.py populate_redib_equipment --csv /path/to/custom_equipment.csv
-python manage.py populate_redib_users --csv /path/to/custom_users.csv
-
-# Seed email templates (required for production)
-python manage.py seed_email_templates
-
-# Seed development data (calls, applications, evaluations)
-python manage.py seed_dev_data
-
-# Clear and rebuild test data
-python manage.py seed_dev_data --clear
-```
-
-**CSV Data Files:**
-- `/data/nodes.csv` - ReDIB network nodes (4 nodes)
-- `/data/equipment.csv` - Equipment at each node (17 items)
-- `/data/users.csv` - Core users (coordinators, evaluators, 8 users)
-
-These CSV files can be edited to customize your deployment.
-
-**Sync Mode:**
-When using `--sync`, records in the database but not in the CSV will be marked as `is_active=False`. This is safer than deletion and allows you to:
-- Keep historical data intact (no deletions)
-- Reactivate items by adding them back to the CSV
-- Maintain referential integrity with existing data
-- Audit trail of all changes
-
-**Important Notes:**
-- User sync mode excludes superusers (they're never deactivated)
-- New users get default password "changeme123" (must be changed on first login)
-- User roles support multiple formats: `coordinator`, `node_coordinator:NODE_CODE`, `evaluator:AREA`
-- Organizations are auto-created if they don't exist
+For development workflows, common commands, database management, and data loading procedures, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
 
 ## Environment Variables
 
@@ -353,25 +264,6 @@ After deployment, perform these initial setup tasks in order:
    **Note:** You can customize the CSV files in `/data/` directory for your deployment.
 
 7. **Create first call** to test the system
-
-## Documentation
-
-### Core Documentation
-- **[TEST.md](TEST.md)** - Testing guide with automated and manual testing procedures
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for development
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
-
-### Reference Materials (`/docs/reference/`)
-- **[System Design Document](docs/reference/redib-coa-system-design.md)** - Complete architecture and requirements
-- **[Application Form Specification](docs/reference/coa-application-form-spec.md)** - Detailed form specification
-- **Official Application Form (DOCX)** - Reference form in `docs/reference/`
-
-### Test Reports (`/docs/test-reports/`)
-- **[Phase 1 & 2 Test Report](docs/test-reports/PHASE1_PHASE2_TEST_REPORT.md)** - Call Management & Application Submission validation
-- **[Phase 3 Test Report](docs/test-reports/PHASE3_TEST_REPORT.md)** - Feasibility Review validation
-
-### Historical Documentation (`/archive/`)
-- Old validation reports and historical documentation
 
 ## License
 
