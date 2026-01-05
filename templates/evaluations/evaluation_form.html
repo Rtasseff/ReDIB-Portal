@@ -1,5 +1,6 @@
 {% extends 'dashboard_base.html' %}
 {% load static %}
+{% load evaluation_filters %}
 
 {% block title %}Evaluate {{ application.code }} - ReDIB COA Portal{% endblock %}
 
@@ -84,7 +85,7 @@
                 <div class="card-body">
                     <!-- Scientific Relevance -->
                     <div class="mb-4">
-                        <h6>1. Scientific Relevance and Originality</h6>
+                        <h6>1. Scientific and Technical Relevance</h6>
                         <div class="bg-light p-3 rounded">
                             {{ application.scientific_relevance|linebreaks }}
                         </div>
@@ -100,23 +101,31 @@
 
                     <!-- Expected Contributions -->
                     <div class="mb-4">
-                        <h6>3. Expected Contributions and Results</h6>
+                        <h6>3. Expected Contributions</h6>
                         <div class="bg-light p-3 rounded">
                             {{ application.expected_contributions|linebreaks }}
                         </div>
                     </div>
 
-                    <!-- Impact and Strengths -->
+                    <!-- Impact -->
                     <div class="mb-4">
-                        <h6>4. Impact and Strengths</h6>
+                        <h6>4. Impact and Advancement of Knowledge</h6>
                         <div class="bg-light p-3 rounded">
                             {{ application.impact_strengths|linebreaks }}
                         </div>
                     </div>
 
-                    <!-- Opportunity Criteria -->
+                    <!-- Socioeconomic Significance -->
                     <div class="mb-4">
-                        <h6>5. Opportunity Criteria</h6>
+                        <h6>5. Socioeconomic Significance</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.socioeconomic_significance|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- Opportunity -->
+                    <div class="mb-4">
+                        <h6>6. Opportunity and Translational Impact</h6>
                         <div class="bg-light p-3 rounded">
                             {{ application.opportunity_criteria|linebreaks }}
                         </div>
@@ -138,6 +147,7 @@
                             <strong>Your Evaluation</strong> (Submitted {{ evaluation.completed_at|date:"F d, Y" }})
                         </div>
 
+                        <h5 class="mt-4 mb-3">Category 1: Scientific and Technical Relevance</h5>
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
@@ -147,31 +157,59 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Scientific Relevance and Originality</td>
-                                    <td class="text-center"><strong>{{ evaluation.score_relevance }}</strong></td>
+                                    <td>Quality and originality of the project and research plan</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_quality_originality }}</strong></td>
                                 </tr>
                                 <tr>
-                                    <td>Methodology and Experimental Design</td>
-                                    <td class="text-center"><strong>{{ evaluation.score_methodology }}</strong></td>
+                                    <td>Suitability of methodology, design, and work plan to the objectives</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_methodology_design }}</strong></td>
                                 </tr>
                                 <tr>
-                                    <td>Expected Contributions and Results</td>
-                                    <td class="text-center"><strong>{{ evaluation.score_contributions }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Impact and Strengths</td>
-                                    <td class="text-center"><strong>{{ evaluation.score_impact }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Opportunity Criteria</td>
-                                    <td class="text-center"><strong>{{ evaluation.score_opportunity }}</strong></td>
-                                </tr>
-                                <tr class="table-success">
-                                    <td><strong>TOTAL SCORE</strong></td>
-                                    <td class="text-center"><strong>{{ evaluation.total_score|floatformat:2 }} / 5.00</strong></td>
+                                    <td>Expected scientific–technical contributions</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_expected_contributions }}</strong></td>
                                 </tr>
                             </tbody>
                         </table>
+
+                        <h5 class="mt-4 mb-3">Category 2: Timeliness and Impact</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Criterion</th>
+                                    <th width="100">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Contribution to the advancement of knowledge</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_knowledge_advancement }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Potential social, economic and/or industrial impact</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_social_economic_impact }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Opportunity for exploitation, translation and/or dissemination</td>
+                                    <td class="text-center"><strong>{{ evaluation.score_exploitation_dissemination }}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="alert alert-primary mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>TOTAL SCORE:</strong> <span class="fs-4">{{ evaluation.total_score|floatformat:0 }} / 12</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>RECOMMENDATION:</strong>
+                                    {% if evaluation.recommendation == 'approved' %}
+                                    <span class="badge bg-success fs-6">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-danger fs-6">Denied</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
 
                         {% if evaluation.comments %}
                         <div class="mt-3">
@@ -189,39 +227,156 @@
                             {% csrf_token %}
 
                             <p class="alert alert-info">
-                                Rate each criterion on a scale of 1 to 5, where:
-                                <strong>1 = Poor</strong>,
-                                <strong>2 = Below Average</strong>,
-                                <strong>3 = Average</strong>,
-                                <strong>4 = Good</strong>,
-                                <strong>5 = Excellent</strong>
+                                Rate each criterion on a scale of <strong>0 to 2</strong>, where each score has a specific meaning described below.
                             </p>
 
-                            <!-- Score Fields -->
-                            {% for field in form %}
-                                {% if 'score_' in field.name %}
-                                <div class="mb-4 p-3 border rounded">
-                                    <label class="form-label"><strong>{{ field.label }}</strong></label>
-                                    <p class="text-muted small">{{ field.help_text }}</p>
+                            <!-- Category 1: Scientific and Technical Relevance -->
+                            <h5 class="mt-4 mb-3 text-primary">Category 1: Scientific and Technical Relevance</h5>
 
-                                    <div class="btn-group" role="group">
-                                        {% for choice_value, choice_label in field.field.widget.choices %}
-                                        <input type="radio" class="btn-check" name="{{ field.name }}"
-                                               id="{{ field.name }}_{{ choice_value }}" value="{{ choice_value }}"
-                                               {% if field.value == choice_value|stringformat:"s" %}checked{% endif %}
-                                               required>
-                                        <label class="btn btn-outline-primary" for="{{ field.name }}_{{ choice_value }}">
-                                            {{ choice_label }}
-                                        </label>
-                                        {% endfor %}
-                                    </div>
+                            <!-- Score Quality Originality -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_quality_originality.label }}</strong></label>
 
-                                    {% if field.errors %}
-                                    <div class="text-danger mt-2">{{ field.errors }}</div>
-                                    {% endif %}
+                                {% for choice_value, choice_label in form.score_quality_originality.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_quality_originality"
+                                           id="score_quality_originality_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_quality_originality.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_quality_originality_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_quality_originality|key:choice_value }}
+                                    </label>
                                 </div>
+                                {% endfor %}
+                                {% if form.score_quality_originality.errors %}
+                                <div class="text-danger mt-2">{{ form.score_quality_originality.errors }}</div>
                                 {% endif %}
-                            {% endfor %}
+                            </div>
+
+                            <!-- Score Methodology Design -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_methodology_design.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.score_methodology_design.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_methodology_design"
+                                           id="score_methodology_design_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_methodology_design.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_methodology_design_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_methodology_design|key:choice_value }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.score_methodology_design.errors %}
+                                <div class="text-danger mt-2">{{ form.score_methodology_design.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Score Expected Contributions -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_expected_contributions.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.score_expected_contributions.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_expected_contributions"
+                                           id="score_expected_contributions_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_expected_contributions.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_expected_contributions_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_expected_contributions|key:choice_value }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.score_expected_contributions.errors %}
+                                <div class="text-danger mt-2">{{ form.score_expected_contributions.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Category 2: Timeliness and Impact -->
+                            <h5 class="mt-4 mb-3 text-primary">Category 2: Timeliness and Impact</h5>
+
+                            <!-- Score Knowledge Advancement -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_knowledge_advancement.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.score_knowledge_advancement.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_knowledge_advancement"
+                                           id="score_knowledge_advancement_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_knowledge_advancement.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_knowledge_advancement_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_knowledge_advancement|key:choice_value }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.score_knowledge_advancement.errors %}
+                                <div class="text-danger mt-2">{{ form.score_knowledge_advancement.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Score Social Economic Impact -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_social_economic_impact.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.score_social_economic_impact.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_social_economic_impact"
+                                           id="score_social_economic_impact_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_social_economic_impact.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_social_economic_impact_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_social_economic_impact|key:choice_value }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.score_social_economic_impact.errors %}
+                                <div class="text-danger mt-2">{{ form.score_social_economic_impact.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Score Exploitation Dissemination -->
+                            <div class="mb-4 p-3 border rounded">
+                                <label class="form-label"><strong>{{ form.score_exploitation_dissemination.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.score_exploitation_dissemination.field.widget.choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="score_exploitation_dissemination"
+                                           id="score_exploitation_dissemination_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.score_exploitation_dissemination.value == choice_value|stringformat:"s" %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="score_exploitation_dissemination_{{ choice_value }}">
+                                        <strong>{{ choice_label }} points:</strong> {{ form.SCORE_HELP_TEXTS.score_exploitation_dissemination|key:choice_value }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.score_exploitation_dissemination.errors %}
+                                <div class="text-danger mt-2">{{ form.score_exploitation_dissemination.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Recommendation -->
+                            <h5 class="mt-4 mb-3 text-primary">Access Decision</h5>
+                            <div class="mb-4 p-3 border rounded bg-light">
+                                <label class="form-label"><strong>{{ form.recommendation.label }}</strong></label>
+
+                                {% for choice_value, choice_label in form.recommendation.field.widget.choices %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="recommendation"
+                                           id="recommendation_{{ choice_value }}" value="{{ choice_value }}"
+                                           {% if form.recommendation.value == choice_value %}checked{% endif %}
+                                           required>
+                                    <label class="form-check-label" for="recommendation_{{ choice_value }}">
+                                        <strong>{{ choice_label|upper }}</strong>
+                                        <div class="small text-muted mt-1">{{ form.RECOMMENDATION_HELP_TEXTS|key:choice_value }}</div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                {% if form.recommendation.errors %}
+                                <div class="text-danger mt-2">{{ form.recommendation.errors }}</div>
+                                {% endif %}
+                            </div>
 
                             <!-- Comments Field -->
                             <div class="mb-4">
@@ -254,4 +409,13 @@
         </div>
     </div>
 </div>
+
+<style>
+.form-check-label {
+    cursor: pointer;
+}
+.form-check-input:checked + .form-check-label {
+    font-weight: 600;
+}
+</style>
 {% endblock %}

@@ -140,7 +140,7 @@
                             <td>{{ evaluation.application.call.code }}</td>
                             <td>{{ evaluation.assigned_at|date:"M d, Y" }}</td>
                             <td>{{ evaluation.completed_at|date:"M d, Y" }}</td>
-                            <td><strong>{{ evaluation.total_score|floatformat:2 }}</strong> / 5.00</td>
+                            <td><strong>{{ evaluation.total_score|floatformat:0 }}</strong> / 12</td>
                             <td>
                                 <a href="{% url 'evaluations:evaluation_detail' evaluation.pk %}" class="btn btn-sm btn-outline-primary">View</a>
                             </td>

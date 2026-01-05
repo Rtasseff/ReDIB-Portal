@@ -23,36 +23,57 @@ class Evaluation(models.Model):
         related_name='evaluations_conducted'
     )
 
-    # Scoring (1-5 scale per criteria)
-    score_relevance = models.IntegerField(
+    # Category 1: Scientific and Technical Relevance (0-2 scale)
+    score_quality_originality = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text='Scientific relevance and originality (1-5)'
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Quality and originality of the project and research plan (0-2)'
     )
-    score_methodology = models.IntegerField(
+    score_methodology_design = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text='Methodology and experimental design (1-5)'
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Suitability of methodology, design, and work plan to the objectives (0-2)'
     )
-    score_contributions = models.IntegerField(
+    score_expected_contributions = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text='Expected contributions and results (1-5)'
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Expected scientific–technical contributions arising from the proposal (0-2)'
     )
-    score_impact = models.IntegerField(
+
+    # Category 2: Timeliness and Impact (0-2 scale)
+    score_knowledge_advancement = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text='Impact and strengths (1-5)'
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Contribution of the research to the advancement of knowledge (0-2)'
     )
-    score_opportunity = models.IntegerField(
+    score_social_economic_impact = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text='Opportunity criteria (1-5)'
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Potential social, economic and/or industrial impact of the expected results (0-2)'
+    )
+    score_exploitation_dissemination = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(2)],
+        help_text='Opportunity for exploitation, translation and/or dissemination (0-2)'
+    )
+
+    # Recommendation
+    RECOMMENDATION_CHOICES = [
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+    ]
+    recommendation = models.CharField(
+        max_length=20,
+        choices=RECOMMENDATION_CHOICES,
+        null=True,
+        blank=True,
+        help_text='Accept or reject recommendation'
     )
 
     total_score = models.DecimalField(
@@ -84,16 +105,18 @@ class Evaluation(models.Model):
     def save(self, *args, **kwargs):
         """Calculate total score before saving"""
         scores = [
-            self.score_relevance,
-            self.score_methodology,
-            self.score_contributions,
-            self.score_impact,
-            self.score_opportunity
+            self.score_quality_originality,
+            self.score_methodology_design,
+            self.score_expected_contributions,
+            self.score_knowledge_advancement,
+            self.score_social_economic_impact,
+            self.score_exploitation_dissemination
         ]
 
         # Calculate total only if all scores are provided
+        # Total score is the SUM of all 6 scores (max 12), not average
         if all(score is not None for score in scores):
-            self.total_score = sum(scores) / len(scores)
+            self.total_score = sum(scores)
 
             # Set completed_at if not already set and all scores are complete
             if not self.completed_at:
