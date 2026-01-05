@@ -164,7 +164,7 @@ class Phase6Tester:
             applicant_email='applicant1.phase6.test@redib.test',
             brief_description='App with competitive funding',
             status='evaluated',
-            final_score=Decimal('2.5'),  # LOW score
+            final_score=Decimal('6.0'),  # LOW score (50% of max 12)
             has_competitive_funding=True,  # CRITICAL: Has competitive funding
             submitted_at=timezone.now()
         )
@@ -202,12 +202,12 @@ class Phase6Tester:
         print("TEST 2: Prioritization Algorithm")
         print("=" * 60)
 
-        # Create applications with varied scores
+        # Create applications with varied scores (0-12 scale)
         apps_data = [
-            ('PHASE6-TEST-APP-003', Decimal('4.5')),
-            ('PHASE6-TEST-APP-001', Decimal('5.0')),  # Highest score
-            ('PHASE6-TEST-APP-002', Decimal('5.0')),  # Same score as APP-001
-            ('PHASE6-TEST-APP-004', Decimal('3.0')),
+            ('PHASE6-TEST-APP-003', Decimal('10.0')),  # 83% of max
+            ('PHASE6-TEST-APP-001', Decimal('12.0')),  # Highest score (100%)
+            ('PHASE6-TEST-APP-002', Decimal('12.0')),  # Same score as APP-001
+            ('PHASE6-TEST-APP-004', Decimal('7.0')),   # 58% of max
         ]
 
         for code, score in apps_data:
@@ -269,7 +269,7 @@ class Phase6Tester:
             applicant_email='hours@test.com',
             brief_description='Hours tracking test',
             status='evaluated',
-            final_score=Decimal('4.0'),
+            final_score=Decimal('10.0'),  # 83% of max 12
             submitted_at=timezone.now()
         )
         req = RequestedAccess.objects.create(
@@ -301,13 +301,13 @@ class Phase6Tester:
         # Clean up applications from previous tests to reset hours
         Application.objects.filter(call=self.call).delete()
 
-        # Create 5 apps: Apps with score >= 3.0 accepted, below pending (with auto_pending=True)
+        # Create 5 apps: Apps with score >= 9.0 accepted, below pending (with auto_pending=True)
         apps_data = [
-            ('PHASE6-BULK-01', Decimal('5.0'), Decimal('30.0'), False),  # Will be accepted
-            ('PHASE6-BULK-02', Decimal('4.5'), Decimal('30.0'), False),  # Will be accepted
-            ('PHASE6-BULK-03', Decimal('3.5'), Decimal('30.0'), False),  # Will be accepted
-            ('PHASE6-BULK-04', Decimal('3.0'), Decimal('30.0'), False),  # Will be accepted (at threshold)
-            ('PHASE6-BULK-05', Decimal('2.0'), Decimal('30.0'), False),  # Will get pending (below threshold)
+            ('PHASE6-BULK-01', Decimal('12.0'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-02', Decimal('11.0'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-03', Decimal('10.0'), Decimal('30.0'), False),  # Will be accepted
+            ('PHASE6-BULK-04', Decimal('9.0'), Decimal('30.0'), False),   # Will be accepted (at threshold)
+            ('PHASE6-BULK-05', Decimal('6.0'), Decimal('30.0'), False),   # Will get pending (below threshold)
         ]
 
         for code, score, hours, comp_funding in apps_data:
@@ -330,9 +330,9 @@ class Phase6Tester:
             )
 
         service = ResolutionService(self.call)
-        result = service.bulk_auto_allocate(threshold_score=Decimal('3.0'), auto_pending=True)
+        result = service.bulk_auto_allocate(threshold_score=Decimal('9.0'), auto_pending=True)
 
-        # Test 4.1: Correct counts (4 accepted with score >= 3.0, 1 pending with score < 3.0)
+        # Test 4.1: Correct counts (4 accepted with score >= 9.0, 1 pending with score < 9.0)
         self.log_test("4.1", result['accepted'] == 4 and result['pending'] == 1,
                       f"Accepted: {result['accepted']}, Pending: {result['pending']}, Rejected: {result['rejected']}")
 

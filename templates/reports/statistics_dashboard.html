@@ -63,7 +63,7 @@
                     <div class="col-md-4">
                         <strong>Average Score:</strong>
                         {% if current_call_stats.avg_score %}
-                            {{ current_call_stats.avg_score|floatformat:2 }}
+                            {{ current_call_stats.avg_score|floatformat:2 }} / 12
                         {% else %}
                             N/A
                         {% endif %}

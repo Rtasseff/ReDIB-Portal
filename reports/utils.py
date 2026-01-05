@@ -48,9 +48,9 @@ def generate_call_report_excel(call):
     ws1.append(['Rejected', apps.filter(resolution='rejected').count()])
     ws1.append(['Pending', apps.filter(resolution='pending').count()])
 
-    # Calculate average score (handle None values)
+    # Calculate average score (0-12 scale, handle None values)
     avg_score = apps.aggregate(avg=Avg('final_score'))['avg']
-    ws1.append(['Average Evaluation Score', f"{float(avg_score):.2f}" if avg_score else 'N/A'])
+    ws1.append(['Average Evaluation Score (out of 12)', f"{float(avg_score):.2f}" if avg_score else 'N/A'])
 
     # Calculate acceptance rate
     total_apps = apps.count()

@@ -4,15 +4,16 @@ Independent validation test for Phase 5: Evaluation Submission & Completion.
 
 Tests:
 1. Evaluation form submission with valid scores
-2. Automatic score calculation (average of 5 criteria)
+2. Automatic score calculation (sum of 6 criteria, max 12)
 3. Automatic completion timestamp
 4. Blind evaluation (applicant identity hidden)
 5. Edit permissions (before/after deadline, before/after completion)
 6. State transition (under_evaluation → evaluated)
 7. Coordinator notification when all evaluations complete
 8. Partial completion scenarios
-9. Score validation (1-5 range)
+9. Score validation (0-2 range)
 10. Form validation
+11. Recommendation field (approved/denied)
 """
 import os
 import sys
@@ -168,8 +169,7 @@ class Phase5Tester:
 
         CallEquipmentAllocation.objects.get_or_create(
             call=self.call,
-            equipment=equipment,
-            defaults={'hours_offered': 100}
+            equipment=equipment
         )
 
         # Create test application in UNDER_EVALUATION status
@@ -221,11 +221,13 @@ class Phase5Tester:
 
         # Test valid form
         form_data = {
-            'score_relevance': 4,
-            'score_methodology': 5,
-            'score_contributions': 3,
-            'score_impact': 4,
-            'score_opportunity': 5,
+            'score_quality_originality': 2,
+            'score_methodology_design': 2,
+            'score_expected_contributions': 1,
+            'score_knowledge_advancement': 2,
+            'score_social_economic_impact': 1,
+            'score_exploitation_dissemination': 2,
+            'recommendation': 'approved',
             'comments': 'Test evaluation comments'
         }
 
@@ -235,17 +237,17 @@ class Phase5Tester:
 
         # Test missing score
         invalid_data = form_data.copy()
-        invalid_data['score_relevance'] = None
+        invalid_data['score_quality_originality'] = None
         form = EvaluationForm(data=invalid_data, instance=evaluation)
         success = not form.is_valid()
         self.log_test("1.2", success, "Form rejects missing score")
 
         # Test out-of-range score (should be caught by model validators)
         invalid_data = form_data.copy()
-        invalid_data['score_relevance'] = 6
+        invalid_data['score_quality_originality'] = 3
         form = EvaluationForm(data=invalid_data, instance=evaluation)
         success = not form.is_valid()
-        self.log_test("1.3", success, "Form rejects out-of-range score (>5)")
+        self.log_test("1.3", success, "Form rejects out-of-range score (>2)")
 
     def test_2_score_calculation(self):
         """Test automatic score calculation"""
@@ -255,23 +257,25 @@ class Phase5Tester:
 
         evaluation = self.evaluations[0]
 
-        # Set scores
-        evaluation.score_relevance = 4
-        evaluation.score_methodology = 5
-        evaluation.score_contributions = 3
-        evaluation.score_impact = 4
-        evaluation.score_opportunity = 4
+        # Set scores (0-2 range, 6 criteria)
+        evaluation.score_quality_originality = 2
+        evaluation.score_methodology_design = 2
+        evaluation.score_expected_contributions = 1
+        evaluation.score_knowledge_advancement = 2
+        evaluation.score_social_economic_impact = 1
+        evaluation.score_exploitation_dissemination = 2
+        evaluation.recommendation = 'approved'
         evaluation.save()
 
-        # Calculate expected average
-        expected_avg = (4 + 5 + 3 + 4 + 4) / 5.0  # = 4.0
+        # Calculate expected sum (max 12)
+        expected_sum = 2 + 2 + 1 + 2 + 1 + 2  # = 10
 
-        success = float(evaluation.total_score) == expected_avg
+        success = float(evaluation.total_score) == expected_sum
         self.log_test(
             "2.1",
             success,
-            "Total score calculated correctly",
-            expected=expected_avg,
+            "Total score calculated correctly (sum of 6 criteria)",
+            expected=expected_sum,
             actual=float(evaluation.total_score) if evaluation.total_score else None
         )
 
@@ -402,11 +406,13 @@ class Phase5Tester:
 
         # Complete the second evaluation
         evaluation = self.evaluations[1]
-        evaluation.score_relevance = 5
-        evaluation.score_methodology = 4
-        evaluation.score_contributions = 5
-        evaluation.score_impact = 5
-        evaluation.score_opportunity = 4
+        evaluation.score_quality_originality = 2
+        evaluation.score_methodology_design = 1
+        evaluation.score_expected_contributions = 2
+        evaluation.score_knowledge_advancement = 2
+        evaluation.score_social_economic_impact = 2
+        evaluation.score_exploitation_dissemination = 1
+        evaluation.recommendation = 'approved'
         evaluation.save()
 
         # Check completion
@@ -423,11 +429,11 @@ class Phase5Tester:
         success = self.application.status == 'evaluated'
         self.log_test("7.3", success, "Application status is 'evaluated'")
 
-        # Check average score
-        expected_avg = (4.0 + 4.6) / 2  # Average of both evaluations
+        # Check average score (10 + 10) / 2 = 10.0
+        expected_avg = (10.0 + 10.0) / 2  # Average of both evaluations (each = 10/12)
         actual_avg = result.get('average_score')
         success = actual_avg is not None and abs(float(actual_avg) - expected_avg) < 0.01
-        self.log_test("7.4", success, f"Average score calculated: {actual_avg:.2f}")
+        self.log_test("7.4", success, f"Average score calculated: {actual_avg:.2f} / 12")
 
     def test_8_coordinator_notification(self):
         """Test coordinator notification email"""
@@ -454,11 +460,13 @@ class Phase5Tester:
             evaluation = Evaluation.objects.create(
                 application=test_app,
                 evaluator=evaluator,
-                score_relevance=4,
-                score_methodology=4,
-                score_contributions=4,
-                score_impact=4,
-                score_opportunity=4
+                score_quality_originality=2,
+                score_methodology_design=1,
+                score_expected_contributions=2,
+                score_knowledge_advancement=1,
+                score_social_economic_impact=2,
+                score_exploitation_dissemination=1,
+                recommendation='approved'
             )
 
         # Trigger transition (which triggers notification)
