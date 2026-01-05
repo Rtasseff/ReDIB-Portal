@@ -199,8 +199,7 @@ class Phase3Tester:
             for equipment in node.equipment.filter(is_active=True):
                 CallEquipmentAllocation.objects.create(
                     call=self.call,
-                    equipment=equipment,
-                    hours_offered=100
+                    equipment=equipment
                 )
 
         allocation_count = self.call.equipment_allocations.count()

@@ -607,7 +607,6 @@ def application_resolution(request, application_id):
                 {
                     'equipment': ra.equipment.name,
                     'hours_requested': float(ra.hours_requested),
-                    'hours_granted': float(ra.hours_granted) if ra.hours_granted else None,
                 }
                 for ra in application.requested_access.select_related('equipment').all()
             ]

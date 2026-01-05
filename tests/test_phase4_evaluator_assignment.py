@@ -171,8 +171,7 @@ class Phase4Tester:
         # Create equipment allocation
         CallEquipmentAllocation.objects.get_or_create(
             call=self.call,
-            equipment=equipment,
-            defaults={'hours_offered': 100}
+            equipment=equipment
         )
 
         # Create test applications (in PENDING_EVALUATION status)

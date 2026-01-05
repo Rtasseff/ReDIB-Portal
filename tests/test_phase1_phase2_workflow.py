@@ -170,8 +170,7 @@ class WorkflowTester:
         for equipment in equipment_list:
             allocation, created = CallEquipmentAllocation.objects.get_or_create(
                 call=self.call,
-                equipment=equipment,
-                defaults={'hours_offered': 50}
+                equipment=equipment
             )
             if created:
                 allocations_created += 1

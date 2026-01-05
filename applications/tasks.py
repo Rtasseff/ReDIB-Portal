@@ -97,9 +97,9 @@ def send_resolution_notifications_task(call_id):
         # Determine template type based on resolution
         template_type = f'resolution_{application.resolution}'
 
-        # Calculate total hours granted
-        hours_granted = application.requested_access.aggregate(
-            total=Sum('hours_granted')
+        # Calculate total hours requested (for accepted applications)
+        hours_requested = application.requested_access.aggregate(
+            total=Sum('hours_requested')
         )['total'] or 0
 
         # Build email context
@@ -109,7 +109,7 @@ def send_resolution_notifications_task(call_id):
             'call_code': call.code,
             'final_score': float(application.final_score) if application.final_score else 0.0,
             'resolution': application.get_resolution_display(),
-            'hours_granted': float(hours_granted),
+            'hours_granted': float(hours_requested),  # Renamed from hours_granted for backward compatibility
             'resolution_comments': application.resolution_comments or '',
             'resolution_date': application.resolution_date,
         }
