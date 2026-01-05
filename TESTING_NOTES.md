@@ -12,6 +12,12 @@ Quick capture of issues, changes, and updates during manual testing.
 
 ### Medium/Low
 <!-- Minor issues, cosmetic problems, or nice-to-have fixes -->
+- [ ] Node director - [Found: 2026-01-05] [Area: applications]
+  - module 'core' under models.py in class Node
+  - Notes: as of now their is a required director with a many (directors) to one (node) relationship.
+We may not want to require, or even record, this as from the pov of the COA portal the director may not be relevant - no action.
+A manager/adminstrator or coordinator role may be more appropriate,
+with the action being emailed for fiesability and ultimate recording of hours used.
 
 ## Feature Ideas / Enhancements
 <!-- Ideas for improvements or new features discovered during testing -->
