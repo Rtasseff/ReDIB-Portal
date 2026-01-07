@@ -114,6 +114,17 @@ class ApplicationStep3Form(forms.ModelForm):
             'service_modality': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'specialization_area': forms.RadioSelect(attrs={'class': 'form-check-input'}),
         }
+        help_texts = {
+            'service_modality': (
+                '<strong>Full assistance:</strong> The requested experiments are carried out by ReDIB technical staff, '
+                'following the user\'s requirements, but without the user\'s physical presence at the centre. '
+                '<strong>In-person:</strong> The user can participate and assist ReDIB technical staff during the development '
+                'of the experiments. '
+                '<strong>Self-service:</strong> The user, after ad hoc training by ReDIB, directly uses the infrastructure '
+                'to which he or she has been granted access, always under the supervision of ICTS technical staff. '
+                '<em>Not all service modalities are available for all installations. In case of doubt, please contact ReDIB technical staff.</em>'
+            ),
+        }
 
 
 class RequestedAccessForm(forms.ModelForm):
@@ -129,6 +140,13 @@ class RequestedAccessForm(forms.ModelForm):
                 'min': '0.5',
                 'class': 'form-control'
             }),
+        }
+        help_texts = {
+            'hours_requested': (
+                'Requested access time: cannot exceed the maximum offered in the AAC call for the indicated installation. '
+                'If you are unable to estimate the access time required to undertake the experimentation associated with the '
+                'Proposal, consult with the ReDIB node involved.'
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -209,6 +227,9 @@ class ApplicationStep4Form(forms.ModelForm):
             'socioeconomic_significance': '5. Socioeconomic Significance',
             'opportunity_criteria': '6. Opportunity and Translational Impact',
         }
+        help_texts = {
+            'expected_contributions': 'Justify your expectations for future scientific-technical contributions and express your commitment to publish and disseminate the ICTS access you are now requesting...',
+        }
 
 
 class ApplicationStep5Form(forms.ModelForm):
@@ -238,7 +259,24 @@ class ApplicationStep5Form(forms.ModelForm):
             'has_animal_ethics': 'I have ethics committee approval for animal use',
             'uses_humans': 'This proposal involves human subjects',
             'has_human_ethics': 'I have ethics committee approval for human subjects',
-            'data_consent': 'I consent to data processing as described in the privacy policy (Required)',
+            'data_consent': 'Having been informed of the processing to which my personal data will be subject, I freely give my consent to such processing',
+        }
+        help_texts = {
+            'technical_feasibility_confirmed': (
+                'In order for an COA Proposal to be approved and prioritized, it is necessary to ensure that ReDIB, '
+                'at any of its nodes, can technically undertake the requested service or experimentation. Therefore, '
+                'it is recommended that AAC applicants consult in advance about the TECHNICAL FEASIBILITY of their Proposal, '
+                'contacting the ReDIB node most directly involved in it, and, in any case, provide in this form all the '
+                'details of the experimentation that the Proposal contemplates to be carried out at ReDIB facilities.'
+            ),
+            'data_consent': (
+                'The personal data collected in this document will be incorporated and processed in the file "ICTS ReDIB USERS", '
+                'the purpose of which is to receive and evaluate requests for use of the ReDIB facilities. The user may exercise '
+                'their rights of access, rectification, deletion and portability of their data before the nodes that make up ReDIB, '
+                'as entities jointly responsible for the "ICTS ReDIB USERS" file, through the procedure for exercising personal data '
+                'rights available on the ReDIB website: www.redib.net. All of which is reported in compliance with article 6 of '
+                'Organic Law 3/2018, of December 5, on the Protection of Personal Data and guarantee of digital rights.'
+            ),
         }
 
     def clean(self):

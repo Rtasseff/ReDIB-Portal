@@ -78,9 +78,11 @@
                             {% if form.expected_contributions.errors %}
                             <div class="text-danger small">{{ form.expected_contributions.errors }}</div>
                             {% endif %}
+                            {% if form.expected_contributions.help_text %}
                             <small class="form-text text-muted">
-                                Describe expected future contributions and dissemination plans
+                                {{ form.expected_contributions.help_text }}
                             </small>
+                            {% endif %}
                         </div>
 
                         <div class="mb-4">

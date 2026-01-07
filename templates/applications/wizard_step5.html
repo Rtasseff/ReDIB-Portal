@@ -31,8 +31,11 @@
 
             <!-- Form Card -->
             <div class="card">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Step 5: Declarations & Consent</h5>
+                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#infoModal">
+                        <i class="bi bi-info-circle"></i> More Info
+                    </button>
                 </div>
                 <div class="card-body">
                     {% if form.non_field_errors %}
@@ -58,9 +61,11 @@
                                 {% if form.technical_feasibility_confirmed.errors %}
                                 <div class="text-danger small">{{ form.technical_feasibility_confirmed.errors }}</div>
                                 {% endif %}
+                                {% if form.technical_feasibility_confirmed.help_text %}
                                 <small class="form-text text-muted d-block mt-2">
-                                    You should contact the ReDIB node coordinator to confirm that your proposed experiments are technically feasible.
+                                    {{ form.technical_feasibility_confirmed.help_text }}
                                 </small>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -138,10 +143,11 @@
                                 {% if form.data_consent.errors %}
                                 <div class="text-danger small">{{ form.data_consent.errors }}</div>
                                 {% endif %}
+                                {% if form.data_consent.help_text %}
                                 <small class="form-text text-muted d-block mt-2">
-                                    By checking this box, you consent to the processing of your personal data according to our privacy policy.
-                                    This is required to submit your application.
+                                    {{ form.data_consent.help_text }}
                                 </small>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -188,6 +194,47 @@
                         6. Preview & Submit
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- More Info Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">General Information and Instructions for Completing this Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    ReDIB infrastructures and services are available to all members of the national and international scientific community,
+                    who can access them under the Competitive Open Access (COA) modality, or under the Access on Demand (AOD) modality.
+                    In the first case, COA, access to the essential ReDIB facilities is free or with minimal costs for the user
+                    (i.e., consumable costs), while in the AOD modality the rates published on the website of the nodes that make up
+                    this distributed ICTS apply. ReDIB declares its firm commitment to offer at least 20% of the capacity of its
+                    essential facilities in COA mode.
+                </p>
+                <p>
+                    The approval of the COA to the essential ReDIB facilities requires adequate justification that the access proposal
+                    complies with sufficient scientific-technical quality. In this sense, the proposals received that are part of R&D&I
+                    projects financed by a competitive call from an international or national funding agency will be deemed to meet
+                    the required quality, and will therefore be automatically approved, with their access to the ICTS being conditioned
+                    by the score obtained in the evaluation and their position on the priority list. Otherwise, if no data is provided
+                    on the existence of a competitively funded parent project, the applications will be approved or not based on the
+                    relevance and opportunity criteria applied in the evaluation and, once approved, their access is also conditioned
+                    by the score obtained.
+                </p>
+                <p>
+                    In all cases, to obtain the corresponding score, which will allow the prioritized list of approved applications
+                    with assigned access to be drawn up, all the sections of this access application must be properly completed,
+                    which are related to the different criteria that will be assessed by the ReDIB Access Committee, in order to
+                    establish the priority of each of the approved accesses in each COA call.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

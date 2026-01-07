@@ -49,6 +49,9 @@
                                 </label>
                             </div>
                             {% endfor %}
+                            {% if service_form.service_modality.help_text %}
+                            <div class="form-text">{{ service_form.service_modality.help_text|safe }}</div>
+                            {% endif %}
                             {% if service_form.service_modality.errors %}
                             <div class="text-danger small">{{ service_form.service_modality.errors }}</div>
                             {% endif %}
@@ -75,6 +78,13 @@
                         <!-- Equipment Requests -->
                         <h5 class="mb-3">Equipment & Hours Requested</h5>
                         <p class="text-muted">Request access to equipment available in this call. You must request at least one equipment.</p>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Requested access time:</strong> Cannot exceed the maximum offered in the AAC call for the indicated installation.
+                            If you are unable to estimate the access time required to undertake the experimentation associated with the Proposal,
+                            consult with the ReDIB node involved.
+                        </div>
 
                         {{ access_formset.management_form }}
 
@@ -109,17 +119,24 @@
                                             {% endif %}
                                         </div>
                                         <div class="col-md-2 d-flex align-items-end">
-                                            {% if form.instance.pk %}
-                                                {{ form.DELETE }}
-                                                <label for="{{ form.DELETE.id_for_label }}" class="form-check-label ms-2">
-                                                    Remove
-                                                </label>
-                                            {% endif %}
+                                            {{ form.DELETE }}
+                                            <label for="{{ form.DELETE.id_for_label }}" class="form-check-label ms-2">
+                                                Remove
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="add-equipment-btn">
+                                <i class="bi bi-plus-circle"></i> Add Another Equipment
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm ms-2" id="remove-selected-btn">
+                                <i class="bi bi-trash"></i> Remove Selected
+                            </button>
                         </div>
 
                         <div class="alert alert-info">
@@ -170,3 +187,83 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formset = document.getElementById('equipment-formset');
+    const addButton = document.getElementById('add-equipment-btn');
+    const removeButton = document.getElementById('remove-selected-btn');
+    const totalFormsInput = document.getElementById('id_requested_access-TOTAL_FORMS');
+
+    // Add new equipment form
+    addButton.addEventListener('click', function() {
+        const formCount = parseInt(totalFormsInput.value);
+        const allForms = document.querySelectorAll('.equipment-form');
+        const lastForm = allForms[allForms.length - 1];
+
+        // Clone the last form
+        const newForm = lastForm.cloneNode(true);
+
+        // Update form index in all fields
+        const formRegex = RegExp(`requested_access-(\\d+)-`, 'g');
+        newForm.innerHTML = newForm.innerHTML.replace(formRegex, `requested_access-${formCount}-`);
+
+        // Clear the values in the cloned form
+        newForm.querySelectorAll('input, select').forEach(function(field) {
+            if (field.type === 'checkbox') {
+                field.checked = false;
+            } else if (field.type !== 'hidden') {
+                field.value = '';
+            }
+        });
+
+        // Append the new form
+        formset.appendChild(newForm);
+
+        // Increment the total forms count
+        totalFormsInput.value = formCount + 1;
+    });
+
+    // Remove selected equipment forms
+    removeButton.addEventListener('click', function() {
+        const allForms = document.querySelectorAll('.equipment-form');
+        let removedCount = 0;
+
+        // Find and remove forms with checked DELETE boxes
+        allForms.forEach(function(form) {
+            const deleteCheckbox = form.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (deleteCheckbox && deleteCheckbox.checked) {
+                form.remove();
+                removedCount++;
+            }
+        });
+
+        // Make sure we have at least 1 form remaining
+        const remainingForms = document.querySelectorAll('.equipment-form');
+        if (remainingForms.length === 0) {
+            alert('You must have at least one equipment request. The last form was not removed.');
+            // Reload to restore the form
+            location.reload();
+            return;
+        }
+
+        if (removedCount > 0) {
+            // Reindex all remaining forms
+            reindexForms();
+        }
+    });
+
+    // Reindex forms after removal
+    function reindexForms() {
+        const remainingForms = document.querySelectorAll('.equipment-form');
+        remainingForms.forEach(function(form, index) {
+            const formRegex = RegExp(`requested_access-(\\d+)-`, 'g');
+            form.innerHTML = form.innerHTML.replace(formRegex, `requested_access-${index}-`);
+        });
+        totalFormsInput.value = remainingForms.length;
+    }
+});
+</script>
+{% endblock %}
+
