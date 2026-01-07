@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.db.models import Sum, Count
 from core.decorators import coordinator_required
 from .models import Call, CallEquipmentAllocation
-from .forms import CallForm, CallEquipmentFormSet
+from .forms import CallForm, CallEquipmentFormSet, get_equipment_formset_for_create
 
 
 # Public Views
@@ -84,9 +84,18 @@ def coordinator_dashboard(request):
 @coordinator_required
 def call_create(request):
     """Create a new call."""
+    from core.models import Equipment
+
+    # Always get active equipment for display
+    active_equipment = Equipment.objects.filter(is_active=True).select_related('node').order_by('node__code', 'name')
+    equipment_count = active_equipment.count()
+
+    # Get the formset factory with correct number of extra forms
+    EquipmentFormSet = get_equipment_formset_for_create(equipment_count)
+
     if request.method == 'POST':
         form = CallForm(request.POST)
-        formset = CallEquipmentFormSet(request.POST)
+        formset = EquipmentFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
             call = form.save()
@@ -95,13 +104,23 @@ def call_create(request):
 
             messages.success(request, f"Call {call.code} created successfully.")
             return redirect('calls:call_edit', pk=call.pk)
+
+        # On validation error, pair equipment with formset forms
+        equipment_forms = list(zip(active_equipment, formset.forms))
     else:
         form = CallForm()
-        formset = CallEquipmentFormSet()
+
+        # Create initial data for the formset - one entry per equipment
+        initial_data = [{'equipment': eq.id} for eq in active_equipment]
+        formset = EquipmentFormSet(initial=initial_data)
+
+        # Pair equipment objects with formset forms for template display
+        equipment_forms = list(zip(active_equipment, formset.forms))
 
     context = {
         'form': form,
         'formset': formset,
+        'equipment_forms': equipment_forms,
         'is_create': True,
     }
     return render(request, 'calls/call_form.html', context)

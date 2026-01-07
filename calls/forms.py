@@ -89,13 +89,30 @@ class CallEquipmentAllocationForm(forms.ModelForm):
         }
 
 
-# Formset for managing equipment allocations inline
+# Formset for managing equipment allocations inline (base factory)
+# Note: extra parameter is set dynamically in views for create vs edit
 CallEquipmentFormSet = inlineformset_factory(
     Call,
     CallEquipmentAllocation,
     form=CallEquipmentAllocationForm,
-    extra=3,  # Show 3 empty forms by default
+    extra=0,  # Default for edit view
     can_delete=True,
     min_num=0,
     validate_min=False
 )
+
+
+def get_equipment_formset_for_create(active_equipment_count):
+    """
+    Returns a formset factory configured for call creation.
+    Sets 'extra' to match the number of active equipment items.
+    """
+    return inlineformset_factory(
+        Call,
+        CallEquipmentAllocation,
+        form=CallEquipmentAllocationForm,
+        extra=active_equipment_count,  # One form per equipment item
+        can_delete=True,
+        min_num=0,
+        validate_min=False
+    )
