@@ -211,6 +211,10 @@
                onclick="return confirm('Publish this call? This will send notification emails to users.')">
                 <i class="bi bi-send"></i> Publish Call
             </a>
+            <a href="{% url 'calls:delete' call.pk %}" class="btn btn-danger ms-2"
+               onclick="return confirm('WARNING: This will permanently delete this call and all associated equipment allocations. This action cannot be undone. Are you sure?')">
+                <i class="bi bi-trash"></i> Delete Call
+            </a>
         </div>
         {% endif %}
     </div>

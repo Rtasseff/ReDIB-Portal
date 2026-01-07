@@ -73,6 +73,10 @@
                            onclick="return confirm('Publish this call? This will notify users.')" title="Publish">
                             <i class="bi bi-send"></i>
                         </a>
+                        <a href="{% url 'calls:delete' call.pk %}" class="btn btn-outline-danger"
+                           onclick="return confirm('WARNING: This will permanently delete this call. This action cannot be undone. Are you sure?')" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </a>
                         {% elif call.status == 'open' %}
                         <a href="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
                            onclick="return confirm('Close this call for submissions?')" title="Close">

@@ -18,4 +18,5 @@ urlpatterns = [
     path('<int:pk>/detail/', views.call_detail, name='detail'),
     path('<int:pk>/publish/', views.call_publish, name='publish'),
     path('<int:pk>/close/', views.call_close, name='close'),
+    path('<int:pk>/delete/', views.call_delete, name='delete'),
 ]

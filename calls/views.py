@@ -255,3 +255,36 @@ def call_close(request, pk):
 
     messages.success(request, f"Call {call.code} closed for submissions. Ready for evaluator assignment.")
     return redirect('calls:detail', pk=call.pk)
+
+
+@coordinator_required
+def call_delete(request, pk):
+    """
+    Delete a draft call.
+
+    Only allows deletion of draft calls (not published).
+    Permanently removes the call and all associated equipment allocations.
+    """
+    call = get_object_or_404(Call, pk=pk)
+
+    # Only allow deletion of draft calls
+    if call.status != 'draft':
+        messages.error(request, f"Cannot delete call {call.code}. Only draft calls can be deleted.")
+        return redirect('calls:detail', pk=call.pk)
+
+    # Check if call has any applications
+    if call.applications.exists():
+        messages.error(
+            request,
+            f"Cannot delete call {call.code}. It has {call.applications.count()} associated application(s)."
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    # Store call code for message before deletion
+    call_code = call.code
+
+    # Delete the call (CASCADE will delete CallEquipmentAllocations)
+    call.delete()
+
+    messages.success(request, f"Call {call_code} has been permanently deleted.")
+    return redirect('calls:coordinator_dashboard')

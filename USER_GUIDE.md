@@ -512,6 +512,297 @@ If you have multiple roles, you'll see sections from all your roles combined. Fo
 
 ---
 
+## Using the Portal
+
+This section provides step-by-step instructions for using the portal. Each subsection corresponds to a phase in the COA workflow and includes detailed guidance for completing tasks.
+
+---
+
+### Phase 1: Creating and Managing Calls (For ReDIB Coordinators)
+
+This phase guides you through creating, publishing, and managing calls for Competitive Open Access applications.
+
+#### Prerequisites
+
+Before starting:
+- You must have the **ReDIB Coordinator** or **Admin** role
+- You must have your login credentials
+- Equipment and nodes should be configured in the system (Phase 0)
+
+**First-time login:** If this is your first time logging in, you'll need to set your password. Contact your administrator to have your password set via the admin panel at `/admin/`.
+
+---
+
+#### Step 1: Log In to the Portal
+
+1. Navigate to the portal homepage at `/`
+2. You will be automatically redirected to the **Coordinator Dashboard**
+3. If you see a login page instead, enter your credentials:
+   - **Email:** Your assigned coordinator email (e.g., `coordinator@redib.net`)
+   - **Password:** Your assigned password
+
+**Expected Result:** You should see the coordinator dashboard with sections for active calls, resolution statistics, and recent applications. 
+
+**Note:** If this is your first login you will be required to confirm your email if you have not yet done so. This is done by an automated email sent to your login email address.
+
+---
+
+#### Step 2: Navigate to Call Management
+
+1. In the left sidebar, click **"Call Management"**
+2. You will see a list of existing calls (if any)
+
+**First-time experience:** If no calls exist yet, you'll see a message: "No Calls Yet" with a button labeled **"Create First Call"**
+
+**What you'll see:**
+- A table listing all calls with their code, title, status, submission period, equipment count, and application count
+- Action buttons for each call (View, Edit, Publish/Close, Delete for drafts)
+
+---
+
+#### Step 3: Create a New Call
+
+1. Click the **"Create New Call"** button (or **"Create First Call"** if it's your first call)
+2. You'll be taken to the call creation form
+
+Fill out the following information:
+
+**Call Details:**
+
+3. **Call Code** (Required)
+   - Enter a unique identifier for the call
+   - Format: `COA-YYYY-NN` (e.g., `COA-2026-01`)
+   - This code will be visible to applicants
+
+4. **Title** (Required)
+   - Enter a descriptive title for the call
+   - Example: "Competitive Open Access Call - January 2026"
+
+5. **Status** (Required)
+   - Select **"Draft"** (default)
+   - Leave as draft until you're ready to publish
+   - **Note:** Only published calls (status = "Open") are visible to applicants
+
+6. **Description** (Required)
+   - Write a multi-line description of the call scope
+   - This text will be visible to applicants on the public call page
+   - You can use HTML formatting if needed
+
+7. **Guidelines** (Optional)
+   - Provide application guidelines and requirements
+   - Example: Eligibility criteria, required documents, etc.
+
+---
+
+**Important Dates:**
+
+All dates are **date-only** (no time selection needed). The system automatically sets deadlines to 23:59 (end of day).
+
+8. **Submission Period - Start Date** (Required)
+   - Select the date when applications can start being submitted
+   - Example: Today's date or a future date
+
+9. **Submission Period - End Date** (Required)
+   - Select the deadline for application submissions
+   - Must be **after** the submission start date
+   - Recommended: 45 days after start date
+   - **Note:** Applications can be submitted until 23:59 on this date
+
+10. **Evaluation Deadline** (Required)
+    - Select the deadline for evaluators to complete their reviews
+    - Must be **after** the submission end date
+    - Recommended: 15 days after submission end (60 days from start)
+
+11. **Execution Period - Start Date** (Required)
+    - Select when approved applicants can begin using the equipment
+    - Recommended: 30-60 days after evaluation deadline
+
+12. **Execution Period - End Date** (Required)
+    - Select when equipment access must be completed
+    - Must be **after** execution start date
+    - Recommended: 90-180 days after execution start
+
+**Validation:** The form will prevent you from:
+- Setting evaluation deadline before submission end date
+- Setting execution end before execution start date
+- Creating overlapping or illogical date ranges
+
+---
+
+**Equipment Allocations:**
+
+13. **Review Equipment List**
+    - Scroll down to the "Equipment Allocations" section
+    - You'll see a table showing **all active equipment** from all nodes
+    - **By default, all equipment is included** in the call
+
+14. **Remove Equipment (Optional)**
+    - If you want to **exclude** specific equipment from this call, check the "Remove" checkbox next to that equipment
+    - **Note:** The description says "Check the box next to any equipment you want to **exclude** from this call"
+    - Equipment without a checkmark will be included in the call
+
+**Important:** You must include at least one equipment item. The system will prevent you from publishing a call with no equipment allocations.
+
+---
+
+15. **Save the Call (Draft)**
+    - Click the **"Save Call"** button at the bottom
+    - The call will be saved with status = "Draft"
+
+**Expected Result:**
+- You'll see a success message: "Call [CODE] created successfully"
+- You'll be redirected to the call edit page
+- The call is **not yet visible** to applicants (it's still a draft)
+
+---
+
+#### Step 4: Review Your Call
+
+After saving, you can:
+
+1. **View the call details** by clicking the **eye icon** in the Call Management dashboard
+2. **Edit the call** by clicking the **pencil icon** or by being on the edit page already
+3. **Check the equipment allocations** to ensure the correct equipment is included
+
+**At this point, you can:**
+- Continue editing the call
+- Delete the draft call if needed (red "Delete Call" button)
+- Publish the call when ready (green "Publish Call" button)
+
+---
+
+#### Step 5: Publish the Call
+
+When you're ready to make the call visible to applicants:
+
+**Option A: From the Edit Page**
+
+1. While editing the call, locate the **"Publish Call"** button (green button on the right)
+2. Click **"Publish Call"**
+3. Confirm the action when prompted: "Publish this call? This will send notification emails to users."
+
+**Option B: From the Call Management Dashboard**
+
+1. Find your draft call in the table
+2. Click the **"Publish"** button (green send icon) in the Actions column
+3. Confirm the action when prompted
+
+**Option C: By Changing Status**
+
+1. Edit the call
+2. Change the **Status** dropdown from "Draft" to "Open for Submissions"
+3. Click **"Save Call"**
+
+**Expected Result:**
+- Call status changes to **"Open"**
+- The `published_at` timestamp is set to the current date/time
+- **Notification emails are sent** to all users who have enabled call notifications
+- The call becomes **visible on the public call listing** (if the submission period has started)
+
+---
+
+#### Step 6: Verify Public Visibility
+
+1. Open a new browser tab or log out
+2. Navigate to the public calls page at `/calls/`
+3. Check if your call appears:
+   - **Currently Open:** If today's date is within the submission period
+   - **Upcoming Calls:** If the submission start date is in the future
+
+**What applicants will see:**
+- Call code and title
+- Description (truncated)
+- Submission deadline (date only, no time)
+- Number of equipment items available
+- "Apply Now" button (if logged in) or "Login to Apply" button
+
+---
+
+#### Step 7: Managing Published Calls
+
+Once a call is published, you can:
+
+**Close the Call for Submissions:**
+
+1. In the Call Management dashboard, find the open call
+2. Click the **"Close"** button (lock icon)
+3. Confirm the action
+4. The call status changes to **"Closed"**
+5. New applications can no longer be submitted
+6. The call is ready for evaluator assignment (Phase 4)
+
+**Edit a Published Call:**
+
+1. You can still edit call details (title, description, dates)
+2. Be careful changing dates after applications have been submitted
+3. Equipment allocations can be modified
+
+**Delete a Call:**
+
+**Important:** You can only delete **draft** calls. Published calls cannot be deleted.
+
+To delete a draft call:
+
+1. **Option A (Edit Page):** Click the red **"Delete Call"** button
+2. **Option B (Dashboard):** Click the trash icon in the Actions column
+3. Confirm the deletion when prompted: "WARNING: This will permanently delete this call and all associated equipment allocations. This action cannot be undone. Are you sure?"
+
+**Expected Result:**
+- The call and all equipment allocations are permanently deleted
+- You're redirected to the Call Management dashboard
+- You'll see a success message: "Call [CODE] has been permanently deleted"
+
+**Safety Features:**
+- Only draft calls can be deleted
+- Calls with applications cannot be deleted (additional safety check)
+- JavaScript confirmation prevents accidental deletion
+
+---
+
+#### Common Issues and Tips
+
+**Q: I created a call but applicants can't see it**
+A: Check two things:
+1. Is the call **published** (status = "Open")? Draft calls are not visible to applicants.
+2. Has the submission period **started**? Calls only appear in "Currently Open" if today's date is within the submission period.
+
+**Q: The form won't let me save**
+A: Check for validation errors:
+- Evaluation deadline must be **after** submission end date
+- Execution end must be **after** execution start
+- All required fields must be filled
+
+**Q: How do I unpublish a call?**
+A: You cannot unpublish a call once it's been published. You can only:
+- Close it (prevents new applications)
+- Edit its details
+- If it has no applications, you could close it and ask an administrator to change the status back to draft via the admin panel
+
+**Q: Can I delete a published call?**
+A: No, only draft calls can be deleted. This prevents accidental deletion of calls with applications.
+
+**Q: What happens to the equipment I unchecked?**
+A: Equipment without a checkmark in the "Remove" column will be **included** in the call. Equipment with a checkmark will be **excluded**.
+
+**Q: Why don't I see all nodes' equipment?**
+A: You should see all active equipment from all nodes. If equipment is missing, it may be marked as inactive. Contact an administrator to activate equipment via the admin panel.
+
+---
+
+#### Next Steps
+
+After publishing your call:
+
+1. **Monitor applications** as they come in (Phase 2)
+2. Wait for the **submission deadline** to pass
+3. **Close the call** for submissions
+4. **Assign evaluators** to applications (Phase 4)
+5. Continue through the workflow phases...
+
+For details on subsequent phases, see the workflow overview in the "Understanding the COA Workflow" section.
+
+---
+
 ## Getting Help
 
 ### Common questions
