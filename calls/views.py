@@ -19,7 +19,7 @@ def public_call_list(request):
 
     Shows:
     - Currently open calls (status='open', within submission window)
-    - Upcoming calls (not yet open)
+    - Upcoming calls (published but not yet open)
     """
     now = timezone.now()
 
@@ -30,7 +30,7 @@ def public_call_list(request):
     ).prefetch_related('equipment_allocations__equipment__node').order_by('-submission_start')
 
     upcoming_calls = Call.objects.filter(
-        status='draft',
+        status='open',
         submission_start__gt=now
     ).order_by('submission_start')
 
@@ -140,7 +140,7 @@ def call_edit(request, pk):
             formset.save()
 
             messages.success(request, f"Call {call.code} updated successfully.")
-            return redirect('calls:call_detail', pk=call.pk)
+            return redirect('calls:detail', pk=call.pk)
     else:
         form = CallForm(instance=call)
         formset = CallEquipmentFormSet(instance=call)
@@ -237,7 +237,7 @@ def call_publish(request, pk):
         request,
         f"Call {call.code} published successfully. {email_status}"
     )
-    return redirect('calls:call_detail', pk=call.pk)
+    return redirect('calls:detail', pk=call.pk)
 
 
 @coordinator_required
@@ -254,4 +254,4 @@ def call_close(request, pk):
     call.save()
 
     messages.success(request, f"Call {call.code} closed for submissions. Ready for evaluator assignment.")
-    return redirect('calls:call_detail', pk=call.pk)
+    return redirect('calls:detail', pk=call.pk)

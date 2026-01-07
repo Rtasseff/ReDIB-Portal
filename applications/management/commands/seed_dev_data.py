@@ -230,9 +230,17 @@ class Command(BaseCommand):
     def create_calls(self, equipment):
         """Create test calls with equipment allocations."""
         from calls.models import Call, CallEquipmentAllocation
+        from datetime import datetime, time
 
         now = timezone.now()
         calls = {}
+
+        # Helper function to set time to 23:59:59
+        def set_end_of_day(dt):
+            """Set datetime to 23:59:59 for consistency with call form behavior."""
+            date_only = dt.date()
+            dt_with_time = datetime.combine(date_only, time(23, 59, 59))
+            return timezone.make_aware(dt_with_time) if timezone.is_naive(dt_with_time) else dt_with_time
 
         # Resolved call (past)
         calls['resolved'], created = Call.objects.get_or_create(
@@ -240,11 +248,11 @@ class Command(BaseCommand):
             defaults={
                 'title': 'Test Call 01 (Resolved)',
                 'status': 'resolved',
-                'submission_start': now - timedelta(days=90),
-                'submission_end': now - timedelta(days=60),
-                'evaluation_deadline': now - timedelta(days=45),
-                'execution_start': now - timedelta(days=30),
-                'execution_end': now + timedelta(days=30),
+                'submission_start': set_end_of_day(now - timedelta(days=90)),
+                'submission_end': set_end_of_day(now - timedelta(days=60)),
+                'evaluation_deadline': set_end_of_day(now - timedelta(days=45)),
+                'execution_start': set_end_of_day(now - timedelta(days=30)),
+                'execution_end': set_end_of_day(now + timedelta(days=30)),
                 'description': 'A resolved test call for development testing.',
                 'published_at': now - timedelta(days=90),
             }
@@ -258,11 +266,11 @@ class Command(BaseCommand):
             defaults={
                 'title': 'Test Call 02 (Open)',
                 'status': 'open',
-                'submission_start': now - timedelta(days=7),
-                'submission_end': now + timedelta(days=38),
-                'evaluation_deadline': now + timedelta(days=53),
-                'execution_start': now + timedelta(days=60),
-                'execution_end': now + timedelta(days=120),
+                'submission_start': set_end_of_day(now - timedelta(days=7)),
+                'submission_end': set_end_of_day(now + timedelta(days=38)),
+                'evaluation_deadline': set_end_of_day(now + timedelta(days=53)),
+                'execution_start': set_end_of_day(now + timedelta(days=60)),
+                'execution_end': set_end_of_day(now + timedelta(days=120)),
                 'description': 'An open test call for development testing.',
                 'published_at': now - timedelta(days=7),
             }
@@ -270,13 +278,12 @@ class Command(BaseCommand):
         if created:
             self.stdout.write(f'  → Created call: COA-TEST-02 (open)')
 
-        # Allocate equipment hours to calls
+        # Allocate equipment to calls (no hours_offered - removed in Phase 7)
         for call in calls.values():
             for equip in equipment.values():
                 CallEquipmentAllocation.objects.get_or_create(
                     call=call,
-                    equipment=equip,
-                    defaults={'hours_offered': 50}
+                    equipment=equip
                 )
 
         return calls
