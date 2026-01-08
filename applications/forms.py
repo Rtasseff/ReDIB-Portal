@@ -201,7 +201,7 @@ class ApplicationStep4Form(forms.ModelForm):
             'expected_contributions': forms.Textarea(attrs={
                 'rows': 5,
                 'class': 'form-control',
-                'placeholder': 'Describe expected future contributions and dissemination plans...'
+                'placeholder': 'Justify your expectations for future scientific-technical contributions and express your commitment to publish and disseminate the ICTS access you are now requesting...'
             }),
             'impact_strengths': forms.Textarea(attrs={
                 'rows': 5,
