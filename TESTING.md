@@ -152,7 +152,7 @@ Before starting, ensure:
 
 ---
 
-### Phase 2: Application Submission
+### Phase 2: Application Submission ✅
 **Views needed:** Application form (5-step wizard), Applicant dashboard, Application detail
 
 This follows the application form structure from the AAC application specification.
@@ -242,17 +242,19 @@ This step contains the 6 evaluation criteria fields. Each should provide guidanc
 - Multi-node request (equipment from CIC + CNIC)
 - Request hours for equipment
 - Attempt submission after deadline (should fail)
+
 Everything works
+
 **PAUSE POINT → Application submission validated**
 
 ---
 
-### Phase 3: Feasibility Review (Node Coordinators)
+### Phase 3: Feasibility Review (Node Coordinators) ✅
 **Views needed:** Node coordinator dashboard, Feasibility review form, Application detail (node view)
 
 Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first by the node directly involved to determine technical feasibility."*
 
-**Single-Node Application Feasibility**
+**Single-Node Application Feasibility** ✅
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
@@ -269,7 +271,7 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 | 3.11 | Verify applicant notified | System | Applicant receives feasibility result email | i am not sending email right now so I cannot confirm this, need to double check when emails are activated |
 | 3.12 | Check coordinator notification | System | Coordinator notified of feasibility completion | i am not sending email right now so I cannot confirm this, need to double check when emails are activated |
 
-**Feasibility Rejection Test**
+**Feasibility Rejection Test**✅
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
@@ -281,7 +283,7 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 | 3.18 | Verify application rejected | System | App-B status → `rejected` | |
 | 3.19 | Verify applicant notified | System | Applicant receives rejection email with reason | |
 
-**Multi-Node Application Feasibility**
+**Multi-Node Application Feasibility** 
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
