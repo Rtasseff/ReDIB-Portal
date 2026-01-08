@@ -126,7 +126,7 @@ Before starting, ensure:
 |------|--------|------|-----------------|-------|
 | 1.1 | Login at `/` | `coordinator@redib.net` | Redirect to coordinator dashboard | need to set password using admin the first time |
 | 1.2 | Navigate to Calls section | `coordinator` | See list of calls (if any exist) | |
-| 1.3 | Create new call | `coordinator` | Click "New Call" button | the first time it is called 'Create First Call' |
+| 1.3 | Create new call | `coordinator` | Click "Create New Call" button | the first time it is called 'Create First Call' |
 | 1.4 | Set call code | `coordinator` | e.g., `COA-TEST-2026-01` | |
 | 1.5 | Set call title | `coordinator` | e.g., "Test Call January 2026" | |
 | 1.6 | Set submission period | `coordinator` | Start: today, End: +45 days from now | |
@@ -206,7 +206,7 @@ This step contains the 6 evaluation criteria fields. Each should provide guidanc
 | 2.26 | Fill "Quality and originality" | `applicant1` | Text: quality/originality of project and research plan | |
 | 2.27 | Fill "Methodology and design" | `applicant1` | Text: experimental design, suitability to objectives | |
 | 2.28 | Fill "Expected contributions" | `applicant1` | Text: expected scientific-technical contributions, publications | |
-| 2.29 | **Category: Timeliness and Impact** | `applicant1` | See category header | |
+| 2.29 | Fill: Timeliness and Impact | `applicant1` | Text | |
 | 2.30 | Fill "Knowledge advancement" | `applicant1` | Text: contribution to advancing knowledge, innovation | |
 | 2.31 | Fill "Social/economic impact" | `applicant1` | Text: potential social, economic, industrial impact | |
 | 2.32 | Fill "Exploitation/dissemination" | `applicant1` | Text: opportunity for translation, dissemination | |
@@ -229,12 +229,12 @@ This step contains the 6 evaluation criteria fields. Each should provide guidanc
 | 2.44 | Verify applicant dashboard | `applicant1` | Application appears with status "Submitted" | |
 
 **Validations:**
-- ☐ Cannot submit without data protection consent
-- ☐ Cannot submit without all required scientific content fields
-- ☐ Cannot submit after call submission deadline
-- ☐ Application code auto-generated on submit (format: CALL-XXX)
-- ☐ Can save draft and return later before submitting
-- ☐ Cannot edit application after submission
+- [x] Cannot submit without data protection consent
+- [x] Cannot submit without all required scientific content fields
+- [x] Cannot submit after call submission deadline
+- [x] Application code auto-generated on submit (format: CALL-XXX)
+- [x] Can save draft and return later before submitting (note: there is no save button but this does work for any completed section before the user exists the application wizard)
+- [x] Cannot edit application after submission
 
 **Edge cases to test:**
 - Save draft at Step 2, logout, login, resume application
@@ -242,7 +242,7 @@ This step contains the 6 evaluation criteria fields. Each should provide guidanc
 - Multi-node request (equipment from CIC + CNIC)
 - Request hours for equipment
 - Attempt submission after deadline (should fail)
-
+Everything works
 **PAUSE POINT → Application submission validated**
 
 ---
@@ -256,7 +256,7 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
-| 3.1 | Login as node coordinator | `node.cic@redib.es` | Redirect to node coordinator dashboard | |
+| 3.1 | Login as node coordinator | `node.cic@redib.net` | Redirect to node coordinator dashboard | may need to have super userset a password if you did not setup your own account, may need to varify email if the first time logging in |
 | 3.2 | View pending feasibility reviews | `node_cic` | See applications requesting CIC biomaGUNE equipment | |
 | 3.3 | Click on application to review | `node_cic` | View full application details (NOT blind - node needs details) | |
 | 3.4 | Review applicant information | `node_cic` | See applicant name, organization, contact info | |
