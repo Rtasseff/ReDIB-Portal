@@ -26,6 +26,12 @@ def dashboard(request):
     # Get user roles
     user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
 
+    # Add role flags to context for template
+    context['is_applicant'] = 'applicant' in user_roles
+    context['is_node_coordinator'] = 'node_coordinator' in user_roles
+    context['is_evaluator'] = 'evaluator' in user_roles
+    context['is_coordinator'] = 'coordinator' in user_roles or user.is_superuser
+
     # Applicant dashboard
     if 'applicant' in user_roles:
         from applications.models import Application

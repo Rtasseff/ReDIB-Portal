@@ -6,34 +6,15 @@ Quick capture of issues, changes, and updates during manual testing.
 
 ### Critical
 <!-- High-impact bugs that block core functionality -->
-- [ ] Broken call Managment button - [Found: 2026-01-05] [Area: applications]
+- [x] Broken call Managment button - [Found: 2026-01-07] [Area: applications]
   - Steps to reproduce: as a ReDIB coordinator create call call, save it, go back to portal's dashoard main page and select the 'Call Managment' tab on the sidebar
   - Expected: shows a page with the existing calls.
   - Actual: error 'NoReverseMatch at /calls/manage/'
   - Notes: if I login as a regular user (e.g. applicant) I only have the public calls tab in the dashboard and this does show the saved call without error.   
   - Error message: Reverse for 'call_detail' not found. 'call_detail' is not a valid view function or pattern name.
 
-Request Method: 	GET
-Request URL: 	http://127.0.0.1:8000/calls/manage/
-Django Version: 	5.0.14
-Exception Type: 	NoReverseMatch
-Exception Value: 	
-
-Reverse for 'call_detail' not found. 'call_detail' is not a valid view function or pattern name.
-
-Exception Location: 	/home/rtasseff/projects/ReDIB-Portal/venv/lib/python3.12/site-packages/django/urls/resolvers.py, line 851, in _reverse_with_prefix
-Raised during: 	calls.views.coordinator_dashboard
-Python Executable: 	/home/rtasseff/projects/ReDIB-Portal/venv/bin/python
-Python Version: 	3.12.3
-Python Path: 	
-
-['/home/rtasseff/projects/ReDIB-Portal',
- '/home/rtasseff/projects/ReDIB-Portal',
- '/usr/lib/python312.zip',
- '/usr/lib/python3.12',
- '/usr/lib/python3.12/lib-dynload',
- '/home/rtasseff/projects/ReDIB-Portal/venv/lib/python3.12/site-packages']
-  - 
+- [x] issues see in'http://127.0.0.1:8000/applications/1/step3/': adding more equipment in application. when filling out the application, these are initally 3 empty drop down boxes for selecting equipment and then giving hours.  It should be possible to add more, maybe a little plus sign at the bottom.
+- [x] Multiple issues with help text in the application wizard
 ### High Priority
 <!-- Important issues that should be fixed soon -->
 - [ ] Profile page not found - [Found: 2026-01-07] [Area: applications]
@@ -45,6 +26,11 @@ Python Path:
 ### Medium/Low
 <!-- Minor issues, cosmetic problems, or nice-to-have fixes -->
 
+- [ ] User cannot see their applications and the application status in the dashboard - [Found: 2026-01-05] [Area: applications]
+  - Steps to reproduce: ...
+  - Expected: ...
+  - Actual: ...
+  - Notes: ...
 
 ## Feature Ideas / Enhancements
 <!-- Ideas for improvements or new features discovered during testing -->
@@ -68,9 +54,9 @@ with the action being emailed for fiesability and ultimate recording of hours us
 **Adding a new issue:**
 ```markdown
 - [ ] Brief description - [Found: 2026-01-05] [Area: applications]
-  - Steps to reproduce: ...
-  - Expected: ...
-  - Actual: ...
+  - Steps to reproduce: login as user with submited applications and go to main dashboard (http://127.0.0.1:8000/dashboard/)
+  - Expected: see browse (open) calls options(s) and see existing applicaitons option to click to see all applicatoins done and their status. 
+  - Actual: only see: browse (open) calls options(s)
   - Notes: ...
 ```
 

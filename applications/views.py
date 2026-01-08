@@ -294,6 +294,14 @@ def application_submit(request, pk):
     ).exclude(status='draft').count() + 1
     application.code = f"{call_code}-APP-{count:03d}"
 
+    # Ensure user has applicant role
+    from core.models import UserRole
+    UserRole.objects.get_or_create(
+        user=request.user,
+        role='applicant',
+        defaults={'is_active': True}
+    )
+
     # Submit
     application.status = 'submitted'
     application.submitted_at = timezone.now()
