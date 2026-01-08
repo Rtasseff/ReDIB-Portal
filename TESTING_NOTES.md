@@ -17,7 +17,7 @@ Quick capture of issues, changes, and updates during manual testing.
 - [x] Multiple issues with help text in the application wizard
 ### High Priority
 <!-- Important issues that should be fixed soon -->
-- [ ] Profile page not found - [Found: 2026-01-07] [Area: applications]
+- [ ] Profile page not found - [Found: 2026-01-07] [Area: ]
   - Steps to reproduce: at any dashboard page you can click the top right corrner with a button labaled as the users name to get a drop down of options, one is profile, that page does not exist.  
   - Expected: some page that lets yo uchange to users basic info like name, orca id, maybe email preferences
   - Actual: page not found
@@ -26,10 +26,10 @@ Quick capture of issues, changes, and updates during manual testing.
 ### Medium/Low
 <!-- Minor issues, cosmetic problems, or nice-to-have fixes -->
 
-- [ ] User cannot see their applications and the application status in the dashboard - [Found: 2026-01-05] [Area: applications]
-  - Steps to reproduce: ...
-  - Expected: ...
-  - Actual: ...
+- [x] User cannot see their applications and the application status in the dashboard - [Found: 2026-01-08] [Area: dashboard/]
+  - Steps to reproduce: login as user with submited applications and go to main dashboard (http://127.0.0.1:8000/dashboard/)
+  - Expected: see browse (open) calls options(s) and see existing applicaitons option to click to see all applicatoins done and their status.
+  - Actual: only see: browse (open) calls options(s)
   - Notes: ...
 
 ## Feature Ideas / Enhancements
@@ -54,9 +54,9 @@ with the action being emailed for fiesability and ultimate recording of hours us
 **Adding a new issue:**
 ```markdown
 - [ ] Brief description - [Found: 2026-01-05] [Area: applications]
-  - Steps to reproduce: login as user with submited applications and go to main dashboard (http://127.0.0.1:8000/dashboard/)
-  - Expected: see browse (open) calls options(s) and see existing applicaitons option to click to see all applicatoins done and their status. 
-  - Actual: only see: browse (open) calls options(s)
+  - Steps to reproduce: ...
+  - Expected: ... 
+  - Actual: ...
   - Notes: ...
 ```
 
