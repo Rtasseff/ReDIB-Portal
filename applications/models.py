@@ -223,37 +223,76 @@ class Application(models.Model):
 
     def save(self, *args, **kwargs):
         """Generate application code and validate state transitions"""
+        from django.db import IntegrityError
+
         # Generate application code if not exists
         if not self.code:
             # Generate code like: CALL-CODE-001
-            last_app = Application.objects.filter(
-                call=self.call
-            ).order_by('-code').first()
+            # Find the highest number used across all applications for this call
+            # (both draft codes like CALL-001 and submitted codes like CALL-APP-001)
+            max_retries = 5
+            for attempt in range(max_retries):
+                all_apps = Application.objects.filter(call=self.call)
 
-            if last_app and last_app.code:
+                max_num = 0
+                for app in all_apps:
+                    if app.code:
+                        try:
+                            # Extract the last numeric part from codes like:
+                            # "CALL-001" or "CALL-APP-001"
+                            parts = app.code.split('-')
+                            last_part = parts[-1]
+                            num = int(last_part)
+                            max_num = max(max_num, num)
+                        except (ValueError, IndexError):
+                            # Skip codes that don't end with a number
+                            continue
+
+                new_num = max_num + 1
+                self.code = f"{self.call.code}-{new_num:03d}"
+
+                # Validate state transition if updating existing application
+                if self.pk:
+                    old_status = Application.objects.get(pk=self.pk).status
+                    if old_status != self.status:
+                        valid_next_states = self.VALID_TRANSITIONS.get(old_status, [])
+                        if self.status not in valid_next_states:
+                            from django.core.exceptions import ValidationError
+                            raise ValidationError(
+                                f"Invalid status transition from '{old_status}' to '{self.status}'. "
+                                f"Valid next states: {', '.join(valid_next_states) if valid_next_states else 'None (terminal state)'}"
+                            )
+
                 try:
-                    last_num = int(last_app.code.split('-')[-1])
-                    new_num = last_num + 1
-                except (ValueError, IndexError):
-                    new_num = 1
-            else:
-                new_num = 1
+                    super().save(*args, **kwargs)
+                    return  # Success, exit
+                except IntegrityError as e:
+                    # If UNIQUE constraint failed on code, retry with next number
+                    if 'applications_application.code' in str(e) or 'UNIQUE constraint' in str(e):
+                        if attempt < max_retries - 1:
+                            # Clear the code to force regeneration
+                            self.code = None
+                            continue
+                        else:
+                            # Final attempt failed, re-raise
+                            raise
+                    else:
+                        # Different IntegrityError, re-raise
+                        raise
+        else:
+            # Code already exists, just validate and save
+            if self.pk:
+                old_status = Application.objects.get(pk=self.pk).status
+                if old_status != self.status:
+                    valid_next_states = self.VALID_TRANSITIONS.get(old_status, [])
+                    if self.status not in valid_next_states:
+                        from django.core.exceptions import ValidationError
+                        raise ValidationError(
+                            f"Invalid status transition from '{old_status}' to '{self.status}'. "
+                            f"Valid next states: {', '.join(valid_next_states) if valid_next_states else 'None (terminal state)'}"
+                        )
 
-            self.code = f"{self.call.code}-{new_num:03d}"
-
-        # Validate state transition if updating existing application
-        if self.pk:
-            old_status = Application.objects.get(pk=self.pk).status
-            if old_status != self.status:
-                valid_next_states = self.VALID_TRANSITIONS.get(old_status, [])
-                if self.status not in valid_next_states:
-                    from django.core.exceptions import ValidationError
-                    raise ValidationError(
-                        f"Invalid status transition from '{old_status}' to '{self.status}'. "
-                        f"Valid next states: {', '.join(valid_next_states) if valid_next_states else 'None (terminal state)'}"
-                    )
-
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     def can_transition_to(self, new_status):
         """
