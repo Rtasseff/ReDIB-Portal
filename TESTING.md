@@ -258,7 +258,7 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 |------|--------|------|-----------------|-------|
 | 3.1 | Login as node coordinator | `node.cic@redib.net` | Redirect to node coordinator dashboard | may need to have super userset a password if you did not setup your own account, may need to varify email if the first time logging in |
 | 3.2 | View pending feasibility reviews | `node_cic` | See applications requesting CIC biomaGUNE equipment | |
-| 3.3 | Click on application to review | `node_cic` | View full application details (NOT blind - node needs details) | |
+| 3.3 | Click on application to review | `node_cic` | View full application details (NOT blind - node needs details) | this only works if another user (applicant) submited an application under the node your are a coordinator for |
 | 3.4 | Review applicant information | `node_cic` | See applicant name, organization, contact info | |
 | 3.5 | Review equipment requests | `node_cic` | See specific equipment + hours requested | |
 | 3.6 | Review scientific content | `node_cic` | Read methodology to assess technical feasibility | |
@@ -266,8 +266,8 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 | 3.8 | Add feasibility comments | `node_cic` | Optional text: technical recommendations, concerns | |
 | 3.9 | Submit feasibility review | `node_cic` | Click "Submit Review" | |
 | 3.10 | Verify application status updated | System | App status → `pending_evaluation` | |
-| 3.11 | Verify applicant notified | System | Applicant receives feasibility result email | |
-| 3.12 | Check coordinator notification | System | Coordinator notified of feasibility completion | |
+| 3.11 | Verify applicant notified | System | Applicant receives feasibility result email | i am not sending email right now so I cannot confirm this, need to double check when emails are activated |
+| 3.12 | Check coordinator notification | System | Coordinator notified of feasibility completion | i am not sending email right now so I cannot confirm this, need to double check when emails are activated |
 
 **Feasibility Rejection Test**
 

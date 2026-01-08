@@ -323,13 +323,20 @@ def application_submit(request, pk):
         nodes.add(access_request.equipment.node)
 
     for node in nodes:
-        # Get node coordinator (director)
-        coordinator = node.director
-        if coordinator:
+        # Get node coordinators via UserRole
+        node_coordinators = UserRole.objects.filter(
+            node=node,
+            role='node_coordinator',
+            is_active=True
+        ).select_related('user')
+
+        # Create a feasibility review for each coordinator
+        # (typically one per node, but handle multiple if needed)
+        for user_role in node_coordinators:
             FeasibilityReview.objects.create(
                 application=application,
                 node=node,
-                reviewer=coordinator
+                reviewer=user_role.user
             )
 
     # Update application status
@@ -395,14 +402,20 @@ def feasibility_queue(request):
     Node coordinator's queue of pending feasibility reviews.
 
     Shows all applications requiring feasibility review for nodes
-    where the current user is the director.
+    where the current user is a node coordinator (via UserRole).
     """
-    # Get nodes where user is director
-    user_nodes = request.user.directed_nodes.all()
+    from core.models import UserRole
+
+    # Get nodes where user is coordinator (via UserRole)
+    my_nodes = UserRole.objects.filter(
+        user=request.user,
+        role='node_coordinator',
+        is_active=True
+    ).values_list('node_id', flat=True)
 
     # Get pending reviews for these nodes
     pending_reviews = FeasibilityReview.objects.filter(
-        node__in=user_nodes,
+        node_id__in=my_nodes,
         is_feasible__isnull=True  # Pending = not yet decided
     ).select_related(
         'application__applicant',
@@ -412,7 +425,7 @@ def feasibility_queue(request):
 
     context = {
         'pending_reviews': pending_reviews,
-        'user_nodes': user_nodes,
+        'user_nodes': my_nodes,
     }
     return render(request, 'applications/feasibility_queue.html', context)
 
