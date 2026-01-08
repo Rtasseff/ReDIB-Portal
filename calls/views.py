@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from core.decorators import coordinator_required
 from .models import Call, CallEquipmentAllocation
 from .forms import CallForm, CallEquipmentFormSet, get_equipment_formset_for_create
@@ -70,9 +70,10 @@ def coordinator_dashboard(request):
     Coordinator dashboard for managing calls.
 
     Shows all calls with application counts and status.
+    Only counts submitted applications (excludes drafts).
     """
     calls = Call.objects.all().annotate(
-        application_count=Count('applications')
+        application_count=Count('applications', filter=~Q(applications__status='draft'))
     ).order_by('-created_at')
 
     context = {

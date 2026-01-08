@@ -304,12 +304,12 @@ Per REDIB-02-PDA section 6.1.2: *"Applications received will be assessed first b
 | 3.31 | Verify applicant notified | System | Email explains CNIC rejection reason | |
 
 **Validations:**
-- ☐ Node coordinator only sees applications requesting their equipment
-- ☐ Application details visible to node (NOT blind review)
-- ☐ Single-node application: one approval moves to pending_evaluation
+- [x] Node coordinator only sees applications requesting their equipment
+- [x] Application details visible to node (NOT blind review)
+- [x] Single-node application: one approval moves to pending_evaluation
 - ☐ Multi-node application: ALL nodes must approve
 - ☐ Multi-node application: ONE rejection rejects entire application
-- ☐ Rejection requires reason/comments
+- [x] Rejection requires reason/comments
 
 **PAUSE POINT → Feasibility review validated**
 
