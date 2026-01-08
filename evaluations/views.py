@@ -134,7 +134,7 @@ def evaluation_detail(request, pk):
 
 
 @login_required
-@role_required(['coordinator', 'admin'])
+@role_required('coordinator', 'admin')
 def assignment_dashboard(request):
     """
     Coordinator dashboard for managing evaluator assignments.
@@ -161,7 +161,7 @@ def assignment_dashboard(request):
 
 
 @login_required
-@role_required(['coordinator', 'admin'])
+@role_required('coordinator', 'admin')
 def call_assignment_detail(request, call_id):
     """
     Detailed view of evaluator assignments for a specific call.
@@ -202,7 +202,7 @@ def call_assignment_detail(request, call_id):
 
 
 @login_required
-@role_required(['coordinator', 'admin'])
+@role_required('coordinator', 'admin')
 def auto_assign_call(request, call_id):
     """
     Automatically assign evaluators to all pending applications in a call.
@@ -236,7 +236,7 @@ def auto_assign_call(request, call_id):
 
 
 @login_required
-@role_required(['coordinator', 'admin'])
+@role_required('coordinator', 'admin')
 def manual_assign_evaluator(request, application_id):
     """
     Manually assign a specific evaluator to an application.
@@ -298,7 +298,7 @@ def manual_assign_evaluator(request, application_id):
 
 
 @login_required
-@role_required(['coordinator', 'admin'])
+@role_required('coordinator', 'admin')
 def remove_evaluator_assignment(request, evaluation_id):
     """
     Remove an evaluator assignment (only if not yet completed).

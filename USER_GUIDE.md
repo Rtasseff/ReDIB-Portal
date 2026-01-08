@@ -65,7 +65,7 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - Email notification templates are set up
 
 ### Phase 1: Call Management
-**Who:** ReDIB Coordinators
+**Who:** Coordinators
 - Coordinators create and publish calls for applications
 - Each call specifies submission deadlines, evaluation deadlines, and available equipment
 - Published calls become visible to all users on the public call listing
@@ -89,7 +89,7 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - Applicants are notified of feasibility decisions
 
 ### Phase 4: Evaluator Assignment
-**Who:** ReDIB Coordinators
+**Who:** Coordinators
 - After the submission deadline, coordinators assign evaluators to applications
 - The system automatically suggests evaluators while avoiding conflicts of interest
 - Each application typically receives 2 evaluators
@@ -111,7 +111,7 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - The system calculates final scores by averaging all evaluators' scores
 
 ### Phase 6: Resolution and Prioritization
-**Who:** ReDIB Coordinators
+**Who:** Coordinators
 - Coordinators review evaluated applications and make final decisions
 - Applications are prioritized by score (highest first)
 - Three possible outcomes:
@@ -143,7 +143,7 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - Reporting publications helps demonstrate ReDIB's research impact
 
 ### Phase 10: Reporting and Statistics
-**Who:** ReDIB Coordinators
+**Who:** Coordinators
 - Coordinators can view comprehensive statistics and generate reports
 - Reports include:
   - Call summary reports (Excel workbooks with 3 sheets)
@@ -185,6 +185,8 @@ The portal uses a **role-based access system** to control what each user can see
 **Important:** Users can have multiple roles. For example, you might be both an Applicant and an Evaluator.
 
 ### 1. Applicant
+
+**Role identifier:** `applicant`
 
 **Who you are:** A researcher applying for access to imaging equipment.
 
@@ -232,6 +234,8 @@ The portal uses a **role-based access system** to control what each user can see
 
 ### 2. Node Coordinator
 
+**Role identifier:** `node_coordinator`
+
 **Who you are:** A staff member at one of the ReDIB nodes responsible for reviewing technical feasibility and coordinating equipment access.
 
 #### What you see in the portal
@@ -277,6 +281,8 @@ The portal uses a **role-based access system** to control what each user can see
 
 ### 3. Evaluator
 
+**Role identifier:** `evaluator`
+
 **Who you are:** An expert reviewer who assesses the scientific merit of applications.
 
 #### What you see in the portal
@@ -317,7 +323,9 @@ The portal uses a **role-based access system** to control what each user can see
 
 ---
 
-### 4. ReDIB Coordinator
+### 4. Coordinator (ReDIB Coordinator)
+
+**Role identifier:** `coordinator`
 
 **Who you are:** A ReDIB staff member with administrative authority to manage calls, assign evaluators, and make final decisions.
 
@@ -360,17 +368,19 @@ The portal uses a **role-based access system** to control what each user can see
 - **Applicant declination** when accepted applicants decline access
 - **Publication submission** when applicants report research outcomes
 
-**Special authority:** ReDIB Coordinators are the **only users who can create calls**. This ensures centralized control over the COA process.
+**Special authority:** Coordinators are the **only users who can create calls**. This ensures centralized control over the COA process.
 
 ---
 
 ### 5. Administrator (Admin)
 
+**Role identifier:** `admin`
+
 **Who you are:** A system administrator with elevated privileges for configuration and user management.
 
 #### What you see in the portal
 
-- **Dashboard:** Same as ReDIB Coordinator, plus:
+- **Dashboard:** Same as Coordinator, plus:
   - "Admin Panel" link in the sidebar (access to Django admin interface)
 
 - **Sidebar Navigation:**
@@ -379,7 +389,7 @@ The portal uses a **role-based access system** to control what each user can see
 
 #### What you can do
 
-Everything a ReDIB Coordinator can do, plus:
+Everything a Coordinator can do, plus:
 - Access the Django admin interface for system configuration
 - Create and manage user accounts
 - Assign roles to users
@@ -518,14 +528,14 @@ This section provides step-by-step instructions for using the portal. Each subse
 
 ---
 
-### Phase 1: Creating and Managing Calls (For ReDIB Coordinators)
+### Phase 1: Creating and Managing Calls (For Coordinators)
 
 This phase guides you through creating, publishing, and managing calls for Competitive Open Access applications.
 
 #### Prerequisites
 
 Before starting:
-- You must have the **ReDIB Coordinator** or **Admin** role
+- You must have the **Coordinator** or **Admin** role
 - You must have your login credentials
 - Equipment and nodes should be configured in the system (Phase 0)
 
@@ -808,7 +818,7 @@ For details on subsequent phases, see the workflow overview in the "Understandin
 ### Common questions
 
 **Q: I can't see the call management section. Why?**
-A: Only users with the ReDIB Coordinator or Admin role can create and manage calls. Contact your administrator if you need this access.
+A: Only users with the Coordinator or Admin role can create and manage calls. Contact your administrator if you need this access.
 
 **Q: Can I change my role?**
 A: No, roles are assigned by administrators. If you need a different or additional role, contact your ReDIB administrator.
