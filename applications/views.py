@@ -33,12 +33,22 @@ def my_applications(request):
 
 @login_required
 def application_detail(request, pk):
-    """View application details (applicant view)"""
-    application = get_object_or_404(
-        Application,
-        pk=pk,
-        applicant=request.user
-    )
+    """View application details (applicant or coordinator view)"""
+    # Check if user is coordinator/superuser or the applicant
+    user = request.user
+    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
+    is_coordinator = 'coordinator' in user_roles or user.is_superuser
+
+    if is_coordinator:
+        # Coordinators can view any application
+        application = get_object_or_404(Application, pk=pk)
+    else:
+        # Regular users can only view their own applications
+        application = get_object_or_404(
+            Application,
+            pk=pk,
+            applicant=request.user
+        )
 
     requested_access = application.requested_access.select_related(
         'equipment__node'
