@@ -330,16 +330,16 @@ Per REDIB-03-PDC section 2.2: *"The Access Committee will have a maximum of fift
 | 4.4 | Navigate to call detail | `coordinator` | See COA-TEST-2026-01 | |
 | 4.5 | View applications ready for evaluation | `coordinator` | List of applications with status=`pending_evaluation` | |
 | 4.6 | Click "Assign Evaluators" | `coordinator` | Open evaluator assignment interface | |
-| 4.7 | View evaluator pool | `coordinator` | See available evaluators with their areas | |
+| 4.7 | View evaluator pool | `coordinator` | See available evaluators with their areas | I did not see this option, I dont think from this view you can just see a list of evaluators, no big deal, ignore it and move on. |
 | 4.8 | Trigger automatic assignment | `coordinator` | Click "Auto-assign 2 evaluators per application" | |
 | 4.9 | Verify assignment considers COI | System | No evaluator assigned from same org as applicant | |
 | 4.10 | Verify area matching (best effort) | System | Preclinical apps → preclinical evaluators preferred | |
 | 4.11 | Verify balanced distribution | System | Evaluators assigned evenly across pool | |
-| 4.12 | View assignment summary | `coordinator` | Table showing: App | Evaluator 1 | Evaluator 2 | |
+| 4.12 | View assignment summary | `coordinator` | Table showing: App - Evaluator 1 - Evaluator 2 | I did not see this table, I saw a list of applicaitons with a sub list of evaluators under each applicaiton, whtat was good enough, just move on |
 | 4.13 | Verify application status updated | System | Applications status → `under_evaluation` | |
 | 4.14 | Verify evaluation records created | System | 2 Evaluation objects per application (incomplete) | |
-| 4.15 | Verify evaluator notifications | System | Each evaluator receives assignment email | |
-| 4.16 | Check evaluator email content | Evaluator | Email contains application codes, deadline, portal link | |
+| 4.15 | Verify evaluator notifications | System | Each evaluator receives assignment email | not doing email right now, will have to return later and check |
+| 4.16 | Check evaluator email content | Evaluator | Email contains application codes, deadline, portal link | not doing email right now, will need to come back and check later |
 
 **Manual Assignment Override (if needed)**
 
