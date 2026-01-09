@@ -163,7 +163,7 @@
                         <td>{{ eval.assigned_at|date:"M d, Y" }}</td>
                         <td>{{ eval.application.call.evaluation_deadline|date:"M d, Y" }}</td>
                         <td>
-                            <a href="{% url 'evaluations:evaluate' eval.pk %}" class="btn btn-sm btn-info">Evaluate</a>
+                            <a href="{% url 'evaluations:evaluation_detail' eval.pk %}" class="btn btn-sm btn-info">Evaluate</a>
                         </td>
                     </tr>
                     {% endfor %}

@@ -65,7 +65,7 @@
                     <div class="mt-3">
                         <h6>Requested Equipment:</h6>
                         <ul>
-                        {% for access in application.requested_equipment %}
+                        {% for access in application.requested_access %}
                             <li>{{ access.equipment.name }} ({{ access.equipment.node.code }}) - {{ access.hours_requested }} hours</li>
                         {% empty %}
                             <li>No equipment requests specified</li>
