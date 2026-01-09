@@ -99,14 +99,8 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
         is_active=True
     ).select_related('user', 'user__organization')
 
-    # Optionally filter by area matching
-    if hasattr(application, 'specialization_area') and application.specialization_area:
-        area_evaluators = evaluator_roles.filter(area=application.specialization_area)
-        if area_evaluators.exists():
-            evaluator_roles = area_evaluators
-
-    # Get user objects
-    available_evaluators = [role.user for role in evaluator_roles]
+    # Get all user objects
+    all_evaluators = [role.user for role in evaluator_roles]
 
     # Track exclusion reasons for logging
     excluded = []
@@ -116,12 +110,15 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
         application=application
     ).values_list('evaluator_id', flat=True))
 
-    # Remove evaluators with conflict of interest
-    # (same organization as applicant)
+    # Remove evaluators with conflict of interest (same organization as applicant)
     applicant_org_id = application.applicant.organization_id if application.applicant.organization else None
 
-    filtered_evaluators = []
-    for evaluator in available_evaluators:
+    # Build filtered list, separating by area match preference
+    area_matched_evaluators = []
+    other_evaluators = []
+
+    for evaluator in all_evaluators:
+        # Skip if already assigned
         if evaluator.id in existing_evaluator_ids:
             excluded.append({
                 'evaluator_id': evaluator.id,
@@ -130,6 +127,7 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             })
             continue
 
+        # Skip if conflict of interest
         if applicant_org_id and evaluator.organization_id == applicant_org_id:
             excluded.append({
                 'evaluator_id': evaluator.id,
@@ -139,10 +137,20 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             })
             continue
 
-        filtered_evaluators.append(evaluator)
+        # Check if evaluator's area matches application's specialization
+        evaluator_role = evaluator_roles.filter(user=evaluator).first()
+        if (hasattr(application, 'specialization_area') and
+            application.specialization_area and
+            evaluator_role and
+            evaluator_role.area == application.specialization_area):
+            area_matched_evaluators.append(evaluator)
+        else:
+            other_evaluators.append(evaluator)
 
-    # Randomly select evaluators
-    num_to_assign = min(num_evaluators, len(filtered_evaluators))
+    # Prefer area-matched evaluators, but fall back to others if needed
+    # This implements "best effort" area matching rather than hard requirement
+    total_available = len(area_matched_evaluators) + len(other_evaluators)
+    num_to_assign = min(num_evaluators, total_available)
 
     if num_to_assign == 0:
         return {
@@ -151,7 +159,19 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             'error': 'No eligible evaluators available'
         }
 
-    selected_evaluators = random.sample(filtered_evaluators, num_to_assign)
+    # Select area-matched evaluators first (randomly from that pool)
+    selected_evaluators = []
+    remaining_needed = num_to_assign
+
+    if area_matched_evaluators:
+        num_from_matched = min(remaining_needed, len(area_matched_evaluators))
+        selected_evaluators.extend(random.sample(area_matched_evaluators, num_from_matched))
+        remaining_needed -= num_from_matched
+
+    # If we still need more evaluators, select from other evaluators
+    if remaining_needed > 0 and other_evaluators:
+        num_from_others = min(remaining_needed, len(other_evaluators))
+        selected_evaluators.extend(random.sample(other_evaluators, num_from_others))
 
     # Create evaluation records
     assigned_ids = []
