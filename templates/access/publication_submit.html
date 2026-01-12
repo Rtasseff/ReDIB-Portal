@@ -1,0 +1,176 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Submit Publication - ReDIB COA Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-plus-circle"></i> Submit Publication</h1>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Acknowledgment Requirement:</strong> Per ReDIB access agreement, publications must acknowledge ReDIB support.
+    <br><br>
+    <strong>Required acknowledgment text:</strong>
+    <blockquote class="mb-0 mt-2 border-start border-primary border-3 ps-3">
+        "This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU) at [NODE NAME]."
+    </blockquote>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Publication Information</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.application.id_for_label }}" class="form-label">
+                    {{ form.application.label }}
+                    <span class="text-danger">*</span>
+                </label>
+                {{ form.application }}
+                {% if form.application.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.application.errors }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Select the ReDIB application that led to this publication.
+                </small>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label">
+                    {{ form.title.label }}
+                    <span class="text-danger">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.title.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.authors.id_for_label }}" class="form-label">
+                    {{ form.authors.label }}
+                </label>
+                {{ form.authors }}
+                {% if form.authors.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.authors.errors }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Full list of authors as they appear in the publication.
+                </small>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.journal.id_for_label }}" class="form-label">
+                        {{ form.journal.label }}
+                    </label>
+                    {{ form.journal }}
+                    {% if form.journal.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.journal.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.doi.id_for_label }}" class="form-label">
+                        {{ form.doi.label }}
+                    </label>
+                    {{ form.doi }}
+                    {% if form.doi.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.doi.errors }}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        e.g., 10.1234/example
+                    </small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.publication_date.id_for_label }}" class="form-label">
+                    {{ form.publication_date.label }}
+                </label>
+                {{ form.publication_date }}
+                {% if form.publication_date.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.publication_date.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="mb-3">ReDIB Acknowledgment</h6>
+
+            <div class="mb-3 form-check">
+                {{ form.redib_acknowledged }}
+                <label class="form-check-label" for="{{ form.redib_acknowledged.id_for_label }}">
+                    {{ form.redib_acknowledged.label }}
+                    <span class="text-danger">*</span>
+                </label>
+                {% if form.redib_acknowledged.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.redib_acknowledged.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {{ form.redib_acknowledged.help_text }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.acknowledgment_text.id_for_label }}" class="form-label">
+                    {{ form.acknowledgment_text.label }}
+                </label>
+                {{ form.acknowledgment_text }}
+                {% if form.acknowledgment_text.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.acknowledgment_text.errors }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                    {{ form.acknowledgment_text.help_text }}
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'access:publication_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle"></i> Submit Publication
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="card border-warning">
+        <div class="card-body">
+            <h6 class="card-title"><i class="bi bi-info-circle text-warning"></i> Important Notes</h6>
+            <ul class="mb-0">
+                <li>Reporting publications is required per ReDIB access agreement</li>
+                <li>Publications help demonstrate the scientific impact of the infrastructure</li>
+                <li>Proper acknowledgment ensures continued funding for ReDIB</li>
+                <li>You will receive reminder emails if publications have not been reported</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}My Publications - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_publications_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-journal-text"></i> My Publications</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'access:publication_submit' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Submit Publication
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Please report any publications resulting from your ReDIB access. This helps demonstrate the impact of the infrastructure and is required per the access agreement.
+</div>
+
+{% if publications %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Reported Publications ({{ publications|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Journal/Conference</th>
+                        <th>Publication Date</th>
+                        <th>Application</th>
+                        <th>ReDIB Acknowledged</th>
+                        <th>Reported</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pub in publications %}
+                    <tr>
+                        <td>
+                            <strong>{{ pub.title }}</strong>
+                            {% if pub.doi %}
+                            <br><small class="text-muted">DOI: {{ pub.doi }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ pub.journal|default:"—" }}</td>
+                        <td>
+                            {% if pub.publication_date %}
+                                {{ pub.publication_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'applications:detail' pub.application.pk %}">
+                                {{ pub.application.code }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if pub.redib_acknowledged %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Yes
+                                </span>
+                                {% if pub.acknowledgment_text %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary ms-1"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#ack-{{ pub.id }}">
+                                    <i class="bi bi-eye"></i> View Text
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> No
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ pub.reported_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% if pub.acknowledgment_text %}
+                    <tr class="collapse" id="ack-{{ pub.id }}">
+                        <td colspan="6">
+                            <div class="p-3 bg-light">
+                                <h6>Acknowledgment Text:</h6>
+                                <blockquote class="mb-0">{{ pub.acknowledgment_text }}</blockquote>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-secondary">
+    <h5><i class="bi bi-journal"></i> No Publications Reported</h5>
+    <p class="mb-3">You haven't reported any publications yet. Once you publish research results from your ReDIB access, please submit them here.</p>
+    <a href="{% url 'access:publication_submit' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Submit Your First Publication
+    </a>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <h6>Acknowledgment Requirement</h6>
+    <p class="text-muted">
+        All publications resulting from ReDIB access must include the following acknowledgment:
+    </p>
+    <blockquote class="border-start border-primary border-3 ps-3 text-muted">
+        "This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU) at [NODE NAME]."
+    </blockquote>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

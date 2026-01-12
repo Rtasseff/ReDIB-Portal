@@ -22,6 +22,9 @@
                     <a href="{% url 'access:applicant_handoff' %}" class="list-group-item list-group-item-action {% block sidebar_handoff_active %}{% endblock %}">
                         <i class="bi bi-clipboard-check"></i> My Active Access
                     </a>
+                    <a href="{% url 'access:publication_list' %}" class="list-group-item list-group-item-action {% block sidebar_publications_active %}{% endblock %}">
+                        <i class="bi bi-journal-text"></i> Publications
+                    </a>
                     <a href="{% url 'calls:public_list' %}" class="list-group-item list-group-item-action {% block sidebar_public_calls_active %}{% endblock %}">
                         <i class="bi bi-megaphone"></i> Open Calls
                     </a>
