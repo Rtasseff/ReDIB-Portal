@@ -40,7 +40,8 @@ Use full path for Python commands when venv not activated:
 ```
 
 ### Database Management
-- **Development:** Uses Docker Compose for PostgreSQL and Redis
+- **Development (NOW):** virtual enviornment and mySQL
+- **Production (LATER):** Uses Docker Compose for PostgreSQL and Redis
 - **Migrations:** Always run `makemigrations` before `migrate`
 - **Fixtures:** Use CSV-based data loading commands (see below)
 
@@ -66,13 +67,15 @@ python manage.py populate_redib_users [--sync] [--csv path/to/file.csv]
   ```bash
   python manage.py seed_email_templates
   ```
+- In development, do not use celery but do manage email templates as if active.
 
 ## Testing Guidelines
 
 ### Test Structure
-- **Location:** `/tests/` directory
+- **Location:** `/tests/` primary directory
 - **Total:** 29 automated integration tests
-- **Coverage:** All 10 phases of the COA workflow
+- **Coverage:** First 9 phases of the COA workflow
+- **Phase 10: Reporting & Statistics** Test Suite: reports.tests
 
 ### Running Tests
 ```bash
