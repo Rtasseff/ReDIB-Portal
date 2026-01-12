@@ -17,15 +17,15 @@
         {% if applications %}
         <p class="text-muted">These applications have been accepted by applicants and require scheduling for equipment access.</p>
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Application Code</th>
+                        <th>Application</th>
                         <th>Applicant</th>
-                        <th>Call</th>
-                        <th>Contact Email</th>
-                        <th>Contact Phone</th>
+                        <th>Project</th>
+                        <th>Contact Info</th>
                         <th>Accepted Date</th>
+                        <th>Equipment & Hours</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -33,13 +33,61 @@
                     {% for app in applications %}
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
-                        <td>{{ app.applicant.get_full_name }}</td>
-                        <td>{{ app.call.code }}</td>
-                        <td><a href="mailto:{{ app.applicant_email }}">{{ app.applicant_email }}</a></td>
-                        <td>{{ app.applicant_phone|default:"—" }}</td>
+                        <td>
+                            {{ app.applicant.get_full_name }}<br>
+                            <small class="text-muted">{{ app.applicant_entity }}</small>
+                        </td>
+                        <td>{{ app.project_title|truncatewords:8 }}</td>
+                        <td>
+                            <a href="mailto:{{ app.applicant_email }}">{{ app.applicant_email }}</a><br>
+                            <small class="text-muted">{{ app.applicant_phone|default:"No phone" }}</small>
+                        </td>
                         <td>{{ app.accepted_at|date:"M d, Y" }}</td>
                         <td>
-                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#hours-{{ app.id }}">
+                                <i class="bi bi-clock"></i> View Hours
+                            </button>
+                        </td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    <!-- Equipment and Hours Details (Collapsible) -->
+                    <tr class="collapse" id="hours-{{ app.id }}">
+                        <td colspan="7">
+                            <div class="p-3 bg-light">
+                                <h6>Equipment and Hours:</h6>
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Node</th>
+                                            <th>Equipment</th>
+                                            <th>Requested Hours</th>
+                                            <th>Approved Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for access in app.requested_access.all %}
+                                        <tr>
+                                            <td>{{ access.equipment.node.code }}</td>
+                                            <td>{{ access.equipment.name }}</td>
+                                            <td>{{ access.hours_requested }}</td>
+                                            <td>
+                                                {% if access.hours_approved %}
+                                                    <span class="badge bg-success">{{ access.hours_approved }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">{{ access.hours_requested }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

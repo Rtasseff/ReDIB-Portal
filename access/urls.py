@@ -7,9 +7,11 @@ from . import views
 app_name = 'access'
 
 urlpatterns = [
-    # Phase 8: Access scheduling and tracking (node coordinator views)
+    # Phase 7/8: Access handoff and scheduling
     path('scheduling/', views.node_scheduling, name='node_scheduling'),
     path('tracking/', views.access_tracking, name='access_tracking'),
+    path('handoff/', views.applicant_handoff_dashboard, name='applicant_handoff'),
+    path('complete/<int:application_id>/', views.mark_application_complete, name='mark_complete'),
 
     # Phase 9: Publication tracking
     path('publications/', views.publication_list, name='publication_list'),

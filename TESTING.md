@@ -587,61 +587,109 @@ Per REDIB-01-RCA 6.1: *"Proposals that are part of R&D&I projects financed by a 
 ---
 
 ### Phase 7: Acceptance & Handoff
-**Views needed:** Applicant acceptance view, Acceptance tracking
+**Views needed:** Applicant acceptance view, Applicant handoff dashboard, Node scheduling, Access tracking, Mark complete form
 
 Per REDIB-02-PDA section 6.1.6: *"Applicants have a period of ten (10) days from the publication of the resolution to accept or reject in writing the access granted"*
 
 **Acceptance tracked directly on Application model** (AccessGrant model deprecated)
 
+**Hours Tracking: Three-Tier System**
+- hours_requested: Original hours requested by applicant
+- hours_approved: Hours approved/granted after resolution
+- actual_hours_used: Actual hours used (reported on completion)
+
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
 | 7.1 | Login as applicant | `applicant1` | Redirect to applicant dashboard | |
-| 7.2 | View resolution notification | `applicant1` | Dashboard shows "Decision Available" | |
-| 7.3 | View accepted application detail | `applicant1` | See resolution=`accepted`, hours granted, equipment | |
-| 7.4 | See acceptance deadline | `applicant1` | Banner: "Respond by YYYY-MM-DD (X days remaining)" | |
-| 7.5 | View equipment details | `applicant1` | Node, equipment name, hours requested/granted | |
-| 7.6 | Click "Accept Access" | `applicant1` | Confirmation dialog | |
-| 7.7 | Confirm acceptance | `applicant1` | Click "Yes, I accept" | |
-| 7.8 | Verify acceptance recorded | System | Application.accepted_by_applicant = True | |
-| 7.9 | Verify acceptance timestamp | System | Application.accepted_at = now | |
-| 7.10 | Verify handoff email sent | System | Email sent to applicant + node coordinators | |
-| 7.11 | Check handoff email content | Applicant | Contains: next steps, node contact, scheduling instructions | |
-| 7.12 | Verify dashboard updated | `applicant1` | Status shows "Accepted - Pending Scheduling" | |
+| 7.2 | View resolution notification | `applicant1` | Dashboard shows "Accept/Decline" button for accepted app | |
+| 7.3 | Click Accept/Decline button | `applicant1` | Navigate to acceptance form | |
+| 7.4 | View application details | `applicant1` | See resolution=`accepted`, application code, project title | |
+| 7.5 | See acceptance deadline | `applicant1` | Banner: "Respond by YYYY-MM-DD (X days remaining)" | |
+| 7.6 | View approved equipment | `applicant1` | Table showing Node, Equipment, Hours Approved | |
+| 7.7 | Verify hours_approved displayed | `applicant1` | See approved hours (same as requested for Phase 7) | |
+| 7.8 | Click "Accept Access" | `applicant1` | Form submission | |
+| 7.9 | Verify acceptance recorded | System | Application.accepted_by_applicant = True | |
+| 7.10 | Verify acceptance timestamp | System | Application.accepted_at = now | |
+| 7.11 | Verify handoff email sent | System | Email sent to applicant + node coordinators | |
+| 7.12 | Check handoff email content | Applicant | Contains: next steps, node contact, scheduling instructions | |
+| 7.13 | Navigate to "My Active Access" | `applicant1` | Click sidebar link | |
+| 7.14 | View active projects | `applicant1` | See accepted application listed | |
+| 7.15 | View equipment details | `applicant1` | Collapsible section shows requested/approved hours | |
+| 7.16 | Verify dashboard updated | `applicant1` | Status shows "Accepted & In Progress" | |
+
+**Node Coordinator Scheduling View**
+
+| Step | Action | User | Expected Result | Notes |
+|------|--------|------|-----------------|-------|
+| 7.17 | Login as node coordinator | `node_cic` | View node coordinator dashboard | |
+| 7.18 | Navigate to "Scheduling" | `node_cic` | Click sidebar link | |
+| 7.19 | View accepted applications | `node_cic` | See apps with accepted_by_applicant=True | |
+| 7.20 | View applicant contact info | `node_cic` | See name, entity, email, phone | |
+| 7.21 | View equipment hours | `node_cic` | Collapsible section showing requested/approved hours | |
+| 7.22 | Verify hours displayed | `node_cic` | See both requested and approved hours | |
+| 7.23 | Contact applicant externally | `node_cic` | Use email/phone to schedule | |
+
+**Access Tracking View**
+
+| Step | Action | User | Expected Result | Notes |
+|------|--------|------|-----------------|-------|
+| 7.24 | Navigate to "Access Tracking" | `node_cic` | Click sidebar link | |
+| 7.25 | View all applications | `node_cic` | See all apps involving node's equipment | |
+| 7.26 | View hours breakdown | `node_cic` | Collapsible table: Equipment, Requested, Approved, Actual Used | |
+| 7.27 | Verify three-tier hours | `node_cic` | See requested, approved, and actual (if completed) | |
+| 7.28 | View completion status | `node_cic` | See which apps are completed vs in progress | |
+
+**Mark Application Complete**
+
+| Step | Action | User | Expected Result | Notes |
+|------|--------|------|-----------------|-------|
+| 7.29 | Click "Mark Complete" | `node_cic` OR `applicant1` | Navigate to completion form | |
+| 7.30 | View application details | User | See app code, project title, applicant | |
+| 7.31 | View equipment list | User | Table showing Node, Equipment, Requested, Approved | |
+| 7.32 | Enter actual hours used | User | Input fields for each equipment | |
+| 7.33 | Verify validation | User | All hours fields required | |
+| 7.34 | Submit completion | User | Click "Mark Application Complete" | |
+| 7.35 | Verify completion recorded | System | Application.is_completed = True | |
+| 7.36 | Verify completion timestamp | System | Application.completed_at = now | |
+| 7.37 | Verify actual hours saved | System | Each RequestedAccess has actual_hours_used | |
+| 7.38 | View completed application | User | Status shows "Completed" with date | |
+| 7.39 | Verify cannot complete again | System | "Already marked as complete" warning | |
 
 **Applicant Rejection Test**
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
-| 7.13 | Create second accepted app (App-Y) | `applicant2` | Application accepted by coordinator | |
-| 7.14 | Login as applicant | `applicant2` | View acceptance notification | |
-| 7.15 | Click "Decline Access" | `applicant2` | Confirmation dialog | |
-| 7.16 | Confirm decline | `applicant2` | Click "Yes, I decline" | |
-| 7.17 | Verify decline recorded | System | Application.accepted_by_applicant = False | |
-| 7.18 | Verify decline timestamp | System | Application.accepted_at = now | |
-| 7.19 | Verify notification sent | System | Coordinator notified of applicant decline | |
-| 7.20 | Verify hours released | System | Equipment total_approved_hours decreases | |
-| 7.21 | Verify dashboard updated | `applicant2` | Status shows "Declined by Applicant" | |
+| 7.40 | Create second accepted app (App-Y) | `applicant2` | Application accepted by coordinator | |
+| 7.41 | Login as applicant | `applicant2` | View acceptance notification | |
+| 7.42 | Click "Decline Access" | `applicant2` | Form submission with optional reason | |
+| 7.43 | Confirm decline | `applicant2` | Provide decline reason (optional) | |
+| 7.44 | Verify decline recorded | System | Application.status = 'declined_by_applicant' | |
+| 7.45 | Verify decline timestamp | System | Application.accepted_at = now | |
+| 7.46 | Verify accepted_by_applicant | System | Application.accepted_by_applicant = False | |
+| 7.47 | Verify notification sent | System | Coordinator notified of applicant decline | |
+| 7.48 | Verify dashboard updated | `applicant2` | Status shows "Declined by Applicant" | |
 
 **Deadline Enforcement**
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
-| 7.22 | Check acceptance deadline | System | acceptance_deadline = resolution_date + 10 days | |
-| 7.23 | Test 7-day reminder | System | At day 7, reminder email sent to applicant | |
-| 7.24 | Test deadline passed | System | After 10 days, if no response: auto-decline | |
-| 7.25 | Verify auto-decline | System | Application.accepted_by_applicant = False | |
-| 7.26 | Verify auto-decline email | System | Applicant notified of auto-decline due to deadline | |
-| 7.27 | Cannot accept after deadline | `applicant1` | "Accept" button disabled, message shown | |
+| 7.49 | Check acceptance deadline | System | acceptance_deadline = resolution_date + 10 days | |
+| 7.50 | Test 7-day reminder | System | At day 7, reminder email sent to applicant | |
+| 7.51 | Test deadline passed | System | After 10 days, if no response: auto-decline | |
+| 7.52 | Verify auto-decline | System | Application.accepted_by_applicant = False | |
+| 7.53 | Verify auto-decline email | System | Applicant notified of auto-decline due to deadline | |
+| 7.54 | Cannot accept after deadline | `applicant1` | "Accept" button disabled, message shown | |
 
-**Pending Applications Promotion**
+**Hours Tracking Validation**
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
-| 7.28 | Create accepted app (App-P1) | Setup | App-P1 accepted, uses 30 hours | |
-| 7.29 | Create pending app (App-P2) | Setup | App-P2 pending (next in priority) | |
-| 7.30 | Applicant declines App-P1 | `applicant1` | 30 hours released | |
-| 7.31 | Verify pending app promoted | System | App-P2 offered to applicant (if hours available) | |
-| 7.32 | Verify promotion notification | System | App-P2 applicant receives acceptance email | |
+| 7.55 | View hours in acceptance form | `applicant1` | See hours_approved (same as requested) | |
+| 7.56 | View hours in node scheduling | `node_cic` | See both requested and approved | |
+| 7.57 | View hours in access tracking | `node_cic` | See requested, approved, actual (3 columns) | |
+| 7.58 | Complete application | `applicant1` | Record actual_hours_used for each equipment | |
+| 7.59 | View completed hours | `node_cic` | All three hours values displayed | |
+| 7.60 | Verify hours persistence | System | All three hour fields saved correctly | |
 
 **Validations:**
 - ☐ Acceptance deadline = 10 days from resolution_date
@@ -651,9 +699,16 @@ Per REDIB-02-PDA section 6.1.6: *"Applicants have a period of ten (10) days from
 - ☐ 7-day reminder sent if no response
 - ☐ Auto-decline after 10 days if no response
 - ☐ Cannot accept/decline after deadline
-- ☐ Declined access releases hours for pending applications
+- ☐ **Three-tier hours tracking**: requested, approved, actual used
+- ☐ **hours_approved auto-populated** from hours_requested on acceptance
+- ☐ **Both applicant and node coordinator** can mark complete
+- ☐ **Actual hours required** when marking complete
+- ☐ **Hours visible** to ReDIB coordinator (all), node coordinators (their equipment), applicants (their apps)
+- ☐ Applicant handoff dashboard shows active and completed projects
+- ☐ Node scheduling shows accepted applications needing scheduling
+- ☐ Access tracking shows all applications with hours breakdown
 
-**PAUSE POINT → Acceptance workflow validated (10-day deadline)**
+**PAUSE POINT → Acceptance workflow validated (10-day deadline + hours tracking)**
 
 ---
 

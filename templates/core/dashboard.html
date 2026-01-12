@@ -73,6 +73,10 @@
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View</a>
                             {% if app.status == 'draft' %}
                             <a href="{% url 'applications:edit_step1' app.pk %}" class="btn btn-sm btn-outline-secondary">Continue</a>
+                            {% elif app.status == 'accepted' and app.accepted_by_applicant is None %}
+                            <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-circle"></i> Accept/Decline
+                            </a>
                             {% endif %}
                         </td>
                     </tr>

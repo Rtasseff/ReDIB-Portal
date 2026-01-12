@@ -384,7 +384,24 @@ class RequestedAccess(models.Model):
     hours_requested = models.DecimalField(
         max_digits=6,
         decimal_places=1,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(0)],
+        help_text='Hours requested by applicant'
+    )
+    hours_approved = models.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text='Hours approved/granted (same as requested for Phase 7 simplification)'
+    )
+    actual_hours_used = models.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text='Actual hours used (reported on completion)'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -399,6 +416,12 @@ class RequestedAccess(models.Model):
 
     def __str__(self):
         return f"{self.application.code} - {self.equipment.name}: {self.hours_requested}h"
+
+    def save(self, *args, **kwargs):
+        """Auto-populate hours_approved from hours_requested if accepted"""
+        if self.hours_approved is None and self.application.status == 'accepted':
+            self.hours_approved = self.hours_requested
+        super().save(*args, **kwargs)
 
 
 class FeasibilityReview(models.Model):

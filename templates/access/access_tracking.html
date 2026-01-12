@@ -6,25 +6,29 @@
 
 {% block dashboard_content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Access Tracking</h1>
+    <h1 class="h2"><i class="bi bi-clipboard-data"></i> Access Tracking</h1>
 </div>
 
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Track all applications involving your node's equipment, including hours requested, approved, and used.
+</div>
+
+{% if applications %}
 <div class="card">
-    <div class="card-header bg-info text-white">
-        <h5 class="mb-0"><i class="bi bi-activity"></i> All Applications for Your Node(s)</h5>
+    <div class="card-header">
+        <h5 class="mb-0">Applications ({{ applications|length }})</h5>
     </div>
-    <div class="card-body">
-        {% if applications %}
-        <p class="text-muted">Track all applications requesting equipment from your node(s).</p>
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover table-sm">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
                     <tr>
-                        <th>Application Code</th>
+                        <th>Application</th>
                         <th>Applicant</th>
-                        <th>Call</th>
                         <th>Status</th>
                         <th>Submitted</th>
+                        <th>Equipment & Hours</th>
                         <th>Completed</th>
                         <th>Actions</th>
                     </tr>
@@ -33,48 +37,112 @@
                     {% for app in applications %}
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
-                        <td>{{ app.applicant.get_full_name }}</td>
-                        <td>{{ app.call.code }}</td>
                         <td>
-                            {% if app.status == 'submitted' %}
-                            <span class="badge bg-info">Submitted</span>
-                            {% elif app.status == 'under_feasibility_review' %}
-                            <span class="badge bg-warning">Feasibility Review</span>
-                            {% elif app.status == 'pending_evaluation' %}
-                            <span class="badge bg-primary">Pending Evaluation</span>
-                            {% elif app.status == 'under_evaluation' %}
-                            <span class="badge bg-info">Under Evaluation</span>
-                            {% elif app.status == 'evaluated' %}
-                            <span class="badge bg-primary">Evaluated</span>
+                            {{ app.applicant.get_full_name }}<br>
+                            <small class="text-muted">{{ app.applicant_entity }}</small>
+                        </td>
+                        <td>
+                            {% if app.status == 'accepted' and app.accepted_by_applicant %}
+                                <span class="badge bg-success">Accepted</span>
                             {% elif app.status == 'accepted' %}
-                            <span class="badge bg-success">Accepted</span>
+                                <span class="badge bg-warning">Awaiting Acceptance</span>
                             {% elif app.status == 'rejected' %}
-                            <span class="badge bg-danger">Rejected</span>
+                                <span class="badge bg-danger">Rejected</span>
+                            {% elif app.status == 'declined_by_applicant' %}
+                                <span class="badge bg-secondary">Declined</span>
                             {% else %}
-                            <span class="badge bg-secondary">{{ app.get_status_display }}</span>
+                                <span class="badge bg-info">{{ app.get_status_display }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ app.submitted_at|date:"M d, Y"|default:"—" }}</td>
+                        <td>{{ app.submitted_at|date:"M d, Y" }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#hours-{{ app.id }}">
+                                <i class="bi bi-clock"></i> View Hours
+                            </button>
+                        </td>
                         <td>
                             {% if app.is_completed %}
-                            <span class="badge bg-success">Completed</span>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> {{ app.completed_at|date:"M d, Y" }}
+                                </span>
+                            {% elif app.accepted_by_applicant %}
+                                <span class="text-muted">In Progress</span>
                             {% else %}
-                            <span class="text-muted">—</span>
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            {% if app.accepted_by_applicant and not app.is_completed %}
+                                <a href="{% url 'access:mark_complete' app.id %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> Mark Complete
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Hours Details (Collapsible) -->
+                    <tr class="collapse" id="hours-{{ app.id }}">
+                        <td colspan="7">
+                            <div class="p-3 bg-light">
+                                <h6>Equipment Hours:</h6>
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Node</th>
+                                            <th>Equipment</th>
+                                            <th>Requested</th>
+                                            <th>Approved</th>
+                                            <th>Actual Used</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for access in app.requested_access.all %}
+                                        <tr>
+                                            <td>{{ access.equipment.node.code }}</td>
+                                            <td>{{ access.equipment.name }}</td>
+                                            <td>{{ access.hours_requested }}</td>
+                                            <td>
+                                                {% if access.hours_approved %}
+                                                    <span class="badge bg-success">{{ access.hours_approved }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if access.actual_hours_used %}
+                                                    <strong>{{ access.actual_hours_used }}</strong>
+                                                {% else %}
+                                                    <span class="text-muted">Not reported</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> No applications found for your node(s).
-        </div>
-        {% endif %}
     </div>
 </div>
+{% else %}
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> No Applications</h5>
+    <p class="mb-0">There are no applications involving your node's equipment.</p>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
 {% endblock %}

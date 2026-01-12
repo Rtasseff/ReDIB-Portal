@@ -106,6 +106,11 @@ class ResolutionService:
         # Update status based on resolution
         if resolution == 'accepted':
             application.status = 'accepted'
+            # Auto-populate hours_approved from hours_requested for accepted applications
+            for req_access in application.requested_access.all():
+                if req_access.hours_approved is None:
+                    req_access.hours_approved = req_access.hours_requested
+                    req_access.save()
         elif resolution == 'pending':
             application.status = 'pending'
         elif resolution == 'rejected':

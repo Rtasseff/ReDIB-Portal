@@ -1,0 +1,111 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Mark Application Complete - ReDIB COA Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-check-circle"></i> Mark Application Complete</h1>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Please record the actual hours used for each equipment. This information helps track resource utilization and plan future allocations.
+</div>
+
+<!-- Application Details -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Application Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Application Code:</strong> {{ application.code }}</p>
+                <p><strong>Project Title:</strong> {{ application.project_title }}</p>
+                <p><strong>Call:</strong> {{ application.call.code }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Applicant:</strong> {{ application.applicant.get_full_name }}</p>
+                <p><strong>Entity:</strong> {{ application.applicant_entity }}</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">Accepted & In Progress</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hours Recording Form -->
+<form method="post">
+    {% csrf_token %}
+
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Record Actual Hours Used</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Node</th>
+                            <th>Equipment</th>
+                            <th>Requested Hours</th>
+                            <th>Approved Hours</th>
+                            <th>Actual Hours Used <span class="text-danger">*</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for access in requested_access %}
+                        <tr>
+                            <td>
+                                <strong>{{ access.equipment.node.code }}</strong><br>
+                                <small class="text-muted">{{ access.equipment.node.name }}</small>
+                            </td>
+                            <td>{{ access.equipment.name }}</td>
+                            <td>{{ access.hours_requested }}</td>
+                            <td>
+                                {% if access.hours_approved %}
+                                    <span class="badge bg-success">{{ access.hours_approved }}</span>
+                                {% else %}
+                                    <span class="text-muted">{{ access.hours_requested }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="input-group" style="max-width: 200px;">
+                                    <input type="number"
+                                           class="form-control"
+                                           name="actual_hours_{{ access.id }}"
+                                           id="actual_hours_{{ access.id }}"
+                                           step="0.1"
+                                           min="0"
+                                           value="{{ access.actual_hours_used|default:'' }}"
+                                           required>
+                                    <span class="input-group-text">hrs</span>
+                                </div>
+                                <small class="text-muted">Enter actual hours used</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Note:</strong> Actual hours may differ from approved hours based on actual project needs.
+                Please be as accurate as possible for resource planning purposes.
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{% url 'applications:detail' application.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Are you sure you want to mark this application as complete? This action cannot be undone.');">
+            <i class="bi bi-check-circle"></i> Mark Application Complete
+        </button>
+    </div>
+</form>
+
+{% endblock %}

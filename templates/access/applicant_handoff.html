@@ -1,0 +1,187 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}My Accepted Access - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_handoff_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-clipboard-check"></i> My Accepted Access</h1>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    These are your accepted applications. Node coordinators will contact you to schedule equipment access.
+    Once your project is complete, you can mark it as complete and record the actual hours used.
+</div>
+
+<!-- Active Applications -->
+{% if applications %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Active Projects ({{ applications|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Project Title</th>
+                        <th>Call</th>
+                        <th>Accepted Date</th>
+                        <th>Equipment & Hours</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.project_title|truncatewords:10 }}</td>
+                        <td>{{ app.call.code }}</td>
+                        <td>
+                            {% if app.handoff_email_sent_at %}
+                                {{ app.handoff_email_sent_at|date:"M d, Y" }}
+                            {% else %}
+                                {{ app.resolved_at|date:"M d, Y" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#hours-{{ app.id }}">
+                                <i class="bi bi-clock"></i> View Equipment & Hours
+                            </button>
+                        </td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
+                            {% if not app.is_completed %}
+                                <a href="{% url 'access:mark_complete' app.id %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> Mark Complete
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Equipment and Hours Details (Collapsible) -->
+                    <tr class="collapse" id="hours-{{ app.id }}">
+                        <td colspan="6">
+                            <div class="p-3 bg-light">
+                                <h6>Equipment and Hours:</h6>
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Node</th>
+                                            <th>Equipment</th>
+                                            <th>Requested Hours</th>
+                                            <th>Approved Hours</th>
+                                            <th>Contact</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for access in app.requested_access.all %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ access.equipment.node.code }}</strong><br>
+                                                <small class="text-muted">{{ access.equipment.node.name }}</small>
+                                            </td>
+                                            <td>{{ access.equipment.name }}</td>
+                                            <td>{{ access.hours_requested }}</td>
+                                            <td>
+                                                {% if access.hours_approved %}
+                                                    <span class="badge bg-success">{{ access.hours_approved }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">{{ access.hours_requested }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {% if access.equipment.node.contact_name %}
+                                                        {{ access.equipment.node.contact_name }}<br>
+                                                        {{ access.equipment.node.contact_email }}
+                                                    {% else %}
+                                                        Contact via node coordinator
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+
+                                {% if app.handoff_email_sent_at %}
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <i class="bi bi-envelope-check"></i>
+                                    Handoff notification sent to node coordinators on {{ app.handoff_email_sent_at|date:"M d, Y" }}.
+                                    They will contact you to schedule equipment access.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> No Active Projects</h5>
+    <p class="mb-0">You don't have any accepted applications in progress. Check your dashboard for any applications requiring acceptance.</p>
+</div>
+{% endif %}
+
+<!-- Recently Completed Applications -->
+{% if completed_applications %}
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Recently Completed Projects</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Project Title</th>
+                        <th>Completed Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in completed_applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.project_title|truncatewords:10 }}</td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> {{ app.completed_at|date:"M d, Y" }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer text-muted">
+        <small>Showing 10 most recent completed projects</small>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}
