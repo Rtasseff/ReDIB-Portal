@@ -521,7 +521,7 @@ def feasibility_review(request, pk):
 # =============================================================================
 
 @login_required
-@role_required('coordinator')
+@role_required('coordinator', 'admin')
 def resolution_dashboard(request):
     """
     Resolution dashboard showing calls ready for coordinator review.
@@ -534,12 +534,10 @@ def resolution_dashboard(request):
     from django.utils import timezone
     from calls.models import Call
 
-    now = timezone.now()
-
-    # Get calls with evaluation deadline passed
+    # Get all calls with evaluated applications (ready for resolution)
+    # Note: Coordinator can start resolving before deadline if all evaluations are complete
     calls = (
         Call.objects
-        .filter(evaluation_deadline__lt=now)
         .annotate(
             total_apps=Count('applications'),
             evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
@@ -586,16 +584,12 @@ def call_resolution_detail(request, call_id):
     # Get prioritized applications
     applications = service.get_prioritized_applications()
 
-    # Get hours availability
-    hours_availability = service.calculate_hours_availability()
-
     # Get resolution summary
     summary = service.get_resolution_summary()
 
     context = {
         'call': call,
         'applications': applications,
-        'hours_availability': hours_availability,
         'summary': summary,
     }
     return render(request, 'applications/resolution/call_detail.html', context)

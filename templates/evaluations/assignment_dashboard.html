@@ -1,0 +1,169 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Assign Evaluators - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_assign_eval_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-people"></i> Evaluator Assignment</h1>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Your Role:</strong> As a coordinator, you assign evaluators to applications that have passed feasibility review.
+    The system helps you avoid conflicts of interest and balance workload across evaluators.
+</div>
+
+<!-- Recent Calls Needing Attention -->
+{% if recent_calls %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Recent Calls Needing Attention</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Call Code</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Total Apps</th>
+                        <th>Pending Assignment</th>
+                        <th>Under Evaluation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for call in recent_calls %}
+                    <tr>
+                        <td><strong>{{ call.code }}</strong></td>
+                        <td>{{ call.title|truncatewords:5 }}</td>
+                        <td>
+                            {% if call.status == 'open' %}
+                                <span class="badge bg-success">Open</span>
+                            {% elif call.status == 'closed' %}
+                                <span class="badge bg-warning">Closed</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ call.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ call.app_count }}</td>
+                        <td>
+                            {% if call.pending_eval_count > 0 %}
+                                <span class="badge bg-warning">{{ call.pending_eval_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if call.under_eval_count > 0 %}
+                                <span class="badge bg-info">{{ call.under_eval_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'evaluations:call_assignment_detail' call.id %}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-arrow-right-circle"></i> View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- All Calls -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">All Calls</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if all_calls %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Call Code</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Submission Period</th>
+                        <th>Total Apps</th>
+                        <th>Pending Assignment</th>
+                        <th>Under Evaluation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for call in all_calls %}
+                    <tr>
+                        <td><strong>{{ call.code }}</strong></td>
+                        <td>{{ call.title|truncatewords:5 }}</td>
+                        <td>
+                            {% if call.status == 'draft' %}
+                                <span class="badge bg-secondary">Draft</span>
+                            {% elif call.status == 'open' %}
+                                <span class="badge bg-success">Open</span>
+                            {% elif call.status == 'closed' %}
+                                <span class="badge bg-warning">Closed</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ call.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ call.submission_start|date:"M d" }} - {{ call.submission_end|date:"M d, Y" }}
+                        </td>
+                        <td>{{ call.app_count }}</td>
+                        <td>
+                            {% if call.pending_eval_count > 0 %}
+                                <span class="badge bg-warning">{{ call.pending_eval_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if call.under_eval_count > 0 %}
+                                <span class="badge bg-info">{{ call.under_eval_count }}</span>
+                            {% else %}
+                                <span class="text-muted">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if call.app_count > 0 %}
+                                <a href="{% url 'evaluations:call_assignment_detail' call.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-right-circle"></i> Manage
+                                </a>
+                            {% else %}
+                                <span class="text-muted">No applications</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card-body">
+            <div class="alert alert-info mb-0">
+                <h5><i class="bi bi-info-circle"></i> No Calls Available</h5>
+                <p class="mb-0">There are no calls in the system yet. Create a call to get started.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

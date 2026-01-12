@@ -1,0 +1,66 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Scheduling - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_scheduling_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Access Scheduling</h1>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-calendar"></i> Applications Requiring Scheduling</h5>
+    </div>
+    <div class="card-body">
+        {% if applications %}
+        <p class="text-muted">These applications have been accepted by applicants and require scheduling for equipment access.</p>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Application Code</th>
+                        <th>Applicant</th>
+                        <th>Call</th>
+                        <th>Contact Email</th>
+                        <th>Contact Phone</th>
+                        <th>Accepted Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.applicant.get_full_name }}</td>
+                        <td>{{ app.call.code }}</td>
+                        <td><a href="mailto:{{ app.applicant_email }}">{{ app.applicant_email }}</a></td>
+                        <td>{{ app.applicant_phone|default:"—" }}</td>
+                        <td>{{ app.accepted_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No applications currently require scheduling.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <h6 class="text-muted">Instructions:</h6>
+    <ul class="text-muted">
+        <li>Contact applicants directly via email or phone to schedule equipment access</li>
+        <li>Coordinate experiment times based on equipment availability</li>
+        <li>Provide necessary safety and operational training before access</li>
+        <li>Mark applications as completed once access has been provided</li>
+    </ul>
+</div>
+{% endblock %}

@@ -426,16 +426,16 @@ class BulkResolutionForm(forms.Form):
     """
 
     threshold_score = forms.DecimalField(
-        min_value=1.0,
-        max_value=5.0,
-        initial=3.0,
-        decimal_places=2,
+        min_value=0.0,
+        max_value=12.0,
+        initial=9.0,
+        decimal_places=1,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
-            'step': '0.1',
-            'placeholder': '3.0'
+            'step': '0.5',
+            'placeholder': '9.0'
         }),
-        help_text="Minimum score for acceptance (1.0-5.0). Applications below this threshold will be rejected."
+        help_text="Minimum score for acceptance (0.0-12.0). Applications below this threshold will be rejected. Default: 9.0 (75%)"
     )
 
     auto_pending = forms.BooleanField(
@@ -448,6 +448,6 @@ class BulkResolutionForm(forms.Form):
     def clean_threshold_score(self):
         """Validate threshold score is within valid range."""
         threshold = self.cleaned_data.get('threshold_score')
-        if threshold < 1.0 or threshold > 5.0:
-            raise forms.ValidationError("Threshold score must be between 1.0 and 5.0")
+        if threshold < 0.0 or threshold > 12.0:
+            raise forms.ValidationError("Threshold score must be between 0.0 and 12.0")
         return threshold

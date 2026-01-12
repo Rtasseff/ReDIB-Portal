@@ -1,0 +1,80 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Access Tracking - ReDIB COA Portal{% endblock %}
+
+{% block sidebar_tracking_active %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Access Tracking</h1>
+</div>
+
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-activity"></i> All Applications for Your Node(s)</h5>
+    </div>
+    <div class="card-body">
+        {% if applications %}
+        <p class="text-muted">Track all applications requesting equipment from your node(s).</p>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>Application Code</th>
+                        <th>Applicant</th>
+                        <th>Call</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Completed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.applicant.get_full_name }}</td>
+                        <td>{{ app.call.code }}</td>
+                        <td>
+                            {% if app.status == 'submitted' %}
+                            <span class="badge bg-info">Submitted</span>
+                            {% elif app.status == 'under_feasibility_review' %}
+                            <span class="badge bg-warning">Feasibility Review</span>
+                            {% elif app.status == 'pending_evaluation' %}
+                            <span class="badge bg-primary">Pending Evaluation</span>
+                            {% elif app.status == 'under_evaluation' %}
+                            <span class="badge bg-info">Under Evaluation</span>
+                            {% elif app.status == 'evaluated' %}
+                            <span class="badge bg-primary">Evaluated</span>
+                            {% elif app.status == 'accepted' %}
+                            <span class="badge bg-success">Accepted</span>
+                            {% elif app.status == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ app.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ app.submitted_at|date:"M d, Y"|default:"—" }}</td>
+                        <td>
+                            {% if app.is_completed %}
+                            <span class="badge bg-success">Completed</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No applications found for your node(s).
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
