@@ -85,6 +85,92 @@ python tests/test_phase3_feasibility_review.py
 
 ---
 
+### 4. Phase 4 Evaluator Assignment
+**File**: `test_phase4_evaluator_assignment.py`
+**Purpose**: Validates evaluator assignment workflow.
+
+**Run**:
+```bash
+python tests/test_phase4_evaluator_assignment.py
+```
+
+---
+
+### 5. Phase 5 Evaluation Submission
+**File**: `test_phase5_evaluation_submission.py`
+**Purpose**: Validates evaluation form submission and scoring.
+
+**Run**:
+```bash
+python tests/test_phase5_evaluation_submission.py
+```
+
+---
+
+### 6. Phase 6 Resolution (Legacy Coordinator Workflow)
+**File**: `test_phase6_resolution.py`
+**Purpose**: Validates the legacy ReDIB coordinator resolution workflow.
+
+**Run**:
+```bash
+python tests/test_phase6_resolution.py
+```
+
+---
+
+### 7. Phase 6 Node Resolution (New Distributed Workflow)
+**File**: `test_phase6_node_resolution.py`
+**Tests**: 18 workflow tests
+**Purpose**: Validates the new node coordinator resolution workflow with multi-node aggregation.
+
+**What it tests**:
+- ✅ Multi-node aggregation: ALL accept → accepted
+- ✅ Multi-node aggregation: ANY reject → rejected
+- ✅ Multi-node aggregation: No rejects but waitlist → pending
+- ✅ Competitive funding protection (cannot reject)
+- ✅ Single-node immediate resolution
+- ✅ Hours approval (can differ from requested)
+- ✅ Equipment completion tracking
+- ✅ Node coordinator validation
+- ✅ Service query methods
+
+**Run**:
+```bash
+python tests/test_phase6_node_resolution.py
+```
+
+**Expected output**: 18/18 tests passed
+
+**Test data created**:
+- Call: NR-TEST-CALL-01
+- Nodes: NR-TEST-NODE1, NR-TEST-NODE2
+- Coordinators: nc1.nr.test@redib.test, nc2.nr.test@redib.test
+- Applications: Multiple test applications with different resolution outcomes
+
+---
+
+### 8. Phase 7 Acceptance Workflow
+**File**: `test_phase7_acceptance.py`
+**Purpose**: Validates applicant acceptance/rejection of approved applications.
+
+**Run**:
+```bash
+python tests/test_phase7_acceptance.py
+```
+
+---
+
+### 9. Phase 9 Publications
+**File**: `test_phase9_publications.py`
+**Purpose**: Validates publication tracking and reporting.
+
+**Run**:
+```bash
+python tests/test_phase9_publications.py
+```
+
+---
+
 ## Running All Tests
 
 To run all automated test suites:
@@ -93,10 +179,16 @@ To run all automated test suites:
 # Run all tests sequentially
 python tests/test_application_form_spec.py && \
 python tests/test_phase1_phase2_workflow.py && \
-python tests/test_phase3_feasibility_review.py
+python tests/test_phase3_feasibility_review.py && \
+python tests/test_phase4_evaluator_assignment.py && \
+python tests/test_phase5_evaluation_submission.py && \
+python tests/test_phase6_resolution.py && \
+python tests/test_phase6_node_resolution.py && \
+python tests/test_phase7_acceptance.py && \
+python tests/test_phase9_publications.py
 ```
 
-**Total tests**: 115 (63 + 23 + 29)
+**Note**: Test counts vary by file. Run individual tests to see specific counts.
 
 ---
 
@@ -194,14 +286,14 @@ When adding new phases or features:
 |-------|----------|-----------|-------|
 | Phase 0 | ✅ Manual | - | - |
 | Phase 1 | ✅ Automated | test_phase1_phase2_workflow.py | 5 |
-| Phase 2 | ✅ Automated | test_phase1_phase2_workflow.py | 13 + 63 |
+| Phase 2 | ✅ Automated | test_phase1_phase2_workflow.py + test_application_form_spec.py | 13 + 63 |
 | Phase 3 | ✅ Automated | test_phase3_feasibility_review.py | 29 |
-| Phase 4 | ⏳ Pending | - | - |
-| Phase 5 | ⏳ Pending | - | - |
-| Phase 6 | ⏳ Pending | - | - |
-| Phase 7 | ⏳ Pending | - | - |
+| Phase 4 | ✅ Automated | test_phase4_evaluator_assignment.py | - |
+| Phase 5 | ✅ Automated | test_phase5_evaluation_submission.py | - |
+| Phase 6 | ✅ Automated | test_phase6_resolution.py + test_phase6_node_resolution.py | 18 (node resolution) |
+| Phase 7 | ✅ Automated | test_phase7_acceptance.py | - |
 | Phase 8 | ⏳ Pending | - | - |
-| Phase 9 | ⏳ Pending | - | - |
+| Phase 9 | ✅ Automated | test_phase9_publications.py | - |
 | Phase 10 | ⏳ Pending | - | - |
 
 ---
