@@ -1,0 +1,201 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Node Resolution Queue - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-check2-square"></i> Node Resolution Queue</h1>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Your Role:</strong> As a node coordinator, review evaluated applications requesting access to your node's equipment.
+    Make resolution decisions (accept, waitlist, or reject) and set approved hours.
+</div>
+
+{% if user_nodes %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">Your Nodes</h6>
+    </div>
+    <div class="card-body">
+        <p class="mb-0">
+            {% for node in user_nodes %}
+                <span class="badge bg-primary">{{ node.code }} - {{ node.name }}</span>
+            {% endfor %}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% if summary %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ summary.total }}</h3>
+                <small>Total Applications</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{{ summary.awaiting_decision }}</h3>
+                <small>Awaiting Your Decision</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">{{ summary.node_accepted }}</h3>
+                <small>Accepted by You</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-info">{{ summary.fully_resolved }}</h3>
+                <small>Fully Resolved</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if pending_applications %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Pending Resolution ({{ pending_applications|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Call</th>
+                        <th>Applicant</th>
+                        <th>Final Score</th>
+                        <th>Competitive Funding</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in pending_applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.call.code }}</td>
+                        <td>{{ app.applicant_name|default:app.applicant.get_full_name }}</td>
+                        <td>
+                            {% if app.final_score %}
+                                <span class="badge bg-primary">{{ app.final_score|floatformat:1 }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.has_competitive_funding %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ app.submitted_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% for node in user_nodes %}
+                            <a href="{% url 'applications:node_resolution_review' app.pk node.pk %}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil-square"></i> Review ({{ node.code }})
+                            </a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <h4 class="alert-heading"><i class="bi bi-check-circle"></i> All Caught Up!</h4>
+    <p class="mb-0">You have no pending resolution decisions at this time.</p>
+</div>
+{% endif %}
+
+{% if resolved_applications %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-check2-all"></i> Resolved by You ({{ resolved_applications|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Call</th>
+                        <th>Final Score</th>
+                        <th>Your Decision</th>
+                        <th>Final Resolution</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in resolved_applications %}
+                    <tr>
+                        <td><strong>{{ app.code }}</strong></td>
+                        <td>{{ app.call.code }}</td>
+                        <td>
+                            {% if app.final_score %}
+                                <span class="badge bg-primary">{{ app.final_score|floatformat:1 }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for nr in app.node_resolutions.all %}
+                                {% if nr.node in user_nodes %}
+                                    {% if nr.resolution == 'accept' %}
+                                        <span class="badge bg-success">Accepted</span>
+                                    {% elif nr.resolution == 'waitlist' %}
+                                        <span class="badge bg-warning text-dark">Waitlisted</span>
+                                    {% elif nr.resolution == 'reject' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if app.resolution == 'accepted' %}
+                                <span class="badge bg-success">Accepted</span>
+                            {% elif app.resolution == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending/Waitlisted</span>
+                            {% elif app.resolution == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Awaiting Other Nodes</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ app.get_status_display }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

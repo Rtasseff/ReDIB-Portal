@@ -967,3 +967,319 @@ def mark_completed(request, pk):
         messages.info(request, f"Application {application.code} is already marked as completed.")
 
     return redirect('applications:handoff_dashboard')
+
+
+# =============================================================================
+# Phase 6: Node Coordinator Resolution Views (Multi-Node Coordination)
+# =============================================================================
+
+@node_coordinator_required
+def node_resolution_queue(request):
+    """
+    Node coordinator's queue of applications awaiting resolution.
+
+    Shows applications in 'evaluated' status that request equipment
+    from nodes where the current user is a node coordinator.
+    """
+    from core.models import UserRole
+    from applications.services import NodeResolutionService
+    from calls.models import Call
+
+    # Get nodes where user is coordinator
+    my_node_roles = UserRole.objects.filter(
+        user=request.user,
+        role='node_coordinator',
+        is_active=True
+    ).select_related('node')
+
+    # Get calls with evaluated applications
+    calls = Call.objects.filter(
+        applications__status='evaluated'
+    ).distinct().order_by('-evaluation_deadline')
+
+    # Get applications per node
+    nodes_data = []
+    total_pending = 0
+
+    for user_role in my_node_roles:
+        service = NodeResolutionService(node=user_role.node)
+        pending_apps = service.get_applications_for_node_resolution()
+
+        # Get summary per call for this node
+        call_summaries = []
+        for call in calls:
+            call_pending = pending_apps.filter(call=call)
+            if call_pending.exists():
+                summary = service.get_resolution_summary_for_call(call)
+                call_summaries.append({
+                    'call': call,
+                    'pending_count': call_pending.count(),
+                    'applications': call_pending,
+                    'summary': summary
+                })
+
+        nodes_data.append({
+            'node': user_role.node,
+            'pending_count': pending_apps.count(),
+            'call_summaries': call_summaries
+        })
+        total_pending += pending_apps.count()
+
+    context = {
+        'nodes_data': nodes_data,
+        'total_pending': total_pending,
+    }
+    return render(request, 'applications/node_resolution/queue.html', context)
+
+
+@node_coordinator_required
+@transaction.atomic
+def node_resolution_review(request, application_id, node_id):
+    """
+    Node coordinator reviews and resolves an application for their node.
+
+    Allows setting:
+    - Node-level resolution (accept/waitlist/reject)
+    - Hours approved per equipment item
+    - Comments
+    """
+    from core.models import UserRole, Node
+    from applications.services import NodeResolutionService
+    from applications.forms import NodeResolutionForm, NodeResolutionEquipmentForm
+    from decimal import Decimal
+
+    application = get_object_or_404(Application, pk=application_id)
+    node = get_object_or_404(Node, pk=node_id)
+
+    # Verify user is node coordinator for this node
+    if not UserRole.objects.filter(
+        user=request.user,
+        role='node_coordinator',
+        node=node,
+        is_active=True
+    ).exists():
+        messages.error(request, "You are not authorized to review applications for this node.")
+        return redirect('applications:node_resolution_queue')
+
+    # Verify application is in evaluated status
+    if application.status != 'evaluated':
+        messages.error(request, f"Application {application.code} is not awaiting resolution (status: {application.status}).")
+        return redirect('applications:node_resolution_queue')
+
+    service = NodeResolutionService(node=node)
+
+    # Get equipment requested from this node
+    requested_access = service.get_equipment_for_node(application)
+
+    # Get existing node resolution if any
+    existing_resolution = service.get_node_resolution_for_application(application)
+
+    # Check if already resolved by this node
+    if existing_resolution and existing_resolution.resolution:
+        messages.info(request, f"You have already resolved application {application.code} for {node.code}.")
+        return redirect('applications:node_resolution_queue')
+
+    if request.method == 'POST':
+        form = NodeResolutionForm(
+            request.POST,
+            has_competitive_funding=application.has_competitive_funding
+        )
+
+        # Build approved hours dict from POST data
+        approved_hours = {}
+        for ra in requested_access:
+            field_name = f'hours_approved_{ra.equipment.id}'
+            try:
+                hours = Decimal(request.POST.get(field_name, ra.hours_requested))
+                approved_hours[ra.equipment.id] = hours
+            except (ValueError, TypeError):
+                approved_hours[ra.equipment.id] = ra.hours_requested
+
+        if form.is_valid():
+            try:
+                result = service.apply_node_resolution(
+                    application=application,
+                    resolution=form.cleaned_data['resolution'],
+                    comments=form.cleaned_data['comments'],
+                    approved_hours_dict=approved_hours,
+                    user=request.user
+                )
+
+                # Success message
+                if result['aggregated']:
+                    messages.success(
+                        request,
+                        f"Resolution submitted for {application.code}. "
+                        f"All nodes have decided - Final resolution: {result['final_resolution'].upper()}"
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Resolution submitted for {application.code}. "
+                        f"Waiting for other nodes to complete their reviews."
+                    )
+
+                return redirect('applications:node_resolution_queue')
+
+            except Exception as e:
+                messages.error(request, str(e))
+    else:
+        # Prepopulate form if existing resolution
+        initial = {}
+        if existing_resolution:
+            initial = {
+                'resolution': existing_resolution.resolution,
+                'comments': existing_resolution.comments,
+            }
+        form = NodeResolutionForm(
+            initial=initial,
+            has_competitive_funding=application.has_competitive_funding
+        )
+
+    # Prepare equipment data for template
+    equipment_data = []
+    for ra in requested_access:
+        equipment_data.append({
+            'requested_access': ra,
+            'equipment': ra.equipment,
+            'hours_requested': ra.hours_requested,
+            'hours_approved': ra.hours_approved or ra.hours_requested,
+        })
+
+    # Get evaluations for display
+    evaluations = application.evaluations.select_related('evaluator').all()
+
+    context = {
+        'form': form,
+        'application': application,
+        'node': node,
+        'equipment_data': equipment_data,
+        'evaluations': evaluations,
+        'existing_resolution': existing_resolution,
+    }
+    return render(request, 'applications/node_resolution/review.html', context)
+
+
+# =============================================================================
+# Equipment Completion Views (Applicants and Node Coordinators)
+# =============================================================================
+
+@login_required
+@transaction.atomic
+def mark_equipment_done(request, application_id, requested_access_id):
+    """
+    Applicant marks an equipment item as completed and reports actual hours.
+    """
+    from applications.forms import EquipmentCompletionForm
+
+    # Verify applicant owns this application
+    application = get_object_or_404(
+        Application,
+        pk=application_id,
+        applicant=request.user,
+        status='accepted',
+        accepted_by_applicant=True
+    )
+
+    req_access = get_object_or_404(
+        RequestedAccess,
+        pk=requested_access_id,
+        application=application
+    )
+
+    # Check if already completed
+    if req_access.is_completed:
+        messages.info(request, f"Equipment {req_access.equipment.name} is already marked as completed.")
+        return redirect('applications:detail', pk=application.id)
+
+    if request.method == 'POST':
+        form = EquipmentCompletionForm(
+            request.POST,
+            hours_approved=req_access.hours_approved
+        )
+
+        if form.is_valid():
+            req_access.is_completed = True
+            req_access.completed_by = request.user
+            req_access.completed_at = timezone.now()
+            req_access.actual_hours_used = form.cleaned_data['actual_hours_used']
+            req_access.save()
+
+            messages.success(
+                request,
+                f"Marked {req_access.equipment.name} as complete. "
+                f"Actual hours used: {req_access.actual_hours_used}"
+            )
+            return redirect('applications:detail', pk=application.id)
+    else:
+        form = EquipmentCompletionForm(hours_approved=req_access.hours_approved)
+
+    context = {
+        'form': form,
+        'application': application,
+        'requested_access': req_access,
+    }
+    return render(request, 'applications/equipment_completion.html', context)
+
+
+@node_coordinator_required
+@transaction.atomic
+def node_confirm_equipment_done(request, requested_access_id):
+    """
+    Node coordinator marks equipment as completed.
+
+    Can override actual hours if needed.
+    """
+    from core.models import UserRole
+    from applications.forms import EquipmentCompletionForm
+
+    req_access = get_object_or_404(
+        RequestedAccess.objects.select_related('equipment__node', 'application'),
+        pk=requested_access_id
+    )
+
+    # Verify user is node coordinator for this equipment's node
+    if not UserRole.objects.filter(
+        user=request.user,
+        role='node_coordinator',
+        node=req_access.equipment.node,
+        is_active=True
+    ).exists():
+        messages.error(request, "You are not authorized to complete equipment for this node.")
+        return redirect('applications:node_resolution_queue')
+
+    application = req_access.application
+
+    # Check if already completed
+    if req_access.is_completed:
+        messages.info(request, f"Equipment {req_access.equipment.name} is already marked as completed.")
+        return redirect('applications:detail', pk=application.id)
+
+    if request.method == 'POST':
+        form = EquipmentCompletionForm(
+            request.POST,
+            hours_approved=req_access.hours_approved
+        )
+
+        if form.is_valid():
+            req_access.is_completed = True
+            req_access.completed_by = request.user
+            req_access.completed_at = timezone.now()
+            req_access.actual_hours_used = form.cleaned_data['actual_hours_used']
+            req_access.save()
+
+            messages.success(
+                request,
+                f"Marked {req_access.equipment.name} as complete for {application.code}. "
+                f"Actual hours used: {req_access.actual_hours_used}"
+            )
+            return redirect('applications:detail', pk=application.id)
+    else:
+        form = EquipmentCompletionForm(hours_approved=req_access.hours_approved)
+
+    context = {
+        'form': form,
+        'application': application,
+        'requested_access': req_access,
+    }
+    return render(request, 'applications/equipment_completion.html', context)

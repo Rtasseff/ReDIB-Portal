@@ -32,6 +32,14 @@ urlpatterns = [
     path('resolution/call/<int:call_id>/bulk/', views.bulk_resolution, name='bulk_resolution'),
     path('resolution/call/<int:call_id>/finalize/', views.finalize_resolution, name='finalize_resolution'),
 
+    # Node Coordinator views - Phase 6: Node Resolution
+    path('node-resolution/', views.node_resolution_queue, name='node_resolution_queue'),
+    path('node-resolution/<int:application_id>/node/<int:node_id>/', views.node_resolution_review, name='node_resolution_review'),
+
+    # Equipment Completion Tracking
+    path('<int:application_id>/equipment/<int:requested_access_id>/mark-done/', views.mark_equipment_done, name='mark_equipment_done'),
+    path('<int:application_id>/equipment/<int:requested_access_id>/node-confirm-done/', views.node_confirm_equipment_done, name='node_confirm_equipment_done'),
+
     # Phase 7: Acceptance & Handoff
     path('<int:pk>/accept/', views.application_acceptance, name='application_acceptance'),
     path('handoff/', views.handoff_dashboard, name='handoff_dashboard'),

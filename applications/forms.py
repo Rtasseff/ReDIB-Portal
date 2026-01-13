@@ -451,3 +451,163 @@ class BulkResolutionForm(forms.Form):
         if threshold < 0.0 or threshold > 12.0:
             raise forms.ValidationError("Threshold score must be between 0.0 and 12.0")
         return threshold
+
+
+# =============================================================================
+# Phase 6: Node Resolution Forms (Multi-Node Coordination)
+# =============================================================================
+
+class NodeResolutionForm(forms.Form):
+    """
+    Form for node coordinator to resolve an application for their node.
+
+    This form handles the resolution decision only. Equipment hours are
+    handled separately through NodeResolutionEquipmentForm.
+    """
+
+    RESOLUTION_CHOICES = [
+        ('accept', 'Accept - Approve equipment access for this node'),
+        ('waitlist', 'Waitlist - Limited capacity at this time'),
+        ('reject', 'Reject - Cannot accommodate this request'),
+    ]
+
+    resolution = forms.ChoiceField(
+        choices=RESOLUTION_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        required=True,
+        label='Resolution Decision'
+    )
+
+    comments = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'class': 'form-control',
+            'placeholder': 'Provide reasoning for your decision...'
+        }),
+        required=False,
+        label='Comments'
+    )
+
+    def __init__(self, *args, **kwargs):
+        """
+        Customize form based on application properties.
+
+        If application has competitive funding, remove 'reject' option.
+        """
+        self.has_competitive_funding = kwargs.pop('has_competitive_funding', False)
+        super().__init__(*args, **kwargs)
+
+        # Remove 'reject' choice if has_competitive_funding
+        if self.has_competitive_funding:
+            self.fields['resolution'].choices = [
+                choice for choice in self.RESOLUTION_CHOICES
+                if choice[0] != 'reject'
+            ]
+            self.fields['resolution'].help_text = (
+                "This application has competitive funding and cannot be rejected. "
+                "You must either accept or waitlist."
+            )
+
+    def clean(self):
+        """Validate resolution business rules."""
+        cleaned_data = super().clean()
+        resolution = cleaned_data.get('resolution')
+
+        # Validate: competitive funding cannot be rejected
+        if self.has_competitive_funding and resolution == 'reject':
+            raise forms.ValidationError(
+                "Applications with competitive funding cannot be rejected."
+            )
+
+        # Require comments if rejecting
+        if resolution == 'reject' and not cleaned_data.get('comments'):
+            raise forms.ValidationError(
+                "Please provide comments explaining why you are rejecting this application."
+            )
+
+        return cleaned_data
+
+
+class NodeResolutionEquipmentForm(forms.Form):
+    """
+    Form for setting hours_approved for a single equipment item.
+
+    Used dynamically in the resolution view - one instance per equipment item
+    from the node coordinator's node.
+    """
+
+    equipment_id = forms.IntegerField(widget=forms.HiddenInput())
+    equipment_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control-plaintext', 'readonly': True})
+    )
+    hours_requested = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control-plaintext', 'readonly': True})
+    )
+    hours_approved = forms.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.5',
+            'min': '0'
+        }),
+        label='Hours Approved'
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Initialize with equipment data."""
+        equipment_data = kwargs.pop('equipment_data', None)
+        super().__init__(*args, **kwargs)
+
+        if equipment_data:
+            self.fields['equipment_id'].initial = equipment_data.get('equipment_id')
+            self.fields['equipment_name'].initial = equipment_data.get('equipment_name')
+            self.fields['hours_requested'].initial = equipment_data.get('hours_requested')
+            # Default hours_approved to hours_requested
+            if not self.initial.get('hours_approved'):
+                self.fields['hours_approved'].initial = equipment_data.get('hours_requested')
+
+
+class EquipmentCompletionForm(forms.Form):
+    """
+    Form for marking equipment access as completed and reporting actual hours used.
+
+    Can be used by either applicants or node coordinators.
+    """
+
+    actual_hours_used = forms.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.5',
+            'min': '0'
+        }),
+        label='Actual Hours Used',
+        help_text='Enter the actual number of hours used for this equipment'
+    )
+
+    completion_notes = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'class': 'form-control',
+            'placeholder': 'Optional notes about the completed access...'
+        }),
+        required=False,
+        label='Notes (optional)'
+    )
+
+    def __init__(self, *args, **kwargs):
+        """Initialize with approved hours for reference."""
+        self.hours_approved = kwargs.pop('hours_approved', None)
+        super().__init__(*args, **kwargs)
+
+        if self.hours_approved:
+            self.fields['actual_hours_used'].help_text = (
+                f'Approved hours: {self.hours_approved}. '
+                'Enter the actual number of hours used.'
+            )

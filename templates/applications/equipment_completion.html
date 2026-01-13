@@ -1,0 +1,160 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Mark Equipment Complete - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'applications:my_applications' %}">My Applications</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'applications:detail' application.pk %}">{{ application.code }}</a></li>
+            <li class="breadcrumb-item active">Mark Equipment Complete</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Mark Equipment Complete</h1>
+    </div>
+
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>Instructions:</strong> Once you have completed using the equipment, mark it as done and report the actual hours used.
+        This helps track equipment utilization and completes the access record.
+    </div>
+
+    <!-- Application Info -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Application: {{ application.code }}</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Call</dt>
+                <dd class="col-sm-9">{{ application.call.code }} - {{ application.call.name }}</dd>
+
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_title|default:"N/A" }}</dd>
+
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9"><span class="badge bg-success">{{ application.get_status_display }}</span></dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Equipment Details -->
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-cpu"></i> Equipment: {{ requested_access.equipment.name }}</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Node</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info">{{ requested_access.equipment.node.code }}</span>
+                    {{ requested_access.equipment.node.name }}
+                </dd>
+
+                <dt class="col-sm-3">Hours Requested</dt>
+                <dd class="col-sm-9">{{ requested_access.hours_requested }} hours</dd>
+
+                <dt class="col-sm-3">Hours Approved</dt>
+                <dd class="col-sm-9">
+                    {% if requested_access.hours_approved %}
+                        {{ requested_access.hours_approved }} hours
+                    {% else %}
+                        <span class="text-muted">Not yet approved</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-3">Current Status</dt>
+                <dd class="col-sm-9">
+                    {% if requested_access.is_completed %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Completed</span>
+                        {% if requested_access.completed_at %}
+                            on {{ requested_access.completed_at|date:"M d, Y H:i" }}
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-warning text-dark">In Progress</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    {% if requested_access.is_completed %}
+    <!-- Already Completed -->
+    <div class="alert alert-success">
+        <h4 class="alert-heading"><i class="bi bi-check-circle"></i> Equipment Access Completed</h4>
+        <p>This equipment access has already been marked as complete.</p>
+        <hr>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Actual Hours Used</dt>
+            <dd class="col-sm-9">{{ requested_access.actual_hours_used|default:"Not recorded" }} hours</dd>
+
+            <dt class="col-sm-3">Completed By</dt>
+            <dd class="col-sm-9">{{ requested_access.completed_by.get_full_name|default:requested_access.completed_by.email|default:"Unknown" }}</dd>
+
+            <dt class="col-sm-3">Completed At</dt>
+            <dd class="col-sm-9">{{ requested_access.completed_at|date:"F d, Y H:i" }}</dd>
+        </dl>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'applications:detail' application.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Application
+        </a>
+    </div>
+
+    {% else %}
+    <!-- Completion Form -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-check2-square"></i> Mark as Complete</h5>
+        </div>
+        <div class="card-body">
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label for="{{ form.actual_hours_used.id_for_label }}" class="form-label">
+                        <strong>Actual Hours Used *</strong>
+                    </label>
+                    {{ form.actual_hours_used }}
+                    {% if form.actual_hours_used.errors %}
+                    <div class="text-danger small">{{ form.actual_hours_used.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        Enter the actual hours you used on this equipment.
+                        {% if requested_access.hours_approved %}
+                            Approved: {{ requested_access.hours_approved }} hours.
+                        {% endif %}
+                    </small>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> Once marked as complete, this action cannot be undone by you.
+                    Only administrators can reset completion status if needed.
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'applications:detail' application.pk %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg"
+                            onclick="return confirm('Are you sure you want to mark this equipment as complete? This cannot be undone.')">
+                        <i class="bi bi-check-circle"></i> Mark as Complete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
