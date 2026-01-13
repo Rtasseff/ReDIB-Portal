@@ -50,8 +50,8 @@ The script creates applications in the following stages:
 
 ### Evaluation Stage Applications (Phase 4-6)
 - **TEST-APP-004**: Pending Evaluation - Ready for evaluator assignment
-- **TEST-APP-005**: Under Evaluation - **1 of 2 evaluations complete** (tests partial evaluation)
-- **TEST-APP-014**: Under Evaluation - Both evaluations complete
+- **TEST-APP-005**: Under Evaluation - **1 of 2 evaluations assigned** (incomplete - tests partial evaluation)
+- **TEST-APP-014**: Under Evaluation - **2 of 2 evaluations assigned** (incomplete - tests waiting for submissions)
 - **TEST-APP-006**: Evaluated - Score: 9.5/12 - Ready for resolution
 - **TEST-APP-017**: Evaluated - Score: 9.0/12 - Ready for resolution
 
@@ -122,9 +122,12 @@ The script creates applications in the following stages:
 - Tests area-based evaluator matching
 
 ### Partial Evaluation
-- **TEST-APP-005**: Only 1 of 2 evaluations complete
-- Tests "waiting for all evaluators" functionality
-- Application should remain in "Under Evaluation" status
+- **TEST-APP-005**: Only 1 of 2 evaluations assigned (incomplete)
+- **TEST-APP-014**: 2 of 2 evaluations assigned (both incomplete)
+- Tests "waiting for evaluator submissions" functionality
+- Applications should remain in "Under Evaluation" status until evaluators submit scores
+- **Note:** Evaluations are created without scores (None), so they show as assigned but incomplete
+- When evaluators submit scores via the form, the application status will automatically transition to "Evaluated"
 
 ## Running the Script
 

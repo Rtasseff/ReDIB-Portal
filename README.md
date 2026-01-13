@@ -11,8 +11,10 @@ This Django-based web application automates the complete COA lifecycle, from cal
 - **[QUICKSTART.md](QUICKSTART.md)** - Get started quickly (new users start here)
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup and configuration
 - **[TESTING.md](TESTING.md)** - Testing procedures and guidelines
+- **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing and demos
 - **[TESTING_NOTES.md](TESTING_NOTES.md)** - Active testing notes and issue tracking
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows and common commands
+- **[OPTIMIZE_SPEED.md](OPTIMIZE_SPEED.md)** - Performance analysis and optimization guide
 - **[docs/](docs/)** - Technical reference and system design documentation
 
 ### Key Features

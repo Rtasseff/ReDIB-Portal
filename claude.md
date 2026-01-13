@@ -94,7 +94,19 @@ python manage.py test reports.tests
 ```
 
 ### Test Data Setup
-For integration testing, use the dev data seeding command:
+
+**For comprehensive manual testing and demos:**
+```bash
+# Create 7 test applicants with 17 applications at various workflow stages
+python manage.py seed_test_applicants
+
+# Clear and rebuild test applicants
+python manage.py seed_test_applicants --clear
+
+# See TEST_APPLICANTS_GUIDE.md for complete documentation
+```
+
+**For automated integration testing:**
 ```bash
 # Create test data (calls, applications, evaluations)
 python manage.py seed_dev_data
@@ -283,10 +295,37 @@ python manage.py populate_redib_nodes --sync
 python manage.py populate_redib_equipment --sync
 python manage.py populate_redib_users --sync
 python manage.py seed_dev_data --clear
+python manage.py seed_test_applicants --clear
 
 # Shell
 python manage.py shell
 ```
+
+## Performance Considerations
+
+### Email Notifications Require Celery
+**Important:** Email notifications are sent asynchronously via Celery. If Celery is not running, email tasks will timeout (1-5 seconds) causing significant latency in form submissions.
+
+**Start Celery worker:**
+```bash
+celery -A redib worker -l info
+```
+
+**Affected operations:**
+- Feasibility review submissions
+- Evaluation assignments
+- Application resolution
+- Acceptance notifications
+
+See `OPTIMIZE_SPEED.md` for detailed performance analysis and optimization recommendations.
+
+## Known Issues and Solutions
+
+### Test Data: 'Under Evaluation' Status
+When using `seed_test_applicants`, applications in 'under_evaluation' status intentionally have incomplete evaluations (scores=None) to test the evaluation workflow. This is by design and allows testing evaluator submission and automatic status transitions.
+
+### URL Patterns
+All URL patterns in templates must match the `name=` parameter in `urls.py`. Recent fix: Changed `applications:acceptance` → `applications:application_acceptance` to match template references.
 
 ## Notes for Claude Code
 
