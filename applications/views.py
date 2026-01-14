@@ -1164,11 +1164,13 @@ def node_resolution_review(request, application_id, node_id):
         )
 
     # Prepare equipment data for template
-    equipment_data = []
+    # node_equipment = the QuerySet for display
+    # equipment_forms = structured data for form inputs
+    equipment_forms = []
     for ra in requested_access:
-        equipment_data.append({
-            'requested_access': ra,
-            'equipment': ra.equipment,
+        equipment_forms.append({
+            'equipment_name': ra.equipment.name,
+            'equipment_id': ra.equipment.id,
             'hours_requested': ra.hours_requested,
             'hours_approved': ra.hours_approved or ra.hours_requested,
         })
@@ -1176,13 +1178,22 @@ def node_resolution_review(request, application_id, node_id):
     # Get evaluations for display
     evaluations = application.evaluations.select_related('evaluator').all()
 
+    # Get other nodes' resolutions (for multi-node visibility)
+    other_node_resolutions = application.node_resolutions.exclude(
+        node=node
+    ).filter(
+        resolution__in=['accept', 'waitlist', 'reject']
+    ).select_related('node')
+
     context = {
         'form': form,
         'application': application,
         'node': node,
-        'equipment_data': equipment_data,
+        'node_equipment': requested_access,  # QuerySet for display
+        'equipment_forms': equipment_forms,  # List of dicts for form
         'evaluations': evaluations,
         'existing_resolution': existing_resolution,
+        'other_node_resolutions': other_node_resolutions,
     }
     return render(request, 'applications/node_resolution/review.html', context)
 

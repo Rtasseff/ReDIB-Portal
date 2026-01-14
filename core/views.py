@@ -45,12 +45,14 @@ def dashboard(request):
     # Node Coordinator dashboard
     if 'node_coordinator' in user_roles:
         from applications.models import FeasibilityReview
-        from core.models import UserRole
+        from applications.services import NodeResolutionService
+        from core.models import UserRole, Node
 
         # Get nodes this user coordinates
-        my_nodes = UserRole.objects.filter(
+        my_node_roles = UserRole.objects.filter(
             user=user, role='node_coordinator', is_active=True
-        ).values_list('node_id', flat=True)
+        ).select_related('node')
+        my_nodes = [role.node_id for role in my_node_roles]
 
         context['pending_feasibility'] = FeasibilityReview.objects.filter(
             node_id__in=my_nodes,
@@ -61,6 +63,26 @@ def dashboard(request):
             node_id__in=my_nodes,
             is_feasible__isnull=True
         ).count()
+
+        # Get pending resolutions for node coordinators
+        pending_resolution_items = []
+        resolution_count = 0
+        for role in my_node_roles:
+            service = NodeResolutionService(node=role.node)
+            pending_apps = service.get_applications_for_node_resolution()
+            for app in pending_apps[:5]:  # Limit per node
+                pending_resolution_items.append({
+                    'application': app,
+                    'node': role.node
+                })
+            resolution_count += pending_apps.count()
+
+        # Sort by final_score descending and limit total
+        pending_resolution_items.sort(
+            key=lambda x: -(x['application'].final_score or 0)
+        )
+        context['pending_resolutions'] = pending_resolution_items[:10]
+        context['resolution_count'] = resolution_count
 
     # Evaluator dashboard
     if 'evaluator' in user_roles:

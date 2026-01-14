@@ -217,18 +217,23 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for eq_form in equipment_forms %}
+                                {% for eq in equipment_forms %}
                                 <tr>
                                     <td>
-                                        <strong>{{ eq_form.equipment_name }}</strong>
-                                        {{ eq_form.equipment_id }}
+                                        <strong>{{ eq.equipment_name }}</strong>
+                                        <input type="hidden" name="equipment_id_{{ eq.equipment_id }}" value="{{ eq.equipment_id }}">
                                     </td>
-                                    <td>{{ eq_form.hours_requested.value }} hours</td>
+                                    <td>{{ eq.hours_requested }} hours</td>
                                     <td>
-                                        {{ eq_form.hours_approved }}
-                                        {% if eq_form.hours_approved.errors %}
-                                        <div class="text-danger small">{{ eq_form.hours_approved.errors }}</div>
-                                        {% endif %}
+                                        <input type="number"
+                                               name="hours_approved_{{ eq.equipment_id }}"
+                                               value="{{ eq.hours_approved }}"
+                                               min="0"
+                                               max="{{ eq.hours_requested }}"
+                                               step="0.5"
+                                               class="form-control form-control-sm"
+                                               style="width: 100px;"
+                                               required>
                                     </td>
                                 </tr>
                                 {% empty %}
