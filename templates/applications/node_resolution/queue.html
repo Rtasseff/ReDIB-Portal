@@ -65,10 +65,10 @@
 </div>
 {% endif %}
 
-{% if pending_applications %}
+{% if pending_items %}
 <div class="card mb-4">
     <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Pending Resolution ({{ pending_applications|length }})</h5>
+        <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Pending Resolution ({{ pending_items|length }})</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -79,39 +79,39 @@
                         <th>Call</th>
                         <th>Applicant</th>
                         <th>Final Score</th>
+                        <th>Node</th>
                         <th>Competitive Funding</th>
                         <th>Submitted</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for app in pending_applications %}
+                    {% for item in pending_items %}
                     <tr>
-                        <td><strong>{{ app.code }}</strong></td>
-                        <td>{{ app.call.code }}</td>
-                        <td>{{ app.applicant_name|default:app.applicant.get_full_name }}</td>
+                        <td><strong>{{ item.application.code }}</strong></td>
+                        <td>{{ item.application.call.code }}</td>
+                        <td>{{ item.application.applicant_name|default:item.application.applicant.get_full_name }}</td>
                         <td>
-                            {% if app.final_score %}
-                                <span class="badge bg-primary">{{ app.final_score|floatformat:1 }}</span>
+                            {% if item.application.final_score %}
+                                <span class="badge bg-primary">{{ item.application.final_score|floatformat:1 }}</span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
+                        <td><span class="badge bg-info">{{ item.node.code }}</span></td>
                         <td>
-                            {% if app.has_competitive_funding %}
+                            {% if item.application.has_competitive_funding %}
                                 <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
                             {% else %}
                                 <span class="badge bg-secondary">No</span>
                             {% endif %}
                         </td>
-                        <td>{{ app.submitted_at|date:"M d, Y" }}</td>
+                        <td>{{ item.application.submitted_at|date:"M d, Y" }}</td>
                         <td>
-                            {% for node in user_nodes %}
-                            <a href="{% url 'applications:node_resolution_review' app.pk node.pk %}"
+                            <a href="{% url 'applications:node_resolution_review' item.application.pk item.node.pk %}"
                                class="btn btn-sm btn-primary">
-                                <i class="bi bi-pencil-square"></i> Review ({{ node.code }})
+                                <i class="bi bi-pencil-square"></i> Review
                             </a>
-                            {% endfor %}
                         </td>
                     </tr>
                     {% endfor %}

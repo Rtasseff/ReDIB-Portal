@@ -983,7 +983,7 @@ def node_resolution_queue(request):
     """
     from core.models import UserRole
     from applications.services import NodeResolutionService
-    from calls.models import Call
+    from applications.models import Application, NodeResolution
 
     # Get nodes where user is coordinator
     my_node_roles = UserRole.objects.filter(
@@ -992,42 +992,69 @@ def node_resolution_queue(request):
         is_active=True
     ).select_related('node')
 
-    # Get calls with evaluated applications
-    calls = Call.objects.filter(
-        applications__status='evaluated'
-    ).distinct().order_by('-evaluation_deadline')
+    user_nodes = [role.node for role in my_node_roles]
 
-    # Get applications per node
-    nodes_data = []
-    total_pending = 0
+    if not user_nodes:
+        context = {
+            'user_nodes': [],
+            'pending_applications': [],
+            'resolved_applications': [],
+            'summary': {'total': 0, 'awaiting_decision': 0, 'node_accepted': 0, 'fully_resolved': 0},
+        }
+        return render(request, 'applications/node_resolution/queue.html', context)
 
-    for user_role in my_node_roles:
-        service = NodeResolutionService(node=user_role.node)
+    # Collect pending and resolved applications across all user's nodes
+    # Use dict to track which node each pending app is for (app can appear once per node)
+    pending_items = []  # List of (application, node) tuples
+    resolved_applications = set()
+
+    for node in user_nodes:
+        service = NodeResolutionService(node=node)
+        # Get applications awaiting this node's decision
         pending_apps = service.get_applications_for_node_resolution()
+        for app in pending_apps:
+            pending_items.append({'application': app, 'node': node})
 
-        # Get summary per call for this node
-        call_summaries = []
-        for call in calls:
-            call_pending = pending_apps.filter(call=call)
-            if call_pending.exists():
-                summary = service.get_resolution_summary_for_call(call)
-                call_summaries.append({
-                    'call': call,
-                    'pending_count': call_pending.count(),
-                    'applications': call_pending,
-                    'summary': summary
-                })
+        # Get applications where this node has already decided
+        resolved_by_node = Application.objects.filter(
+            requested_access__equipment__node=node,
+            node_resolutions__node=node,
+            node_resolutions__resolution__in=['accept', 'waitlist', 'reject']
+        ).distinct().prefetch_related('node_resolutions', 'node_resolutions__node')
+        resolved_applications.update(resolved_by_node)
 
-        nodes_data.append({
-            'node': user_role.node,
-            'pending_count': pending_apps.count(),
-            'call_summaries': call_summaries
-        })
-        total_pending += pending_apps.count()
+    # Sort pending items by final_score descending, then by code
+    pending_items = sorted(
+        pending_items,
+        key=lambda x: (-(x['application'].final_score or 0), x['application'].code)
+    )
+    resolved_applications = sorted(
+        resolved_applications,
+        key=lambda x: (-(x.final_score or 0), x.code)
+    )
+
+    # Build summary stats
+    summary = {
+        'total': len(pending_items) + len(resolved_applications),
+        'awaiting_decision': len(pending_items),
+        'node_accepted': sum(
+            1 for app in resolved_applications
+            if any(
+                nr.resolution == 'accept' and nr.node in user_nodes
+                for nr in app.node_resolutions.all()
+            )
+        ),
+        'fully_resolved': sum(
+            1 for app in resolved_applications
+            if app.resolution in ['accepted', 'pending', 'rejected']
+        ),
+    }
 
     context = {
-        'nodes_data': nodes_data,
-        'total_pending': total_pending,
+        'user_nodes': user_nodes,
+        'pending_items': pending_items,  # List of {'application': app, 'node': node}
+        'resolved_applications': resolved_applications,
+        'summary': summary,
     }
     return render(request, 'applications/node_resolution/queue.html', context)
 
