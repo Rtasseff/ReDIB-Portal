@@ -194,7 +194,7 @@ This creates:
 - `applicant1@test.redib.net` - Applicant
 - `applicant2@test.redib.net` - Applicant
 
-See `archive/TEST_SETUP.md` for detailed information about the test data structure.
+See `../archive/TEST_SETUP.md` for detailed information about the test data structure.
 
 ---
 
@@ -291,7 +291,7 @@ Once you have the test data loaded:
 - **Development Workflows**: See [DEVELOPMENT.md](DEVELOPMENT.md)
 - **Testing Guide**: See [TESTING.md](TESTING.md)
 - **Quick Start**: See [QUICKSTART.md](QUICKSTART.md)
-- **System Design**: See [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md)
+- **System Design**: See [reference/redib-coa-system-design.md](reference/redib-coa-system-design.md)
 - **Archived Docs**: See [archive/](archive/) for historical documentation
 
 ---

@@ -33,7 +33,7 @@ The ReDIB COA Portal is **fully implemented and production-ready** with all 10 d
 - ✅ 29 integration tests covering all phases
 - ✅ Ready for production deployment
 
-See [README.md](README.md) for complete feature list and technical details.
+See [README.md](../README.md) for complete feature list and technical details.
 
 ## How to Use
 
@@ -158,5 +158,5 @@ For production deployment, see the comprehensive deployment guide in [README.md]
 - **Detailed Setup**: [SETUP_GUIDE.md](SETUP_GUIDE.md)
 - **Testing Guide**: [TESTING.md](TESTING.md)
 - **Development Workflows**: [DEVELOPMENT.md](DEVELOPMENT.md)
-- **System Design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md)
-- **Complete Documentation**: [README.md](README.md)
+- **System Design**: [reference/redib-coa-system-design.md](reference/redib-coa-system-design.md)
+- **Complete Documentation**: [README.md](../README.md)

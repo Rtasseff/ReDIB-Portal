@@ -2,107 +2,85 @@
 
 This directory contains all project documentation, reference materials, and test reports.
 
+## Documentation Index
+
+### Getting Started
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for new users
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows and common commands
+
+### User Documentation
+- **[USER_GUIDE.md](USER_GUIDE.md)** - Complete end-user guide for all portal roles
+
+### Testing
+- **[TESTING.md](TESTING.md)** - Testing procedures and guidelines
+- **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** - Test data and manual testing scenarios
+
 ## Directory Structure
 
 ### `/reference/`
 Reference materials and specifications:
 - `redib-coa-system-design.md` - Complete system design document
 - `coa-application-form-spec.md` - Application form specification
-- `REDIB-APP-application-form-coa-redib.docx` - Official application form (DOCX)
+- `evaluationForm_en.md` - Evaluation form specification
 
 ### `/test-reports/`
 Comprehensive test reports for each phase:
-- `PHASE1_PHASE2_TEST_REPORT.md` - Call Management & Application Submission tests
-- `PHASE3_TEST_REPORT.md` - Feasibility Review tests
+- `PHASE1_PHASE2_TEST_REPORT.md` - Call Management & Application Submission
+- `PHASE3_TEST_REPORT.md` - Feasibility Review
+- `PHASE4_TEST_REPORT.md` - Evaluator Assignment
+- `PHASE_8_9_10_TEST_RESULTS.md` - Acceptance, Publications, and Reporting
 
-## Related Documentation
-
-### Root Directory
-- [README.md](../README.md) - Main project documentation and overview
-- [QUICKSTART.md](../QUICKSTART.md) - Quick start guide for new users
-- [SETUP_GUIDE.md](../SETUP_GUIDE.md) - Detailed setup and configuration
-- [TESTING.md](../TESTING.md) - Testing procedures and guidelines
-- [DEVELOPMENT.md](../DEVELOPMENT.md) - Development workflows and common commands
-
-### Archive Directory (`../archive/`)
-- `../archive/` - Historical documentation (CHANGELOG.md, old validation reports)
-- `../archive/dev-docs/` - Development-phase documentation (PROJECT_STRUCTURE.md, design decisions)
+### `/archive/`
+Completed planning documents and historical notes:
+- `PHASE_6_CHANGE.md` - Node coordinator resolution workflow implementation
+- `PHASES_8_9_10_REVIEW.md` - Phases 8-10 review and implementation
+- `ACCEPTANCE_WORKFLOW_FIXED.md` - Acceptance workflow fixes
+- `OPTIMIZE_SPEED.md` - Performance optimization plan
+- `TESTING_NOTES.md` - Historical testing notes
 
 ## Test Scripts
 
 All automated test scripts are located in `/tests/`:
-- `test_phase1_phase2_workflow.py` - Call Management & Application Submission
-- `test_phase3_feasibility_review.py` - Feasibility Review
+- `test_application_form_spec.py` - Application form specification validation (63 tests)
+- `test_phase1_phase2_workflow.py` - Call Management & Application Submission (23 tests)
+- `test_phase3_feasibility_review.py` - Feasibility Review (29 tests)
 - `test_phase4_evaluator_assignment.py` - Evaluator Assignment
 - `test_phase5_evaluation_submission.py` - Evaluation Process
-- `test_phase6_resolution.py` - Resolution & Prioritization
+- `test_phase6_resolution.py` - Resolution & Prioritization (legacy)
+- `test_phase6_node_resolution.py` - Node Coordinator Resolution (18 tests)
 - `test_phase7_acceptance.py` - Acceptance & Handoff
 - `test_phase9_publications.py` - Publication Tracking
-- `reports/tests.py` - Reporting & Statistics
 
-**Total:** 29 integration tests across all phases.
+**Total:** 47+ integration tests across all phases.
+
+## Quick Database Setup
+
+```bash
+# Set up complete test database with one command
+python manage.py setup_test_database --reset --yes
+```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for more options.
 
 ## Current Implementation Status
 
-### ✅ All Phases Complete (Production-Ready)
-
-All 10 development phases have been completed and validated with comprehensive test coverage:
+### All Phases Complete (Production-Ready)
 
 - **Phase 0**: Foundation & Dashboard
 - **Phase 1**: Call Management
 - **Phase 2**: Application Submission (5-step wizard)
-- **Phase 3**: Feasibility Review
+- **Phase 3**: Feasibility Review (multi-node)
 - **Phase 4**: Evaluator Assignment (COI detection)
 - **Phase 5**: Evaluation Process (5 criteria, 1-5 scale)
-- **Phase 6**: Resolution & Prioritization
-- **Phase 7**: Acceptance & Handoff
+- **Phase 6**: Resolution & Prioritization (node coordinator ownership)
+- **Phase 7**: Acceptance & Handoff (10-day deadline)
+- **Phase 8**: Access Handoff (email automation)
 - **Phase 9**: Publication Tracking
 - **Phase 10**: Reporting & Statistics
 
-**Current Phase:** Comprehensive testing and validation.
+## Related Documentation
 
-Total automated tests: **29 integration tests** covering all workflow phases.
-
-## Key Features Implemented
-
-### Application Form (Phase 2)
-- ✅ 5 applicant information fields (name, ORCID, entity, email, phone)
-- ✅ 7 project types (expanded from 5)
-- ✅ 20 AEI subject area classifications (expanded from 13)
-- ✅ Auto-population from user profile
-- ✅ Data snapshot at submission time
-
-### Feasibility Review (Phase 3)
-- ✅ Multi-node workflow
-- ✅ One review per node with requested equipment
-- ✅ Approval/rejection logic
-- ✅ State machine compliance
-- ✅ Email notifications (via Celery)
-
-## Running Tests
-
-See [TESTING.md](../TESTING.md) for comprehensive testing documentation.
-
-**Quick reference:**
-```bash
-# Run all tests
-python manage.py test tests
-
-# Run specific phase tests
-python manage.py test tests.test_phase1_phase2_workflow
-python manage.py test tests.test_phase3_feasibility_review
-python manage.py test tests.test_phase4_evaluator_assignment
-python manage.py test tests.test_phase5_evaluation_submission
-python manage.py test tests.test_phase6_resolution
-python manage.py test tests.test_phase7_acceptance
-python manage.py test tests.test_phase9_publications
-python manage.py test reports.tests
-```
-
-## Documentation Maintenance
-
-When updating documentation:
-1. Keep this README current with directory structure changes
-2. Move outdated docs to `../archive/`
-3. Update test reports after running new tests
-4. Keep reference materials in `/reference/`
+- [../README.md](../README.md) - Main project README
+- [../tests/README.md](../tests/README.md) - Test suite documentation
+- [../archive/](../archive/) - Historical project documentation

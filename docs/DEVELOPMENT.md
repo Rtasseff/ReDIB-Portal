@@ -4,10 +4,38 @@ This guide contains common development workflows and procedures for ReDIB-Portal
 
 ## Table of Contents
 
+- [Quick Database Setup](#quick-database-setup)
 - [Database Management](#database-management)
 - [Data Loading](#data-loading)
 - [Development Server](#development-server)
 - [Common Commands](#common-commands)
+
+## Quick Database Setup
+
+The fastest way to set up a complete development/test database:
+
+```bash
+# Complete reset and seed with all test data (recommended)
+python manage.py setup_test_database --reset --yes
+
+# Or just seed without reset (if database is already empty)
+python manage.py setup_test_database
+```
+
+This single command:
+1. Clears all data except superusers (with `--reset`)
+2. Populates ReDIB nodes (4 nodes)
+3. Populates equipment (17 items)
+4. Populates users (coordinators, evaluators, node coordinators)
+5. Seeds development data (calls, organizations)
+6. Seeds email templates
+7. Creates test applicants with applications in various workflow stages
+
+**Test accounts created** (password: `testpass123`):
+- `testapplicant1@test.redib.net` through `testapplicant5@test.redib.net`
+- Applications at different stages: draft, submitted, under review, evaluated, accepted, etc.
+
+See [TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md) for complete test data documentation.
 
 ## Database Management
 
@@ -135,7 +163,13 @@ python manage.py sqlmigrate core 0001
 ### Creating Test Data
 
 ```bash
-# Create comprehensive test data (optional)
+# Complete test database setup (recommended - runs all seed scripts)
+python manage.py setup_test_database --reset --yes
+
+# Or seed just the test applicants (if base data already exists)
+python manage.py seed_test_applicants --clear
+
+# Or seed just development data (calls, orgs)
 python manage.py seed_dev_data
 ```
 
@@ -151,11 +185,16 @@ python manage.py migrate
 # 2. Create superuser
 python manage.py createsuperuser
 
-# 3. Load data in order
-python manage.py seed_email_templates
-python manage.py populate_redib_nodes
-python manage.py populate_redib_users
-python manage.py populate_redib_equipment
+# 3. Load ALL data with one command (recommended)
+python manage.py setup_test_database
+
+# OR load data manually in order:
+# python manage.py seed_email_templates
+# python manage.py populate_redib_nodes
+# python manage.py populate_redib_users
+# python manage.py populate_redib_equipment
+# python manage.py seed_dev_data
+# python manage.py seed_test_applicants
 
 # 4. Start server
 python manage.py runserver
@@ -163,7 +202,8 @@ python manage.py runserver
 
 ## Related Documentation
 
-- [SETUP_GUIDE.md](SETUP_GUIDE.md) - Initial project setup and configuration
-- [TESTING.md](TESTING.md) - Testing procedures and guidelines
+- [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Initial project setup and configuration
+- [docs/TESTING.md](docs/TESTING.md) - Testing procedures and guidelines
+- [docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md) - Test data documentation
+- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - End-user guide for portal users
 - [README.md](README.md) - Project overview and features
-- [workflows/basic_dev.md](workflows/basic_dev.md) - Original basic workflow reference

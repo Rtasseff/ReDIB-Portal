@@ -8,14 +8,16 @@ This Django-based web application automates the complete COA lifecycle, from cal
 
 ## Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started quickly (new users start here)
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup and configuration
-- **[TESTING.md](TESTING.md)** - Testing procedures and guidelines
-- **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing and demos
-- **[TESTING_NOTES.md](TESTING_NOTES.md)** - Active testing notes and issue tracking
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows and common commands
-- **[OPTIMIZE_SPEED.md](OPTIMIZE_SPEED.md)** - Performance analysis and optimization guide
-- **[docs/](docs/)** - Technical reference and system design documentation
+All documentation is organized in the `docs/` folder:
+
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Get started quickly (new users start here)
+- **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflows and common commands
+- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - End-user guide for portal users
+- **[docs/TESTING.md](docs/TESTING.md)** - Testing procedures and guidelines
+- **[docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing
+- **[docs/reference/](docs/reference/)** - Technical reference and system design documentation
+- **[docs/test-reports/](docs/test-reports/)** - Automated test reports by phase
 
 ### Key Features
 
@@ -93,10 +95,11 @@ redib/
   - Completion notifications
 
 - **Phase 6**: Resolution & Prioritization ✅
-  - Score aggregation and ranking
-  - Auto-approval rule (>3.5 average score)
-  - Coordinator resolution workflow
-  - Priority assignment
+  - Node coordinator resolution workflow (distributed ownership)
+  - Multi-node aggregation (ALL accept → accepted, ANY reject → rejected)
+  - Per-equipment hours approval by node coordinators
+  - Competitive funding protection (cannot reject funded applications)
+  - Score-based ranking and prioritization
 
 - **Phase 7 & 8**: Acceptance & Handoff (Simplified) ✅
   - Applicant acceptance/decline workflow
@@ -116,7 +119,7 @@ redib/
   - Publication statistics integration
   - Report generation tracking
 
-**Complete system with comprehensive automated test suites (29 tests across all phases).**
+**Complete system with comprehensive automated test suites (47+ tests across all phases).**
 
 ---
 
@@ -215,7 +218,16 @@ redib/
 
 ## Development
 
-For development workflows, common commands, database management, and data loading procedures, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
+For development workflows, common commands, database management, and data loading procedures, see **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
+
+### Quick Test Database Setup
+
+```bash
+# Set up complete test database with one command
+python manage.py setup_test_database --reset --yes
+```
+
+This populates the database with nodes, equipment, users, calls, and test applications at various workflow stages.
 
 ## Environment Variables
 
@@ -229,7 +241,24 @@ Key environment variables (see `.env.example` for full list):
 
 ## Initial Setup Tasks
 
-After deployment, perform these initial setup tasks in order:
+After deployment, perform these initial setup tasks:
+
+### Option A: Quick Setup (Recommended for Development/Testing)
+
+```bash
+# 1. Run migrations
+python manage.py migrate
+
+# 2. Create superuser
+python manage.py createsuperuser
+
+# 3. Set up complete test database with one command
+python manage.py setup_test_database
+```
+
+This single command populates nodes, equipment, users, email templates, calls, and test applications.
+
+### Option B: Manual Setup (Production)
 
 1. **Run migrations**
    ```bash
@@ -246,7 +275,7 @@ After deployment, perform these initial setup tasks in order:
    python manage.py seed_email_templates
    ```
 
-4. **Populate ReDIB nodes** (4 nodes from CSV: BioImaC, CIC-biomaGUNE, Imaging La Fe, TRIMA-CNIC)
+4. **Populate ReDIB nodes** (4 nodes from CSV)
    ```bash
    python manage.py populate_redib_nodes
    ```
