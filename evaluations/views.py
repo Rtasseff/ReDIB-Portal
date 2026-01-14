@@ -302,14 +302,18 @@ def manual_assign_evaluator(request, application_id):
 def remove_evaluator_assignment(request, evaluation_id):
     """
     Remove an evaluator assignment (only if not yet completed).
+    Redirects back to the call assignment page after removal.
     """
     if request.method != 'POST':
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
+        messages.error(request, 'Invalid request method')
+        return redirect('evaluations:assignment_dashboard')
 
     evaluation = get_object_or_404(Evaluation, pk=evaluation_id)
+    call_id = evaluation.application.call_id
 
     if evaluation.completed_at:
-        return JsonResponse({'error': 'Cannot remove completed evaluation'}, status=400)
+        messages.error(request, 'Cannot remove completed evaluation')
+        return redirect('evaluations:call_assignment_detail', call_id=call_id)
 
     application_code = evaluation.application.code
     evaluator_name = evaluation.evaluator.get_full_name()
@@ -318,4 +322,4 @@ def remove_evaluator_assignment(request, evaluation_id):
 
     messages.success(request, f'Removed {evaluator_name} from {application_code}')
 
-    return JsonResponse({'success': True})
+    return redirect('evaluations:call_assignment_detail', call_id=call_id)

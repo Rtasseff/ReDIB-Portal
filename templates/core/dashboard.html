@@ -135,6 +135,56 @@
         {% endif %}
     </div>
 </div>
+
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-check2-square"></i> Pending Resolution Decisions</h5>
+        {% if resolution_count > 0 %}
+        <span class="badge bg-warning text-dark">{{ resolution_count }} awaiting</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if pending_resolutions %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Node</th>
+                        <th>Final Score</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pending_resolutions %}
+                    <tr>
+                        <td><strong>{{ item.application.code }}</strong></td>
+                        <td><span class="badge bg-info">{{ item.node.code }}</span></td>
+                        <td>
+                            {% if item.application.final_score %}
+                            <span class="badge bg-primary">{{ item.application.final_score|floatformat:1 }}</span>
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.application.submitted_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'applications:node_resolution_review' item.application.pk item.node.pk %}" class="btn btn-sm btn-danger">
+                                <i class="bi bi-check-square"></i> Resolve
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="{% url 'applications:node_resolution_queue' %}" class="btn btn-danger">View Full Resolution Queue</a>
+        {% else %}
+        <p class="text-muted">No pending resolution decisions. All evaluated applications have been resolved.</p>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
 
 <!-- Evaluator Section -->

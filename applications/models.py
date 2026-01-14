@@ -404,7 +404,27 @@ class RequestedAccess(models.Model):
         help_text='Actual hours used (reported on completion)'
     )
 
+    # Equipment completion tracking
+    is_completed = models.BooleanField(
+        default=False,
+        help_text='Equipment access marked as completed (by either applicant or node coordinator)'
+    )
+    completed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='completed_equipment_requests',
+        help_text='User who marked this equipment access as completed'
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When this equipment access was marked as completed'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     history = HistoricalRecords()
 
@@ -458,4 +478,73 @@ class FeasibilityReview(models.Model):
             status = 'Feasible'
         elif self.is_feasible is False:
             status = 'Not Feasible'
+        return f"{self.application.code} - {self.node.code}: {status}"
+
+
+class NodeResolution(models.Model):
+    """
+    Node coordinator's resolution decision for applications requesting their equipment.
+
+    Each node coordinator makes an independent decision for their node's equipment,
+    which is then aggregated by the system into a final application-level resolution.
+
+    Aggregation Logic:
+    - ALL nodes accept → Application accepted
+    - ANY node rejects → Application rejected
+    - No rejects but ≥1 waitlist → Application pending (waitlisted)
+    """
+
+    NODE_RESOLUTION_CHOICES = [
+        ('', 'Not Decided'),
+        ('accept', 'Accept'),
+        ('waitlist', 'Waitlist'),
+        ('reject', 'Reject'),
+    ]
+
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name='node_resolutions'
+    )
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.PROTECT,
+        help_text='Node providing this resolution'
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='node_resolutions_conducted',
+        help_text='Node coordinator who made this decision'
+    )
+
+    resolution = models.CharField(
+        max_length=20,
+        choices=NODE_RESOLUTION_CHOICES,
+        blank=True,
+        help_text="This node's resolution decision"
+    )
+    comments = models.TextField(
+        blank=True,
+        help_text='Node coordinator comments on resolution'
+    )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When node coordinator made their decision'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ['application', 'node']
+        unique_together = ['application', 'node']
+        verbose_name = 'Node Resolution'
+        verbose_name_plural = 'Node Resolutions'
+
+    def __str__(self):
+        status = self.get_resolution_display() if self.resolution else 'Pending'
         return f"{self.application.code} - {self.node.code}: {status}"

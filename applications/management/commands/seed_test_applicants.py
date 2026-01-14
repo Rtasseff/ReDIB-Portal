@@ -74,7 +74,7 @@ class Command(BaseCommand):
 
     def clear_test_data(self):
         """Clear only test applicant data (users with email containing 'applicant' and not from seed_dev_data)."""
-        from applications.models import Application
+        from applications.models import Application, NodeResolution
         from core.models import UserRole
 
         # Find test applicants (exclude the ones from seed_dev_data)
@@ -82,9 +82,16 @@ class Command(BaseCommand):
             email__icontains='testapplicant'
         ).filter(is_superuser=False)
 
+        # Get their applications
+        test_apps = Application.objects.filter(applicant__in=test_applicants)
+
+        # Delete node resolutions for their applications
+        nr_count = NodeResolution.objects.filter(application__in=test_apps).count()
+        NodeResolution.objects.filter(application__in=test_apps).delete()
+
         # Delete their applications
-        app_count = Application.objects.filter(applicant__in=test_applicants).count()
-        Application.objects.filter(applicant__in=test_applicants).delete()
+        app_count = test_apps.count()
+        test_apps.delete()
 
         # Delete their roles
         UserRole.objects.filter(user__in=test_applicants).delete()
@@ -93,7 +100,7 @@ class Command(BaseCommand):
         user_count = test_applicants.count()
         test_applicants.delete()
 
-        self.stdout.write(self.style.WARNING(f'  → Deleted {user_count} test applicants and {app_count} applications'))
+        self.stdout.write(self.style.WARNING(f'  → Deleted {user_count} test applicants, {app_count} applications, {nr_count} node resolutions'))
 
     def create_applicants(self):
         """Create test applicants with diverse backgrounds."""
@@ -154,7 +161,7 @@ class Command(BaseCommand):
 
     def create_applications(self, applicants):
         """Create applications at various stages for comprehensive testing."""
-        from applications.models import Application, RequestedAccess, FeasibilityReview
+        from applications.models import Application, RequestedAccess, FeasibilityReview, NodeResolution
         from evaluations.models import Evaluation
         from calls.models import Call
         from core.models import Equipment, Node, UserRole
@@ -202,47 +209,61 @@ class Command(BaseCommand):
             return timezone.make_aware(dt_with_time) if timezone.is_naive(dt_with_time) else dt_with_time
 
         # Application templates for different stages
-        # Format: (status, needs_equipment, needs_feasibility, needs_evaluation, score, resolution)
+        # Format: (status, needs_equipment, needs_feasibility, needs_evaluation, score, resolution, node_resolution_type)
+        # node_resolution_type: None=no resolution, 'all_accept'=all nodes accept, 'mixed_waitlist'=accept+waitlist, 'any_reject'=one rejects
         stages = [
             # Applicant 1: Early stages
-            ('draft', True, False, False, None, ''),
-            ('submitted', True, False, False, None, ''),
-            ('under_feasibility_review', True, True, False, None, ''),
+            ('draft', True, False, False, None, '', None),
+            ('submitted', True, False, False, None, '', None),
+            ('under_feasibility_review', True, True, False, None, '', None),
 
             # Applicant 2: Evaluation stages
-            ('pending_evaluation', True, True, False, None, ''),
-            ('under_evaluation', True, True, True, None, ''),  # 1 of 2 evaluations
-            ('evaluated', True, True, True, Decimal('9.5'), ''),
+            ('pending_evaluation', True, True, False, None, '', None),
+            ('under_evaluation', True, True, True, None, '', None),  # 1 of 2 evaluations
+            ('evaluated', True, True, True, Decimal('9.5'), '', None),  # Ready for node resolution
 
-            # Applicant 3: Resolution outcomes
-            ('accepted', True, True, True, Decimal('10.5'), 'accepted'),
-            ('pending', True, True, True, Decimal('8.5'), 'pending'),
-            ('rejected', True, True, True, Decimal('4.0'), 'rejected'),
+            # Applicant 3: Resolution outcomes (via node coordinator resolution)
+            ('accepted', True, True, True, Decimal('10.5'), 'accepted', 'all_accept'),
+            ('pending', True, True, True, Decimal('8.5'), 'pending', 'mixed_waitlist'),
+            ('rejected', True, True, True, Decimal('4.0'), 'rejected', 'any_reject'),
 
             # Applicant 4: Acceptance workflow
-            ('accepted', True, True, True, Decimal('11.0'), 'accepted'),
-            ('declined_by_applicant', True, True, True, Decimal('9.0'), 'accepted'),
+            ('accepted', True, True, True, Decimal('11.0'), 'accepted', 'all_accept'),
+            ('declined_by_applicant', True, True, True, Decimal('9.0'), 'accepted', 'all_accept'),
 
             # Applicant 5: Various scenarios
-            ('rejected_feasibility', True, True, False, None, ''),
-            ('accepted', True, True, True, Decimal('10.0'), 'accepted'),
+            ('rejected_feasibility', True, True, False, None, '', None),
+            ('accepted', True, True, True, Decimal('10.0'), 'accepted', 'all_accept'),
 
             # Applicant 6: Edge cases
-            ('under_evaluation', True, True, True, None, ''),  # Both evaluations complete
-            ('accepted', True, True, True, Decimal('8.0'), 'accepted'),  # Below threshold but accepted
+            ('under_evaluation', True, True, True, None, '', None),  # Both evaluations complete
+            ('accepted', True, True, True, Decimal('8.0'), 'accepted', 'all_accept'),  # Below threshold but accepted
 
             # Applicant 7: Multi-equipment and competitive funding
-            ('accepted', True, True, True, Decimal('11.5'), 'accepted'),
-            ('evaluated', True, True, True, Decimal('9.0'), ''),
+            ('accepted', True, True, True, Decimal('11.5'), 'accepted', 'all_accept'),
+            ('evaluated', True, True, True, Decimal('9.0'), '', None),  # Ready for node resolution (multi-node)
         ]
 
-        for i, (status, needs_equip, needs_feas, needs_eval, score, resolution) in enumerate(stages):
+        for i, (status, needs_equip, needs_feas, needs_eval, score, resolution, node_res_type) in enumerate(stages):
             # Rotate through applicants
             applicant = applicants[i % len(applicants)]
 
             # Determine equipment (some single-node, some multi-node)
-            if i % 5 == 0:  # Multi-node application
-                equip_items = equipment_list[:2] if len(equipment_list) >= 2 else equipment_list[:1]
+            # Multi-node for: every 5th app, OR apps that need mixed/reject node resolutions
+            needs_multi_node = (i % 5 == 0) or node_res_type in ('mixed_waitlist', 'any_reject')
+            if needs_multi_node and len(equipment_list) >= 2:
+                # Get equipment from DIFFERENT nodes
+                equip_items = []
+                seen_nodes = set()
+                for eq in equipment_list:
+                    if eq.node.id not in seen_nodes:
+                        equip_items.append(eq)
+                        seen_nodes.add(eq.node.id)
+                        if len(equip_items) >= 2:
+                            break
+                # Fallback if not enough different nodes
+                if len(equip_items) < 2:
+                    equip_items = equipment_list[:2]
             else:  # Single-node application
                 equip_items = [equipment_list[i % len(equipment_list)]]
 
@@ -372,6 +393,43 @@ class Command(BaseCommand):
                     )
                     # Note: Don't manually set completed_at - let the Evaluation model handle it
                     # The model auto-sets completed_at when all scores are filled in
+
+            # Add node resolutions for applications that have gone through resolution
+            if node_res_type and node_coords:
+                nodes_in_app = list(set(equip.node for equip in equip_items))
+                for j, node in enumerate(nodes_in_app):
+                    if node.code in node_coords:
+                        # Determine resolution based on node_res_type
+                        if node_res_type == 'all_accept':
+                            node_decision = 'accept'
+                        elif node_res_type == 'mixed_waitlist':
+                            # First node accepts, others waitlist
+                            node_decision = 'accept' if j == 0 else 'waitlist'
+                        elif node_res_type == 'any_reject':
+                            # First node accepts, second rejects
+                            node_decision = 'accept' if j == 0 else 'reject'
+                        else:
+                            node_decision = 'accept'
+
+                        # Set hours_approved based on resolution
+                        req_access_items = app.requested_access.filter(equipment__node=node)
+                        for ra in req_access_items:
+                            if node_decision == 'accept':
+                                ra.hours_approved = ra.hours_requested
+                            elif node_decision == 'waitlist':
+                                ra.hours_approved = ra.hours_requested / 2  # Partial approval
+                            else:
+                                ra.hours_approved = Decimal('0')
+                            ra.save()
+
+                        NodeResolution.objects.create(
+                            application=app,
+                            node=node,
+                            reviewer=node_coords[node.code],
+                            resolution=node_decision,
+                            comments=f'Test {node_decision} decision by {node.code}',
+                            reviewed_at=aware_datetime(-5)
+                        )
 
             app_counter += 1
 

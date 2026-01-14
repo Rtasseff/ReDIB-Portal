@@ -133,6 +133,103 @@ def send_resolution_notifications_task(call_id):
 
 
 @shared_task
+def send_single_resolution_notification_task(application_id):
+    """
+    Send resolution notification email for a single application.
+    Triggered automatically when node resolution aggregation completes.
+
+    Args:
+        application_id: ID of the application with finalized resolution
+
+    Returns:
+        str: Summary of notification sent
+    """
+    from django.db.models import Sum
+    from .models import Application
+
+    try:
+        application = Application.objects.select_related(
+            'applicant', 'call'
+        ).prefetch_related(
+            'node_resolutions__node',
+            'requested_access__equipment__node'
+        ).get(id=application_id)
+    except Application.DoesNotExist:
+        return f"Error: Application {application_id} not found"
+
+    # Verify the application has been resolved
+    if application.resolution not in ['accepted', 'pending', 'rejected']:
+        return f"Application {application.code} has not been fully resolved yet"
+
+    # Determine template type based on resolution
+    template_type = f'resolution_{application.resolution}'
+
+    # Calculate hours details
+    hours_data = application.requested_access.aggregate(
+        total_requested=Sum('hours_requested'),
+        total_approved=Sum('hours_approved')
+    )
+    hours_requested = hours_data['total_requested'] or 0
+    hours_approved = hours_data['total_approved'] or 0
+
+    # Build node decision breakdown
+    node_decisions = []
+    for nr in application.node_resolutions.filter(
+        resolution__in=['accept', 'waitlist', 'reject']
+    ).select_related('node'):
+        node_decisions.append({
+            'node_code': nr.node.code,
+            'node_name': nr.node.name,
+            'resolution': nr.get_resolution_display(),
+            'comments': nr.comments or '',
+        })
+
+    # Build equipment breakdown with approved hours
+    equipment_details = []
+    for ra in application.requested_access.select_related('equipment__node'):
+        equipment_details.append({
+            'equipment_name': ra.equipment.name,
+            'node_code': ra.equipment.node.code,
+            'hours_requested': ra.hours_requested,
+            'hours_approved': ra.hours_approved or 0,
+        })
+
+    # Build email context
+    context = {
+        'applicant_name': application.applicant_name,
+        'application_code': application.code,
+        'call_code': application.call.code,
+        'call_name': application.call.name,
+        'final_score': float(application.final_score) if application.final_score else 0.0,
+        'resolution': application.get_resolution_display(),
+        'hours_requested': float(hours_requested),
+        'hours_approved': float(hours_approved),
+        'resolution_comments': application.resolution_comments or '',
+        'resolution_date': application.resolution_date,
+        'node_decisions': node_decisions,
+        'equipment_details': equipment_details,
+    }
+
+    # Add acceptance deadline for accepted applications
+    if application.resolution == 'accepted' and application.acceptance_deadline:
+        context['acceptance_deadline'] = application.acceptance_deadline
+        context['days_to_respond'] = application.days_until_acceptance_deadline
+
+    # Send notification email
+    try:
+        send_email_from_template(
+            template_type=template_type,
+            recipient_email=application.applicant.email,
+            context_data=context,
+            recipient_user_id=application.applicant.id,
+            related_application_id=application.id
+        )
+        return f"Sent resolution notification for {application.code} ({application.resolution})"
+    except Exception as e:
+        return f"Error sending notification for {application.code}: {e}"
+
+
+@shared_task
 def process_acceptance_deadlines():
     """
     Daily task to process acceptance deadlines for approved applications.
