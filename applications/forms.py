@@ -611,3 +611,78 @@ class EquipmentCompletionForm(forms.Form):
                 f'Approved hours: {self.hours_approved}. '
                 'Enter the actual number of hours used.'
             )
+
+
+# =============================================================================
+# PDF Signature Upload Form
+# =============================================================================
+
+class SignedPdfUploadForm(forms.Form):
+    """
+    Form for uploading a signed PDF application.
+
+    Validates:
+    - File extension (.pdf only)
+    - MIME type (application/pdf)
+    - File size (max 5MB)
+    - Signature affirmation checkbox (required)
+    """
+
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
+
+    signed_pdf = forms.FileField(
+        label='Signed PDF File',
+        help_text='Upload your signed PDF (maximum 5MB)',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,application/pdf'
+        })
+    )
+
+    signature_affirmation = forms.BooleanField(
+        required=True,
+        label=(
+            'I declare that the uploaded PDF has been signed with a valid '
+            'qualified electronic certificate (certificado digital cualificado) '
+            'in accordance with eIDAS regulations.'
+        ),
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def clean_signed_pdf(self):
+        """Validate the uploaded PDF file."""
+        uploaded_file = self.cleaned_data.get('signed_pdf')
+
+        if not uploaded_file:
+            raise forms.ValidationError("Please select a PDF file to upload.")
+
+        # Check file extension
+        if not uploaded_file.name.lower().endswith('.pdf'):
+            raise forms.ValidationError("Only PDF files are accepted.")
+
+        # Check MIME type
+        content_type = uploaded_file.content_type
+        if content_type != 'application/pdf':
+            raise forms.ValidationError(
+                "The uploaded file is not a valid PDF."
+            )
+
+        # Check file size
+        if uploaded_file.size > self.MAX_FILE_SIZE:
+            raise forms.ValidationError(
+                f"File size exceeds the 5MB limit. "
+                f"Your file is {uploaded_file.size / (1024*1024):.1f}MB."
+            )
+
+        return uploaded_file
+
+    def clean_signature_affirmation(self):
+        """Validate signature affirmation is checked."""
+        affirmation = self.cleaned_data.get('signature_affirmation')
+
+        if not affirmation:
+            raise forms.ValidationError(
+                "You must confirm that the PDF has been signed."
+            )
+
+        return affirmation

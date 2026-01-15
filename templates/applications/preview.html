@@ -221,29 +221,65 @@
         </div>
     </div>
 
-    <!-- Submit Actions -->
-    <div class="card border-success mb-4">
+    <!-- Download & Submit Actions -->
+    <div class="card border-primary mb-4">
         <div class="card-body">
-            <h5 class="card-title text-success"><i class="bi bi-check-circle"></i> Ready to Submit</h5>
-            <p class="card-text">
-                By submitting this application, you confirm that all information provided is accurate and complete.
-                Your application will be reviewed by ReDIB node coordinators for technical feasibility.
-            </p>
+            <h5 class="card-title text-primary"><i class="bi bi-file-earmark-pdf"></i> Download & Sign</h5>
 
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'applications:edit_step5' application.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Edit
-                </a>
+            <!-- Download Section -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Step 1:</strong> You must download the PDF and upload a signed copy to complete your submission.
+                        Sign the PDF using AutoFirma or your qualified electronic certificate (DNIe, FNMT, etc.).
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-end">
+                    <a href="{% url 'applications:download_pdf' application.pk %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-download"></i> Download Application PDF
+                    </a>
+                </div>
+            </div>
 
-                <form method="post" action="{% url 'applications:submit' application.pk %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success btn-lg"
-                            onclick="return confirm('Are you sure you want to submit this application? You cannot make changes after submission.')">
-                        <i class="bi bi-send"></i> Submit Application
+            <hr>
+
+            <!-- Upload Section -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="alert {% if application.pdf_generated_at %}alert-success{% else %}alert-secondary{% endif %} mb-0">
+                        <i class="bi bi-{% if application.pdf_generated_at %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                        <strong>Step 2:</strong> Submit your application by uploading a PDF with your official electronic signature.
+                        {% if not application.pdf_generated_at %}
+                        <br><small class="text-muted">Please download the PDF first before you can upload.</small>
+                        {% else %}
+                        <br><small class="text-muted">PDF downloaded on {{ application.pdf_generated_at|date:"M d, Y H:i" }}. Ready to upload!</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-end">
+                    {% if application.pdf_generated_at %}
+                    <a href="{% url 'applications:upload_signed_pdf' application.pk %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-upload"></i> Upload & Submit
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg" disabled title="Please download the PDF first">
+                        <i class="bi bi-upload"></i> Upload & Submit
                     </button>
-                </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{% url 'applications:edit_step5' application.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Edit
+        </a>
+        <span class="text-muted align-self-center">
+            <strong>Deadline:</strong> {{ application.call.submission_end|date:"F d, Y H:i" }}
+        </span>
     </div>
 </div>
 

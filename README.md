@@ -144,6 +144,12 @@ redib/
    pip install -r requirements.txt
    ```
 
+   **Note for PDF generation:** WeasyPrint requires system libraries. On Ubuntu/Debian:
+   ```bash
+   sudo apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info fonts-dejavu-core
+   ```
+   On macOS: `brew install pango cairo gdk-pixbuf libffi`. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details.
+
 4. **Set up environment variables**
    ```bash
    cp .env.example .env

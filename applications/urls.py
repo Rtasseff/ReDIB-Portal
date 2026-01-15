@@ -17,6 +17,8 @@ urlpatterns = [
     path('<int:pk>/step5/', views.application_edit_step5, name='edit_step5'),
     path('<int:pk>/preview/', views.application_preview, name='preview'),
     path('<int:pk>/submit/', views.application_submit, name='submit'),
+    path('<int:pk>/download-pdf/', views.download_application_pdf, name='download_pdf'),
+    path('<int:pk>/upload-signed/', views.upload_signed_pdf, name='upload_signed_pdf'),
 
     # Stub URL for edit_step1 (redirects to step2 since step1 is only for create)
     path('<int:pk>/step1/', views.application_edit_step2, name='edit_step1'),

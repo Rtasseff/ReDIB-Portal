@@ -10,6 +10,18 @@ from calls.models import Call
 from core.models import Equipment, Node
 
 
+def signed_pdf_upload_path(instance, filename):
+    """
+    Generate organized upload path for signed PDFs.
+    Format: signed_applications/YYYY/MM/APPLICATION_CODE_signed.pdf
+    """
+    from django.utils import timezone
+    now = timezone.now()
+    # Use application code for clear identification
+    safe_code = instance.code.replace('-', '_')
+    return f'signed_applications/{now.year}/{now.month:02d}/{safe_code}_signed.pdf'
+
+
 class Application(models.Model):
     """COA application submitted by researcher"""
 
@@ -145,6 +157,20 @@ class Application(models.Model):
     uses_humans = models.BooleanField(default=False)
     has_human_ethics = models.BooleanField(default=False)
     data_consent = models.BooleanField(default=False, help_text='Data processing consent')
+
+    # Signed PDF document tracking
+    signed_pdf = models.FileField(
+        upload_to=signed_pdf_upload_path,
+        null=True,
+        blank=True,
+        help_text='Uploaded PDF with electronic signature'
+    )
+    signed_pdf_uploaded_at = models.DateTimeField(null=True, blank=True)
+    pdf_generated_at = models.DateTimeField(null=True, blank=True)
+    signature_affirmation = models.BooleanField(
+        default=False,
+        help_text='User affirmed valid electronic signature'
+    )
 
     # Resolution
     final_score = models.DecimalField(

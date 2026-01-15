@@ -200,6 +200,51 @@ python manage.py setup_test_database
 python manage.py runserver
 ```
 
+## System Dependencies for PDF Generation
+
+The portal uses WeasyPrint to generate PDF documents for application signing. WeasyPrint requires certain system libraries to be installed.
+
+### Ubuntu/Debian
+
+```bash
+sudo apt-get install -y \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    fonts-dejavu-core \
+    fonts-liberation
+```
+
+### macOS (Homebrew)
+
+```bash
+brew install pango cairo gdk-pixbuf libffi
+```
+
+### Windows (WSL recommended)
+
+For Windows development, we recommend using WSL2 with Ubuntu. Install the Ubuntu dependencies listed above within WSL.
+
+### Docker
+
+The Dockerfile already includes all required dependencies. No additional setup needed when using Docker.
+
+### Verifying PDF Generation
+
+After installing dependencies, you can test PDF generation:
+
+```bash
+# Start the development server
+python manage.py runserver
+
+# Create a test application and navigate to the preview page
+# Click "Download Application PDF" to test PDF generation
+```
+
+If you encounter errors like "Pango" or "Cairo" not found, ensure the system dependencies are properly installed.
+
 ## Related Documentation
 
 - [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Initial project setup and configuration

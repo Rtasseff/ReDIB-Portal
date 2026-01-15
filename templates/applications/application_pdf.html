@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Application {{ application.code }} - ReDIB</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "DejaVu Sans", Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            padding: 20mm 15mm;
+        }
+
+        /* Page setup for A4 */
+        @page {
+            size: A4;
+            margin: 15mm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 8pt;
+                color: #666;
+            }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 16pt;
+            color: #003366;
+            margin-bottom: 5px;
+        }
+
+        .header h2 {
+            font-size: 12pt;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .header-info {
+            margin-top: 10px;
+            font-size: 9pt;
+            color: #666;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+
+        .section-header {
+            background-color: #003366;
+            color: white;
+            padding: 6px 10px;
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .section-content {
+            padding: 0 10px;
+        }
+
+        /* Definition lists */
+        .info-row {
+            display: table;
+            width: 100%;
+            border-bottom: 1px solid #eee;
+            padding: 4px 0;
+        }
+
+        .info-label {
+            display: table-cell;
+            width: 35%;
+            font-weight: bold;
+            color: #555;
+            vertical-align: top;
+        }
+
+        .info-value {
+            display: table-cell;
+            width: 65%;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 9pt;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        /* Scientific content */
+        .scientific-section {
+            margin-bottom: 12px;
+        }
+
+        .scientific-section h4 {
+            font-size: 10pt;
+            color: #003366;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #003366;
+            padding-bottom: 2px;
+        }
+
+        .scientific-section p {
+            white-space: pre-wrap;
+            font-size: 9pt;
+            margin-top: 5px;
+        }
+
+        /* Declarations */
+        .declaration-item {
+            display: table;
+            width: 100%;
+            padding: 4px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .declaration-label {
+            display: table-cell;
+            width: 70%;
+        }
+
+        .declaration-value {
+            display: table-cell;
+            width: 30%;
+            text-align: right;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        .badge-yes {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-no {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* Signature box */
+        .signature-box {
+            margin-top: 30px;
+            border: 2px solid #003366;
+            padding: 20px;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        .signature-box h3 {
+            font-size: 11pt;
+            color: #003366;
+            margin-bottom: 15px;
+        }
+
+        .signature-placeholder {
+            height: 60px;
+            border: 1px dashed #999;
+            margin: 10px auto;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        .signature-note {
+            font-size: 8pt;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* Footer info */
+        .footer-info {
+            margin-top: 20px;
+            font-size: 8pt;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        /* Utility */
+        .text-muted {
+            color: #666;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>ReDIB - Competitive Open Access Application</h1>
+        <h2>Solicitud de Acceso Competitivo Abierto</h2>
+        <div class="header-info">
+            <strong>Call / Convocatoria:</strong> {{ application.call.code }} - {{ application.call.name }}<br>
+            <strong>Application Code / Codigo:</strong> {{ application.code }}<br>
+            <strong>Generated / Generado:</strong> {{ generated_at|date:"Y-m-d H:i" }}
+        </div>
+    </div>
+
+    <!-- Section 1: Basic Information -->
+    <div class="section">
+        <div class="section-header">1. Applicant Information / Informacion del Solicitante</div>
+        <div class="section-content">
+            <div class="info-row">
+                <span class="info-label">Name / Nombre:</span>
+                <span class="info-value">{{ application.applicant_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">ORCID:</span>
+                <span class="info-value">{{ application.applicant_orcid|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Entity / Entidad:</span>
+                <span class="info-value">{{ application.applicant_entity|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ application.applicant_email|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone / Telefono:</span>
+                <span class="info-value">{{ application.applicant_phone|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Brief Description / Descripcion:</span>
+                <span class="info-value">{{ application.brief_description }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Funding & Project -->
+    <div class="section">
+        <div class="section-header">2. Funding Source / Fuente de Financiacion</div>
+        <div class="section-content">
+            <div class="info-row">
+                <span class="info-label">Project Title / Titulo:</span>
+                <span class="info-value">{{ application.project_title|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Project Code / Codigo:</span>
+                <span class="info-value">{{ application.project_code|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Funding Agency / Agencia:</span>
+                <span class="info-value">{{ application.funding_agency|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Project Type / Tipo:</span>
+                <span class="info-value">{{ application.get_project_type_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Subject Area / Area:</span>
+                <span class="info-value">{{ application.get_subject_area_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Competitive Funding:</span>
+                <span class="info-value">
+                    {% if application.has_competitive_funding %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Equipment Request -->
+    <div class="section">
+        <div class="section-header">3. Equipment Request / Solicitud de Equipamiento</div>
+        <div class="section-content">
+            <div class="info-row">
+                <span class="info-label">Service Modality / Modalidad:</span>
+                <span class="info-value">{{ application.get_service_modality_display }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Specialization / Especializacion:</span>
+                <span class="info-value">{{ application.get_specialization_area_display }}</span>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Node / Nodo</th>
+                        <th>Equipment / Equipamiento</th>
+                        <th>Hours Requested / Horas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for access in requested_access %}
+                    <tr>
+                        <td>{{ access.equipment.node.code }}</td>
+                        <td>{{ access.equipment.name }}</td>
+                        <td>{{ access.hours_requested }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-muted">No equipment requested</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 4: Scientific Content -->
+    <div class="section page-break">
+        <div class="section-header">4. Scientific Content / Contenido Cientifico</div>
+        <div class="section-content">
+            <div class="scientific-section">
+                <h4>4.1 Scientific and Technical Relevance / Relevancia Cientifica y Tecnica</h4>
+                <p>{{ application.scientific_relevance|default:"—" }}</p>
+            </div>
+
+            <div class="scientific-section">
+                <h4>4.2 Methodology and Experimental Design / Metodologia y Diseno Experimental</h4>
+                <p>{{ application.methodology_description|default:"—" }}</p>
+            </div>
+
+            <div class="scientific-section">
+                <h4>4.3 Expected Contributions / Contribuciones Esperadas</h4>
+                <p>{{ application.expected_contributions|default:"—" }}</p>
+            </div>
+
+            <div class="scientific-section">
+                <h4>4.4 Impact and Advancement of Knowledge / Impacto y Avance del Conocimiento</h4>
+                <p>{{ application.impact_strengths|default:"—" }}</p>
+            </div>
+
+            <div class="scientific-section">
+                <h4>4.5 Socioeconomic Significance / Significacion Socioeconomica</h4>
+                <p>{{ application.socioeconomic_significance|default:"—" }}</p>
+            </div>
+
+            <div class="scientific-section">
+                <h4>4.6 Opportunity and Translational Impact / Criterios de Oportunidad</h4>
+                <p>{{ application.opportunity_criteria|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Declarations -->
+    <div class="section">
+        <div class="section-header">5. Declarations & Consent / Declaraciones y Consentimiento</div>
+        <div class="section-content">
+            <div class="declaration-item">
+                <span class="declaration-label">Technical feasibility confirmed with ReDIB node / Factibilidad tecnica confirmada</span>
+                <span class="declaration-value">
+                    {% if application.technical_feasibility_confirmed %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="declaration-item">
+                <span class="declaration-label">Uses experimental animals / Utiliza animales de experimentacion</span>
+                <span class="declaration-value">
+                    {% if application.uses_animals %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if application.uses_animals %}
+            <div class="declaration-item">
+                <span class="declaration-label">Has animal ethics committee approval / Tiene aprobacion de comite de etica animal</span>
+                <span class="declaration-value">
+                    {% if application.has_animal_ethics %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            <div class="declaration-item">
+                <span class="declaration-label">Uses human subjects / Utiliza sujetos humanos</span>
+                <span class="declaration-value">
+                    {% if application.uses_humans %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if application.uses_humans %}
+            <div class="declaration-item">
+                <span class="declaration-label">Has human ethics committee approval / Tiene aprobacion de comite de etica humana</span>
+                <span class="declaration-value">
+                    {% if application.has_human_ethics %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            <div class="declaration-item">
+                <span class="declaration-label">Data processing consent given / Consentimiento de tratamiento de datos</span>
+                <span class="declaration-value">
+                    {% if application.data_consent %}
+                        <span class="badge badge-yes">Yes / Si</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signature Box -->
+    <div class="signature-box">
+        <h3>Electronic Signature / Firma Electronica</h3>
+        <div class="signature-placeholder">
+            Sign this document with your qualified electronic certificate<br>
+            Firme este documento con su certificado electronico cualificado
+        </div>
+        <div class="signature-note">
+            This document must be signed with a valid qualified electronic certificate (DNIe, FNMT, or equivalent)<br>
+            in accordance with eIDAS regulations before submission.<br>
+            <br>
+            Este documento debe ser firmado con un certificado electronico cualificado valido<br>
+            (DNIe, FNMT, o equivalente) de acuerdo con el reglamento eIDAS antes de su presentacion.
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-info">
+        ReDIB - Red Distribuida de Imagen Biomedica<br>
+        Generated: {{ generated_at|date:"Y-m-d H:i:s" }} | Application: {{ application.code }}
+    </div>
+</body>
+</html>

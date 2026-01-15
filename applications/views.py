@@ -14,7 +14,7 @@ from .models import Application, RequestedAccess, FeasibilityReview
 from .forms import (
     ApplicationStep1Form, ApplicationStep2Form, ApplicationStep3Form,
     ApplicationStep4Form, ApplicationStep5Form, RequestedAccessFormSet,
-    FeasibilityReviewForm
+    FeasibilityReviewForm, SignedPdfUploadForm
 )
 
 
@@ -1321,3 +1321,221 @@ def node_confirm_equipment_done(request, requested_access_id):
         'requested_access': req_access,
     }
     return render(request, 'applications/equipment_completion.html', context)
+
+
+# =============================================================================
+# PDF Signature Upload Views
+# =============================================================================
+
+@login_required
+def download_application_pdf(request, pk):
+    """
+    Generate and download the application PDF for signing.
+
+    This view generates a PDF from the application data using WeasyPrint,
+    updates the pdf_generated_at timestamp, and returns the PDF as a download.
+    """
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user,
+        status='draft'
+    )
+
+    # Get related data
+    requested_access = application.requested_access.select_related(
+        'equipment__node'
+    ).order_by('equipment__node__code')
+
+    # Render the HTML template
+    html_string = render_to_string('applications/application_pdf.html', {
+        'application': application,
+        'requested_access': requested_access,
+        'generated_at': timezone.now(),
+    })
+
+    # Generate PDF using WeasyPrint
+    try:
+        html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+        pdf_content = html.write_pdf()
+    except Exception as e:
+        logger.error(f"PDF generation failed for application {application.code}: {e}")
+        messages.error(request, "Failed to generate PDF. Please try again or contact support.")
+        return redirect('applications:preview', pk=pk)
+
+    # Update pdf_generated_at timestamp
+    application.pdf_generated_at = timezone.now()
+    application.save(update_fields=['pdf_generated_at'])
+
+    # Create HTTP response with PDF
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    filename = f"{application.code}_application.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
+
+
+@login_required
+@transaction.atomic
+def upload_signed_pdf(request, pk):
+    """
+    Handle upload of signed PDF and submit the application.
+
+    Validates:
+    - PDF has been downloaded at least once (pdf_generated_at is set)
+    - File is a valid PDF under 5MB
+    - User has affirmed the signature
+
+    On success:
+    - Saves the uploaded file
+    - Transitions application to 'submitted' status
+    - Creates feasibility reviews for each node
+    """
+    from core.models import UserRole
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user,
+        status='draft'
+    )
+
+    # Check that PDF was downloaded at least once
+    if not application.pdf_generated_at:
+        messages.error(request, "Please download the application PDF before uploading.")
+        return redirect('applications:preview', pk=pk)
+
+    # Validate application is complete
+    if not application.requested_access.exists():
+        messages.error(request, "You must request at least one equipment access.")
+        return redirect('applications:edit_step3', pk=application.pk)
+
+    if not application.data_consent:
+        messages.error(request, "You must consent to data processing.")
+        return redirect('applications:edit_step5', pk=application.pk)
+
+    # Check call deadline
+    if timezone.now() > application.call.submission_end:
+        messages.error(request, "Submission deadline has passed.")
+        return redirect('applications:detail', pk=application.pk)
+
+    if request.method == 'POST':
+        form = SignedPdfUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            # Save the uploaded file
+            application.signed_pdf = form.cleaned_data['signed_pdf']
+            application.signed_pdf_uploaded_at = timezone.now()
+            application.signature_affirmation = form.cleaned_data['signature_affirmation']
+
+            # Generate application code
+            call_code = application.call.code
+            count = Application.objects.filter(
+                call=application.call
+            ).exclude(status='draft').count() + 1
+            application.code = f"{call_code}-APP-{count:03d}"
+
+            # Ensure user has applicant role
+            UserRole.objects.get_or_create(
+                user=request.user,
+                role='applicant',
+                defaults={'is_active': True}
+            )
+
+            # Submit
+            application.status = 'submitted'
+            application.submitted_at = timezone.now()
+            application.save()
+
+            # Create feasibility reviews for each node
+            nodes = set()
+            for access_request in application.requested_access.all():
+                nodes.add(access_request.equipment.node)
+
+            for node in nodes:
+                # Get node coordinators via UserRole
+                node_coordinators = UserRole.objects.filter(
+                    node=node,
+                    role='node_coordinator',
+                    is_active=True
+                ).select_related('user')
+
+                # Create a feasibility review for each coordinator
+                for user_role in node_coordinators:
+                    FeasibilityReview.objects.create(
+                        application=application,
+                        node=node,
+                        reviewer=user_role.user
+                    )
+
+            # Update application status to under_feasibility_review
+            application.status = 'under_feasibility_review'
+            application.save()
+
+            # Send confirmation email (gracefully handle Celery unavailability)
+            try:
+                from communications.tasks import send_email_from_template
+                send_email_from_template.delay(
+                    template_type='application_received',
+                    recipient_email=request.user.email,
+                    context_data={
+                        'applicant_name': request.user.get_full_name(),
+                        'application_code': application.code,
+                        'call_code': application.call.code,
+                    },
+                    recipient_user_id=request.user.id,
+                    related_application_id=application.id
+                )
+
+                # Send feasibility request emails
+                for review in application.feasibility_reviews.all():
+                    review_url = request.build_absolute_uri(
+                        reverse('applications:feasibility_review', kwargs={'pk': review.pk})
+                    )
+
+                    send_email_from_template.delay(
+                        template_type='feasibility_request',
+                        recipient_email=review.reviewer.email,
+                        context_data={
+                            'reviewer_name': review.reviewer.get_full_name(),
+                            'application_code': application.code,
+                            'node_name': review.node.name,
+                            'review_url': review_url,
+                        },
+                        recipient_user_id=review.reviewer.id,
+                        related_application_id=application.id
+                    )
+                email_status = "You will receive confirmation by email."
+            except Exception as e:
+                logger.warning(f"Email notification failed (Celery unavailable): {e}")
+                email_status = "(Email notifications disabled - Celery not running)"
+
+            messages.success(
+                request,
+                f"Application {application.code} submitted successfully! {email_status}"
+            )
+            return redirect('applications:detail', pk=application.pk)
+    else:
+        form = SignedPdfUploadForm()
+
+    # Get related data for the upload page
+    requested_access = application.requested_access.select_related(
+        'equipment__node'
+    ).order_by('equipment__node__code')
+
+    context = {
+        'application': application,
+        'requested_access': requested_access,
+        'form': form,
+    }
+    return render(request, 'applications/upload_signed_pdf.html', context)

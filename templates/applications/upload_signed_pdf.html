@@ -1,0 +1,160 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Upload Signed PDF - {{ application.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'applications:preview' application.pk %}">Preview</a></li>
+            <li class="breadcrumb-item active">Upload Signed PDF</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Upload Signed PDF</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Application Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Application Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Application Code</dt>
+                        <dd class="col-sm-8">{{ application.code }}</dd>
+
+                        <dt class="col-sm-4">Call</dt>
+                        <dd class="col-sm-8">{{ application.call.code }} - {{ application.call.name }}</dd>
+
+                        <dt class="col-sm-4">Brief Description</dt>
+                        <dd class="col-sm-8">{{ application.brief_description }}</dd>
+
+                        <dt class="col-sm-4">PDF Downloaded</dt>
+                        <dd class="col-sm-8">{{ application.pdf_generated_at|date:"M d, Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-upload"></i> Upload Signed PDF & Submit</h5>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Please correct the errors below:</h6>
+                        {% for field in form %}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="{{ form.signed_pdf.id_for_label }}" class="form-label">
+                                <strong>{{ form.signed_pdf.label }}</strong>
+                            </label>
+                            {{ form.signed_pdf }}
+                            {% if form.signed_pdf.help_text %}
+                            <div class="form-text">{{ form.signed_pdf.help_text }}</div>
+                            {% endif %}
+                            {% if form.signed_pdf.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.signed_pdf.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Affirmation Checkbox -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    {{ form.signature_affirmation }}
+                                    <label class="form-check-label" for="{{ form.signature_affirmation.id_for_label }}">
+                                        {{ form.signature_affirmation.label }}
+                                    </label>
+                                </div>
+                                {% if form.signature_affirmation.errors %}
+                                <div class="text-danger small mt-2">
+                                    {% for error in form.signature_affirmation.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Warning -->
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Important:</strong> Once you submit, you cannot make further changes to your application.
+                            Please ensure your signed PDF is correct before proceeding.
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'applications:preview' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Preview
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg"
+                                    onclick="return confirm('Are you sure you want to submit this application? You cannot make changes after submission.')">
+                                <i class="bi bi-send"></i> Upload & Submit Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Instructions Sidebar -->
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">
+                            <strong>Sign the PDF</strong><br>
+                            <small class="text-muted">Use AutoFirma or your electronic certificate software to sign the downloaded PDF.</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Select the signed file</strong><br>
+                            <small class="text-muted">Click "Choose File" and select your signed PDF (max 5MB).</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Confirm the signature</strong><br>
+                            <small class="text-muted">Check the box to declare that you have signed the PDF with a valid certificate.</small>
+                        </li>
+                        <li>
+                            <strong>Submit</strong><br>
+                            <small class="text-muted">Click "Upload & Submit Application" to complete your submission.</small>
+                        </li>
+                    </ol>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <strong>Need to re-download?</strong><br>
+                        <a href="{% url 'applications:download_pdf' application.pk %}">
+                            <i class="bi bi-download"></i> Download PDF again
+                        </a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
