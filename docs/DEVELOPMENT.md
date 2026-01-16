@@ -113,6 +113,11 @@ Start the development server after loading data:
 ```bash
 python manage.py runserver
 ```
+If you want others to see it at biomaGUNE
+```bash
+python manage.py runserver 0.0.0.0:8000
+PS C:\Users\rtasseff> python .\tcp_forward.py --target-host 172.26.220.46 --target-port 8000 --listen-host 0.0.0.0 --listen-port 8000
+```
 
 Access points:
 - **Application**: http://localhost:8000
