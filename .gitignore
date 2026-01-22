@@ -71,3 +71,6 @@ htmlcov/
 *.db
 postgres_data/
 redis_data/
+
+# Personal/Local files
+claude.md

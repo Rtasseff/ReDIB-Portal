@@ -61,30 +61,93 @@ See [README.md](../README.md) for complete feature list and technical details.
 
 ### Using Docker (Production-like Environment)
 
-1. **Start all services**
+Docker provides a complete environment with PostgreSQL, Redis, Celery workers, and the Django application.
+
+#### Services Included
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| web | 8000 | Django application |
+| db | 5432 | PostgreSQL database |
+| redis | 6379 | Cache & Celery broker |
+| celery | - | Background task worker |
+| celery-beat | - | Scheduled tasks |
+
+#### Quick Start
+
+1. **Copy the Docker environment file**
    ```bash
-   docker compose up -d
+   cp .env.docker .env
    ```
 
-2. **Run migrations**
+2. **Build and start all services**
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **Run migrations**
    ```bash
    docker compose exec web python manage.py migrate
    ```
 
-3. **Create superuser**
+4. **Create superuser**
    ```bash
    docker compose exec web python manage.py createsuperuser
    ```
 
-4. **View logs**
+5. **Load test data (recommended for testing)**
    ```bash
-   docker compose logs -f web
+   docker compose exec web python manage.py setup_localtest1_database
    ```
 
-5. **Stop services**
-   ```bash
-   docker compose down
-   ```
+6. **Access the portal**
+   - Application: http://localhost:8000
+   - Admin: http://localhost:8000/admin
+
+#### Test Accounts (after running setup_localtest1_database)
+
+All test accounts use password: `testpass123`
+
+| Email | Role |
+|-------|------|
+| coordinator@test.redib.net | ReDIB Coordinator |
+| nc.cicbio@test.redib.net | Node Coordinator (CICBIO) |
+| nc.bioimac@test.redib.net | Node Coordinator (BIOIMAC) |
+| nc.cnic@test.redib.net | Node Coordinator (CNIC) |
+| eval.preclinical@test.redib.net | Evaluator (preclinical) |
+| eval.clinical@test.redib.net | Evaluator (clinical) |
+| eval.radiotracers@test.redib.net | Evaluator (radiotracers) |
+| applicant1@test.redib.net | Applicant |
+| applicant2@test.redib.net | Applicant |
+| applicant3@test.redib.net | Applicant |
+
+#### Common Docker Commands
+
+```bash
+# View logs
+docker compose logs -f web
+
+# View all service logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes (full reset)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose up -d --build
+
+# Run Django management commands
+docker compose exec web python manage.py <command>
+
+# Access Django shell
+docker compose exec web python manage.py shell
+
+# Access database shell
+docker compose exec db psql -U redib_user -d redib_db
+```
 
 ## Initial Data Setup
 

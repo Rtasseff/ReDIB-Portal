@@ -125,71 +125,59 @@ redib/
 
 ## Quick Start
 
-### Development Setup (Local)
+### Docker Deployment (Recommended)
 
-1. **Clone the repository**
+The fastest way to get started is using Docker, which includes PostgreSQL, Redis, and Celery workers.
+
+```bash
+# 1. Copy Docker environment file
+cp .env.docker .env
+
+# 2. Build and start all services
+docker compose up -d --build
+
+# 3. Run migrations
+docker compose exec web python manage.py migrate
+
+# 4. Create superuser
+docker compose exec web python manage.py createsuperuser
+
+# 5. Load test data (optional but recommended)
+docker compose exec web python manage.py setup_localtest1_database
+
+# 6. Access the portal at http://localhost:8000
+```
+
+For detailed Docker instructions, test accounts, and common commands, see **[docs/QUICKSTART.md](docs/QUICKSTART.md)**.
+
+### Local Development (Without Docker)
+
+1. **Clone and set up virtual environment**
    ```bash
    git clone <repository-url>
    cd ReDIB-Portal
-   ```
-
-2. **Create virtual environment**
-   ```bash
    python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate
    ```
 
-3. **Install dependencies**
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**
+   **Note:** WeasyPrint requires system libraries for PDF generation. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#system-dependencies-for-pdf-generation).
+
+3. **Set up environment and run**
    ```bash
    cp .env.example .env
-   # Edit .env with your settings
-   ```
-
-5. **Run with Docker (recommended)**
-   ```bash
-   # Start only database and Redis for local development
-   docker-compose -f docker-compose.dev.yml up -d
-
-   # Run migrations
    python manage.py migrate
-
-   # Create superuser
    python manage.py createsuperuser
-
-   # Run development server
    python manage.py runserver
    ```
 
-6. **Access the application**
+4. **Access the application**
    - Application: http://localhost:8000
    - Admin: http://localhost:8000/admin
-
-### Production Deployment (Docker)
-
-1. **Build and start all services**
-   ```bash
-   docker-compose up -d
-   ```
-
-2. **Run migrations**
-   ```bash
-   docker-compose exec web python manage.py migrate
-   ```
-
-3. **Create superuser**
-   ```bash
-   docker-compose exec web python manage.py createsuperuser
-   ```
-
-4. **Collect static files**
-   ```bash
-   docker-compose exec web python manage.py collectstatic --noinput
-   ```
 
 ## Data Models
 

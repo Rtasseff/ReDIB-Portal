@@ -1,3 +1,13 @@
+# ReDIB Portal Docker Compose Configuration
+#
+# Usage:
+#   1. Copy .env.docker to .env:  cp .env.docker .env
+#   2. Start all services:        docker-compose up -d
+#   3. Run migrations:            docker-compose exec web python manage.py migrate
+#   4. Create superuser:          docker-compose exec web python manage.py createsuperuser
+#   5. Load test data:            docker-compose exec web python manage.py setup_localtest1_database
+#   6. Access the portal:         http://localhost:8000
+
 version: '3.8'
 
 services:
@@ -12,7 +22,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U redib_user"]
+      test: ["CMD-SHELL", "pg_isready -U redib_user -d redib_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,11 +56,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/accounts/login/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   celery:
     build: .
@@ -60,8 +70,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   celery-beat:
     build: .
@@ -71,8 +83,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
