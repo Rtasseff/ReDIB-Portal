@@ -378,15 +378,41 @@
         </div>
     </div>
 
-    <!-- Section 5: Declarations -->
+    <!-- Section 5: Authorizations, Commitments and Declarations -->
     <div class="section">
-        <div class="section-header">5. Declarations & Consent / Declaraciones y Consentimiento</div>
+        <div class="section-header">5. Authorizations, Commitments and Declarations / Autorizaciones, Compromisos y Declaraciones</div>
         <div class="section-content">
+            <p style="font-size: 9pt; margin-bottom: 10px;">
+                The electronic signature of this form is MANDATORY, and with it the applicant:<br>
+                <em>La firma electrónica de este formulario es OBLIGATORIA, y con ella el solicitante:</em>
+            </p>
+
+            <p style="font-size: 9pt; margin-bottom: 5px;">
+                <strong>AUTHORIZES / AUTORIZA</strong> ReDIB, if its COA application is accepted, to publish the following information on its website: access code, principal investigator, entity, project title, essential facility and node in which the experiments will be carried out.<br>
+                <em>AUTORIZA a ReDIB, si su solicitud de COA es aceptada, a publicar la siguiente información en su sitio web: código de acceso, investigador principal, entidad, título del proyecto, instalación esencial y nodo en el que se llevarán a cabo los experimentos.</em>
+            </p>
+
+            <p style="font-size: 9pt; margin-bottom: 5px;">
+                <strong>COMMITS TO / SE COMPROMETE A:</strong>
+            </p>
+            <ul style="font-size: 9pt; margin-bottom: 10px; padding-left: 20px;">
+                <li>INCLUDE an express mention of ReDIB in scientific publications resulting from the COA granted. / INCLUIR una mención expresa a ReDIB en las publicaciones científicas resultantes del COA concedido.</li>
+                <li>NOTIFY published results to info@redib.net / NOTIFICAR los resultados publicados a info@redib.net</li>
+            </ul>
+
+            <p style="font-size: 9pt; margin-bottom: 10px;">
+                <strong>DECLARES / DECLARA</strong> what is marked below / lo que se indica a continuación:
+            </p>
+
             <div class="declaration-item">
-                <span class="declaration-label">Technical feasibility confirmed with ReDIB node / Factibilidad tecnica confirmada</span>
+                <span class="declaration-label">
+                    <strong>Technical Feasibility / Factibilidad Técnica</strong><br>
+                    <span style="font-size: 8pt;">I have already contacted ReDIB or one of its nodes, where they have confirmed the TECHNICAL FEASIBILITY of the experimentation for which I request ICTS access in this Proposal.<br>
+                    <em>He contactado previamente con ReDIB o con uno de sus nodos, donde han confirmado la FACTIBILIDAD TÉCNICA de la experimentación para la que solicito acceso ICTS en esta Propuesta.</em></span>
+                </span>
                 <span class="declaration-value">
                     {% if application.technical_feasibility_confirmed %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Yes / Sí</span>
                     {% else %}
                         <span class="badge badge-no">No</span>
                     {% endif %}
@@ -394,10 +420,14 @@
             </div>
 
             <div class="declaration-item">
-                <span class="declaration-label">Uses experimental animals / Utiliza animales de experimentacion</span>
+                <span class="declaration-label">
+                    <strong>Experimental Animals / Animales de Experimentación</strong><br>
+                    <span style="font-size: 8pt;">This Proposal involves the use of EXPERIMENTAL ANIMALS, and for this purpose I have the corresponding approval from the Ethics Committee, as well as other documentation that may be required (i.e., Animal Experimentation Procedures, health certificates, veterinary approval for the transfer of animals...).<br>
+                    <em>Esta Propuesta implica el uso de ANIMALES DE EXPERIMENTACIÓN, y para ello dispongo de la correspondiente aprobación del Comité de Ética, así como de otra documentación que pueda ser requerida (procedimientos de experimentación animal, certificados sanitarios, aprobación veterinaria para el traslado de animales...).</em></span>
+                </span>
                 <span class="declaration-value">
                     {% if application.uses_animals %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Yes / Sí</span>
                     {% else %}
                         <span class="badge badge-no">No</span>
                     {% endif %}
@@ -406,10 +436,12 @@
 
             {% if application.uses_animals %}
             <div class="declaration-item">
-                <span class="declaration-label">Has animal ethics committee approval / Tiene aprobacion de comite de etica animal</span>
+                <span class="declaration-label" style="padding-left: 20px;">
+                    Has Ethics Committee approval for animal experimentation / Dispone de aprobación del Comité de Ética para experimentación animal
+                </span>
                 <span class="declaration-value">
                     {% if application.has_animal_ethics %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Yes / Sí</span>
                     {% else %}
                         <span class="badge badge-no">No</span>
                     {% endif %}
@@ -418,10 +450,14 @@
             {% endif %}
 
             <div class="declaration-item">
-                <span class="declaration-label">Uses human subjects / Utiliza sujetos humanos</span>
+                <span class="declaration-label">
+                    <strong>Human Subjects / Sujetos Humanos</strong><br>
+                    <span style="font-size: 8pt;">This Proposal involves HUMANS as subjects of study (i.e., clinical trial) and for this purpose has the mandatory approval by the Ethics Committee. I undertake to provide, when requested by ReDIB, all relevant information in this regard.<br>
+                    <em>Esta Propuesta implica SUJETOS HUMANOS como objeto de estudio (p. ej., ensayo clínico) y para ello dispone de la aprobación obligatoria del Comité de Ética. Me comprometo a facilitar, cuando ReDIB lo solicite, toda la información pertinente al respecto.</em></span>
+                </span>
                 <span class="declaration-value">
                     {% if application.uses_humans %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Yes / Sí</span>
                     {% else %}
                         <span class="badge badge-no">No</span>
                     {% endif %}
@@ -430,10 +466,12 @@
 
             {% if application.uses_humans %}
             <div class="declaration-item">
-                <span class="declaration-label">Has human ethics committee approval / Tiene aprobacion de comite de etica humana</span>
+                <span class="declaration-label" style="padding-left: 20px;">
+                    Has Ethics Committee approval for human subjects / Dispone de aprobación del Comité de Ética para sujetos humanos
+                </span>
                 <span class="declaration-value">
                     {% if application.has_human_ethics %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Yes / Sí</span>
                     {% else %}
                         <span class="badge badge-no">No</span>
                     {% endif %}
@@ -441,13 +479,19 @@
             </div>
             {% endif %}
 
-            <div class="declaration-item">
-                <span class="declaration-label">Data processing consent given / Consentimiento de tratamiento de datos</span>
+            <div class="declaration-item" style="border-bottom: none;">
+                <span class="declaration-label">
+                    <strong>Data Protection / Protección de Datos</strong><br>
+                    <span style="font-size: 8pt;">The personal data collected in this document will be incorporated and processed in the file "ICTS ReDIB USERS", the purpose of which is to receive and evaluate requests for use of the ReDIB facilities. The user may exercise their rights of access, rectification, deletion and portability of their data before the nodes that make up ReDIB, as entities jointly responsible for the "ICTS ReDIB USERS" file, through the procedure for exercising personal data rights available on the ReDIB website: www.redib.net. All of which is reported in compliance with article 6 of Organic Law 3/2018, of December 5, on the Protection of Personal Data and guarantee of digital rights.<br><br>
+                    <em>Los datos personales recogidos en este documento serán incorporados y tratados en el fichero "USUARIOS ICTS ReDIB", cuya finalidad es recibir y evaluar solicitudes de uso de las instalaciones de ReDIB. El usuario podrá ejercer sus derechos de acceso, rectificación, supresión y portabilidad de sus datos ante los nodos que componen ReDIB, como entidades corresponsables del fichero "USUARIOS ICTS ReDIB", a través del procedimiento de ejercicio de derechos de datos personales disponible en la web de ReDIB: www.redib.net. Todo lo cual se informa en cumplimiento del artículo 6 de la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales.</em><br><br>
+                    Having been informed of the processing to which my personal data will be subject, I freely give my consent to such processing.<br>
+                    <em>Habiendo sido informado del tratamiento al que serán sometidos mis datos personales, presto libremente mi consentimiento a dicho tratamiento.</em></span>
+                </span>
                 <span class="declaration-value">
                     {% if application.data_consent %}
-                        <span class="badge badge-yes">Yes / Si</span>
+                        <span class="badge badge-yes">Consent Given / Consentimiento Dado</span>
                     {% else %}
-                        <span class="badge badge-no">No</span>
+                        <span class="badge badge-no">Not Given / No Dado</span>
                     {% endif %}
                 </span>
             </div>
