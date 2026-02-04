@@ -228,9 +228,10 @@ class UserRole(models.Model):
 
     AREAS = [
         ('', 'Not applicable'),
-        ('preclinical', 'Preclinical'),
         ('clinical', 'Clinical'),
+        ('preclinical', 'Preclinical'),
         ('radiotracers', 'Radiotracers'),
+        ('radiochemistry', 'Radiochemistry Lab'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roles')

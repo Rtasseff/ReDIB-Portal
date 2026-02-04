@@ -156,7 +156,7 @@ Please do not reply to this email.
             <p><strong>Important Notes:</strong></p>
             <ul>
                 <li>Evaluations are blind - applicant identity is hidden</li>
-                <li>Please score the application on 5 criteria (1-5 scale)</li>
+                <li>Please score the application on 6 criteria (0-2 scale)</li>
                 <li>Your evaluation must be submitted by the deadline above</li>
                 <li>You will receive a reminder 7 days before the deadline</li>
             </ul>
@@ -192,7 +192,7 @@ Please access the ReDIB COA Portal to review the application and submit your eva
 
 Important Notes:
 - Evaluations are blind - applicant identity is hidden
-- Please score the application on 5 criteria (1-5 scale)
+- Please score the application on 6 criteria (0-2 scale)
 - Your evaluation must be submitted by the deadline above
 - You will receive a reminder 7 days before the deadline
 
@@ -305,6 +305,245 @@ This is an automated reminder from the ReDIB COA Portal.
 }
                 '''
             },
+            # Overdue evaluation notifications (Issue #11)
+            {
+                'template_type': 'evaluation_overdue',
+                'subject': 'ReDIB COA: Your Evaluation for {{ application_code }} is Overdue',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #c0392b; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #c0392b; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .warning-box { background-color: #fdedec; border-left: 4px solid #c0392b; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Evaluation Overdue</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ evaluator_name }},</p>
+            <p>Your evaluation for application <strong>{{ application_code }}</strong> (call {{ call_code }}) is now <strong>overdue</strong>.</p>
+            <div class="warning-box">
+                <p><strong>Evaluation Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+                <p><strong>Grace Period:</strong> You have <strong>1 week</strong> from the deadline to submit your evaluation before the form is locked.</p>
+            </div>
+            <p>Please submit your evaluation as soon as possible:</p>
+            <p style="text-align: center;">
+                <a href="{{ evaluation_url }}" class="button">Submit Evaluation Now</a>
+            </p>
+            <p>If you are unable to complete the evaluation, please contact the ReDIB coordinator immediately.</p>
+            <p>Best regards,<br>The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ evaluator_name }},
+
+Your evaluation for application {{ application_code }} (call {{ call_code }}) is now OVERDUE.
+
+Evaluation Deadline: {{ deadline|date:"F d, Y" }}
+Grace Period: You have 1 week from the deadline to submit your evaluation before the form is locked.
+
+Please submit your evaluation as soon as possible:
+{{ evaluation_url }}
+
+If you are unable to complete the evaluation, please contact the ReDIB coordinator immediately.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.''',
+                'available_variables': '''
+{
+    "evaluator_name": "Full name of the evaluator",
+    "application_code": "Application unique code",
+    "call_code": "Call code",
+    "deadline": "Evaluation deadline (datetime object)",
+    "evaluation_url": "URL to the evaluation form"
+}
+                '''
+            },
+            {
+                'template_type': 'coordinator_overdue_evaluations',
+                'subject': 'ReDIB COA: Overdue Evaluations for Call {{ call_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #fef5e7; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        pre { background-color: #f0f0f0; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Overdue Evaluations Notification</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+            <p>The evaluation deadline for call <strong>{{ call_code }}</strong> ({{ call_title }}) has passed and there are <strong>{{ pending_count }}</strong> evaluation(s) still pending.</p>
+            <div class="info-box">
+                <p><strong>Evaluation Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+                <p><strong>Pending Evaluations:</strong> {{ pending_count }}</p>
+            </div>
+            <p><strong>Pending evaluations:</strong></p>
+            <pre>{{ pending_evaluations }}</pre>
+            <p><strong>What has been done:</strong></p>
+            <ul>
+                <li>The evaluators listed above have been notified that their evaluations are overdue</li>
+                <li>Evaluators have a <strong>1-week grace period</strong> to submit their evaluations</li>
+                <li>After the grace period, the evaluation forms will be automatically locked</li>
+            </ul>
+            <p><strong>What you can do:</strong></p>
+            <ul>
+                <li>Contact overdue evaluators directly if needed</li>
+                <li>If you need to extend the deadline, edit the call dates from <strong>Dashboard &gt; Manage Call</strong>. Extending the evaluation deadline automatically resets the grace period for all evaluators.</li>
+            </ul>
+            <p>Best regards,<br>The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from the ReDIB COA Portal.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+The evaluation deadline for call {{ call_code }} ({{ call_title }}) has passed and there are {{ pending_count }} evaluation(s) still pending.
+
+Evaluation Deadline: {{ deadline|date:"F d, Y" }}
+Pending Evaluations: {{ pending_count }}
+
+Pending evaluations:
+{{ pending_evaluations }}
+
+What has been done:
+- The evaluators listed above have been notified that their evaluations are overdue
+- Evaluators have a 1-week grace period to submit their evaluations
+- After the grace period, the evaluation forms will be automatically locked
+
+What you can do:
+- Contact overdue evaluators directly if needed
+- If you need to extend the deadline, edit the call dates from Dashboard > Manage Call. Extending the evaluation deadline automatically resets the grace period for all evaluators.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated notification from the ReDIB COA Portal.''',
+                'available_variables': '''
+{
+    "coordinator_name": "Full name of the coordinator",
+    "call_code": "Call code",
+    "call_title": "Call title",
+    "deadline": "Evaluation deadline (datetime object)",
+    "pending_count": "Number of pending evaluations",
+    "pending_evaluations": "Formatted list of pending evaluations with evaluator info"
+}
+                '''
+            },
+            {
+                'template_type': 'coordinator_evaluations_locked',
+                'subject': 'ReDIB COA: Evaluators Locked Out - Call {{ call_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #c0392b; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .danger-box { background-color: #fdedec; border-left: 4px solid #c0392b; padding: 15px; margin: 15px 0; }
+        pre { background-color: #f0f0f0; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Evaluator Lockout - Action Required</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+            <p>The 1-week grace period for overdue evaluations in call <strong>{{ call_code }}</strong> ({{ call_title }}) has expired. <strong>{{ pending_count }}</strong> evaluation(s) remain incomplete and the evaluators have been <strong>locked out</strong>.</p>
+            <div class="danger-box">
+                <p><strong>Evaluation Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+                <p><strong>Grace Period Expired:</strong> {{ days_overdue }} days past deadline</p>
+                <p><strong>Locked Evaluations:</strong> {{ pending_count }}</p>
+            </div>
+            <p><strong>Still pending evaluations:</strong></p>
+            <pre>{{ pending_evaluations }}</pre>
+            <p><strong>Action Required:</strong></p>
+            <ul>
+                <li>The evaluators above can no longer submit their evaluations</li>
+                <li>To unlock evaluators, extend the evaluation deadline by editing the call from <strong>Dashboard &gt; Manage Call</strong></li>
+                <li>Extending the deadline will automatically reset the grace period</li>
+                <li>Alternatively, you may proceed with only the completed evaluations</li>
+            </ul>
+            <p>Best regards,<br>The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from the ReDIB COA Portal.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+The 1-week grace period for overdue evaluations in call {{ call_code }} ({{ call_title }}) has expired. {{ pending_count }} evaluation(s) remain incomplete and the evaluators have been LOCKED OUT.
+
+Evaluation Deadline: {{ deadline|date:"F d, Y" }}
+Grace Period Expired: {{ days_overdue }} days past deadline
+Locked Evaluations: {{ pending_count }}
+
+Still pending evaluations:
+{{ pending_evaluations }}
+
+Action Required:
+- The evaluators above can no longer submit their evaluations
+- To unlock evaluators, extend the evaluation deadline by editing the call from Dashboard > Manage Call
+- Extending the deadline will automatically reset the grace period
+- Alternatively, you may proceed with only the completed evaluations
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated notification from the ReDIB COA Portal.''',
+                'available_variables': '''
+{
+    "coordinator_name": "Full name of the coordinator",
+    "call_code": "Call code",
+    "call_title": "Call title",
+    "deadline": "Evaluation deadline (datetime object)",
+    "days_overdue": "Number of days past the deadline",
+    "pending_count": "Number of pending evaluations",
+    "pending_evaluations": "Formatted list of pending evaluations with evaluator info"
+}
+                '''
+            },
             {
                 'template_type': 'evaluations_complete',
                 'subject': 'ReDIB COA: All Evaluations Complete for {{ application_code }}',
@@ -345,7 +584,7 @@ This is an automated reminder from the ReDIB COA Portal.
             </div>
 
             <div class="score-display">
-                Average Score: {{ average_score }} / 5.00
+                Average Score: {{ average_score }} / 12.00
             </div>
 
             <p>The application status has been automatically updated to <strong>EVALUATED</strong> and is now ready for your resolution.</p>
@@ -387,7 +626,7 @@ Application Details:
 - Call: {{ call_code }}
 - Number of Evaluations: {{ num_evaluations }}
 
-AVERAGE SCORE: {{ average_score }} / 5.00
+AVERAGE SCORE: {{ average_score }} / 12.00
 
 The application status has been automatically updated to EVALUATED and is now ready for your resolution.
 
@@ -429,7 +668,7 @@ Please do not reply to this email.
 <h2>Application Accepted</h2>
 <p>Dear {{ applicant_name }},</p>
 <p>Congratulations! Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been <strong>ACCEPTED</strong>.</p>
-<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p><strong>Final Score:</strong> {{ final_score }}/12.00</p>
 <p><strong>Hours Granted:</strong> {{ hours_granted }} hours</p>
 <p>{{ resolution_comments }}</p>
 <p>Next steps will be provided soon.</p>
@@ -441,7 +680,7 @@ Dear {{ applicant_name }},
 
 Congratulations! Your application {{ application_code }} for call {{ call_code }} has been ACCEPTED.
 
-Final Score: {{ final_score }}/5.00
+Final Score: {{ final_score }}/12.00
 Hours Granted: {{ hours_granted }} hours
 
 {{ resolution_comments }}
@@ -459,7 +698,7 @@ ReDIB COA Team''',
 <h2>Application Pending (Waiting List)</h2>
 <p>Dear {{ applicant_name }},</p>
 <p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been marked as <strong>PENDING</strong> (waiting list).</p>
-<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p><strong>Final Score:</strong> {{ final_score }}/12.00</p>
 <p>{{ resolution_comments }}</p>
 <p>You will be notified if hours become available.</p>
 <p>Best regards,<br>ReDIB COA Team</p>
@@ -470,7 +709,7 @@ Dear {{ applicant_name }},
 
 Your application {{ application_code }} for call {{ call_code }} has been marked as PENDING (waiting list).
 
-Final Score: {{ final_score }}/5.00
+Final Score: {{ final_score }}/12.00
 
 {{ resolution_comments }}
 
@@ -487,7 +726,7 @@ ReDIB COA Team''',
 <h2>Application Resolution</h2>
 <p>Dear {{ applicant_name }},</p>
 <p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} was not accepted at this time.</p>
-<p><strong>Final Score:</strong> {{ final_score }}/5.00</p>
+<p><strong>Final Score:</strong> {{ final_score }}/12.00</p>
 <p>{{ resolution_comments }}</p>
 <p>Thank you for your participation.</p>
 <p>Best regards,<br>ReDIB COA Team</p>
@@ -498,7 +737,7 @@ Dear {{ applicant_name }},
 
 Your application {{ application_code }} for call {{ call_code }} was not accepted at this time.
 
-Final Score: {{ final_score }}/5.00
+Final Score: {{ final_score }}/12.00
 
 {{ resolution_comments }}
 

@@ -1,8 +1,9 @@
 """
 Core application views.
 """
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -116,3 +117,29 @@ def dashboard(request):
         ).count()
 
     return render(request, 'core/dashboard.html', context)
+
+
+@login_required
+def profile(request):
+    """User profile view - display and edit personal information."""
+    from .forms import ProfileForm
+
+    user = request.user
+
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('core:profile')
+    else:
+        form = ProfileForm(instance=user)
+
+    # Get user roles for display
+    user_roles = user.roles.filter(is_active=True).select_related('node')
+
+    context = {
+        'form': form,
+        'user_roles': user_roles,
+    }
+    return render(request, 'core/profile.html', context)

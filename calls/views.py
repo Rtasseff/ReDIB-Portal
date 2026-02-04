@@ -13,6 +13,20 @@ from .forms import CallForm, CallEquipmentFormSet, get_equipment_formset_for_cre
 
 # Public Views
 
+def _auto_close_expired_calls():
+    """
+    View-level fallback: close any open calls past their submission deadline.
+
+    This ensures correct behavior even if Celery Beat is not running.
+    """
+    now = timezone.now()
+    expired = Call.objects.filter(status='open', submission_end__lt=now)
+    count = expired.count()
+    if count > 0:
+        expired.update(status='closed')
+    return count
+
+
 def public_call_list(request):
     """
     Public list of open and upcoming calls.
@@ -21,6 +35,8 @@ def public_call_list(request):
     - Currently open calls (status='open', within submission window)
     - Upcoming calls (published but not yet open)
     """
+    _auto_close_expired_calls()
+
     now = timezone.now()
 
     open_calls = Call.objects.filter(
@@ -48,6 +64,8 @@ def public_call_detail(request, pk):
     Shows call information, equipment allocations, and application button.
     Only shows calls that are open, closed, or resolved (not drafts).
     """
+    _auto_close_expired_calls()
+
     call = get_object_or_404(Call, pk=pk, status__in=['open', 'closed', 'resolved'])
 
     equipment_allocations = call.equipment_allocations.select_related(

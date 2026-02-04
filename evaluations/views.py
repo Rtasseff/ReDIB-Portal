@@ -14,6 +14,7 @@ from core.models import UserRole, User
 from calls.models import Call
 from applications.models import Application
 from .models import Evaluation
+from .utils import is_evaluation_locked
 from .tasks import assign_evaluators_to_application, assign_evaluators_to_call
 
 
@@ -43,17 +44,23 @@ def evaluator_dashboard(request):
         application__call__evaluation_deadline__gte=timezone.now()
     ).order_by('application__call__evaluation_deadline')
 
-    # Get overdue evaluations
+    # Get overdue evaluations and annotate with lock status
     overdue = pending.filter(
         application__call__evaluation_deadline__lt=timezone.now()
     )
+
+    # Add lock status to each overdue evaluation for template display
+    overdue_list = list(overdue)
+    for eval_obj in overdue_list:
+        locked, reason = is_evaluation_locked(eval_obj)
+        eval_obj.is_locked = locked
 
     context = {
         'pending_count': pending.count(),
         'completed_count': completed.count(),
         'overdue_count': overdue.count(),
         'upcoming': upcoming,
-        'overdue': overdue,
+        'overdue': overdue_list,
         'completed': completed[:10],  # Show 10 most recent
     }
 
@@ -69,7 +76,7 @@ def evaluation_detail(request, pk):
     Phase 5: Submit evaluation scores and comments (IMPLEMENTED)
     """
     from .forms import EvaluationForm
-    from .utils import get_blind_application_data, is_evaluation_locked, check_and_transition_application
+    from .utils import get_blind_application_data, check_and_transition_application
 
     evaluation = get_object_or_404(
         Evaluation.objects.select_related(
@@ -85,9 +92,18 @@ def evaluation_detail(request, pk):
     # Check if evaluation is locked
     is_locked, lock_reason = is_evaluation_locked(evaluation)
 
-    # Calculate days until deadline
+    # Calculate days until deadline and grace period status
     deadline = evaluation.application.call.evaluation_deadline
     days_until_deadline = (deadline - timezone.now()).days if deadline else None
+
+    # Determine if in grace period (past deadline but within 1 week)
+    from datetime import timedelta
+    is_in_grace_period = False
+    grace_days_remaining = None
+    if deadline and deadline < timezone.now() and not is_locked:
+        is_in_grace_period = True
+        grace_end = deadline + timedelta(days=7)
+        grace_days_remaining = (grace_end - timezone.now()).days
 
     if request.method == 'POST' and not is_locked:
         form = EvaluationForm(request.POST, instance=evaluation)
@@ -126,6 +142,8 @@ def evaluation_detail(request, pk):
         'is_locked': is_locked,
         'lock_reason': lock_reason,
         'is_past_deadline': deadline < timezone.now() if deadline else False,
+        'is_in_grace_period': is_in_grace_period,
+        'grace_days_remaining': grace_days_remaining,
         'days_until_deadline': days_until_deadline,
         'deadline': deadline,
     }

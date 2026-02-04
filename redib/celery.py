@@ -36,6 +36,18 @@ app.conf.beat_schedule = {
         'task': 'access.tasks.send_publication_followups',
         'schedule': crontab(hour=10, minute=0, day_of_week=1),  # Mondays
     },
+    'check-call-deadlines': {
+        'task': 'calls.tasks.check_call_deadlines',
+        'schedule': crontab(hour=0, minute=15),  # Daily at 00:15
+    },
+    'notify-overdue-evaluators': {
+        'task': 'evaluations.tasks.notify_overdue_evaluators',
+        'schedule': crontab(hour=9, minute=30),  # Daily at 9:30 AM
+    },
+    'notify-coordinator-overdue-evaluations': {
+        'task': 'evaluations.tasks.notify_coordinator_overdue_evaluations',
+        'schedule': crontab(hour=9, minute=45),  # Daily at 9:45 AM
+    },
 }
 
 @app.task(bind=True, ignore_result=True)

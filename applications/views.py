@@ -57,7 +57,51 @@ def application_detail(request, pk):
     context = {
         'application': application,
         'requested_access': requested_access,
+        'is_coordinator': is_coordinator,
     }
+
+    # Add feasibility review status for coordinators
+    if is_coordinator:
+        feasibility_reviews = application.feasibility_reviews.select_related(
+            'node', 'reviewer'
+        ).order_by('node__code')
+
+        # Build a combined view: for each requested node, show review status
+        feasibility_status = []
+        reviewed_node_ids = {fr.node_id: fr for fr in feasibility_reviews}
+
+        for access in requested_access:
+            node = access.equipment.node
+            if node.id in reviewed_node_ids:
+                review = reviewed_node_ids[node.id]
+                feasibility_status.append({
+                    'node': node,
+                    'equipment': access.equipment,
+                    'status': 'feasible' if review.is_feasible is True else ('not_feasible' if review.is_feasible is False else 'pending'),
+                    'reviewer': review.reviewer,
+                    'reviewed_at': review.reviewed_at,
+                    'comments': review.comments,
+                })
+            else:
+                feasibility_status.append({
+                    'node': node,
+                    'equipment': access.equipment,
+                    'status': 'pending',
+                    'reviewer': None,
+                    'reviewed_at': None,
+                    'comments': '',
+                })
+
+        # Deduplicate by node (multiple equipment from same node)
+        seen_nodes = set()
+        unique_feasibility = []
+        for item in feasibility_status:
+            if item['node'].id not in seen_nodes:
+                seen_nodes.add(item['node'].id)
+                unique_feasibility.append(item)
+
+        context['feasibility_status'] = unique_feasibility
+
     return render(request, 'applications/detail.html', context)
 
 

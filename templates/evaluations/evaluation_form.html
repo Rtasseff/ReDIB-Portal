@@ -15,28 +15,31 @@
     </div>
 
     <!-- Deadline Warning -->
-    {% if days_until_deadline and days_until_deadline < 7 and days_until_deadline > 0 %}
+    {% if is_in_grace_period %}
+    <div class="alert alert-danger" role="alert">
+        <strong>Evaluation Overdue!</strong>
+        The evaluation deadline was {{ deadline|date:"F d, Y" }}.
+        You have {{ grace_days_remaining }} day{{ grace_days_remaining|pluralize }} remaining to submit before the form is locked.
+        Please submit your evaluation as soon as possible.
+    </div>
+    {% elif days_until_deadline is not None and days_until_deadline < 7 and days_until_deadline >= 0 %}
     <div class="alert alert-warning" role="alert">
         <strong>Deadline Approaching!</strong>
         {{ days_until_deadline }} day{{ days_until_deadline|pluralize }} remaining until evaluation deadline
         ({{ deadline|date:"F d, Y" }})
-    </div>
-    {% elif is_past_deadline %}
-    <div class="alert alert-danger" role="alert">
-        <strong>Deadline Passed!</strong>
-        The evaluation deadline was {{ deadline|date:"F d, Y" }}.
-        This evaluation can no longer be edited.
     </div>
     {% endif %}
 
     <!-- Locked Message -->
     {% if is_locked %}
     <div class="alert alert-info" role="alert">
-        <strong>Evaluation {{ lock_reason|title }}!</strong>
         {% if lock_reason == 'completed' %}
+        <strong>Evaluation Completed!</strong>
         This evaluation has been submitted and cannot be edited.
-        {% else %}
-        The deadline has passed and evaluations can no longer be submitted.
+        {% elif lock_reason == 'grace_period_expired' %}
+        <strong>Evaluation Locked!</strong>
+        The evaluation deadline was {{ deadline|date:"F d, Y" }} and the 1-week grace period has expired.
+        Please contact the ReDIB coordinator if you need the deadline extended.
         {% endif %}
     </div>
     {% endif %}

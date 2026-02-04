@@ -21,6 +21,9 @@ class EmailTemplate(models.Model):
         ('feasibility_rejected', 'Feasibility Rejected'),
         ('evaluation_assigned', 'Evaluation Assigned'),
         ('evaluation_reminder', 'Evaluation Reminder'),
+        ('evaluation_overdue', 'Evaluation Overdue (to Evaluator)'),
+        ('coordinator_overdue_evaluations', 'Overdue Evaluations (to Coordinator)'),
+        ('coordinator_evaluations_locked', 'Evaluations Locked Out (to Coordinator)'),
         ('evaluations_complete', 'All Evaluations Complete'),  # Phase 5
         ('resolution_accepted', 'Resolution: Accepted'),
         ('resolution_pending', 'Resolution: Pending (Waiting List)'),

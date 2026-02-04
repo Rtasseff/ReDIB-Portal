@@ -8,5 +8,6 @@ app_name = 'core'
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('profile/', views.profile, name='profile'),
     path('', views.dashboard, name='home'),  # Redirect root to dashboard
 ]

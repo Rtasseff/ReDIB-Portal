@@ -67,6 +67,155 @@ def send_evaluation_reminders():
 
 
 @shared_task
+def notify_overdue_evaluators():
+    """
+    Daily task to notify evaluators whose evaluations are overdue.
+
+    Sends a notification on the first day past the evaluation deadline.
+    Only sends once per evaluation (checks if email was already sent via EmailLog).
+    """
+    import logging
+    from communications.models import EmailLog
+
+    logger = logging.getLogger(__name__)
+    now = timezone.now()
+
+    # Find incomplete evaluations where deadline has just passed (within last 24 hours)
+    overdue_evaluations = Evaluation.objects.filter(
+        completed_at__isnull=True,
+        application__call__evaluation_deadline__lt=now,
+        application__call__evaluation_deadline__gte=now - timedelta(hours=25),
+    ).select_related('application', 'application__call', 'evaluator')
+
+    notifications_sent = 0
+
+    for evaluation in overdue_evaluations:
+        # Check if we already sent an overdue notice for this evaluation
+        already_sent = EmailLog.objects.filter(
+            related_evaluation_id=evaluation.id,
+            subject__icontains='overdue',
+            status='sent',
+        ).exists()
+
+        if already_sent:
+            continue
+
+        context = {
+            'evaluator_name': evaluation.evaluator.get_full_name(),
+            'application_code': evaluation.application.code,
+            'call_code': evaluation.application.call.code,
+            'deadline': evaluation.application.call.evaluation_deadline,
+            'evaluation_url': f'/evaluations/{evaluation.id}/',
+        }
+
+        send_email_from_template(
+            template_type='evaluation_overdue',
+            recipient_email=evaluation.evaluator.email,
+            context_data=context,
+            recipient_user_id=evaluation.evaluator.id,
+            related_application_id=evaluation.application.id,
+            related_evaluation_id=evaluation.id
+        )
+
+        notifications_sent += 1
+
+    logger.info("Sent %d overdue evaluation notifications to evaluators", notifications_sent)
+    return f"Sent {notifications_sent} overdue evaluator notifications"
+
+
+@shared_task
+def notify_coordinator_overdue_evaluations():
+    """
+    Daily task to notify coordinators about overdue evaluations.
+
+    Trigger 1: Sent when evaluation deadline passes and there are pending evaluations.
+    Trigger 2: Sent 1 week after deadline if evaluations are still pending (lockout notification).
+    """
+    import logging
+    from calls.models import Call
+    from core.models import User
+
+    logger = logging.getLogger(__name__)
+    now = timezone.now()
+
+    # Find calls with overdue evaluations
+    calls_with_overdue = Call.objects.filter(
+        status='closed',
+        evaluation_deadline__lt=now,
+    )
+
+    if not calls_with_overdue.exists():
+        return "No calls with overdue evaluations"
+
+    # Get all active coordinators
+    coordinators = User.objects.filter(
+        roles__role='coordinator',
+        roles__is_active=True
+    ).distinct()
+
+    if not coordinators.exists():
+        return "No active coordinators to notify"
+
+    notifications_sent = 0
+
+    for call in calls_with_overdue:
+        pending_evals = Evaluation.objects.filter(
+            application__call=call,
+            completed_at__isnull=True,
+        ).select_related('evaluator', 'application')
+
+        if not pending_evals.exists():
+            continue
+
+        days_overdue = (now - call.evaluation_deadline).days
+        is_lockout = days_overdue >= 7
+
+        # Only send on day 0 (deadline just passed) or day 7 (lockout)
+        # Allow a 25-hour window for the daily check
+        deadline_just_passed = (0 <= days_overdue <= 1 and
+            (now - call.evaluation_deadline).total_seconds() < 25 * 3600)
+        lockout_just_happened = (7 <= days_overdue <= 8 and
+            (now - (call.evaluation_deadline + timedelta(days=7))).total_seconds() < 25 * 3600)
+
+        if not deadline_just_passed and not lockout_just_happened:
+            continue
+
+        # Build list of pending evaluations for context
+        pending_list = []
+        for ev in pending_evals:
+            pending_list.append(
+                f"{ev.application.code} - Evaluator: {ev.evaluator.get_full_name()} ({ev.evaluator.email})"
+            )
+
+        template_type = 'coordinator_evaluations_locked' if is_lockout else 'coordinator_overdue_evaluations'
+
+        for coordinator in coordinators:
+            context = {
+                'coordinator_name': coordinator.get_full_name(),
+                'call_code': call.code,
+                'call_title': call.title,
+                'deadline': call.evaluation_deadline,
+                'days_overdue': days_overdue,
+                'pending_count': pending_evals.count(),
+                'pending_evaluations': '\n'.join(pending_list),
+                'is_lockout': is_lockout,
+            }
+
+            send_email_from_template(
+                template_type=template_type,
+                recipient_email=coordinator.email,
+                context_data=context,
+                recipient_user_id=coordinator.id,
+                related_call_id=call.id,
+            )
+
+            notifications_sent += 1
+
+    logger.info("Sent %d coordinator overdue evaluation notifications", notifications_sent)
+    return f"Sent {notifications_sent} coordinator notifications"
+
+
+@shared_task
 def assign_evaluators_to_application(application_id, num_evaluators=2):
     """
     Randomly assign evaluators to an application with conflict-of-interest handling.

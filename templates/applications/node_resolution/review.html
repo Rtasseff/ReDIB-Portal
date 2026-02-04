@@ -88,7 +88,7 @@
                         <tr>
                             <th>Evaluator</th>
                             <th>Score</th>
-                            <th>Evaluated At</th>
+                            <th>Completed On</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,7 +102,7 @@
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>{{ eval.evaluated_at|date:"M d, Y H:i"|default:"Not completed" }}</td>
+                            <td>{{ eval.completed_at|date:"M d, Y H:i"|default:"Not completed" }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

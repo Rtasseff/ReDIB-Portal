@@ -54,10 +54,10 @@
                     <p class="mb-0">{{ application.submitted_at|date:"M d, Y H:i" }}</p>
                 </div>
                 {% endif %}
-                {% if application.evaluated_at %}
+                {% if application.resolution_date %}
                 <div class="col-md-4">
-                    <small class="text-muted">Evaluated</small>
-                    <p class="mb-0">{{ application.evaluated_at|date:"M d, Y H:i" }}</p>
+                    <small class="text-muted">Resolved</small>
+                    <p class="mb-0">{{ application.resolution_date|date:"M d, Y H:i" }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -174,6 +174,49 @@
         </div>
     </div>
 
+    <!-- Feasibility Review Status (Coordinator Only) -->
+    {% if is_coordinator and feasibility_status %}
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Feasibility Review Status</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Node</th>
+                            <th>Status</th>
+                            <th>Reviewer</th>
+                            <th>Date</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in feasibility_status %}
+                        <tr>
+                            <td>{{ item.node.name }} ({{ item.node.code }})</td>
+                            <td>
+                                {% if item.status == 'feasible' %}
+                                    <span class="badge bg-success">Feasible</span>
+                                {% elif item.status == 'not_feasible' %}
+                                    <span class="badge bg-danger">Not Feasible</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.reviewer.get_full_name|default:"—" }}</td>
+                            <td>{{ item.reviewed_at|date:"M d, Y"|default:"—" }}</td>
+                            <td>{{ item.comments|default:"—"|truncatewords:20 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Scientific Content -->
     <div class="card mb-3">
         <div class="card-header bg-primary text-white">
@@ -269,17 +312,13 @@
     </div>
 
     <!-- Actions -->
-    <div class="d-flex justify-content-between">
-        <a href="{% url 'applications:my_applications' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to My Applications
-        </a>
-
-        {% if application.status == 'draft' %}
+    {% if application.status == 'draft' %}
+    <div class="d-flex justify-content-end">
         <a href="{% url 'applications:edit_step2' application.pk %}" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Continue Editing
         </a>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 
 <style>

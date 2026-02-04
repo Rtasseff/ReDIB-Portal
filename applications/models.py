@@ -83,7 +83,8 @@ class Application(models.Model):
     SPECIALIZATION_AREAS = [
         ('clinical', 'Clinical'),
         ('preclinical', 'Preclinical'),
-        ('radiotracers', 'Radiotracers and Biomarkers'),
+        ('radiotracers', 'Radiotracers'),
+        ('radiochemistry', 'Radiochemistry Lab'),
     ]
 
     RESOLUTIONS = [

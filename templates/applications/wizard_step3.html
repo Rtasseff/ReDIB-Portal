@@ -205,9 +205,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clone the last form
         const newForm = lastForm.cloneNode(true);
 
-        // Update form index in all fields
-        const formRegex = RegExp(`requested_access-(\\d+)-`, 'g');
-        newForm.innerHTML = newForm.innerHTML.replace(formRegex, `requested_access-${formCount}-`);
+        // Update form index in all fields (attributes only, preserves DOM state)
+        const formRegex = RegExp(`requested_access-\\d+-`, 'g');
+        const replacement = `requested_access-${formCount}-`;
+
+        newForm.querySelectorAll('input, select, textarea').forEach(function(el) {
+            if (el.name) el.name = el.name.replace(formRegex, replacement);
+            if (el.id) el.id = el.id.replace(formRegex, replacement);
+        });
+        newForm.querySelectorAll('label').forEach(function(el) {
+            if (el.htmlFor) el.htmlFor = el.htmlFor.replace(formRegex, replacement);
+        });
 
         // Clear the values in the cloned form
         newForm.querySelectorAll('input, select').forEach(function(field) {
@@ -258,8 +266,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function reindexForms() {
         const remainingForms = document.querySelectorAll('.equipment-form');
         remainingForms.forEach(function(form, index) {
-            const formRegex = RegExp(`requested_access-(\\d+)-`, 'g');
-            form.innerHTML = form.innerHTML.replace(formRegex, `requested_access-${index}-`);
+            const formRegex = RegExp(`requested_access-\\d+-`, 'g');
+            const replacement = `requested_access-${index}-`;
+
+            // Update name and id attributes on inputs/selects without destroying element state
+            form.querySelectorAll('input, select, textarea').forEach(function(el) {
+                if (el.name) el.name = el.name.replace(formRegex, replacement);
+                if (el.id) el.id = el.id.replace(formRegex, replacement);
+            });
+            // Update for attributes on labels
+            form.querySelectorAll('label').forEach(function(el) {
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(formRegex, replacement);
+            });
         });
         totalFormsInput.value = remainingForms.length;
     }

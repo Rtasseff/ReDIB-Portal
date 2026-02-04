@@ -138,7 +138,10 @@ def is_evaluation_locked(evaluation):
 
     An evaluation is locked if:
     1. It has been completed (completed_at is set), OR
-    2. The evaluation deadline has passed
+    2. More than 1 week has passed since the evaluation deadline (grace period expired)
+
+    During the 1-week grace period after the deadline, evaluators can still submit
+    but see a "past due" warning.
 
     Args:
         evaluation: Evaluation instance
@@ -152,10 +155,15 @@ def is_evaluation_locked(evaluation):
     if evaluation.is_complete:
         return (True, 'completed')
 
-    # Check if past deadline
+    # Check if past deadline + grace period (1 week)
     deadline = evaluation.application.call.evaluation_deadline
     if deadline and deadline < now:
-        return (True, 'past_deadline')
+        from datetime import timedelta
+        grace_end = deadline + timedelta(days=7)
+        if now > grace_end:
+            return (True, 'grace_period_expired')
+        # Within grace period - not locked, but overdue
+        # (the view will show a warning)
 
     return (False, None)
 
