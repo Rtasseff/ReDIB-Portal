@@ -1,0 +1,79 @@
+{% extends 'account/base_entrance.html' %}
+
+{% block title %}Create Account - ReDIB Portal{% endblock %}
+
+{% block entrance_content %}
+<h4 class="text-center mb-4">Create Account</h4>
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger">
+    {% for error in form.non_field_errors %}
+    <p class="mb-0">{{ error }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'account_signup' %}">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label for="id_email" class="form-label">Email address</label>
+        <input type="email" name="email" id="id_email"
+               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+               placeholder="you@example.com"
+               autocomplete="email"
+               value="{{ form.email.value|default:'' }}"
+               required>
+        {% if form.email.errors %}
+        <div class="invalid-feedback">{{ form.email.errors.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_email2" class="form-label">Confirm email</label>
+        <input type="email" name="email2" id="id_email2"
+               class="form-control {% if form.email2.errors %}is-invalid{% endif %}"
+               placeholder="Confirm your email"
+               autocomplete="email"
+               value="{{ form.email2.value|default:'' }}"
+               required>
+        {% if form.email2.errors %}
+        <div class="invalid-feedback">{{ form.email2.errors.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_password1" class="form-label">Password</label>
+        <input type="password" name="password1" id="id_password1"
+               class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+               autocomplete="new-password"
+               required>
+        {% if form.password1.errors %}
+        <div class="invalid-feedback">{{ form.password1.errors.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="id_password2" class="form-label">Confirm password</label>
+        <input type="password" name="password2" id="id_password2"
+               class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+               autocomplete="new-password"
+               required>
+        {% if form.password2.errors %}
+        <div class="invalid-feedback">{{ form.password2.errors.0 }}</div>
+        {% endif %}
+    </div>
+
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary w-100">
+        <i class="bi bi-person-plus"></i> Create Account
+    </button>
+</form>
+{% endblock %}
+
+{% block entrance_footer %}
+<p>Already have an account? <a href="{% url 'account_login' %}">Sign in</a></p>
+{% endblock %}

@@ -1,0 +1,84 @@
+/* ==========================================================================
+   ReDIB Portal - Main Stylesheet
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Brand Variables (Placeholders)
+   Replace these with actual ReDIB brand values when available.
+   -------------------------------------------------------------------------- */
+:root {
+    --redib-primary: #0d6efd;       /* Bootstrap primary blue - replace with brand color */
+    --redib-secondary: #6c757d;     /* Bootstrap secondary gray */
+    --redib-accent: #0dcaf0;        /* Bootstrap info cyan - replace with brand accent */
+    --redib-sidebar-shadow: rgba(0, 0, 0, 0.1);
+    --redib-navbar-height: 56px;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard Sidebar
+   Extracted from templates/dashboard_base.html
+   -------------------------------------------------------------------------- */
+.sidebar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    height: calc(100vh - var(--redib-navbar-height));
+    overflow-y: auto;
+    box-shadow: inset -1px 0 0 var(--redib-sidebar-shadow);
+}
+
+.sidebar .list-group-item {
+    border-left: 3px solid transparent;
+    border-radius: 0;
+}
+
+.sidebar .list-group-item.active,
+.sidebar .list-group-item:hover {
+    border-left-color: var(--redib-primary);
+    background-color: #f8f9fa;
+    color: var(--redib-primary);
+    font-weight: 500;
+}
+
+.sidebar .bi {
+    margin-right: 8px;
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: relative;
+        height: auto;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Text Utilities
+   Extracted from detail.html, preview.html, review.html, feasibility_review.html
+   -------------------------------------------------------------------------- */
+.text-pre-wrap {
+    white-space: pre-wrap;
+}
+
+/* --------------------------------------------------------------------------
+   Wizard / Application Form Utilities
+   Extracted from wizard_step*.html templates
+   -------------------------------------------------------------------------- */
+.progress-lg {
+    height: 30px;
+}
+
+.sticky-sidebar-card {
+    top: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   Evaluation Form
+   Extracted from evaluations/evaluation_form.html
+   -------------------------------------------------------------------------- */
+.form-check-label {
+    cursor: pointer;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: 600;
+}

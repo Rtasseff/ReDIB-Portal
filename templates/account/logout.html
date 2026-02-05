@@ -1,0 +1,24 @@
+{% extends 'account/base_entrance.html' %}
+
+{% block title %}Sign Out - ReDIB Portal{% endblock %}
+
+{% block entrance_content %}
+<h4 class="text-center mb-4">Sign Out</h4>
+<p class="text-center text-muted">Are you sure you want to sign out?</p>
+
+<form method="post" action="{% url 'account_logout' %}">
+    {% csrf_token %}
+
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+    {% endif %}
+
+    <button type="submit" class="btn btn-outline-danger w-100">
+        <i class="bi bi-box-arrow-right"></i> Sign Out
+    </button>
+</form>
+{% endblock %}
+
+{% block entrance_footer %}
+<p>Changed your mind? <a href="/">Go back to the portal</a></p>
+{% endblock %}
