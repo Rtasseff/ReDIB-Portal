@@ -16,6 +16,7 @@ All documentation is organized in the `docs/` folder:
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - End-user guide for portal users
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing procedures and guidelines
 - **[docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing
+- **[docs/developer/](docs/developer/)** - Developer guides (branding, styles, issue plans)
 - **[docs/reference/](docs/reference/)** - Technical reference and system design documentation
 - **[docs/test-reports/](docs/test-reports/)** - Automated test reports by phase
 

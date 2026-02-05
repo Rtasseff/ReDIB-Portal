@@ -39,6 +39,13 @@ Completed planning documents and historical notes:
 - `OPTIMIZE_SPEED.md` - Performance optimization plan
 - `TESTING_NOTES.md` - Historical testing notes
 
+### `/developer/`
+Developer guides and planning documents:
+- `branding-and-styles.md` - How to change branding, logo, colors, and CSS
+- `issue-action-plan-20260204.md` - planned changes on 20260204 (Feb 4, 2026)
+- `tier1-manual-test-checklist.md` - manual tests done on 20260204 change list
+
+
 ## Test Scripts
 
 All automated test scripts are located in `/tests/`:
