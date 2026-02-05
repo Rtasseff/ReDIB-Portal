@@ -3,16 +3,65 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Brand Variables (Placeholders)
-   Replace these with actual ReDIB brand values when available.
+   Brand Variables
+   Derived from the ReDIB logo: dark teal "Re", silver "DiB", crimson dot.
+   Primary is a deeper navy-teal so the logo remains visible on dark backgrounds.
    -------------------------------------------------------------------------- */
 :root {
-    --redib-primary: #0d6efd;       /* Bootstrap primary blue - replace with brand color */
-    --redib-secondary: #6c757d;     /* Bootstrap secondary gray */
-    --redib-accent: #0dcaf0;        /* Bootstrap info cyan - replace with brand accent */
+    --redib-primary: #1A3D50;       /* Deep navy-teal (navbar, buttons, links) */
+    --redib-secondary: #6B7780;     /* Warm gray (muted text, secondary elements) */
+    --redib-accent: #BE2845;        /* Crimson red from logo dot (badges, alerts, highlights) */
     --redib-sidebar-shadow: rgba(0, 0, 0, 0.1);
     --redib-navbar-height: 56px;
 }
+
+/* --------------------------------------------------------------------------
+   Bootstrap Overrides
+   Wire brand variables into Bootstrap utility classes so navbar, buttons,
+   badges, and cards all use the ReDIB palette consistently.
+   -------------------------------------------------------------------------- */
+
+/* Navbar & backgrounds */
+.bg-primary { background-color: var(--redib-primary) !important; }
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--redib-primary);
+    border-color: var(--redib-primary);
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #143349;
+    border-color: #143349;
+}
+.btn-primary:active {
+    background-color: #0F2A3C;
+    border-color: #0F2A3C;
+}
+.btn-outline-primary {
+    color: var(--redib-primary);
+    border-color: var(--redib-primary);
+}
+.btn-outline-primary:hover {
+    background-color: var(--redib-primary);
+    border-color: var(--redib-primary);
+    color: #fff;
+}
+
+/* Links */
+a { color: var(--redib-primary); }
+a:hover { color: #143349; }
+
+/* Card headers that use bg-primary */
+.card-header.bg-primary { background-color: var(--redib-primary) !important; }
+
+/* Accent color for info-styled elements */
+.bg-info { background-color: var(--redib-accent) !important; }
+.badge.bg-info { background-color: var(--redib-accent) !important; }
+.text-info { color: var(--redib-accent) !important; }
+
+/* Secondary overrides */
+.bg-secondary { background-color: var(--redib-secondary) !important; }
+.text-secondary { color: var(--redib-secondary) !important; }
 
 /* --------------------------------------------------------------------------
    Dashboard Sidebar

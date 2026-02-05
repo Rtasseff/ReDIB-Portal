@@ -153,8 +153,8 @@ class BaseTemplateTest(TestCase):
 
     def test_base_includes_logo(self):
         content = (BASE_DIR / 'templates' / 'base.html').read_text()
-        self.assertIn('logo-placeholder.svg', content,
-                      "base.html does not include logo placeholder")
+        self.assertIn('ReDiB_logo.png', content,
+                      "base.html does not include ReDiB logo")
 
 
 class AuthTemplateOverrideTest(TestCase):

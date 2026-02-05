@@ -7,10 +7,11 @@ How to customize branding, colors, and common styles in the ReDIB Portal.
 ```
 static/
 ├── css/
-│   ├── main.css              # Global styles and brand variables
+│   ├── main.css              # Global styles, brand variables, Bootstrap overrides
 │   └── auth.css              # Login/signup page styles
 ├── images/
-│   └── logo-placeholder.svg  # Logo (replace with real logo)
+│   ├── ReDiB_logo.png        # Compact logo (navbar)
+│   └── ReDIB_logo_text.png   # Wide logo with tagline (auth pages)
 └── js/
     └── (future scripts)
 ```
@@ -21,15 +22,20 @@ After editing any file in `static/`, run:
 python manage.py collectstatic --noinput
 ```
 
-## Replacing the Logo
+## Replacing the Logos
 
-1. Place your logo file (SVG, PNG, or similar) in `static/images/`
-2. Update the two references to the logo:
-   - **Navbar:** `templates/base.html` — look for `logo-placeholder.svg` and change the filename
-   - **Auth pages:** `templates/account/base_entrance.html` — same search/replace
+The portal uses two separate logo images:
+
+- **Navbar (compact):** `ReDiB_logo.png` — referenced in `templates/base.html`, displayed at `height="32"`
+- **Auth pages (wide):** `ReDIB_logo_text.png` — referenced in `templates/account/base_entrance.html`, max-height `64px` (set in `auth.css`)
+
+To swap either logo:
+
+1. Place the new file in `static/images/`
+2. Update the filename in the corresponding template
 3. Run `collectstatic`
 
-SVG is recommended because it scales cleanly at any size. The navbar uses `height="32"` and the auth pages use `max-height: 64px` (set in `auth.css`).
+**Note:** Filenames are case-sensitive on Linux. Double-check capitalization if the logo doesn't appear.
 
 ## Changing Brand Colors
 
@@ -37,24 +43,20 @@ All brand colors are defined as CSS custom properties at the top of `static/css/
 
 ```css
 :root {
-    --redib-primary: #0d6efd;       /* Main brand color */
-    --redib-secondary: #6c757d;     /* Secondary/muted color */
-    --redib-accent: #0dcaf0;        /* Accent/highlight color */
+    --redib-primary: #1A3D50;       /* Deep navy-teal (navbar, buttons, links) */
+    --redib-secondary: #6B7780;     /* Warm gray (muted text, secondary elements) */
+    --redib-accent: #BE2845;        /* Crimson red (badges, alerts, highlights) */
 }
 ```
+
+These are derived from the ReDIB logo colors but darkened/adjusted so the logo remains visible on colored backgrounds.
 
 To change the brand color scheme:
 
 1. Edit the hex values in `static/css/main.css` under `:root`
-2. These variables are used by the sidebar active/hover states and the auth page styles
-3. The navbar and buttons still use Bootstrap's `bg-primary` class — to change those too, override Bootstrap's primary color by adding this to `main.css`:
-
-```css
-/* Override Bootstrap primary color */
-.bg-primary { background-color: var(--redib-primary) !important; }
-.btn-primary { background-color: var(--redib-primary); border-color: var(--redib-primary); }
-.btn-primary:hover { background-color: color-mix(in srgb, var(--redib-primary) 85%, black); }
-```
+2. The "Bootstrap Overrides" section directly below the variables wires them into Bootstrap's `.bg-primary`, `.btn-primary`, `.btn-outline-primary`, `a`, `.bg-info`, `.bg-secondary`, and related classes — so changing the variables automatically updates the navbar, buttons, links, and card headers
+3. If you change `--redib-primary`, also update the hover/active shades in the `.btn-primary:hover` and `.btn-primary:active` rules (make them slightly darker than your new primary)
+4. Run `collectstatic` after saving
 
 ## Key CSS Files
 
@@ -65,6 +67,7 @@ Loaded on every page via `templates/base.html`. Contains:
 | Section | What it controls |
 |---------|-----------------|
 | `:root` variables | Brand colors used throughout |
+| Bootstrap Overrides | Maps brand variables to `.bg-primary`, `.btn-primary`, `a`, etc. |
 | `.sidebar` | Dashboard sidebar layout and hover/active states |
 | `.text-pre-wrap` | Preserves line breaks in scientific content display |
 | `.progress-lg` | Taller progress bar in the application wizard |

@@ -27,12 +27,12 @@
 
 .auth-brand h2 {
     font-weight: 600;
-    color: var(--redib-primary, #0d6efd);
+    color: var(--redib-primary, #1A3D50);
     margin-bottom: 0.25rem;
 }
 
 .auth-brand p {
-    color: #6c757d;
+    color: var(--redib-secondary, #6B7780);
     font-size: 0.9rem;
     margin-bottom: 0;
 }
@@ -50,12 +50,12 @@
 .auth-footer {
     text-align: center;
     margin-top: 1.5rem;
-    color: #6c757d;
+    color: var(--redib-secondary, #6B7780);
     font-size: 0.9rem;
 }
 
 .auth-footer a {
-    color: var(--redib-primary, #0d6efd);
+    color: var(--redib-primary, #1A3D50);
     text-decoration: none;
 }
 
