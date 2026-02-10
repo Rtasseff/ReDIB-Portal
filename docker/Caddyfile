@@ -1,0 +1,14 @@
+{$DOMAIN:localhost} {
+    reverse_proxy web:8000
+
+    # Serve media files directly (uploads, signed PDFs)
+    handle_path /media/* {
+        root * /srv/media
+        file_server
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

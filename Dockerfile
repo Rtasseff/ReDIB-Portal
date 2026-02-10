@@ -38,10 +38,13 @@ COPY . /app/
 # Create directories for static and media files
 RUN mkdir -p /app/staticfiles /app/media
 
-# Collect static files (will be run in production)
-# RUN python manage.py collectstatic --noinput
+# Set up entrypoint (handles migrations, collectstatic, email templates)
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
-# Run gunicorn
-CMD ["gunicorn", "redib.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Gunicorn optimized for 4GB VPS: 2 workers + 4 threads = 8 concurrent requests
+CMD ["gunicorn", "redib.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--worker-tmp-dir", "/dev/shm"]
