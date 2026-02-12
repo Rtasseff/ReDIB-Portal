@@ -12,6 +12,7 @@ All documentation is organized in the `docs/` folder:
 
 - **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Get started quickly (new users start here)
 - **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment guide (VPS, Docker, Caddy, backups)
 - **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflows and common commands
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - End-user guide for portal users
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing procedures and guidelines
@@ -90,7 +91,7 @@ redib/
   - Email notifications to evaluators
 
 - **Phase 5**: Evaluation Process ✅
-  - 5-criteria evaluation system (1-5 scale)
+  - 6-criteria evaluation system (0-2 scale)
   - Evaluator dashboard and forms
   - Progress tracking
   - Completion notifications
@@ -124,61 +125,11 @@ redib/
 
 ---
 
-## Quick Start
+## Getting Started
 
-### Docker Deployment (Recommended)
-
-The fastest way to get started is using Docker, which includes PostgreSQL, Redis, and Celery workers.
-
-```bash
-# 1. Copy Docker environment file
-cp .env.docker .env
-
-# 2. Build and start all services
-docker compose up -d --build
-
-# 3. Run migrations
-docker compose exec web python manage.py migrate
-
-# 4. Create superuser
-docker compose exec web python manage.py createsuperuser
-
-# 5. Load test data (optional but recommended)
-docker compose exec web python manage.py setup_localtest1_database
-
-# 6. Access the portal at http://localhost:8000
-```
-
-For detailed Docker instructions, test accounts, and common commands, see **[docs/QUICKSTART.md](docs/QUICKSTART.md)**.
-
-### Local Development (Without Docker)
-
-1. **Clone and set up virtual environment**
-   ```bash
-   git clone <repository-url>
-   cd ReDIB-Portal
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   **Note:** WeasyPrint requires system libraries for PDF generation. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#system-dependencies-for-pdf-generation).
-
-3. **Set up environment and run**
-   ```bash
-   cp .env.example .env
-   python manage.py migrate
-   python manage.py createsuperuser
-   python manage.py runserver
-   ```
-
-4. **Access the application**
-   - Application: http://localhost:8000
-   - Admin: http://localhost:8000/admin
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Docker setup (recommended, includes PostgreSQL, Redis, Celery)
+- **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Local venv + SQLite setup (no Docker required)
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment on VPS with Caddy, auto-TLS, backups
 
 ## Data Models
 
@@ -199,7 +150,7 @@ For detailed Docker instructions, test accounts, and common commands, see **[doc
 - **FeasibilityReview**: Node technical feasibility assessments
 
 ### Evaluations
-- **Evaluation**: Evaluator scores and comments (1-5 scale on 5 criteria)
+- **Evaluation**: Evaluator scores and comments (0-2 scale on 6 criteria)
 
 ### Access Tracking
 - **AccessGrant**: Approved access with scheduling and usage tracking
@@ -207,83 +158,7 @@ For detailed Docker instructions, test accounts, and common commands, see **[doc
 
 ## Development
 
-For development workflows, common commands, database management, and data loading procedures, see **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
-
-### Quick Test Database Setup
-
-```bash
-# Set up complete test database with one command
-python manage.py setup_test_database --reset --yes
-```
-
-This populates the database with nodes, equipment, users, calls, and test applications at various workflow stages.
-
-## Environment Variables
-
-Key environment variables (see `.env.example` for full list):
-
-- `SECRET_KEY`: Django secret key
-- `DEBUG`: Debug mode (True/False)
-- `DATABASE_URL`: PostgreSQL connection string
-- `REDIS_URL`: Redis connection string
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: Email configuration
-
-## Initial Setup Tasks
-
-After deployment, perform these initial setup tasks:
-
-### Option A: Quick Setup (Recommended for Development/Testing)
-
-```bash
-# 1. Run migrations
-python manage.py migrate
-
-# 2. Create superuser
-python manage.py createsuperuser
-
-# 3. Set up complete test database with one command
-python manage.py setup_test_database
-```
-
-This single command populates nodes, equipment, users, email templates, calls, and test applications.
-
-### Option B: Manual Setup (Production)
-
-1. **Run migrations**
-   ```bash
-   python manage.py migrate
-   ```
-
-2. **Create superuser**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-3. **Seed email templates** (required for automated emails)
-   ```bash
-   python manage.py seed_email_templates
-   ```
-
-4. **Populate ReDIB nodes** (4 nodes from CSV)
-   ```bash
-   python manage.py populate_redib_nodes
-   ```
-
-5. **Populate equipment** (17 items across 4 nodes from CSV)
-   ```bash
-   python manage.py populate_redib_equipment
-   ```
-
-6. **Populate core users** (coordinators, node coordinators, evaluators from CSV)
-   ```bash
-   python manage.py populate_redib_users
-   ```
-
-   Default password for all users is "changeme123" - users must change on first login.
-
-   **Note:** You can customize the CSV files in `/data/` directory for your deployment.
-
-7. **Create first call** to test the system
+See **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** for workflows, common commands, database management, and data loading procedures.
 
 ## License
 

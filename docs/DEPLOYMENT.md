@@ -537,3 +537,9 @@ docker stats --no-stream
 - Check celery logs: `docker compose -f docker-compose.prod.yml logs celery`
 - Test email manually (see Step 5)
 - Verify `EMAIL_BACKEND` is set to SMTP, not console
+
+---
+
+## Pre-Launch Checklist
+
+- [ ] **License**: Choose and add a license to `LICENSE` file and update `README.md` (currently says "[To be determined]")

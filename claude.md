@@ -4,7 +4,7 @@
 
 Django-based Competitive Open Access (COA) management system for the ReDIB distributed biomedical imaging network. Automates the complete COA lifecycle from call publication through application, evaluation, resolution, and access tracking.
 
-**Current Status:** Preparing for deployment and live testing on IONOS VPS.
+**Current Status:** Production deployment infrastructure ready, preparing for live testing on IONOS VPS. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full deployment guide.
 
 ## Technology Stack
 
@@ -79,7 +79,7 @@ Access: http://localhost:8000 | Admin: http://localhost:8000/admin
 
 ### Test Data
 ```bash
-python manage.py setup_localtest1_database       # Minimal: 3 nodes, 6 equipment, 10 users
+python manage.py setup_localtest1_database       # Minimal test setup
 python manage.py setup_test_database --reset --yes  # Full: all data + applications at various stages
 ```
 All test user passwords: `testpass123`
@@ -109,21 +109,21 @@ python manage.py test reports.tests                     # Reports tests
 ### Quick Start
 ```bash
 cp .env.docker .env
-docker-compose up -d
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py createsuperuser
-docker-compose exec web python manage.py seed_email_templates
-docker-compose exec web python manage.py setup_localtest1_database
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py seed_email_templates
+docker compose exec web python manage.py setup_localtest1_database
 ```
 Access: http://localhost:8000
 
 ### Useful Commands
 ```bash
-docker-compose logs -f web              # View web logs
-docker-compose logs -f celery           # View Celery worker logs
-docker-compose exec web python manage.py shell  # Django shell
-docker-compose down                     # Stop all services
-docker-compose down -v                  # Stop and remove volumes (full reset)
+docker compose logs -f web              # View web logs
+docker compose logs -f celery           # View Celery worker logs
+docker compose exec web python manage.py shell  # Django shell
+docker compose down                     # Stop all services
+docker compose down -v                  # Stop and remove volumes (full reset)
 ```
 
 ### Environment Variables (.env.docker)
@@ -140,6 +140,16 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=noreply@redib.net
 EMAIL_HOST_PASSWORD=your-email-password
 ```
+
+## Production Deployment
+
+Production uses `docker-compose.prod.yml` with Caddy (auto-TLS), PostgreSQL, Redis, Celery, and Gunicorn. See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for the complete guide covering VPS setup, DNS, email, backups, and monitoring.
+
+Key production files:
+- `docker-compose.prod.yml` - Production Docker Compose stack
+- `docker/Caddyfile` - Reverse proxy and media file serving
+- `.env.production.template` - Documented environment template
+- `scripts/backup-db.sh` - PostgreSQL backup with 30-day retention
 
 ## Project Structure
 
@@ -219,7 +229,7 @@ Email templates are stored in the database. Seed with `python manage.py seed_ema
 | `populate_redib_nodes` | Load nodes from CSV (must run before users/equipment) |
 | `populate_redib_users` | Load users from CSV (requires nodes) |
 | `populate_redib_equipment` | Load equipment from CSV (requires nodes) |
-| `setup_localtest1_database` | Minimal test setup (3 nodes, 6 equipment, 10 users) |
+| `setup_localtest1_database` | Minimal test setup |
 | `setup_test_database` | Full test setup (all data + test applications) |
 | `seed_dev_data` | Seed calls and organizations |
 | `seed_test_applicants` | Create test applicants with applications at various stages |
