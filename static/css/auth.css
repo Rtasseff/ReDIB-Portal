@@ -47,6 +47,25 @@
     padding: 2rem;
 }
 
+.auth-affiliate {
+    text-align: center;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.auth-affiliate span {
+    color: var(--redib-secondary, #6B7780);
+    font-size: 0.85rem;
+}
+
+.auth-affiliate img {
+    height: 40px;
+    mix-blend-mode: multiply;
+}
+
 .auth-footer {
     text-align: center;
     margin-top: 1.5rem;

@@ -11,7 +11,8 @@ static/
 │   └── auth.css              # Login/signup page styles
 ├── images/
 │   ├── ReDiB_logo.png        # Compact logo (navbar)
-│   └── ReDIB_logo_text.png   # Wide logo with tagline (auth pages)
+│   ├── ReDIB_logo_text.png   # Wide logo with tagline (auth pages)
+│   └── Logo-ICTS-def-low.jpg # ICTS affiliate logo (auth pages, below card)
 └── js/
     └── (future scripts)
 ```
@@ -28,6 +29,7 @@ The portal uses two separate logo images:
 
 - **Navbar (compact):** `ReDiB_logo.png` — referenced in `templates/base.html`, displayed at `height="32"`
 - **Auth pages (wide):** `ReDIB_logo_text.png` — referenced in `templates/account/base_entrance.html`, max-height `64px` (set in `auth.css`)
+- **ICTS affiliate:** `Logo-ICTS-def-low.jpg` — shown below the card on auth pages at `height: 40px`. Uses `mix-blend-mode: multiply` to make the white JPG background transparent. Replace with a transparent PNG when available.
 
 To swap either logo:
 
@@ -83,6 +85,7 @@ Loaded only on login/signup/logout pages. Controls the centered card layout:
 | `.auth-wrapper` | Full-height centered flex container |
 | `.auth-card` | Max-width card wrapper (440px) |
 | `.auth-brand` | Logo + heading area above the card |
+| `.auth-affiliate` | ICTS logo strip between card and footer |
 | `.auth-footer` | Links below the card (e.g., "Don't have an account?") |
 
 ## Template Structure
