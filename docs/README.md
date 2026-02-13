@@ -7,6 +7,7 @@ This directory contains all project documentation, reference materials, and test
 ### Getting Started
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for new users
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide (VPS, Docker, Caddy, backups)
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows and common commands
 
 ### User Documentation
@@ -16,7 +17,16 @@ This directory contains all project documentation, reference materials, and test
 - **[TESTING.md](TESTING.md)** - Testing procedures and guidelines
 - **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** - Test data and manual testing scenarios
 
+### Other
+- **[UPDATE_PDF_APP.md](UPDATE_PDF_APP.md)** - How to update the signed PDF application form
+
 ## Directory Structure
+
+### `/developer/`
+Developer guides and planning documents:
+- `branding-and-styles.md` - How to change branding, logo, colors, and CSS
+- `issue-action-plan-20260204.md` - planned changes on 20260204 (Feb 4, 2026)
+- `tier1-manual-test-checklist.md` - manual tests done on 20260204 change list
 
 ### `/reference/`
 Reference materials and specifications:
@@ -39,55 +49,7 @@ Completed planning documents and historical notes:
 - `OPTIMIZE_SPEED.md` - Performance optimization plan
 - `TESTING_NOTES.md` - Historical testing notes
 
-### `/developer/`
-Developer guides and planning documents:
-- `branding-and-styles.md` - How to change branding, logo, colors, and CSS
-- `issue-action-plan-20260204.md` - planned changes on 20260204 (Feb 4, 2026)
-- `tier1-manual-test-checklist.md` - manual tests done on 20260204 change list
-
-
-## Test Scripts
-
-All automated test scripts are located in `/tests/`:
-- `test_application_form_spec.py` - Application form specification validation (63 tests)
-- `test_phase1_phase2_workflow.py` - Call Management & Application Submission (23 tests)
-- `test_phase3_feasibility_review.py` - Feasibility Review (29 tests)
-- `test_phase4_evaluator_assignment.py` - Evaluator Assignment
-- `test_phase5_evaluation_submission.py` - Evaluation Process
-- `test_phase6_resolution.py` - Resolution & Prioritization (legacy)
-- `test_phase6_node_resolution.py` - Node Coordinator Resolution (18 tests)
-- `test_phase7_acceptance.py` - Acceptance & Handoff
-- `test_phase9_publications.py` - Publication Tracking
-
-**Total:** 47+ integration tests across all phases.
-
-## Quick Database Setup
-
-```bash
-# Set up complete test database with one command
-python manage.py setup_test_database --reset --yes
-```
-
-See [DEVELOPMENT.md](DEVELOPMENT.md) for more options.
-
-## Current Implementation Status
-
-### All Phases Complete (Production-Ready)
-
-- **Phase 0**: Foundation & Dashboard
-- **Phase 1**: Call Management
-- **Phase 2**: Application Submission (5-step wizard)
-- **Phase 3**: Feasibility Review (multi-node)
-- **Phase 4**: Evaluator Assignment (COI detection)
-- **Phase 5**: Evaluation Process (5 criteria, 1-5 scale)
-- **Phase 6**: Resolution & Prioritization (node coordinator ownership)
-- **Phase 7**: Acceptance & Handoff (10-day deadline)
-- **Phase 8**: Access Handoff (email automation)
-- **Phase 9**: Publication Tracking
-- **Phase 10**: Reporting & Statistics
-
 ## Related Documentation
 
 - [../README.md](../README.md) - Main project README
 - [../tests/README.md](../tests/README.md) - Test suite documentation
-- [../archive/](../archive/) - Historical project documentation
