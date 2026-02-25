@@ -230,7 +230,6 @@ class UserRole(models.Model):
         ('', 'Not applicable'),
         ('clinical', 'Clinical'),
         ('preclinical', 'Preclinical'),
-        ('radiotracers', 'Radiotracers'),
         ('radiochemistry', 'Radiochemistry Lab'),
     ]
 

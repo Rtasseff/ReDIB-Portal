@@ -117,7 +117,7 @@ class Command(BaseCommand):
                     parsed_roles.append((role, qualifier, ''))
                 elif role == 'evaluator':
                     # Check if qualifier is a valid area
-                    valid_areas = ['preclinical', 'clinical', 'radiotracers']
+                    valid_areas = ['preclinical', 'clinical', 'radiochemistry']
                     if qualifier in valid_areas:
                         parsed_roles.append((role, None, qualifier))
                     else:

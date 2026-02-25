@@ -288,13 +288,13 @@ class Command(BaseCommand):
                 'area': 'clinical',
             },
             {
-                'email': 'eval.radiotracers@test.redib.net',
+                'email': 'eval.radiochemistry@test.redib.net',
                 'first_name': 'Laura',
                 'last_name': 'Navarro',
                 'position': 'Radiochemist',
                 'role': 'evaluator',
                 'node_code': None,
-                'area': 'radiotracers',
+                'area': 'radiochemistry',
             },
             # Applicants
             {

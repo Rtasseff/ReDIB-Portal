@@ -272,7 +272,7 @@ class Command(BaseCommand):
             competitive_funding = (i % 4 == 0)  # Every 4th app has competitive funding
 
             # Specialization areas rotation
-            spec_areas = ['preclinical', 'clinical', 'radiotracers']
+            spec_areas = ['preclinical', 'clinical', 'radiochemistry']
             spec_area = spec_areas[i % len(spec_areas)]
 
             app = Application.objects.create(
@@ -448,7 +448,7 @@ class Command(BaseCommand):
                 'Oncological Response Monitoring with PET-CT',
                 'Neurodegenerative Disease Progression Imaging Study',
             ],
-            'radiotracers': [
+            'radiochemistry': [
                 'Development of Novel PET Radiotracers for Inflammation',
                 'Radiotracer Validation for Alzheimer\'s Biomarkers',
                 'Synthesis and Testing of New Oncological Tracers',
