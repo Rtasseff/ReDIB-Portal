@@ -18,6 +18,7 @@ class EmailTemplate(models.Model):
         ('application_received', 'Application Received'),
         ('feasibility_request', 'Feasibility Review Request'),
         ('feasibility_reminder', 'Feasibility Review Reminder'),
+        ('feasibility_complete', 'Feasibility Review Complete'),
         ('feasibility_rejected', 'Feasibility Rejected'),
         ('evaluation_assigned', 'Evaluation Assigned'),
         ('evaluation_reminder', 'Evaluation Reminder'),
@@ -28,7 +29,9 @@ class EmailTemplate(models.Model):
         ('resolution_accepted', 'Resolution: Accepted'),
         ('resolution_pending', 'Resolution: Pending (Waiting List)'),
         ('resolution_rejected', 'Resolution: Rejected'),
+        ('handoff_notification', 'Handoff Notification'),
         ('acceptance_reminder', 'Acceptance Reminder'),
+        ('acceptance_expired', 'Acceptance Expired'),
         ('access_scheduled', 'Access Scheduled'),
         ('publication_followup', 'Publication Follow-up'),
     ]

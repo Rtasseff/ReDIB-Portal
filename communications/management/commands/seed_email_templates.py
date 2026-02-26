@@ -112,6 +112,161 @@ Please do not reply to this email.
                 '''
             },
             {
+                'template_type': 'application_received',
+                'subject': 'ReDIB COA: Application {{ application_code }} Received',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #27ae60; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #d5f4e6; border-left: 4px solid #27ae60; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Application Received</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+
+            <p>Your application has been successfully submitted to the ReDIB Competitive Open Access programme.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Call:</strong> {{ call_code }}</p>
+            </div>
+
+            <p><strong>What happens next:</strong></p>
+            <ul>
+                <li>Your application will be reviewed for technical feasibility by the relevant node coordinator(s)</li>
+                <li>Once approved, it will proceed to scientific evaluation by independent reviewers</li>
+                <li>You will be notified of the outcome at each stage</li>
+            </ul>
+
+            <p>Thank you for your submission. If you have any questions, please contact info@redib.net.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+Your application has been successfully submitted to the ReDIB Competitive Open Access programme.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Call: {{ call_code }}
+
+What happens next:
+- Your application will be reviewed for technical feasibility by the relevant node coordinator(s)
+- Once approved, it will proceed to scientific evaluation by independent reviewers
+- You will be notified of the outcome at each stage
+
+Thank you for your submission. If you have any questions, please contact info@redib.net.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''
+{
+    "applicant_name": "Full name of the applicant",
+    "application_code": "Application unique code (e.g., COA-2026-01-APP-001)",
+    "call_code": "Call code (e.g., COA-2026-01)"
+}
+                '''
+            },
+            {
+                'template_type': 'feasibility_complete',
+                'subject': 'ReDIB COA: Feasibility Review Complete for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Feasibility Review Complete</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+
+            <p>The technical feasibility review for your application <strong>{{ application_code }}</strong> has been completed.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Status:</strong> {{ status }}</p>
+            </div>
+
+            <p>You will receive further updates as your application progresses through the evaluation process.</p>
+
+            <p>If you have any questions, please contact info@redib.net.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+The technical feasibility review for your application {{ application_code }} has been completed.
+
+Application Code: {{ application_code }}
+Status: {{ status }}
+
+You will receive further updates as your application progresses through the evaluation process.
+
+If you have any questions, please contact info@redib.net.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''
+{
+    "applicant_name": "Full name of the applicant",
+    "application_code": "Application unique code",
+    "status": "Feasibility outcome (e.g., approved and ready for evaluation, or rejected)"
+}
+                '''
+            },
+            {
                 'template_type': 'evaluation_assigned',
                 'subject': 'ReDIB COA: Evaluation Assignment for {{ call_code }}',
                 'html_content': '''

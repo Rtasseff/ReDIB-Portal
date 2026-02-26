@@ -1,6 +1,7 @@
 """
 Views for the applications app - 5-step application wizard.
 """
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
@@ -494,12 +495,22 @@ def feasibility_review(request, pk):
     Node coordinators can approve or reject based on technical
     feasibility and resource availability.
     """
+    # Any active node coordinator for the review's node can complete it
     review = get_object_or_404(
         FeasibilityReview,
         pk=pk,
-        reviewer=request.user,
         is_feasible__isnull=True  # Pending = not yet decided
     )
+
+    # Verify the current user is a coordinator for this node
+    from core.models import UserRole
+    if not UserRole.objects.filter(
+        user=request.user,
+        node=review.node,
+        role='node_coordinator',
+        is_active=True
+    ).exists():
+        raise Http404
 
     application = review.application
 
@@ -513,6 +524,7 @@ def feasibility_review(request, pk):
 
         if form.is_valid():
             review = form.save(commit=False)
+            review.reviewer = request.user  # Record who actually reviewed
             review.reviewed_at = timezone.now()
             review.save()
 
@@ -1519,19 +1531,18 @@ def upload_signed_pdf(request, pk):
                 nodes.add(access_request.equipment.node)
 
             for node in nodes:
-                # Get node coordinators via UserRole
-                node_coordinators = UserRole.objects.filter(
+                # Get the first active node coordinator as reviewer
+                coordinator_role = UserRole.objects.filter(
                     node=node,
                     role='node_coordinator',
                     is_active=True
-                ).select_related('user')
+                ).select_related('user').first()
 
-                # Create a feasibility review for each coordinator
-                for user_role in node_coordinators:
-                    FeasibilityReview.objects.create(
+                if coordinator_role:
+                    FeasibilityReview.objects.get_or_create(
                         application=application,
                         node=node,
-                        reviewer=user_role.user
+                        defaults={'reviewer': coordinator_role.user}
                     )
 
             # Update application status to under_feasibility_review
@@ -1553,24 +1564,31 @@ def upload_signed_pdf(request, pk):
                     related_application_id=application.id
                 )
 
-                # Send feasibility request emails
+                # Send feasibility request emails to ALL coordinators of each node
                 for review in application.feasibility_reviews.all():
                     review_url = request.build_absolute_uri(
                         reverse('applications:feasibility_review', kwargs={'pk': review.pk})
                     )
 
-                    send_email_from_template.delay(
-                        template_type='feasibility_request',
-                        recipient_email=review.reviewer.email,
-                        context_data={
-                            'reviewer_name': review.reviewer.get_full_name(),
-                            'application_code': application.code,
-                            'node_name': review.node.name,
-                            'review_url': review_url,
-                        },
-                        recipient_user_id=review.reviewer.id,
-                        related_application_id=application.id
-                    )
+                    node_coordinators = UserRole.objects.filter(
+                        node=review.node,
+                        role='node_coordinator',
+                        is_active=True
+                    ).select_related('user')
+
+                    for coord_role in node_coordinators:
+                        send_email_from_template.delay(
+                            template_type='feasibility_request',
+                            recipient_email=coord_role.user.email,
+                            context_data={
+                                'reviewer_name': coord_role.user.get_full_name(),
+                                'application_code': application.code,
+                                'node_name': review.node.name,
+                                'review_url': review_url,
+                            },
+                            recipient_user_id=coord_role.user.id,
+                            related_application_id=application.id
+                        )
                 email_status = "You will receive confirmation by email."
             except Exception as e:
                 logger.warning(f"Email notification failed (Celery unavailable): {e}")
