@@ -88,6 +88,7 @@
                         <tr>
                             <th>Evaluator</th>
                             <th>Score</th>
+                            <th>Recommendation</th>
                             <th>Completed On</th>
                         </tr>
                     </thead>
@@ -98,6 +99,15 @@
                             <td>
                                 {% if eval.total_score %}
                                     <span class="badge bg-primary">{{ eval.total_score|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if eval.recommendation == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif eval.recommendation == 'denied' %}
+                                    <span class="badge bg-danger">Denied</span>
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}

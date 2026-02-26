@@ -442,19 +442,32 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
         Number of notifications sent
     """
     from applications.models import Application
-    from core.models import User
+    from core.models import User, UserRole
 
     application = Application.objects.select_related('call', 'applicant').get(id=application_id)
 
-    # Get all active coordinators
-    coordinators = User.objects.filter(
+    # Get all active ReDIB coordinators
+    recipients = User.objects.filter(
         roles__role='coordinator',
         roles__is_active=True
+    )
+
+    # Also notify node coordinators whose nodes are involved in this application
+    involved_node_ids = application.requested_access.values_list(
+        'equipment__node_id', flat=True
     ).distinct()
+    node_coordinators = User.objects.filter(
+        roles__role='node_coordinator',
+        roles__node_id__in=involved_node_ids,
+        roles__is_active=True
+    )
+
+    # Combine and deduplicate
+    all_recipients = (recipients | node_coordinators).distinct()
 
     notifications_sent = 0
 
-    for coordinator in coordinators:
+    for coordinator in all_recipients:
         # Check notification preferences
         if hasattr(coordinator, 'notification_preferences'):
             prefs = coordinator.notification_preferences

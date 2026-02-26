@@ -824,9 +824,14 @@ Please do not reply to this email.
 <p>Dear {{ applicant_name }},</p>
 <p>Congratulations! Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been <strong>ACCEPTED</strong>.</p>
 <p><strong>Final Score:</strong> {{ final_score }}/12.00</p>
-<p><strong>Hours Granted:</strong> {{ hours_granted }} hours</p>
-<p>{{ resolution_comments }}</p>
-<p>Next steps will be provided soon.</p>
+<p><strong>Hours Approved:</strong> {{ hours_approved }} hours</p>
+{% if resolution_comments %}<p>{{ resolution_comments }}</p>{% endif %}
+<hr>
+<h3>Next Step: Accept or Decline Access</h3>
+<p>You have until <strong>{{ acceptance_deadline|date:"F d, Y" }}</strong> to respond.</p>
+<p><a href="{{ accept_url }}" style="display:inline-block;padding:12px 24px;background-color:#198754;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;">Accept or Decline Access</a></p>
+<p><small>Or copy this link into your browser: {{ accept_url }}</small></p>
+<p><em>If you do not respond by the deadline, your access will expire automatically.</em></p>
 <p>Best regards,<br>ReDIB COA Team</p>
 </body></html>''',
                 'text_content': '''Application Accepted
@@ -836,15 +841,21 @@ Dear {{ applicant_name }},
 Congratulations! Your application {{ application_code }} for call {{ call_code }} has been ACCEPTED.
 
 Final Score: {{ final_score }}/12.00
-Hours Granted: {{ hours_granted }} hours
+Hours Approved: {{ hours_approved }} hours
 
 {{ resolution_comments }}
 
-Next steps will be provided soon.
+Next Step: Accept or Decline Access
+You have until {{ acceptance_deadline|date:"F d, Y" }} to respond.
+
+Please visit the following link to accept or decline:
+{{ accept_url }}
+
+If you do not respond by the deadline, your access will expire automatically.
 
 Best regards,
 ReDIB COA Team''',
-                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
+                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_approved, resolution_comments, resolution_date, acceptance_deadline, days_to_respond, accept_url'''
             },
             {
                 'template_type': 'resolution_pending',

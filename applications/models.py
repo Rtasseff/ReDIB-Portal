@@ -38,6 +38,7 @@ class Application(models.Model):
         ('rejected', 'Rejected'),
         ('declined_by_applicant', 'Declined by Applicant'),  # Phase 7
         ('expired', 'Acceptance Expired'),  # Phase 7
+        ('completed', 'Completed'),  # Phase 8
     ]
 
     PROJECT_TYPES = [
@@ -240,11 +241,12 @@ class Application(models.Model):
         'pending_evaluation': ['under_evaluation'],
         'under_evaluation': ['evaluated'],
         'evaluated': ['accepted', 'pending', 'rejected'],
-        'accepted': ['declined_by_applicant', 'expired'],  # Phase 7: Applicant can decline or expire
+        'accepted': ['declined_by_applicant', 'expired', 'completed'],  # Phase 7/8: Decline, expire, or complete
         'pending': ['accepted', 'rejected'],  # Can be promoted from waiting list
         'rejected': [],  # Terminal state
         'declined_by_applicant': [],  # Terminal state - Phase 7
         'expired': [],  # Terminal state - Phase 7
+        'completed': [],  # Terminal state - Phase 8
     }
 
     def save(self, *args, **kwargs):

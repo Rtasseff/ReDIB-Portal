@@ -185,6 +185,7 @@ def mark_application_complete(request, application_id):
             # Mark application as complete
             application.is_completed = True
             application.completed_at = timezone.now()
+            application.status = 'completed'
             application.save()
 
             messages.success(
@@ -221,7 +222,8 @@ def applicant_handoff_dashboard(request):
     applications = Application.objects.filter(
         applicant=request.user,
         status='accepted',
-        accepted_by_applicant=True
+        accepted_by_applicant=True,
+        is_completed=False
     ).select_related('call').prefetch_related(
         'requested_access__equipment__node'
     ).order_by('-handoff_email_sent_at')

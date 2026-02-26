@@ -105,7 +105,7 @@ def send_publication_followups():
     # Find accepted applications from ~6 months ago without publications
     # Use handoff_email_sent_at as the "completion" timestamp
     completed_applications = Application.objects.filter(
-        status='accepted',
+        status__in=['accepted', 'completed'],
         accepted_by_applicant=True,  # Applicant accepted the grant
         handoff_email_sent_at__isnull=False,  # Handoff occurred
         handoff_email_sent_at__lte=six_months_ago,  # ~6 months ago

@@ -199,7 +199,7 @@ def send_single_resolution_notification_task(application_id):
         'applicant_name': application.applicant_name,
         'application_code': application.code,
         'call_code': application.call.code,
-        'call_name': application.call.name,
+        'call_name': application.call.title,
         'final_score': float(application.final_score) if application.final_score else 0.0,
         'resolution': application.get_resolution_display(),
         'hours_requested': float(hours_requested),
@@ -210,10 +210,13 @@ def send_single_resolution_notification_task(application_id):
         'equipment_details': equipment_details,
     }
 
-    # Add acceptance deadline for accepted applications
+    # Add acceptance deadline and accept URL for accepted applications
     if application.resolution == 'accepted' and application.acceptance_deadline:
         context['acceptance_deadline'] = application.acceptance_deadline
         context['days_to_respond'] = application.days_until_acceptance_deadline
+        from django.contrib.sites.models import Site
+        domain = Site.objects.get_current().domain
+        context['accept_url'] = f'https://{domain}/applications/{application.id}/accept/'
 
     # Send notification email
     try:
