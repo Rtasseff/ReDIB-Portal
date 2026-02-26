@@ -230,7 +230,7 @@ class UserRole(models.Model):
         ('', 'Not applicable'),
         ('clinical', 'Clinical'),
         ('preclinical', 'Preclinical'),
-        ('radiochemistry', 'Radiochemistry Lab'),
+        ('radiochemistry', 'Radiochemistry'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='roles')

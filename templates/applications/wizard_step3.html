@@ -195,6 +195,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const addButton = document.getElementById('add-equipment-btn');
     const removeButton = document.getElementById('remove-selected-btn');
     const totalFormsInput = document.getElementById('id_requested_access-TOTAL_FORMS');
+    const initialFormsInput = document.getElementById('id_requested_access-INITIAL_FORMS');
+
+    // Count how many remaining forms have a database ID (are existing records)
+    function countInitialForms() {
+        let count = 0;
+        document.querySelectorAll('.equipment-form').forEach(function(form) {
+            const idField = form.querySelector('input[type="hidden"][name$="-id"]');
+            if (idField && idField.value) {
+                count++;
+            }
+        });
+        return count;
+    }
 
     // Add new equipment form
     addButton.addEventListener('click', function() {
@@ -217,10 +230,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (el.htmlFor) el.htmlFor = el.htmlFor.replace(formRegex, replacement);
         });
 
-        // Clear the values in the cloned form
+        // Clear all values in the cloned form (including hidden id field)
         newForm.querySelectorAll('input, select').forEach(function(field) {
             if (field.type === 'checkbox') {
                 field.checked = false;
+            } else if (field.name && field.name.endsWith('-id')) {
+                // Clear the hidden id field so Django treats this as a new record
+                field.value = '';
             } else if (field.type !== 'hidden') {
                 field.value = '';
             }
@@ -235,51 +251,79 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Remove selected equipment forms
     removeButton.addEventListener('click', function() {
-        const allForms = document.querySelectorAll('.equipment-form');
+        const allForms = document.querySelectorAll('.equipment-form:not(.d-none)');
         let removedCount = 0;
 
-        // Find and remove forms with checked DELETE boxes
         allForms.forEach(function(form) {
             const deleteCheckbox = form.querySelector('input[type="checkbox"][name$="-DELETE"]');
             if (deleteCheckbox && deleteCheckbox.checked) {
-                form.remove();
+                const idField = form.querySelector('input[type="hidden"][name$="-id"]');
+                if (idField && idField.value) {
+                    // Existing DB record: hide the form but keep it so Django
+                    // receives the DELETE flag and removes it from the database
+                    form.classList.add('d-none');
+                } else {
+                    // New (unsaved) form: safe to remove from DOM entirely
+                    form.remove();
+                }
                 removedCount++;
             }
         });
 
-        // Make sure we have at least 1 form remaining
-        const remainingForms = document.querySelectorAll('.equipment-form');
-        if (remainingForms.length === 0) {
-            alert('You must have at least one equipment request. The last form was not removed.');
-            // Reload to restore the form
-            location.reload();
+        // Make sure we have at least 1 visible form remaining
+        const visibleForms = document.querySelectorAll('.equipment-form:not(.d-none)');
+        if (visibleForms.length === 0) {
+            alert('You must have at least one equipment request.');
+            // Unhide any we just hid
+            document.querySelectorAll('.equipment-form.d-none').forEach(function(form) {
+                const cb = form.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                if (cb) cb.checked = false;
+                form.classList.remove('d-none');
+            });
             return;
         }
 
         if (removedCount > 0) {
-            // Reindex all remaining forms
             reindexForms();
         }
     });
 
-    // Reindex forms after removal
+    // Reindex all forms (visible + hidden/deleted) and update management counts
     function reindexForms() {
-        const remainingForms = document.querySelectorAll('.equipment-form');
-        remainingForms.forEach(function(form, index) {
+        // Collect all forms (including hidden ones marked for deletion)
+        const allForms = Array.from(document.querySelectorAll('.equipment-form'));
+
+        // Sort: existing DB records first (with id), new forms after
+        allForms.sort(function(a, b) {
+            const aId = a.querySelector('input[type="hidden"][name$="-id"]');
+            const bId = b.querySelector('input[type="hidden"][name$="-id"]');
+            const aHasId = aId && aId.value ? 0 : 1;
+            const bHasId = bId && bId.value ? 0 : 1;
+            return aHasId - bHasId;
+        });
+
+        // Re-append in sorted order
+        allForms.forEach(function(form) {
+            formset.appendChild(form);
+        });
+
+        // Reindex all fields
+        allForms.forEach(function(form, index) {
             const formRegex = RegExp(`requested_access-\\d+-`, 'g');
             const replacement = `requested_access-${index}-`;
 
-            // Update name and id attributes on inputs/selects without destroying element state
             form.querySelectorAll('input, select, textarea').forEach(function(el) {
                 if (el.name) el.name = el.name.replace(formRegex, replacement);
                 if (el.id) el.id = el.id.replace(formRegex, replacement);
             });
-            // Update for attributes on labels
             form.querySelectorAll('label').forEach(function(el) {
                 if (el.htmlFor) el.htmlFor = el.htmlFor.replace(formRegex, replacement);
             });
         });
-        totalFormsInput.value = remainingForms.length;
+
+        // TOTAL_FORMS = all forms (visible + hidden/deleted)
+        totalFormsInput.value = allForms.length;
+        initialFormsInput.value = countInitialForms();
     }
 });
 </script>

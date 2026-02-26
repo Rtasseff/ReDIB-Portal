@@ -204,9 +204,21 @@ def application_edit_step3(request, pk):
     )
 
     if request.method == 'POST':
-        service_form = ApplicationStep3Form(request.POST, instance=application)
+        # Fix INITIAL_FORMS to match forms that actually have database IDs.
+        # Browser-side JS may remove existing forms and add new ones, leaving
+        # INITIAL_FORMS stale and higher than the actual count of existing records.
+        post_data = request.POST.copy()
+        prefix = 'requested_access'
+        total = int(post_data.get(f'{prefix}-TOTAL_FORMS', 0))
+        actual_initial = 0
+        for i in range(total):
+            if post_data.get(f'{prefix}-{i}-id', ''):
+                actual_initial += 1
+        post_data[f'{prefix}-INITIAL_FORMS'] = str(actual_initial)
+
+        service_form = ApplicationStep3Form(post_data, instance=application)
         access_formset = RequestedAccessFormSet(
-            request.POST,
+            post_data,
             instance=application,
             form_kwargs={'call': application.call}
         )
