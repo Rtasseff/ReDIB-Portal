@@ -6,8 +6,7 @@ This compact and high-performance MRI platform enables researchers without prior
 MRI is a widely used clinical imaging technique, and the results obtained with the ICON in animal models (rat and mouse) are scalable and translatable to humans, since many clinical MRI applications, sequences, and approaches can be reproduced on this system.
 
 The ICON operates at a magnetic field strength of 1 tesla, which is particularly suitable for imaging with gadolinium-based contrast agents, due to the relaxivity profiles of these compounds.",preclinical,TRUE,TRUE
-BioImaC,"
-PET/MRI 9.4T Bruker BioSpec with CryoProbe",pet_mri,"High-field Magnetic Resonance Imaging (MRI) system operating at 9.4 tesla, enabling the acquisition of both anatomical and functional images with exceptional resolution. The system supports in vivo MR spectroscopy, angiography, and cardiovascular, perfusion, and diffusion studies.
+BioImaC,PET/MRI 9.4T Bruker BioSpec with CryoProbe,pet_mri,"High-field Magnetic Resonance Imaging (MRI) system operating at 9.4 tesla, enabling the acquisition of both anatomical and functional images with exceptional resolution. The system supports in vivo MR spectroscopy, angiography, and cardiovascular, perfusion, and diffusion studies.
 
 Its modular design, featuring gradient systems and RF coils of various sizes, makes it highly optimized for a wide range of preclinical MRI applications.
 
@@ -15,7 +14,7 @@ The system includes a CryoProbe, providing a sensitivity gain of 2.5 to 5.3 time
 
 It also includes a PET insert, as described in the section on Hybrid MRI/PET Imaging, enabling the simultaneous acquisition of metabolic and structural data.
 
-This high-field MRI system has been acquired by BioImaC with funding from the European Union through the NextGenerationEU program.",preclinical,,
+This high-field MRI system has been acquired by BioImaC with funding from the European Union through the NextGenerationEU program.",preclinical,TRUE,TRUE
 CIC-biomaGUNE,MRI 7T Bruker BioSpec,mri,"he 7 tesla, 30 cm bore MRI system (70/30 USR) is equipped with two interchangeable gradient sets:
 
 A 20 cm gradient with a maximum strength of 200 mT/m.
@@ -31,20 +30,20 @@ It features four broadband transmit channels and parallel reception with up to e
 The system supports a wide range of radiofrequency coils suited for various animal models and applications, and enables multinuclear detection of ¹³C, ¹?F, and ³¹P, making it ideal for advanced metabolic, molecular, and functional imaging.
 
 This instrument is primarily used for biomedical and molecular research, providing high-precision imaging of physiological, cardiovascular, neurological, and metabolic processes.",preclinical,TRUE,TRUE
-CIC-biomaGUNE,PET/SPECT/CT Multimodal system Molecubes,spect_pet_ct,"Trimodal imaging system, PET, SPECT and CT – MOLECUBES ?, ? and X-CUBES
+CIC-biomaGUNE,PET/SPECT/CT Multimodal system Molecubes,spect_pet_ct,"Trimodal imaging system, PET, SPECT and CT – MOLECUBES a, b and X-CUBES
 These devices work separately thus allowing to obtain multimodal images simultaneously. It is composed of three independent modules:
-•    ?-CUBE. SPECT equipment of high resolution and sensitivity that allows the obtaining of static images of full body of rats and mice.
-•    ?-CUBE. High-resolution, sensitivity PET equipment with a wide axial field of view of 13 cm in a bedding position, with which full-body dynamic acquisitions can be made.
-•    X-CUBE. High-performance CT equipment that allows to obtain high-resolution anatomical images (50 ? m) of rats and mice in a short time.
+•    a-CUBE. SPECT equipment of high resolution and sensitivity that allows the obtaining of static images of full body of rats and mice.
+•    b-CUBE. High-resolution, sensitivity PET equipment with a wide axial field of view of 13 cm in a bedding position, with which full-body dynamic acquisitions can be made.
+•    X-CUBE. High-performance CT equipment that allows to obtain high-resolution anatomical images (50 um) of rats and mice in a short time.
 Specific features of the system include: images of full-body mice and rats (PET, SPECT and CT); dynamic (PET) and static (PET and SPECT) studies; possibility of acquiring PET images synchronized with the heart rhythm of the cardiac animal gated imaging; possibility of acquiring CT images synchronized with the breathing of the animal respiratory gated imaging; possibility of acquiring PET images of up to four mice simultaneously; image reconstruction using the iterative 3DOSEM algorithm and scatter correction and CT image-based energy attenuation.",preclinical,TRUE,TRUE
 CIC-biomaGUNE,PET/SPECT/CT/OI Multimodal system MILabs VECtor,spect_pet_ct_oi,"The MILabs VECTor PET-SPECT-CT-OI is a fully integrated multimodal imaging platform that combines PET, SPECT, CT, and 2D Optical Imaging within a single compact system. It offers submillimeter PET and SPECT resolution, high-resolution CT (
 
-Uniquely, the system enables true multi-isotope imaging, including simultaneous PET/SPECT and PET/PET acquisitions (e.g., ¹?F and ??Zr), capabilities unmatched by any other preclinical system. In addition, it supports cardiac and respiratory dual gating across PET, SPECT, and CT, allowing precise dynamic and functional studies.
+Uniquely, the system enables true multi-isotope imaging, including simultaneous PET/SPECT and PET/PET acquisitions, capabilities unmatched by any other preclinical system. In addition, it supports cardiac and respiratory dual gating across PET, SPECT, and CT, allowing precise dynamic and functional studies.
 
-Advanced reconstruction algorithms (MLEM, POSEM, SROSEM), DICOM and NIfTI export, and a dedicated GPU-based reconstruction server (36 TB) complete this versatile platform.",,TRUE,TRUE
+Advanced reconstruction algorithms (MLEM, POSEM, SROSEM), DICOM and NIfTI export, and a dedicated GPU-based reconstruction server (36 TB) complete this versatile platform.",preclinical,TRUE,TRUE
 CIC-biomaGUNE,Cyclotron IBA 9/18,cyclotron,"The IBA 9/18 Cyclotron at CIC biomaGUNE is a particle accelerator designed for the production of radioisotopes used in molecular imaging, nuclear medicine, and preclinical research.
 
-The cyclotron is capable of accelerating protons up to 18 MeV and deuterons up to 9 MeV, and is equipped with seven irradiation targets for the routine production of [¹?F]F?, [¹?F]F?, [¹³N]NH??, [¹?O]O?, [¹¹C]CO?, and [¹¹C]CH?, as well as a solid target for the production of ??Zr and ??Cu.
+The cyclotron is capable of accelerating protons up to 18 MeV and deuterons up to 9 MeV, and is equipped with seven irradiation targets for the routine production, as well as a solid target for the production of other targets.
 
 This configuration enables the reliable and efficient synthesis of a broad range of PET radioisotopes for use in radiopharmaceutical production and radiolabeling.
 
@@ -60,8 +59,7 @@ In addition, there are two lead-shielded laminar flow cabinets equipped with a g
 
 These facilities operate ensuring reproducibility, safety, and traceability in the synthesis and quality control of labeled compounds.
 Their activity is essential for the development of novel radiopharmaceuticals, biodistribution studies, and biomarker validation in translational biomedical research.",radiochemistry,TRUE,TRUE
-Imaging La Fe,"
-MRI 3T Philips Achieva TX (MultiTransmit)",mri,"The Philips Achieva 3 tesla TX (MultiTransmit) MRI system, Release 5, features a 60 cm bore diameter designed for advanced MRI acquisitions with the capability to customize and program specialized pulse sequences.
+Imaging La Fe,MRI 3T Philips Achieva TX (MultiTransmit),mri,"The Philips Achieva 3 tesla TX (MultiTransmit) MRI system, Release 5, features a 60 cm bore diameter designed for advanced MRI acquisitions with the capability to customize and program specialized pulse sequences.
 It is equipped with multiple interchangeable coils, enabling imaging of small and large animals, as well as human volunteers and patients, while providing high spatial and temporal resolution.
 This high-performance system is used for preclinical, translational, and advanced clinical research, offering exceptional image quality and experimental flexibility.",clinical,TRUE,TRUE
 Imaging La Fe,PET/MRI 3T General Electric SIGNA,pet_mri,"Multimodal PET/MR system enabling simultaneous acquisition of Positron Emission Tomography (PET) and 3-Tesla Magnetic Resonance Imaging (MRI).
