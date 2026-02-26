@@ -27,14 +27,14 @@ This MRI system enables high spatial and temporal resolution imaging, ideal for 
 CIC-biomaGUNE,MRI 11.7T Bruker BioSpec,mri,"The 11.7 tesla Bruker BioSpec MRI system is equipped with a high-performance 9 cm gradient delivering up to 750 mT/m, enabling ultra-high spatial and temporal resolution in preclinical imaging studies.
 
 It features four broadband transmit channels and parallel reception with up to eight channels, enhancing sensitivity and reducing acquisition time.
-The system supports a wide range of radiofrequency coils suited for various animal models and applications, and enables multinuclear detection of ¹³C, ¹?F, and ³¹P, making it ideal for advanced metabolic, molecular, and functional imaging.
+The system supports a wide range of radiofrequency coils suited for various animal models and applications, and enables multinuclear detection of ï¿½ï¿½C, ï¿½?F, and ï¿½ï¿½P, making it ideal for advanced metabolic, molecular, and functional imaging.
 
 This instrument is primarily used for biomedical and molecular research, providing high-precision imaging of physiological, cardiovascular, neurological, and metabolic processes.",preclinical,TRUE,TRUE
-CIC-biomaGUNE,PET/SPECT/CT Multimodal system Molecubes,spect_pet_ct,"Trimodal imaging system, PET, SPECT and CT – MOLECUBES a, b and X-CUBES
+CIC-biomaGUNE,PET/SPECT/CT Multimodal system Molecubes,spect_pet_ct,"Trimodal imaging system, PET, SPECT and CT ï¿½ MOLECUBES a, b and X-CUBES
 These devices work separately thus allowing to obtain multimodal images simultaneously. It is composed of three independent modules:
-•    a-CUBE. SPECT equipment of high resolution and sensitivity that allows the obtaining of static images of full body of rats and mice.
-•    b-CUBE. High-resolution, sensitivity PET equipment with a wide axial field of view of 13 cm in a bedding position, with which full-body dynamic acquisitions can be made.
-•    X-CUBE. High-performance CT equipment that allows to obtain high-resolution anatomical images (50 um) of rats and mice in a short time.
+ï¿½    a-CUBE. SPECT equipment of high resolution and sensitivity that allows the obtaining of static images of full body of rats and mice.
+ï¿½    b-CUBE. High-resolution, sensitivity PET equipment with a wide axial field of view of 13 cm in a bedding position, with which full-body dynamic acquisitions can be made.
+ï¿½    X-CUBE. High-performance CT equipment that allows to obtain high-resolution anatomical images (50 um) of rats and mice in a short time.
 Specific features of the system include: images of full-body mice and rats (PET, SPECT and CT); dynamic (PET) and static (PET and SPECT) studies; possibility of acquiring PET images synchronized with the heart rhythm of the cardiac animal gated imaging; possibility of acquiring CT images synchronized with the breathing of the animal respiratory gated imaging; possibility of acquiring PET images of up to four mice simultaneously; image reconstruction using the iterative 3DOSEM algorithm and scatter correction and CT image-based energy attenuation.",preclinical,TRUE,TRUE
 CIC-biomaGUNE,PET/SPECT/CT/OI Multimodal system MILabs VECtor,spect_pet_ct_oi,"The MILabs VECTor PET-SPECT-CT-OI is a fully integrated multimodal imaging platform that combines PET, SPECT, CT, and 2D Optical Imaging within a single compact system. It offers submillimeter PET and SPECT resolution, high-resolution CT (
 
@@ -59,13 +59,13 @@ In addition, there are two lead-shielded laminar flow cabinets equipped with a g
 
 These facilities operate ensuring reproducibility, safety, and traceability in the synthesis and quality control of labeled compounds.
 Their activity is essential for the development of novel radiopharmaceuticals, biodistribution studies, and biomarker validation in translational biomedical research.",radiochemistry,TRUE,TRUE
-Imaging La Fe,MRI 3T Philips Achieva TX (MultiTransmit),mri,"The Philips Achieva 3 tesla TX (MultiTransmit) MRI system, Release 5, features a 60 cm bore diameter designed for advanced MRI acquisitions with the capability to customize and program specialized pulse sequences.
+IIS-LaFe,MRI 3T Philips Achieva TX (MultiTransmit),mri,"The Philips Achieva 3 tesla TX (MultiTransmit) MRI system, Release 5, features a 60 cm bore diameter designed for advanced MRI acquisitions with the capability to customize and program specialized pulse sequences.
 It is equipped with multiple interchangeable coils, enabling imaging of small and large animals, as well as human volunteers and patients, while providing high spatial and temporal resolution.
 This high-performance system is used for preclinical, translational, and advanced clinical research, offering exceptional image quality and experimental flexibility.",clinical,TRUE,TRUE
-Imaging La Fe,PET/MRI 3T General Electric SIGNA,pet_mri,"Multimodal PET/MR system enabling simultaneous acquisition of Positron Emission Tomography (PET) and 3-Tesla Magnetic Resonance Imaging (MRI).
+IIS-LaFe,PET/MRI 3T General Electric SIGNA,pet_mri,"Multimodal PET/MR system enabling simultaneous acquisition of Positron Emission Tomography (PET) and 3-Tesla Magnetic Resonance Imaging (MRI).
 With a 60 cm bore, it allows fast acquisition and high spatial resolution for both imaging modalities simultaneously.
 Intended for clinical research use, particularly within patient-based studies and trials.",clinical,TRUE,TRUE
-Imaging La Fe,CT Philips Brilliance iCT,ct,"The Philips Brilliance iCT Multidetector Computed Tomography (MDCT) system with 256 detectors provides high spatial and temporal resolution imaging with wide anatomical coverage per rotation.
+IIS-LaFe,CT Philips Brilliance iCT,ct,"The Philips Brilliance iCT Multidetector Computed Tomography (MDCT) system with 256 detectors provides high spatial and temporal resolution imaging with wide anatomical coverage per rotation.
 Its advanced iterative reconstruction technology and fast full-volume acquisition enable high-quality cardiac, vascular, and dynamic studies with low radiation dose.",clinical,TRUE,TRUE
 TRIMA-CNIC,MRI 3T Philips Elition,mri,"The Philips Elition X 3 tesla magnetic resonance imaging (MRI) platform delivers advanced performance with high spatial resolution, fast acquisition speed, and enhanced patient comfort.
 The 3 tesla MRI system features a large bore diameter, spacious tunnel, and wide field of view, improving image quality and examination comfort.
@@ -79,10 +79,10 @@ A 12 cm gradient with a maximum gradient strength of 400 mT/m.
 The system is designed for small-animal imaging, featuring a horizontal bore of 31 cm inner diameter, enabling high-resolution anatomical and functional studies.
 Its advanced configuration provides high sensitivity, contrast, and temporal accuracy, making it ideal for preclinical cardiovascular, neurological, and metabolic research.",preclinical,TRUE,TRUE
 TRIMA-CNIC,PET/CT Philips Vereos,pet_ct,"The Philips Vereos digital PET/CT imaging system (positron emission tomography and computed tomography, a hybrid technique that combines metabolic and anatomical information in a single image) with photon-counting technology features a large field of view, high sensitivity, multiple CT detectors, and high temporal and spatial resolution. It also includes ECG gating, enabling synchronization with the cardiac signal for high-quality imaging in dynamic or cardiac studies.",clinical,TRUE,TRUE
-TRIMA-CNIC,"Modular Imaging System PET, SPECT and CT – Molecubes",spect_pet_ct,"· ?-CUBE: Positron Emission Tomography (PET) modality for nuclear imaging using ?-emitting radioisotopes such as 68-Gallium, 18-Fluorine or 89-Zirconium. The ?-CUBE enables preclinical imaging in rats and mice, both static and dynamic modes, ensuring high sensitivity and resolution.
+TRIMA-CNIC,"Modular Imaging System PET, SPECT and CT ï¿½ Molecubes",spect_pet_ct,"ï¿½ ?-CUBE: Positron Emission Tomography (PET) modality for nuclear imaging using ?-emitting radioisotopes such as 68-Gallium, 18-Fluorine or 89-Zirconium. The ?-CUBE enables preclinical imaging in rats and mice, both static and dynamic modes, ensuring high sensitivity and resolution.
 
-· ?-CUBE: Single-Photon Emission Computed Tomography (SPECT) modality for nuclear imaging using gamma-emitting radioisotopes such as 99m-Technetium or 177-Lutetium. Like the ?-CUBE, this system provides high-sensitivity and high-resolution preclinical images, with dedicated collimators for scanning rats and mice.
+ï¿½ ?-CUBE: Single-Photon Emission Computed Tomography (SPECT) modality for nuclear imaging using gamma-emitting radioisotopes such as 99m-Technetium or 177-Lutetium. Like the ?-CUBE, this system provides high-sensitivity and high-resolution preclinical images, with dedicated collimators for scanning rats and mice.
 
-· X-Cube: Computed Tomography (CT) modality. It allows high-resolution structural images with excellent contrast between different tissues.
+ï¿½ X-Cube: Computed Tomography (CT) modality. It allows high-resolution structural images with excellent contrast between different tissues.
 
-In combination, the modular PET-SPECT-CT system enables multimodal nuclear imaging focused on the diagnosis of various pathologies and even the monitoring of treatment response. For mouse studies, these systems allow simultaneous scanning of multiple animals. Additionally, all three modalities offer the possibility of acquiring images synchronized with the animal’s cardiac rhythm.",preclinical,TRUE,TRUE
+In combination, the modular PET-SPECT-CT system enables multimodal nuclear imaging focused on the diagnosis of various pathologies and even the monitoring of treatment response. For mouse studies, these systems allow simultaneous scanning of multiple animals. Additionally, all three modalities offer the possibility of acquiring images synchronized with the animalï¿½s cardiac rhythm.",preclinical,TRUE,TRUE

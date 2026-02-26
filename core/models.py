@@ -91,6 +91,8 @@ class Equipment(models.Model):
         ('ct', 'CT'),
         ('pet_ct', 'PET-CT'),
         ('pet_mri', 'PET-MRI'),
+        ('spect_pet_ct', 'SPECT-PET-CT'),
+        ('spect_pet_ct_oi', 'SPECT-PET-CT-OI'),
         ('cyclotron', 'Cyclotron'),
         ('spect', 'SPECT'),
         ('ultrasound', 'Ultrasound'),
