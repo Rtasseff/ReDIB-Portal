@@ -143,6 +143,14 @@ EMAIL_HOST_PASSWORD=your-email-password
 
 ## Production Deployment
 
+**Server:** IONOS VPS at `212.227.99.72` (`portal.redib.net`), Debian 13 (Trixie), deploy user.
+
+**TODO (priority):** Ensure SSH access works from any network. Currently the IONOS cloud-level firewall restricts port 22, which blocks SSH from home/remote networks. On Monday:
+1. Verify the IONOS cloud firewall allows inbound port 22 from all IPs (not just the office IP)
+2. Check if `fail2ban` is installed on the server and review its SSH jail configuration
+3. Consider adding a non-standard SSH port (e.g., 2222) as a fallback in both `sshd_config` and `ufw`
+4. Update `docs/DEPLOYMENT.md` firewall section with any changes
+
 Production uses `docker-compose.prod.yml` with Caddy (auto-TLS), PostgreSQL, Redis, Celery, and Gunicorn. See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for the complete guide covering VPS setup, DNS, email, backups, and monitoring.
 
 Key production files:
