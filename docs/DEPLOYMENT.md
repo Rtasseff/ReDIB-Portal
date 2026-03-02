@@ -65,14 +65,22 @@ Copy your SSH key for passwordless login (run this on your **local machine**):
 ssh-copy-id deploy@YOUR_SERVER_IP
 ```
 
-### 1.3 Disable Root Login
+### 1.3 Harden SSH
 
 Edit `/etc/ssh/sshd_config` on the server:
 
 ```
 PermitRootLogin no
 PasswordAuthentication no
+Port 22
+Port 2222
+ClientAliveInterval 120
 ```
+
+> **Note:** IONOS cloud-init may override `PasswordAuthentication` via `/etc/ssh/sshd_config.d/50-cloud-init.conf`. Check that file and set it to `no` if needed:
+> ```bash
+> sudo sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config.d/50-cloud-init.conf
+> ```
 
 Then restart SSH:
 
@@ -88,7 +96,8 @@ systemctl restart sshd
 apt install ufw -y
 ufw default deny incoming
 ufw default allow outgoing
-ufw allow ssh
+ufw allow 22/tcp
+ufw allow 2222/tcp comment 'SSH fallback'
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw enable
@@ -97,10 +106,25 @@ ufw enable
 Verify:
 
 ```bash
-ufw status
+ufw status verbose
 ```
 
-### 1.5 Enable Automatic Security Updates
+> **Note:** The IONOS cloud-level firewall also controls inbound access. Currently, SSH (ports 22 and 2222) is restricted to the office network by IT policy. Web traffic (80/443) is open to all. Any changes to the cloud firewall must be made through the IONOS web panel.
+
+### 1.5 Install fail2ban
+
+```bash
+apt install fail2ban -y
+systemctl enable --now fail2ban
+```
+
+The default configuration protects SSH out of the box (5 failed attempts = 10-minute ban). Verify:
+
+```bash
+fail2ban-client status sshd
+```
+
+### 1.6 Enable Automatic Security Updates
 
 ```bash
 apt install unattended-upgrades -y
