@@ -65,7 +65,7 @@ class Command(BaseCommand):
                     is_active = row.get('is_active', 'TRUE').strip().upper() in ['TRUE', '1', 'YES']
 
                     users_data.append({
-                        'email': row['email'].strip(),
+                        'email': row['email'].strip().lower(),
                         'first_name': row['first_name'].strip(),
                         'last_name': row['last_name'].strip(),
                         'organization_name': row.get('organization_name', '').strip(),
