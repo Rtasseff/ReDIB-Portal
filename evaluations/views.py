@@ -274,11 +274,15 @@ def manual_assign_evaluator(request, application_id):
     if Evaluation.objects.filter(application=application, evaluator=evaluator).exists():
         return JsonResponse({'error': 'Evaluator already assigned'}, status=400)
 
-    # Check conflict of interest
-    if application.applicant.organization and evaluator.organization:
-        if application.applicant.organization == evaluator.organization:
+    # Check conflict of interest (compare application's declared entity with evaluator's org)
+    applicant_org_name = application.applicant_entity or (
+        application.applicant.organization.name if application.applicant.organization else None
+    )
+    evaluator_org_name = evaluator.organization.name if evaluator.organization else None
+    if applicant_org_name and evaluator_org_name:
+        if applicant_org_name.strip().lower() == evaluator_org_name.strip().lower():
             return JsonResponse({
-                'error': f'Conflict of interest: Evaluator from same organization ({evaluator.organization.name})'
+                'error': f'Conflict of interest: Evaluator from same organization ({evaluator_org_name})'
             }, status=400)
 
     # Create evaluation

@@ -259,8 +259,11 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
         application=application
     ).values_list('evaluator_id', flat=True))
 
-    # Remove evaluators with conflict of interest (same organization as applicant)
-    applicant_org_id = application.applicant.organization_id if application.applicant.organization else None
+    # Remove evaluators with conflict of interest (compare application's declared entity with evaluator's org)
+    applicant_org_name = application.applicant_entity or (
+        application.applicant.organization.name if application.applicant.organization else None
+    )
+    applicant_org_name_lower = applicant_org_name.strip().lower() if applicant_org_name else None
 
     # Build filtered list, separating by area match preference
     area_matched_evaluators = []
@@ -277,12 +280,13 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             continue
 
         # Skip if conflict of interest
-        if applicant_org_id and evaluator.organization_id == applicant_org_id:
+        evaluator_org_name = evaluator.organization.name if evaluator.organization else None
+        if applicant_org_name_lower and evaluator_org_name and evaluator_org_name.strip().lower() == applicant_org_name_lower:
             excluded.append({
                 'evaluator_id': evaluator.id,
                 'evaluator_email': evaluator.email,
                 'reason': 'conflict_of_interest',
-                'detail': f'Same organization as applicant ({evaluator.organization.name})'
+                'detail': f'Same organization as applicant ({evaluator_org_name})'
             })
             continue
 
