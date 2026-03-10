@@ -184,6 +184,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Site URL for building absolute links in emails (no trailing slash)
+SITE_URL = env('SITE_URL', default='https://portal.redib.net')
+
 # Redis Configuration
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 

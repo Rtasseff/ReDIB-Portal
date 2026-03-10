@@ -3,6 +3,7 @@ Views for evaluations app - Phase 4: Evaluator Assignment
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -298,7 +299,9 @@ def manual_assign_evaluator(request, application_id):
         'application_code': application.code,
         'call_code': application.call.code,
         'deadline': application.call.evaluation_deadline,
-        'evaluation_url': f'/evaluations/{evaluation.id}/',
+        'evaluation_url': request.build_absolute_uri(
+            reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id})
+        ),
     }
 
     send_email_from_template(

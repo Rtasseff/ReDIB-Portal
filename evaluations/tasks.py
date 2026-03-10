@@ -4,6 +4,8 @@ Based on design document section 7.3 - Periodic Tasks.
 """
 
 from celery import shared_task
+from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from .models import Evaluation
@@ -50,6 +52,7 @@ def send_evaluation_reminders():
             'call_code': evaluation.application.call.code,
             'days_remaining': days_remaining,
             'deadline': evaluation.application.call.evaluation_deadline,
+            'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
         }
 
         send_email_from_template(
@@ -105,7 +108,7 @@ def notify_overdue_evaluators():
             'application_code': evaluation.application.code,
             'call_code': evaluation.application.call.code,
             'deadline': evaluation.application.call.evaluation_deadline,
-            'evaluation_url': f'/evaluations/{evaluation.id}/',
+            'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
         }
 
         send_email_from_template(
@@ -340,7 +343,7 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             'application_code': application.code,
             'call_code': application.call.code,
             'deadline': application.call.evaluation_deadline,
-            'evaluation_url': f'/evaluations/{evaluation.id}/',
+            'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
         }
 
         send_email_from_template(
@@ -486,7 +489,7 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
             'call_code': application.call.code,
             'average_score': round(average_score, 2),
             'num_evaluations': application.evaluations.count(),
-            'application_url': f'/applications/{application.id}/',
+            'application_url': settings.SITE_URL + reverse('applications:detail', kwargs={'pk': application.id}),
             'brief_description': application.brief_description,
         }
 

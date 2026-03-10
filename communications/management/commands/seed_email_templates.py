@@ -439,7 +439,8 @@ Application Details:
 - Days Remaining: {{ days_remaining }} days
 - Deadline: {{ deadline|date:"F d, Y" }}
 
-Please submit your evaluation as soon as possible.
+Please submit your evaluation as soon as possible:
+{{ evaluation_url }}
 
 Thank you for your timely participation.
 
@@ -456,7 +457,8 @@ This is an automated reminder from the ReDIB COA Portal.
     "application_title": "Brief description of the application",
     "call_code": "Call code",
     "days_remaining": "Number of days until deadline",
-    "deadline": "Evaluation deadline (datetime object)"
+    "deadline": "Evaluation deadline (datetime object)",
+    "evaluation_url": "URL to the evaluation form"
 }
                 '''
             },
