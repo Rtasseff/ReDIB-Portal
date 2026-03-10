@@ -102,7 +102,9 @@
                         <td><strong>{{ app.code }}</strong></td>
                         <td>{{ app.applicant.get_full_name }}</td>
                         <td>
-                            {% if app.applicant.organization %}
+                            {% if app.applicant_entity %}
+                                {{ app.applicant_entity }}
+                            {% elif app.applicant.organization %}
                                 {{ app.applicant.organization.name }}
                             {% else %}
                                 <span class="text-muted">N/A</span>
