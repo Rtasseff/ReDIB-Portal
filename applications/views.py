@@ -944,14 +944,14 @@ def _send_handoff_email(application):
         related_application_id=application.id
     )
 
-    # Send to node directors
+    # Send to node coordinators
     for node in nodes:
-        node_directors = UserRole.objects.filter(
+        node_coordinators = UserRole.objects.filter(
             node=node,
-            role='node_director'
+            role='node_coordinator'
         ).select_related('user')
 
-        for user_role in node_directors:
+        for user_role in node_coordinators:
             send_email_from_template(
                 template_type='handoff_notification',
                 recipient_email=user_role.user.email,
