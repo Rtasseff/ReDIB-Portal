@@ -314,7 +314,7 @@ class FeasibilityReviewForm(forms.ModelForm):
             (False, 'Reject - Not feasible'),
         ],
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
-        coerce=lambda x: x == 'True',  # Convert string to boolean
+        coerce=lambda x: x in (True, 'True'),  # Convert string or bool to boolean
         label='Feasibility Decision',
         required=True,
         empty_value=None

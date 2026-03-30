@@ -3,6 +3,7 @@ Celery tasks for email sending and communication workflows.
 """
 
 from celery import shared_task
+from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives
 from django.template import Template, Context
 from django.utils import timezone
@@ -36,6 +37,7 @@ def send_email_from_template(template_type, recipient_email, context_data, recip
         html_template = Template(template.html_content)
         text_template = Template(template.text_content)
 
+        context_data.setdefault('contact_email', django_settings.CONTACT_EMAIL)
         context = Context(context_data)
         subject = subject_template.render(context)
         html_content = html_template.render(context)

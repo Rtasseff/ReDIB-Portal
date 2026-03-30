@@ -175,6 +175,7 @@ if EMAIL_BACKEND != 'django.core.mail.backends.console.EmailBackend':
     EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
     EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+CONTACT_EMAIL = env('CONTACT_EMAIL', default='info@redib.net')
 
 # Celery Configuration
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
