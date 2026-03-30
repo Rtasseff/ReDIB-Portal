@@ -4,6 +4,8 @@ Based on design document section 7.3 - Periodic Tasks.
 """
 
 from celery import shared_task
+from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from .models import AccessGrant
@@ -129,6 +131,7 @@ def send_publication_followups():
             'project_title': application.project_title or application.brief_description,
             'handoff_date': application.handoff_email_sent_at,
             'acknowledgment_text': 'This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU).',
+            'publication_url': settings.SITE_URL + reverse('access:publication_submit'),
         }
 
         send_email_from_template(
