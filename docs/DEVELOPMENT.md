@@ -123,6 +123,42 @@ Access points:
 - **Application**: http://localhost:8000
 - **Admin Interface**: http://localhost:8000/admin
 
+## Email Templates
+
+### Seeding Templates
+
+Email templates are loaded into the database from `seed_email_templates.py`:
+
+```bash
+python manage.py seed_email_templates
+```
+
+This is also run automatically during deployment via the Docker entrypoint.
+
+### Testing All Templates
+
+Send all 15 templates to a single recipient to verify rendering and links:
+
+```bash
+# Send test emails
+python manage.py send_test_emails --to your-email@example.com
+
+# Clean up test data afterward
+python manage.py send_test_emails --cleanup
+```
+
+See [docs/TEST_EMAIL_TEMPLATES.md](docs/TEST_EMAIL_TEMPLATES.md) for full details on what is created and how to verify.
+
+### Contact Email
+
+The contact email used across all templates is configured in `redib/settings.py`:
+
+```python
+CONTACT_EMAIL = env('CONTACT_EMAIL', default='info@redib.net')
+```
+
+This is automatically injected into every template as `{{ contact_email }}`. To change it, update the setting or set `CONTACT_EMAIL` in your `.env` file.
+
 ## Common Commands
 
 ### Running Tests
@@ -255,5 +291,6 @@ If you encounter errors like "Pango" or "Cairo" not found, ensure the system dep
 - [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Initial project setup and configuration
 - [docs/TESTING.md](docs/TESTING.md) - Testing procedures and guidelines
 - [docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md) - Test data documentation
+- [docs/TEST_EMAIL_TEMPLATES.md](docs/TEST_EMAIL_TEMPLATES.md) - Email template testing guide
 - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - End-user guide for portal users
 - [README.md](README.md) - Project overview and features
