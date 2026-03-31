@@ -6,6 +6,8 @@ Django 5.0 / Python 3.11 COA management system for the ReDIB distributed biomedi
 
 **Current Phase:** Rapid iterative improvement — fixing bugs, adding features, and updating content based on recent testing. Changes are developed and tested locally (often on feature branches), merged to main, pushed to origin, then pulled on the production VPS.
 
+**Active Branch:** `fixes-batch-1` — batching simple bug fixes and content changes. Merge to main when the batch is tested and ready.
+
 ## Environment Context
 
 **Always ask which environment we are working in** before making changes or giving instructions:
