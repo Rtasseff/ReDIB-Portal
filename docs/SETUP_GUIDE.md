@@ -1,66 +1,72 @@
-# ReDIB COA Portal - Setup Guide
+# ReDIB COA Portal -- Setup & Configuration Guide
 
-Quick guide to get the portal running and create your first admin user.
+Detailed configuration reference for the ReDIB Portal. For a quick first-time setup, see [QUICKSTART.md](QUICKSTART.md).
 
 ---
 
-## Initial Setup
+## Environment Configuration
 
-### 1. Database Setup
+### How the App Determines Its Mode
 
-The migrations are already created. Just run them:
+The application reads a single `.env` file in the project root (`redib/settings.py`). Three templates are provided:
 
+| Template | Purpose | Copy Command |
+|----------|---------|-------------|
+| `.env.example` | Local development (venv + SQLite) | `cp .env.example .env` |
+| `.env.docker` | Local Docker testing (PostgreSQL + Redis) | `cp .env.docker .env` |
+| `.env.production.template` | Production VPS deployment | `cp .env.production.template .env` |
+
+### Key Settings That Control Behavior
+
+| Setting | Dev Default | Prod Value | Effect |
+|---------|-----------|------------|--------|
+| `DEBUG` | `True` | `False` | Enables debug toolbar; when False, enables HSTS, secure cookies |
+| `DATABASE_URL` | `sqlite:///db.sqlite3` | `postgres://...` | Database engine |
+| `USE_REDIS` | `False` | `True` | Cache backend: LocMemCache (dev) vs Redis (prod) |
+| `EMAIL_BACKEND` | `console` | `django.core.mail.backends.smtp.EmailBackend` | Emails print to terminal (dev) vs real SMTP delivery (prod) |
+| `SECRET_KEY` | Insecure dev default | **Must set unique value** | Cryptographic signing |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Your domain | HTTP Host header validation |
+| `SITE_URL` | `https://portal.redib.net` | Your domain URL | Absolute URLs in emails |
+| `CELERY_BROKER_URL` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Celery broker (only matters if workers are running) |
+
+When `DEBUG=False`, Django automatically enables: HSTS, secure cookies, CSRF cookie security, and proxy SSL header detection. See `redib/settings.py`.
+
+### Switching Between Modes
+
+**Development to Docker testing:**
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Run migrations
-python manage.py migrate
+docker compose down          # if previously running
+cp .env.docker .env
+docker compose up -d --build
 ```
 
-**Expected output**: All migrations should apply successfully.
+**Docker testing back to development:**
+```bash
+docker compose down
+cp .env.example .env
+source venv/bin/activate
+python manage.py runserver
+```
+
+**Production deployment** is a one-way setup on a VPS -- see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
-### 2. Create Superuser (Admin Account)
+## Admin Account Setup
 
-Create your first admin account:
+### Create Superuser
 
 ```bash
 python manage.py createsuperuser
 ```
 
-**You'll be prompted for**:
+You'll be prompted for:
 - **Email address**: Your admin email (used for login)
 - **First name**: Your first name
 - **Last name**: Your last name
 - **Password**: Strong password (won't be visible as you type)
 
-**Example**:
-```
-Email address: admin@redib.net
-First name: Admin
-Last name: User
-Password: **********
-Password (again): **********
-Superuser created successfully.
-```
-
----
-
-### 3. Start Development Server
-
-```bash
-python manage.py runserver
-```
-
-**Access the portal**:
-- **Homepage**: http://localhost:8000
-- **Admin**: http://localhost:8000/admin
-
----
-
-## First Login
+### First Login
 
 1. Go to http://localhost:8000/admin
 2. Login with your superuser email and password
@@ -68,9 +74,9 @@ python manage.py runserver
 
 ---
 
-## Initial Data Setup
+## Initial Data Setup (Detailed)
 
-After creating the database and superuser, load the required production data using the provided management commands.
+After creating the database and superuser, load the required data using the provided management commands.
 
 **IMPORTANT**: Commands must be run in the specific order below due to data dependencies.
 
@@ -82,7 +88,7 @@ Load all required email templates (no dependencies):
 python manage.py seed_email_templates
 ```
 
-This creates all 10 required email templates:
+This creates all required email templates:
 - call_published
 - application_received
 - feasibility_request
@@ -104,7 +110,7 @@ python manage.py populate_redib_nodes
 ```
 
 Loads 4 ReDIB nodes from `data/nodes.csv`:
-- **CIC biomaGUNE** (CICBIO) - San Sebastián
+- **CIC biomaGUNE** (CICBIO) - San Sebastian
 - **BioImaC** (BIOIMAC) - Murcia
 - **La Fe** (LAFE) - Valencia
 - **CNIC** (CNIC) - Madrid
@@ -169,12 +175,12 @@ You can edit these CSV files to customize the data before loading.
 
 ---
 
-## Quick Test Data Setup (Recommended)
+## Quick Test Data Setup
 
-Instead of creating test data manually, use the `seed_dev_data` command to automatically create a complete test environment:
+Instead of loading data manually with the steps above, use a single command:
 
 ```bash
-python manage.py seed_dev_data --clear
+python manage.py setup_test_database --reset --yes
 ```
 
 This creates:
@@ -194,53 +200,43 @@ This creates:
 - `applicant1@test.redib.net` - Applicant
 - `applicant2@test.redib.net` - Applicant
 
-See `../archive/TEST_SETUP.md` for detailed information about the test data structure.
-
 ---
 
-## Running with Docker (Production-like)
+## Running Celery Workers (Optional in Development)
 
-If you have Docker installed:
+Background tasks (email sending, scheduled reminders) require Celery + Redis. **In development mode, these are optional** -- emails print to the console via the console email backend, and background tasks are simply not executed unless a worker is running.
 
-```bash
-# Start all services
-docker compose up -d
+If you want to test Celery locally:
 
-# Run migrations
-docker compose exec web python manage.py migrate
+1. Install and start Redis:
+   ```bash
+   # macOS
+   brew install redis && redis-server
+   # Linux
+   sudo apt-get install redis && redis-server
+   ```
 
-# Create superuser
-docker compose exec web python manage.py createsuperuser
+2. Update `.env`: set `USE_REDIS=True`
 
-# View logs
-docker compose logs -f web
+3. Run in three separate terminals:
 
-# Access at http://localhost:8000
-```
+   **Terminal 1** - Celery Worker:
+   ```bash
+   source venv/bin/activate
+   celery -A redib worker -l info
+   ```
 
----
+   **Terminal 2** - Celery Beat (scheduler):
+   ```bash
+   source venv/bin/activate
+   celery -A redib beat -l info
+   ```
 
-## Running Celery Workers (for background tasks)
-
-To enable automated emails and reminders:
-
-**Terminal 1** - Celery Worker:
-```bash
-source venv/bin/activate
-celery -A redib worker -l info
-```
-
-**Terminal 2** - Celery Beat (scheduler):
-```bash
-source venv/bin/activate
-celery -A redib beat -l info
-```
-
-**Terminal 3** - Django server:
-```bash
-source venv/bin/activate
-python manage.py runserver
-```
+   **Terminal 3** - Django server:
+   ```bash
+   source venv/bin/activate
+   python manage.py runserver
+   ```
 
 ---
 
@@ -256,44 +252,21 @@ python manage.py runserver
 **Solution**: Run migrations: `python manage.py migrate`
 
 ### Issue: Celery tasks not running
-**Solution**: Make sure Celery worker and beat are running in separate terminals.
+**Solution**: In development mode, Celery is optional. If you want background tasks, see [Running Celery Workers](#running-celery-workers-optional-in-development) above.
 
 ### Issue: Emails not sending
-**Solution**: Check that email templates are created and marked as active in admin.
+**Solution**: In development mode, emails print to the terminal (console backend). Check your terminal output. For real email delivery, configure SMTP in your `.env` file.
 
 ### Issue: "Error connecting to redis:6379" when logging in
-**Solution**: The app is configured for local development without Redis by default (USE_REDIS=False in .env). This is normal. If you want to use Redis for caching and Celery:
-
-1. Install Redis: `brew install redis` (macOS) or `apt-get install redis` (Linux)
-2. Start Redis: `redis-server`
-3. Update `.env`: Set `USE_REDIS=True`
-4. Restart the Django server
-
-For basic testing, Redis is optional - the app uses in-memory caching instead.
+**Solution**: Your `.env` has `USE_REDIS=True` but Redis is not running. Either:
+- Set `USE_REDIS=False` in `.env` (recommended for development)
+- Or install and start Redis (see Celery section above)
 
 ---
-
 
 ## Next Steps
 
-Once you have the test data loaded:
-
-1. **Login with different roles** at http://localhost:8000/accounts/login/
-2. **Test the workflow** (submit APP-TEST-003, review APP-TEST-004)
-3. **Explore the admin** at http://localhost:8000/admin/
-4. **Test email sending** (check console output or SMTP)
-5. **Test Celery tasks** (if Redis is enabled)
-
----
-
-## Getting Help
-
-- **Development Workflows**: See [DEVELOPMENT.md](DEVELOPMENT.md)
-- **Testing Guide**: See [TESTING.md](TESTING.md)
-- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md)
-- **System Design**: See [reference/redib-coa-system-design.md](reference/redib-coa-system-design.md)
-- **Archived Docs**: See [archive/](archive/) for historical documentation
-
----
-
-**Ready to use!** 🚀
+- **Development workflows**: [DEVELOPMENT.md](DEVELOPMENT.md)
+- **Testing guide**: [TESTING.md](TESTING.md)
+- **Quick start**: [QUICKSTART.md](QUICKSTART.md)
+- **System design**: [reference/redib-coa-system-design.md](reference/redib-coa-system-design.md)

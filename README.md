@@ -10,10 +10,10 @@ This Django-based web application automates the complete COA lifecycle, from cal
 
 All documentation is organized in the `docs/` folder:
 
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Get started quickly (new users start here)
-- **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Development setup (venv + SQLite) and optional local Docker testing
+- **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Detailed configuration, environment variables, and data loading reference
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment guide (VPS, Docker, Caddy, backups)
-- **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflows and common commands
+- **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development prerequisites, workflows, and common commands
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - End-user guide for portal users
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing procedures and guidelines
 - **[docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing
@@ -32,9 +32,18 @@ All documentation is organized in the `docs/` folder:
 
 ## Technology Stack
 
-- **Backend**: Django 5.0, Python 3.11
-- **Database**: PostgreSQL 15
-- **Task Queue**: Celery + Redis
+The portal runs in two modes. **Development** needs only Python; **Production** uses Docker with the full service stack.
+
+| Component | Development | Production |
+|-----------|------------|------------|
+| Runtime | Python 3.11, venv | Docker containers |
+| Web Server | `manage.py runserver` | Gunicorn + Caddy (auto-TLS) |
+| Database | SQLite (automatic, no setup) | PostgreSQL 15 |
+| Cache | In-memory (LocMemCache) | Redis 7 |
+| Task Queue | None required | Celery 5 + Redis |
+| Email | Console (prints to terminal) | SMTP |
+
+Shared across both modes:
 - **Frontend**: Django Templates + HTMX + Alpine.js + Bootstrap 5
 - **Authentication**: django-allauth
 - **APIs**: Django REST Framework (for future use)
@@ -128,9 +137,38 @@ redib/
 
 ## Getting Started
 
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Docker setup (recommended, includes PostgreSQL, Redis, Celery)
-- **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Local venv + SQLite setup (no Docker required)
-- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment on VPS with Caddy, auto-TLS, backups
+### Development (recommended for contributors)
+
+Set up a local Python environment with SQLite -- no Docker, Redis, or Celery required.
+
+1. Copy `.env.example` to `.env`
+2. Follow **[docs/QUICKSTART.md](docs/QUICKSTART.md)**
+
+### Production Deployment (VPS with Docker)
+
+Deploy with Docker Compose, PostgreSQL, Redis, Celery, and Caddy (auto-TLS).
+
+1. Copy `.env.production.template` to `.env` and fill in all values
+2. Follow **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+
+### Local Docker Testing (optional)
+
+Run the full production-like stack locally for integration testing.
+
+1. Copy `.env.docker` to `.env`
+2. Follow the "Local Docker Testing" section in **[docs/QUICKSTART.md](docs/QUICKSTART.md)**
+
+### Environment Files
+
+The app reads a single `.env` file. Three templates are provided:
+
+| Template File | Copy to `.env` when... | Key Defaults |
+|---------------|----------------------|--------------|
+| `.env.example` | Developing locally (venv + SQLite) | `DEBUG=True`, `USE_REDIS=False`, SQLite DB |
+| `.env.docker` | Testing with local Docker Compose | `DEBUG=True`, `USE_REDIS=True`, PostgreSQL |
+| `.env.production.template` | Deploying to production VPS | `DEBUG=False`, `USE_REDIS=True`, PostgreSQL, SMTP |
+
+See **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** for a full reference of all environment variables and how to switch between modes.
 
 ## Data Models
 

@@ -5,10 +5,10 @@ This directory contains all project documentation, reference materials, and test
 ## Documentation Index
 
 ### Getting Started
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for new users
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup and configuration
+- **[QUICKSTART.md](QUICKSTART.md)** - Development setup (venv + SQLite) and optional local Docker testing
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed configuration, environment variables, and data loading reference
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide (VPS, Docker, Caddy, backups)
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows and common commands
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development prerequisites, workflows, and common commands
 
 ### User Documentation
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Complete end-user guide for all portal roles

@@ -2,13 +2,43 @@
 
 This guide contains common development workflows and procedures for ReDIB-Portal contributors.
 
+Development mode uses **Python venv + SQLite** -- no Docker, Redis, or Celery required.
+
 ## Table of Contents
 
+- [Prerequisites](#prerequisites)
 - [Quick Database Setup](#quick-database-setup)
 - [Database Management](#database-management)
 - [Data Loading](#data-loading)
 - [Development Server](#development-server)
 - [Common Commands](#common-commands)
+
+## Prerequisites
+
+Before using any command in this guide, ensure you have:
+
+1. **Python 3.11+** installed
+2. **Virtual environment created and activated**:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate   # Linux/macOS
+   ```
+3. **Dependencies installed**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Environment file configured** (copy once, then leave it):
+   ```bash
+   cp .env.example .env
+   ```
+   This gives you: SQLite database, `DEBUG=True`, console email backend, `USE_REDIS=False` (in-memory cache). See [SETUP_GUIDE.md](SETUP_GUIDE.md#environment-configuration) for details on all environment variables.
+5. **Database initialized**:
+   ```bash
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
+
+If you haven't done these steps yet, follow [QUICKSTART.md](QUICKSTART.md) for a complete walkthrough.
 
 ## Quick Database Setup
 
@@ -111,12 +141,13 @@ python manage.py populate_redib_equipment --sync
 Start the development server after loading data:
 
 ```bash
+source venv/bin/activate
 python manage.py runserver
 ```
-If you want others to see it at biomaGUNE
+
+To make the server accessible on your LAN:
 ```bash
 python manage.py runserver 0.0.0.0:8000
-PS C:\Users\rtasseff> python .\tcp_forward.py --target-host 172.26.220.46 --target-port 8000 --listen-host 0.0.0.0 --listen-port 8000
 ```
 
 Access points:
@@ -176,15 +207,17 @@ python manage.py test --verbosity=2
 
 See [TESTING.md](TESTING.md) for comprehensive testing documentation.
 
-### Celery (Background Tasks)
+### Celery (Optional -- Background Tasks)
 
-For email notifications and background tasks:
+Celery workers are **not required** for core development. Emails print to the terminal via the console backend, and background tasks are simply skipped unless a worker is running.
+
+If you need to test background tasks (e.g., scheduled reminders), install Redis and start workers. See [SETUP_GUIDE.md](SETUP_GUIDE.md#running-celery-workers-optional-in-development) for setup instructions.
 
 ```bash
-# Start Celery worker
+# Start Celery worker (requires Redis running)
 celery -A redib worker -l info
 
-# Start Celery beat (scheduled tasks)
+# Start Celery beat (scheduled tasks, requires Redis running)
 celery -A redib beat -l info
 ```
 
@@ -216,30 +249,9 @@ python manage.py seed_dev_data
 
 ## Quick Reference: Complete Setup from Scratch
 
-```bash
-# 1. Database setup
-rm db.sqlite3
-find ./applications ./calls ./core ./evaluations ./access ./communications ./reports -path "*/migrations/*.py" -not -name "__init__.py" -delete
-python manage.py makemigrations
-python manage.py migrate
+For a complete first-time setup walkthrough, see [QUICKSTART.md](QUICKSTART.md).
 
-# 2. Create superuser
-python manage.py createsuperuser
-
-# 3. Load ALL data with one command (recommended)
-python manage.py setup_test_database
-
-# OR load data manually in order:
-# python manage.py seed_email_templates
-# python manage.py populate_redib_nodes
-# python manage.py populate_redib_users
-# python manage.py populate_redib_equipment
-# python manage.py seed_dev_data
-# python manage.py seed_test_applicants
-
-# 4. Start server
-python manage.py runserver
-```
+For manual step-by-step data loading (nodes, users, equipment), see [SETUP_GUIDE.md](SETUP_GUIDE.md#initial-data-setup-detailed).
 
 ## System Dependencies for PDF Generation
 
@@ -288,9 +300,11 @@ If you encounter errors like "Pango" or "Cairo" not found, ensure the system dep
 
 ## Related Documentation
 
-- [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Initial project setup and configuration
-- [docs/TESTING.md](docs/TESTING.md) - Testing procedures and guidelines
-- [docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md) - Test data documentation
-- [docs/TEST_EMAIL_TEMPLATES.md](docs/TEST_EMAIL_TEMPLATES.md) - Email template testing guide
-- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - End-user guide for portal users
-- [README.md](README.md) - Project overview and features
+- [QUICKSTART.md](QUICKSTART.md) - First-time development setup
+- [SETUP_GUIDE.md](SETUP_GUIDE.md) - Configuration reference and environment variables
+- [TESTING.md](TESTING.md) - Testing procedures and guidelines
+- [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) - Test data documentation
+- [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) - Email template testing guide
+- [USER_GUIDE.md](USER_GUIDE.md) - End-user guide for portal users
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment guide
+- [../README.md](../README.md) - Project overview and features
