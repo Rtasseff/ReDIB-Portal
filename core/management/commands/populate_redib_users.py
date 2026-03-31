@@ -15,6 +15,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from allauth.account.models import EmailAddress
 from core.models import Organization, Node, UserRole
 
 User = get_user_model()
@@ -188,10 +189,18 @@ class Command(BaseCommand):
                 }
             )
 
-            # Set password for new users only
+            # Always set password so all CSV users have a known password
+            user.set_password('changeme123')
+            user.save()
+
+            # Ensure allauth EmailAddress exists and is verified
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=email,
+                defaults={'verified': True, 'primary': True},
+            )
+
             if user_created:
-                user.set_password('changeme123')  # Default password
-                user.save()
                 created_count += 1
                 self.stdout.write(
                     self.style.SUCCESS(

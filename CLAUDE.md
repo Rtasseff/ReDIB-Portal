@@ -101,12 +101,13 @@ Email templates are stored in the database. Seed with `python manage.py seed_ema
 
 | Command | Purpose |
 |---------|---------|
+| `setup_base_database` | Populate real reference data only (nodes, equipment, users, email templates) |
+| `setup_test_database` | Full test setup (base data + fake calls, applications, test applicants) |
 | `seed_email_templates` | Load/update email templates (run after DB reset) |
 | `populate_redib_nodes` | Load nodes from CSV (must run before users/equipment) |
-| `populate_redib_users` | Load users from CSV (requires nodes) |
+| `populate_redib_users` | Load users from CSV (requires nodes), sets password + email verification |
 | `populate_redib_equipment` | Load equipment from CSV (requires nodes) |
 | `setup_localtest1_database` | Minimal test setup |
-| `setup_test_database` | Full test setup (all data + test applications) |
 | `seed_dev_data` | Seed calls and organizations |
 | `seed_test_applicants` | Create test applicants with applications at various stages |
 

@@ -42,55 +42,68 @@ If you haven't done these steps yet, follow [QUICKSTART.md](QUICKSTART.md) for a
 
 ## Quick Database Setup
 
-The fastest way to set up a complete development/test database:
+### Base Data Only (Real Reference Data)
+
+For a clean database with only real nodes, equipment, users, and email templates — no fake test data:
 
 ```bash
-# Complete reset and seed with all test data (recommended)
-python manage.py setup_test_database --reset --yes
+# Step 1: Delete the old database and create a fresh one
+rm db.sqlite3
+python manage.py migrate
 
-# Or just seed without reset (if database is already empty)
-python manage.py setup_test_database
+# Step 2: Create your superuser (interactive — enter email and password)
+python manage.py createsuperuser
+
+# Step 3: Populate real reference data
+python manage.py setup_base_database
 ```
 
-This single command:
-1. Clears all data except superusers (with `--reset`)
-2. Populates ReDIB nodes (4 nodes)
-3. Populates equipment (17 items)
-4. Populates users (coordinators, evaluators, node coordinators)
-5. Seeds development data (calls, organizations)
-6. Seeds email templates
-7. Creates test applicants with applications in various workflow stages
+This loads:
+- **4 nodes** from `data/nodes.csv`
+- **17 equipment items** from `data/equipment.csv` (across all nodes)
+- **9 staff users** from `data/users.csv` (coordinator, node coordinators, evaluators)
+- **15+ email templates** for all workflow notifications
 
-**Test accounts created** (password: `testpass123`):
-- `testapplicant1@test.redib.net` through `testapplicant5@test.redib.net`
-- Applications at different stages: draft, submitted, under review, evaluated, accepted, etc.
+All CSV users get password `changeme123` and pre-verified email (ready to log in immediately).
 
-See [TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md) for complete test data documentation.
+If your superuser email matches a row in `data/users.csv`, that user also gets the CSV roles assigned and password set to `changeme123`.
+
+### Base Data + Test Data
+
+For a database that also includes fake calls, applications, and test applicants at various workflow stages:
+
+```bash
+python manage.py setup_test_database --reset --yes
+```
+
+See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for test data documentation.
+
+### Soft Reset (Preserve Superuser)
+
+To clear all data except superusers and repopulate without deleting the database file:
+
+```bash
+# Base data only
+python manage.py setup_base_database --reset --yes
+
+# Or with test data
+python manage.py setup_test_database --reset --yes
+```
 
 ## Database Management
 
-### Complete Database Reset and Repopulation
+### Complete Database Reset
 
-When you need to completely reset your development database (purge and repopulate):
+When you need a fully clean slate (new database file, fresh migrations):
 
 ```bash
-# Remove existing database
 rm db.sqlite3
-
-# Remove all migration files (except __init__.py)
-find ./applications ./calls ./core ./evaluations ./access ./communications ./reports -path "*/migrations/*.py" -not -name "__init__.py" -delete
-
-# Recreate migrations
-python manage.py makemigrations
-
-# Apply migrations
 python manage.py migrate
-
-# Create superuser
 python manage.py createsuperuser
+python manage.py setup_base_database
 ```
 
-After resetting the database, proceed with [Data Loading](#data-loading).
+**Note:** You do not need to delete or regenerate migration files. The existing migration files apply cleanly to a new empty database.
 
 ## Data Loading
 
