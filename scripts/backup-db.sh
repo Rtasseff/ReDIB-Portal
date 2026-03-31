@@ -6,7 +6,11 @@
 #   ./scripts/backup-db.sh
 #
 # Cron example (daily at 2 AM, keep 30 days):
-#   0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /var/log/redib-backup.log 2>&1
+#   0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
+#
+# IMPORTANT: The "cd /home/deploy/ReDIB-Portal &&" prefix is required because
+# this script uses a relative path to docker-compose.prod.yml. Without it,
+# cron runs from the home directory and the script will silently fail.
 # ============================================================================
 
 set -euo pipefail

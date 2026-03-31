@@ -376,8 +376,10 @@ crontab -e
 Add this line:
 
 ```
-0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /var/log/redib-backup.log 2>&1
+0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
 ```
+
+**Important:** The `cd /home/deploy/ReDIB-Portal &&` prefix is required — cron runs from the home directory, and the script needs to be in the project root to find `docker-compose.prod.yml`.
 
 This runs daily at 2 AM and keeps backups for 30 days.
 
