@@ -351,7 +351,14 @@ Check the received email headers for `spf=pass`, `dkim=pass`, `dmarc=pass`.
 
 ---
 
-## Step 6: Database Backups
+## Step 6: Backups
+
+The backup script (`scripts/backup-db.sh`) handles two things:
+
+1. **Database dump** — exports the PostgreSQL database to a gzipped SQL file.
+2. **Key files** — archives files not tracked in git (e.g., `.env`) into a tarball.
+
+Both are saved to `/home/deploy/backups/redib/` with matching timestamps and automatically cleaned up after 30 days.
 
 ### 6.1 Set Up Automated Backups
 
@@ -383,7 +390,34 @@ Add this line:
 
 This runs daily at 2 AM and keeps backups for 30 days.
 
-### 6.3 Restore from Backup
+### 6.3 Backing Up Additional Files
+
+The backup script archives key files that are not tracked in git (e.g., `.env`). To change which files are backed up, edit the `BACKUP_FILES` array near the top of `scripts/backup-db.sh`:
+
+```bash
+BACKUP_FILES=(
+    ".env"
+    # Add more paths here (relative to the project root).
+    # Files and directories are both supported.
+    # "certs/"
+    # "config/local_settings.py"
+)
+```
+
+Each backup run produces a `redib_files_TIMESTAMP.tar.gz` alongside the database dump. If a listed file does not exist, the script logs a warning but continues without failing.
+
+To restore files from a backup:
+
+```bash
+# List contents of a file backup
+tar -tzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
+
+# Extract to the project directory (overwrites existing files)
+cd ~/ReDIB-Portal
+tar -xzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
+```
+
+### 6.4 Restore Database from Backup
 
 ```bash
 # Stop application services
@@ -398,7 +432,7 @@ gunzip < /home/deploy/backups/redib/redib_db_YYYYMMDD_HHMMSS.sql.gz | \
 docker compose -f docker-compose.prod.yml start web celery celery-beat
 ```
 
-### 6.4 Off-site Backup (Recommended)
+### 6.5 Off-site Backup (Recommended)
 
 Copy backups to another server or object storage periodically:
 

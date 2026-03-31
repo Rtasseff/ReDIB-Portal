@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# ReDIB Portal - Database Backup Script
+# ReDIB Portal - Backup Script (Database + Key Files)
 # ============================================================================
 # Usage:
 #   ./scripts/backup-db.sh
@@ -21,6 +21,13 @@ RETENTION_DAYS="${RETENTION_DAYS:-30}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/redib_db_${TIMESTAMP}.sql.gz"
+FILES_BACKUP="${BACKUP_DIR}/redib_files_${TIMESTAMP}.tar.gz"
+
+# Files/directories to back up (paths relative to project root).
+# Edit this list to add anything not tracked in git.
+BACKUP_FILES=(
+    ".env"
+)
 
 # Ensure backup directory exists
 mkdir -p "${BACKUP_DIR}"
@@ -43,10 +50,30 @@ fi
 BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
 echo "[$(date)] Backup completed: ${BACKUP_FILE} (${BACKUP_SIZE})"
 
+# Back up key files not tracked in git
+VALID_FILES=()
+for f in "${BACKUP_FILES[@]}"; do
+    if [ -e "${f}" ]; then
+        VALID_FILES+=("${f}")
+    else
+        echo "[$(date)] WARNING: ${f} not found, skipping"
+    fi
+done
+
+if [ ${#VALID_FILES[@]} -gt 0 ]; then
+    tar -czf "${FILES_BACKUP}" "${VALID_FILES[@]}"
+    FILES_SIZE=$(du -h "${FILES_BACKUP}" | cut -f1)
+    echo "[$(date)] Files backup completed: ${FILES_BACKUP} (${FILES_SIZE})"
+else
+    echo "[$(date)] No files to back up, skipping file archive"
+fi
+
 # Remove backups older than retention period
-DELETED=$(find "${BACKUP_DIR}" -name "redib_db_*.sql.gz" -mtime +${RETENTION_DAYS} -delete -print | wc -l)
-if [ "${DELETED}" -gt 0 ]; then
-    echo "[$(date)] Cleaned up ${DELETED} old backup(s)"
+DB_DELETED=$(find "${BACKUP_DIR}" -name "redib_db_*.sql.gz" -mtime +${RETENTION_DAYS} -delete -print | wc -l)
+FILES_DELETED=$(find "${BACKUP_DIR}" -name "redib_files_*.tar.gz" -mtime +${RETENTION_DAYS} -delete -print | wc -l)
+TOTAL_DELETED=$((DB_DELETED + FILES_DELETED))
+if [ "${TOTAL_DELETED}" -gt 0 ]; then
+    echo "[$(date)] Cleaned up ${TOTAL_DELETED} old backup(s)"
 fi
 
 echo "[$(date)] Backup finished successfully."
