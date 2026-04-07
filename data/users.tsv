@@ -1,0 +1,10 @@
+email	first_name	last_name	organization_name	orcid	phone	position	is_staff	is_active	roles	auto_data_consent
+coordinator@redib.net	ReDIB	Coordinator	ReDIB ICTS			ReDIB Coordinator	TRUE	TRUE	coordinator	
+rtasseff@cicbiomagune.es	Ryan 	Tasseff	CIC biomaGUNE			Node Coordinator	TRUE	TRUE	node_coordinator:CIC-biomaGUNE	
+amartinez@cicbiomagune.es	Angel 	Manuel Martinez Villacorta	CIC biomaGUNE			Node Coordinator	TRUE	TRUE	node_coordinator:CIC-biomaGUNE	
+gonzalo.pizarro@cnic.es	Gonzalo 	Pizarro Sanchez	Centro Nacional de Investigaciones Cardiovasculares			Node Coordinator	TRUE	TRUE	node_coordinator:TRIMA-CNIC	
+bioimac@ucm.es	CRISTINA	 ALVAREZ DE LARA SANCHEZ	BioImaC Biomedical Imaging Center			Node Coordinator	TRUE	TRUE	node_coordinator:BioImaC	
+ana_penades@iislafe.es	Ana 	Penades Blasco	Hospital Universitario y Politacnico La Fe			Node Coordinator	TRUE	TRUE	node_coordinator:IIS-LaFe	
+Calvar12@ucm.es	CRISTINA	Evaluator1	BioImaC Biomedical Imaging Center			 Senior Researcher	FALSE	TRUE	evaluator:preclinical	
+anapenadesblasco@gmail.com	Ana 	Evaluator2	Hospital Universitario y Politacnico La Fe			Principal Investigator	FALSE	TRUE	evaluator:clinical	
+rtasseff@gmail.com	Ryan	Evaluator3	CIC biomaGUNE			Research Professor	FALSE	TRUE	evaluator:radiochemistry	

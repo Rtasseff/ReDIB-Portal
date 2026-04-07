@@ -20,8 +20,8 @@ urlpatterns = [
     path('<int:pk>/download-pdf/', views.download_application_pdf, name='download_pdf'),
     path('<int:pk>/upload-signed/', views.upload_signed_pdf, name='upload_signed_pdf'),
 
-    # Stub URL for edit_step1 (redirects to step2 since step1 is only for create)
-    path('<int:pk>/step1/', views.application_edit_step2, name='edit_step1'),
+    path('<int:pk>/step1/', views.application_edit_step1, name='edit_step1'),
+    path('<int:pk>/cancel/', views.application_cancel, name='cancel'),
 
     # Node coordinator views - Phase 3: Feasibility Review
     path('feasibility/', views.feasibility_queue, name='feasibility_queue'),

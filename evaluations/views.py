@@ -204,11 +204,22 @@ def call_assignment_detail(request, call_id):
         app.evaluator_count = app.evaluations.count()
         app.completed_evaluations = app.evaluations.filter(completed_at__isnull=False).count()
 
-    # Get all active evaluators for manual assignment
+    # Get all active evaluators for manual assignment, with their combined areas
     active_evaluators = User.objects.filter(
         roles__role='evaluator',
         roles__is_active=True
-    ).select_related('organization').distinct()
+    ).select_related('organization').prefetch_related('roles').distinct()
+
+    # Pre-compute each evaluator's combined area list across all their evaluator roles
+    for ev in active_evaluators:
+        seen = set()
+        ev.combined_areas = []
+        for r in ev.roles.all():
+            if r.role == 'evaluator' and r.is_active:
+                for a in r.area_list:
+                    if a not in seen:
+                        seen.add(a)
+                        ev.combined_areas.append(a)
 
     context = {
         'call': call,

@@ -4,7 +4,7 @@ Django admin configuration for applications models.
 
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Application, RequestedAccess, FeasibilityReview, NodeResolution
+from .models import Application, RequestedAccess, FeasibilityReview, NodeResolution, FundingAgency
 
 
 class RequestedAccessInline(admin.TabularInline):
@@ -16,7 +16,7 @@ class RequestedAccessInline(admin.TabularInline):
 class FeasibilityReviewInline(admin.TabularInline):
     model = FeasibilityReview
     extra = 0
-    fields = ['node', 'reviewer', 'is_feasible', 'comments', 'reviewed_at']
+    fields = ['node', 'reviewer', 'status', 'is_feasible', 'comments', 'reviewed_at']
     readonly_fields = ['reviewed_at']
 
 
@@ -38,7 +38,7 @@ class ApplicationAdmin(SimpleHistoryAdmin):
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('code', 'call', 'applicant', 'status', 'brief_description', 'submitted_at')
+            'fields': ('code', 'call', 'applicant', 'status', 'project_name', 'brief_description', 'submitted_at')
         }),
         ('Applicant Details', {
             'fields': (
@@ -49,7 +49,7 @@ class ApplicationAdmin(SimpleHistoryAdmin):
         }),
         ('Funding Source', {
             'fields': (
-                'project_title', 'project_code', 'funding_agency',
+                'project_title', 'project_code', 'funding_agency_obj', 'funding_agency',
                 'project_type', 'has_competitive_funding'
             ),
             'classes': ('collapse',)
@@ -113,8 +113,8 @@ class RequestedAccessAdmin(SimpleHistoryAdmin):
 
 @admin.register(FeasibilityReview)
 class FeasibilityReviewAdmin(SimpleHistoryAdmin):
-    list_display = ['application', 'node', 'reviewer', 'is_feasible', 'reviewed_at']
-    list_filter = ['node', 'is_feasible']
+    list_display = ['application', 'node', 'reviewer', 'status', 'is_feasible', 'reviewed_at']
+    list_filter = ['node', 'status', 'is_feasible']
     search_fields = ['application__code', 'reviewer__email']
     ordering = ['-reviewed_at']
     readonly_fields = ['created_at', 'updated_at']
@@ -137,3 +137,10 @@ class NodeResolutionAdmin(SimpleHistoryAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(FundingAgency)
+class FundingAgencyAdmin(SimpleHistoryAdmin):
+    list_display = ['name', 'created_at']
+    search_fields = ['name']
+    ordering = ['name']

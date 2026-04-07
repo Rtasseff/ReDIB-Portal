@@ -267,6 +267,87 @@ Please do not reply to this email.''',
                 '''
             },
             {
+                'template_type': 'feasibility_edits_requested',
+                'subject': 'ReDIB COA: Edits Requested for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f39c12; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #fef9e7; border-left: 4px solid #f39c12; padding: 15px; margin: 15px 0; }
+        .btn { display: inline-block; background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Edits Requested</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+
+            <p>A node coordinator has reviewed your application <strong>{{ application_code }}</strong> and is requesting revisions before it can proceed.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Node:</strong> {{ node_name }}</p>
+                <p><strong>Reviewer Comments:</strong></p>
+                <p>{{ reviewer_comments }}</p>
+            </div>
+
+            <p>Please review the comments above, edit your application accordingly, and resubmit.</p>
+
+            <p style="text-align: center; margin: 20px 0;">
+                <a href="{{ application_url }}" class="btn">View Your Application</a>
+            </p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+A node coordinator has reviewed your application {{ application_code }} and is requesting revisions.
+
+Application Code: {{ application_code }}
+Node: {{ node_name }}
+Reviewer Comments: {{ reviewer_comments }}
+
+Please review the comments above, edit your application accordingly, and resubmit.
+
+View your application: {{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''
+{
+    "applicant_name": "Full name of the applicant",
+    "application_code": "Application unique code",
+    "node_name": "Name of the reviewing node",
+    "reviewer_comments": "Comments from the coordinator",
+    "application_url": "Direct URL to the application"
+}
+                '''
+            },
+            {
                 'template_type': 'evaluation_assigned',
                 'subject': 'ReDIB COA: Evaluation Assignment for {{ application_code }}',
                 'html_content': '''

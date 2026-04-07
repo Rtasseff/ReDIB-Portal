@@ -125,7 +125,7 @@ class Command(BaseCommand):
             user=user,
             role='evaluator',
             node=None,
-            defaults={'area': 'preclinical'},
+            defaults={'areas': 'preclinical'},
         )
 
         # Create evaluation

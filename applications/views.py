@@ -2,6 +2,7 @@
 Views for the applications app - 5-step application wizard.
 """
 from django.http import Http404
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
@@ -15,7 +16,7 @@ from .models import Application, RequestedAccess, FeasibilityReview
 from .forms import (
     ApplicationStep1Form, ApplicationStep2Form, ApplicationStep3Form,
     ApplicationStep4Form, ApplicationStep5Form, RequestedAccessFormSet,
-    FeasibilityReviewForm, SignedPdfUploadForm
+    FeasibilityReviewForm
 )
 
 
@@ -55,10 +56,18 @@ def application_detail(request, pk):
         'equipment__node'
     ).order_by('equipment__node__code')
 
+    # Show edit-request feedback to the applicant when application is in draft after a reopen
+    edit_requests = []
+    if application.status == 'draft':
+        edit_requests = list(application.feasibility_reviews.filter(
+            status='edits_requested'
+        ).select_related('node', 'reviewer'))
+
     context = {
         'application': application,
         'requested_access': requested_access,
         'is_coordinator': is_coordinator,
+        'edit_requests': edit_requests,
     }
 
     # Add feasibility review status for coordinators
@@ -78,7 +87,7 @@ def application_detail(request, pk):
                 feasibility_status.append({
                     'node': node,
                     'equipment': access.equipment,
-                    'status': 'feasible' if review.is_feasible is True else ('not_feasible' if review.is_feasible is False else 'pending'),
+                    'status': review.status,
                     'reviewer': review.reviewer,
                     'reviewed_at': review.reviewed_at,
                     'comments': review.comments,
@@ -137,15 +146,16 @@ def application_create(request, call_pk):
             application.applicant = request.user
             application.status = 'draft'
 
-            # Auto-populate applicant fields from user profile if not provided
-            if not application.applicant_name:
-                application.applicant_name = request.user.get_full_name() or f"{request.user.first_name} {request.user.last_name}".strip()
-            if not application.applicant_email:
-                application.applicant_email = request.user.email
-            if not application.applicant_entity and hasattr(request.user, 'organization') and request.user.organization:
-                application.applicant_entity = request.user.organization
-            if not application.applicant_phone and hasattr(request.user, 'phone') and request.user.phone:
-                application.applicant_phone = request.user.phone
+            # Always overwrite profile fields from current user profile
+            user = request.user
+            application.applicant_name = user.get_full_name() or f"{user.first_name} {user.last_name}".strip()
+            application.applicant_email = user.email
+            if user.organization:
+                application.applicant_entity = str(user.organization)
+            if user.phone:
+                application.applicant_phone = user.phone
+            if user.orcid:
+                application.applicant_orcid = user.orcid
 
             application.save()
 
@@ -157,6 +167,48 @@ def application_create(request, call_pk):
     context = {
         'form': form,
         'call': call,
+        'step': 1,
+        'total_steps': 5,
+    }
+    return render(request, 'applications/wizard_step1.html', context)
+
+
+@login_required
+@transaction.atomic
+def application_edit_step1(request, pk):
+    """Edit application - Step 1: Basic Information"""
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user,
+        status='draft'
+    )
+
+    if request.method == 'POST':
+        form = ApplicationStep1Form(request.POST, instance=application, user=request.user)
+
+        if form.is_valid():
+            app = form.save(commit=False)
+            # Overwrite profile fields from current user profile
+            user = request.user
+            app.applicant_name = user.get_full_name() or f"{user.first_name} {user.last_name}".strip()
+            app.applicant_email = user.email
+            if user.organization:
+                app.applicant_entity = str(user.organization)
+            if user.phone:
+                app.applicant_phone = user.phone
+            if user.orcid:
+                app.applicant_orcid = user.orcid
+            app.save()
+            messages.success(request, "Step 1 saved. Continue to step 2.")
+            return redirect('applications:edit_step2', pk=application.pk)
+    else:
+        form = ApplicationStep1Form(instance=application, user=request.user)
+
+    context = {
+        'form': form,
+        'application': application,
+        'call': application.call,
         'step': 1,
         'total_steps': 5,
     }
@@ -289,20 +341,25 @@ def application_edit_step5(request, pk):
     )
 
     if request.method == 'POST':
-        form = ApplicationStep5Form(request.POST, instance=application)
+        form = ApplicationStep5Form(request.POST, instance=application, user=request.user)
 
         if form.is_valid():
-            form.save()
+            app = form.save(commit=False)
+            # Ensure data_consent is set for auto-consent users
+            if request.user.auto_data_consent:
+                app.data_consent = True
+            app.save()
             messages.success(request, "All steps complete. Review and submit.")
             return redirect('applications:preview', pk=application.pk)
     else:
-        form = ApplicationStep5Form(instance=application)
+        form = ApplicationStep5Form(instance=application, user=request.user)
 
     context = {
         'form': form,
         'application': application,
         'step': 5,
         'total_steps': 5,
+        'auto_consent': request.user.auto_data_consent,
     }
     return render(request, 'applications/wizard_step5.html', context)
 
@@ -329,6 +386,7 @@ def application_preview(request, pk):
 
 
 @login_required
+@require_POST
 @transaction.atomic
 def application_submit(request, pk):
     """Submit application"""
@@ -353,13 +411,13 @@ def application_submit(request, pk):
         messages.error(request, "Submission deadline has passed.")
         return redirect('applications:detail', pk=application.pk)
 
-    # Generate application code
-    year = timezone.now().year
-    call_code = application.call.code
-    count = Application.objects.filter(
-        call=application.call
-    ).exclude(status='draft').count() + 1
-    application.code = f"{call_code}-APP-{count:03d}"
+    # Generate application code if not already set (resubmissions reuse the original code)
+    if not application.code:
+        call_code = application.call.code
+        count = Application.objects.filter(
+            call=application.call
+        ).exclude(status='draft').count() + 1
+        application.code = f"{call_code}-APP-{count:03d}"
 
     # Ensure user has applicant role
     from core.models import UserRole
@@ -374,27 +432,31 @@ def application_submit(request, pk):
     application.submitted_at = timezone.now()
     application.save()
 
-    # Create feasibility reviews for each node
-    nodes = set()
+    # Compute the current set of nodes from requested equipment
+    current_nodes = set()
     for access_request in application.requested_access.all():
-        nodes.add(access_request.equipment.node)
+        current_nodes.add(access_request.equipment.node)
 
-    for node in nodes:
-        # Get node coordinators via UserRole
-        node_coordinators = UserRole.objects.filter(
+    # Ensure a feasibility review exists for each current node
+    # (handles both first submission and resubmission with potentially changed nodes)
+    for node in current_nodes:
+        coord = UserRole.objects.filter(
             node=node,
             role='node_coordinator',
             is_active=True
-        ).select_related('user')
+        ).select_related('user').first()
 
-        # Create a feasibility review for each coordinator
-        # (typically one per node, but handle multiple if needed)
-        for user_role in node_coordinators:
-            FeasibilityReview.objects.create(
+        if coord:
+            FeasibilityReview.objects.get_or_create(
                 application=application,
                 node=node,
-                reviewer=user_role.user
+                defaults={'reviewer': coord.user}
             )
+
+    # Reset all reviews to pending (covers both new reviews and any from a prior submission cycle)
+    application.feasibility_reviews.update(
+        status='pending', is_feasible=None, reviewed_at=None, comments=''
+    )
 
     # Update application status
     application.status = 'under_feasibility_review'
@@ -449,6 +511,21 @@ def application_submit(request, pk):
     return redirect('applications:detail', pk=application.pk)
 
 
+@login_required
+@require_POST
+def application_cancel(request, pk):
+    """Cancel and delete a draft application."""
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user,
+        status='draft'
+    )
+    application.delete()  # Cascade deletes RequestedAccess etc.
+    messages.success(request, "Application cancelled and deleted.")
+    return redirect('applications:my_applications')
+
+
 # ============================================================================
 # Phase 3: Feasibility Review Views (Node Coordinators)
 # ============================================================================
@@ -473,7 +550,7 @@ def feasibility_queue(request):
     # Get pending reviews for these nodes
     pending_reviews = FeasibilityReview.objects.filter(
         node_id__in=my_nodes,
-        is_feasible__isnull=True  # Pending = not yet decided
+        status='pending'  # Pending review
     ).select_related(
         'application__applicant',
         'application__call',
@@ -488,18 +565,17 @@ def feasibility_queue(request):
 
 
 @node_coordinator_required
+@transaction.atomic
 def feasibility_review(request, pk):
     """
     Review an application for feasibility.
 
-    Node coordinators can approve or reject based on technical
-    feasibility and resource availability.
+    Node coordinators can approve, reject, or request edits.
     """
-    # Any active node coordinator for the review's node can complete it
     review = get_object_or_404(
         FeasibilityReview,
         pk=pk,
-        is_feasible__isnull=True  # Pending = not yet decided
+        status='pending'
     )
 
     # Verify the current user is a coordinator for this node
@@ -524,30 +600,75 @@ def feasibility_review(request, pk):
 
         if form.is_valid():
             review = form.save(commit=False)
-            review.reviewer = request.user  # Record who actually reviewed
+            decision = form.cleaned_data['decision']
+            review.status = decision
+            review.reviewer = request.user
             review.reviewed_at = timezone.now()
+
+            # Sync legacy field
+            if decision == 'approved':
+                review.is_feasible = True
+            elif decision == 'rejected':
+                review.is_feasible = False
+            else:
+                review.is_feasible = None
+
             review.save()
 
-            # Check if all reviews are complete
+            if decision == 'edits_requested':
+                # Return application to draft for editing.
+                # Keep this review's status='edits_requested' and comments so the
+                # applicant can see the feedback. Other reviews stay as-is.
+                # On resubmission, application_submit will reset all reviews to pending.
+                application.status = 'draft'
+                application.submitted_at = None
+                application.save()
+
+                # Send edits-requested email
+                try:
+                    from communications.tasks import send_email_from_template
+                    app_url = request.build_absolute_uri(
+                        reverse('applications:detail', kwargs={'pk': application.pk})
+                    )
+                    send_email_from_template.delay(
+                        template_type='feasibility_edits_requested',
+                        recipient_email=application.applicant.email,
+                        context_data={
+                            'applicant_name': application.applicant.get_full_name(),
+                            'application_code': application.code,
+                            'node_name': review.node.name,
+                            'reviewer_comments': review.comments,
+                            'application_url': app_url,
+                        },
+                        recipient_user_id=application.applicant.id,
+                        related_application_id=application.id
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Email notification failed: {e}")
+
+                messages.success(
+                    request,
+                    f"Application {application.code} returned to applicant for edits."
+                )
+                return redirect('applications:feasibility_queue')
+
+            # For approve/reject: check if all reviews are complete
             all_reviews = application.feasibility_reviews.all()
-            pending_count = all_reviews.filter(is_feasible__isnull=True).count()
+            pending_count = all_reviews.filter(status='pending').count()
 
             if pending_count == 0:
-                # All reviews complete - check outcomes
-                rejected_count = all_reviews.filter(is_feasible=False).count()
+                rejected_count = all_reviews.filter(status='rejected').count()
 
                 if rejected_count > 0:
-                    # Any rejection = application rejected (feasibility)
                     application.status = 'rejected_feasibility'
                     application.save()
                     status_msg = "rejected"
                 else:
-                    # All approved = move to pending evaluation
                     application.status = 'pending_evaluation'
                     application.save()
                     status_msg = "approved and ready for evaluation"
 
-                # Send email to applicant
                 try:
                     from communications.tasks import send_email_from_template
                     send_email_from_template.delay(
@@ -563,13 +684,11 @@ def feasibility_review(request, pk):
                     )
                 except Exception as e:
                     import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(f"Email notification failed: {e}")
+                    logging.getLogger(__name__).warning(f"Email notification failed: {e}")
 
-            decision_text = "Approved" if review.is_feasible else "Rejected"
             messages.success(
                 request,
-                f"Feasibility review submitted for {application.code}. Decision: {decision_text}"
+                f"Feasibility review submitted for {application.code}. Decision: {review.get_status_display()}"
             )
             return redirect('applications:feasibility_queue')
     else:
@@ -1398,10 +1517,10 @@ def node_confirm_equipment_done(request, requested_access_id):
 @login_required
 def download_application_pdf(request, pk):
     """
-    Generate and download the application PDF for signing.
+    Generate and download the application PDF for the applicant's records.
 
-    This view generates a PDF from the application data using WeasyPrint,
-    updates the pdf_generated_at timestamp, and returns the PDF as a download.
+    This view generates a PDF from the application data using WeasyPrint
+    and returns the PDF as a download.
     """
     from django.http import HttpResponse
     from django.template.loader import render_to_string
@@ -1414,7 +1533,6 @@ def download_application_pdf(request, pk):
         Application,
         pk=pk,
         applicant=request.user,
-        status='draft'
     )
 
     # Get related data
@@ -1451,165 +1569,6 @@ def download_application_pdf(request, pk):
 
 
 @login_required
-@transaction.atomic
 def upload_signed_pdf(request, pk):
-    """
-    Handle upload of signed PDF and submit the application.
-
-    Validates:
-    - PDF has been downloaded at least once (pdf_generated_at is set)
-    - File is a valid PDF under 5MB
-    - User has affirmed the signature
-
-    On success:
-    - Saves the uploaded file
-    - Transitions application to 'submitted' status
-    - Creates feasibility reviews for each node
-    """
-    from core.models import UserRole
-    import logging
-
-    logger = logging.getLogger(__name__)
-
-    application = get_object_or_404(
-        Application,
-        pk=pk,
-        applicant=request.user,
-        status='draft'
-    )
-
-    # Check that PDF was downloaded at least once
-    if not application.pdf_generated_at:
-        messages.error(request, "Please download the application PDF before uploading.")
-        return redirect('applications:preview', pk=pk)
-
-    # Validate application is complete
-    if not application.requested_access.exists():
-        messages.error(request, "You must request at least one equipment access.")
-        return redirect('applications:edit_step3', pk=application.pk)
-
-    if not application.data_consent:
-        messages.error(request, "You must consent to data processing.")
-        return redirect('applications:edit_step5', pk=application.pk)
-
-    # Check call deadline
-    if timezone.now() > application.call.submission_end:
-        messages.error(request, "Submission deadline has passed.")
-        return redirect('applications:detail', pk=application.pk)
-
-    if request.method == 'POST':
-        form = SignedPdfUploadForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            # Save the uploaded file
-            application.signed_pdf = form.cleaned_data['signed_pdf']
-            application.signed_pdf_uploaded_at = timezone.now()
-            application.signature_affirmation = form.cleaned_data['signature_affirmation']
-
-            # Generate application code
-            call_code = application.call.code
-            count = Application.objects.filter(
-                call=application.call
-            ).exclude(status='draft').count() + 1
-            application.code = f"{call_code}-APP-{count:03d}"
-
-            # Ensure user has applicant role
-            UserRole.objects.get_or_create(
-                user=request.user,
-                role='applicant',
-                defaults={'is_active': True}
-            )
-
-            # Submit
-            application.status = 'submitted'
-            application.submitted_at = timezone.now()
-            application.save()
-
-            # Create feasibility reviews for each node
-            nodes = set()
-            for access_request in application.requested_access.all():
-                nodes.add(access_request.equipment.node)
-
-            for node in nodes:
-                # Get the first active node coordinator as reviewer
-                coordinator_role = UserRole.objects.filter(
-                    node=node,
-                    role='node_coordinator',
-                    is_active=True
-                ).select_related('user').first()
-
-                if coordinator_role:
-                    FeasibilityReview.objects.get_or_create(
-                        application=application,
-                        node=node,
-                        defaults={'reviewer': coordinator_role.user}
-                    )
-
-            # Update application status to under_feasibility_review
-            application.status = 'under_feasibility_review'
-            application.save()
-
-            # Send confirmation email (gracefully handle Celery unavailability)
-            try:
-                from communications.tasks import send_email_from_template
-                send_email_from_template.delay(
-                    template_type='application_received',
-                    recipient_email=request.user.email,
-                    context_data={
-                        'applicant_name': request.user.get_full_name(),
-                        'application_code': application.code,
-                        'call_code': application.call.code,
-                    },
-                    recipient_user_id=request.user.id,
-                    related_application_id=application.id
-                )
-
-                # Send feasibility request emails to ALL coordinators of each node
-                for review in application.feasibility_reviews.all():
-                    review_url = request.build_absolute_uri(
-                        reverse('applications:feasibility_review', kwargs={'pk': review.pk})
-                    )
-
-                    node_coordinators = UserRole.objects.filter(
-                        node=review.node,
-                        role='node_coordinator',
-                        is_active=True
-                    ).select_related('user')
-
-                    for coord_role in node_coordinators:
-                        send_email_from_template.delay(
-                            template_type='feasibility_request',
-                            recipient_email=coord_role.user.email,
-                            context_data={
-                                'reviewer_name': coord_role.user.get_full_name(),
-                                'application_code': application.code,
-                                'node_name': review.node.name,
-                                'review_url': review_url,
-                            },
-                            recipient_user_id=coord_role.user.id,
-                            related_application_id=application.id
-                        )
-                email_status = "You will receive confirmation by email."
-            except Exception as e:
-                logger.warning(f"Email notification failed (Celery unavailable): {e}")
-                email_status = "(Email notifications disabled - Celery not running)"
-
-            messages.success(
-                request,
-                f"Application {application.code} submitted successfully! {email_status}"
-            )
-            return redirect('applications:detail', pk=application.pk)
-    else:
-        form = SignedPdfUploadForm()
-
-    # Get related data for the upload page
-    requested_access = application.requested_access.select_related(
-        'equipment__node'
-    ).order_by('equipment__node__code')
-
-    context = {
-        'application': application,
-        'requested_access': requested_access,
-        'form': form,
-    }
-    return render(request, 'applications/upload_signed_pdf.html', context)
+    """Legacy URL — redirect to preview page. PDF signature is no longer required."""
+    return redirect('applications:preview', pk=pk)

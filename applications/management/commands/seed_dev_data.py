@@ -213,17 +213,17 @@ class Command(BaseCommand):
                     user=user,
                     role=role_name,
                     node=node,
-                    defaults={'area': area, 'is_active': True}
+                    defaults={'areas': area, 'is_active': True}
                 )
                 if role_created:
                     display = f"{role_name} at {node.code}" if node else role_name
                     self.stdout.write(f'    → Assigned role: {display}')
                 else:
-                    # Update area if it changed
-                    if role.area != area:
-                        role.area = area
+                    # Update areas if they changed
+                    if role.areas != area:
+                        role.areas = area
                         role.save()
-                        self.stdout.write(f'    → Updated role area: {role_name}')
+                        self.stdout.write(f'    → Updated role areas: {role_name}')
 
         return users
 

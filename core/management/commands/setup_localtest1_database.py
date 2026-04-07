@@ -387,13 +387,13 @@ class Command(BaseCommand):
                 **role_kwargs,
                 defaults={
                     'is_active': True,
-                    'area': data.get('area') or '',
+                    'areas': data.get('area') or '',
                 }
             )
 
-            # Update area if it exists
-            if data.get('area') and not role.area:
-                role.area = data['area']
+            # Update areas if needed
+            if data.get('area') and not role.areas:
+                role.areas = data['area']
                 role.save()
 
             users_created.append({

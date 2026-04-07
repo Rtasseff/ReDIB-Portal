@@ -20,6 +20,7 @@ class EmailTemplate(models.Model):
         ('feasibility_reminder', 'Feasibility Review Reminder'),
         ('feasibility_complete', 'Feasibility Review Complete'),
         ('feasibility_rejected', 'Feasibility Rejected'),
+        ('feasibility_edits_requested', 'Feasibility: Edits Requested'),
         ('evaluation_assigned', 'Evaluation Assigned'),
         ('evaluation_reminder', 'Evaluation Reminder'),
         ('evaluation_overdue', 'Evaluation Overdue (to Evaluator)'),

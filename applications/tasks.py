@@ -17,7 +17,7 @@ def send_feasibility_reminders():
     Runs at 9 AM daily (configured in redib/celery.py).
 
     Sends reminder if:
-    - Feasibility review is pending (is_feasible is None)
+    - Feasibility review status is 'pending'
     - More than 5 days have passed since application submission
     - No reminder sent in last 3 days
     """
@@ -27,7 +27,7 @@ def send_feasibility_reminders():
     cutoff_date = timezone.now() - timedelta(days=5)
 
     pending_reviews = FeasibilityReview.objects.filter(
-        is_feasible__isnull=True,
+        status='pending',
         application__submitted_at__lte=cutoff_date,
         reviewed_at__isnull=True
     ).select_related('application', 'node', 'reviewer')

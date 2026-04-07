@@ -94,7 +94,7 @@
                                 <div class="text-danger small">{{ form.has_animal_ethics.errors }}</div>
                                 {% endif %}
                                 <small class="form-text text-muted d-block mt-2">
-                                    If you use animals, you must have approval from an ethics committee before starting experiments.
+                                    Ethics committee approval is recommended before starting experiments involving animals.
                                 </small>
                             </div>
                         </div>
@@ -124,16 +124,22 @@
                                 <div class="text-danger small">{{ form.has_human_ethics.errors }}</div>
                                 {% endif %}
                                 <small class="form-text text-muted d-block mt-2">
-                                    If you use human subjects, you must have approval from an ethics committee before starting experiments.
+                                    Ethics committee approval is recommended before starting experiments involving human subjects.
                                 </small>
                             </div>
                         </div>
 
-                        <div class="card mb-4 border-danger">
-                            <div class="card-header bg-danger text-white">
-                                <h6 class="mb-0">Data Consent (Required)</h6>
+                        <div class="card mb-4 {% if auto_consent %}border-success{% else %}border-danger{% endif %}">
+                            <div class="card-header {% if auto_consent %}bg-success{% else %}bg-danger{% endif %} text-white">
+                                <h6 class="mb-0">Data Consent {% if not auto_consent %}(Required){% endif %}</h6>
                             </div>
                             <div class="card-body">
+                                {% if auto_consent %}
+                                <div class="alert alert-success mb-0">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Data consent provided.</strong> You have enabled automatic data consent in your profile.
+                                </div>
+                                {% else %}
                                 <div class="form-check">
                                     {{ form.data_consent }}
                                     <label class="form-check-label" for="{{ form.data_consent.id_for_label }}">
@@ -147,6 +153,7 @@
                                 <small class="form-text text-muted d-block mt-2">
                                     {{ form.data_consent.help_text }}
                                 </small>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -164,6 +171,13 @@
                                 Next: Preview & Submit <i class="bi bi-arrow-right"></i>
                             </button>
                         </div>
+                    </form>
+                    <form method="post" action="{% url 'applications:cancel' application.pk %}" class="mt-2"
+                          onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-x-circle"></i> Cancel Application
+                        </button>
                     </form>
                 </div>
             </div>

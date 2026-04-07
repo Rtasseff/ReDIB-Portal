@@ -1,8 +1,8 @@
 """
 Django management command to populate the database with real reference data only.
 
-Loads nodes, equipment, users (from CSVs) and email templates.
-No fake test data (no calls, applications, or test applicants).
+Loads nodes, organizations, users, equipment, funding agencies (from TSVs)
+and email templates. No fake test data (no calls, applications, or test applicants).
 
 Use this after creating a fresh database and superuser:
 
@@ -24,7 +24,7 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Populate database with real reference data only (nodes, equipment, users, email templates)'
+    help = 'Populate database with real reference data only (nodes, organizations, users, equipment, funding agencies, email templates)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -58,8 +58,8 @@ class Command(BaseCommand):
             self.reset_database()
             self.stdout.write(self.style.SUCCESS('  Done\n'))
 
-        # Step 1: Nodes (must be first — users and equipment depend on nodes)
-        self.stdout.write('Step 1: Populating ReDIB nodes from data/nodes.csv...')
+        # Step 1: Nodes (no dependencies; users and equipment depend on nodes)
+        self.stdout.write('Step 1: Populating ReDIB nodes from data/nodes.tsv...')
         try:
             call_command('populate_redib_nodes', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
@@ -67,17 +67,19 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
             return
 
-        # Step 2: Equipment (depends on nodes)
-        self.stdout.write('Step 2: Populating equipment from data/equipment.csv...')
+        # Step 2: Organizations (no dependencies; users depend on organizations).
+        # Run before users so user.organization can link to fully-populated org records
+        # rather than relying on populate_redib_users' auto-create-stub fallback.
+        self.stdout.write('Step 2: Populating organizations from data/organizations.tsv...')
         try:
-            call_command('populate_redib_equipment', verbosity=0)
+            call_command('populate_redib_organizations', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
             return
 
-        # Step 3: Users (depends on nodes)
-        self.stdout.write('Step 3: Populating users from data/users.csv...')
+        # Step 3: Users (depends on nodes + organizations)
+        self.stdout.write('Step 3: Populating users from data/users.tsv...')
         try:
             call_command('populate_redib_users', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
@@ -85,8 +87,26 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
             return
 
-        # Step 4: Email templates
-        self.stdout.write('Step 4: Seeding email templates...')
+        # Step 4: Equipment (depends on nodes)
+        self.stdout.write('Step 4: Populating equipment from data/equipment.tsv...')
+        try:
+            call_command('populate_redib_equipment', verbosity=0)
+            self.stdout.write(self.style.SUCCESS('  Done'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
+            return
+
+        # Step 5: Funding agencies (no dependencies)
+        self.stdout.write('Step 5: Populating funding agencies from data/funding_agencies.tsv...')
+        try:
+            call_command('populate_redib_funding_agencies', verbosity=0)
+            self.stdout.write(self.style.SUCCESS('  Done'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
+            return
+
+        # Step 6: Email templates
+        self.stdout.write('Step 6: Seeding email templates...')
         try:
             call_command('seed_email_templates', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
@@ -103,7 +123,7 @@ class Command(BaseCommand):
         from access.models import Publication, AccessGrant
         from evaluations.models import Evaluation
         from applications.models import (
-            FeasibilityReview, RequestedAccess, Application, NodeResolution
+            FeasibilityReview, RequestedAccess, Application, NodeResolution, FundingAgency
         )
         from calls.models import CallEquipmentAllocation, Call
         from core.models import Equipment, Node, Organization, UserRole
@@ -123,6 +143,7 @@ class Command(BaseCommand):
             (Application, 'applications'),
             (CallEquipmentAllocation, 'call equipment allocations'),
             (Call, 'calls'),
+            (FundingAgency, 'funding agencies'),
             (Equipment, 'equipment'),
             (Node, 'nodes'),
             (UserRole, 'user roles'),
@@ -162,6 +183,7 @@ class Command(BaseCommand):
     def print_summary(self):
         """Print summary of populated data."""
         from core.models import Node, Equipment, Organization, UserRole
+        from applications.models import FundingAgency
         from communications.models import EmailTemplate
 
         self.stdout.write('\n' + '=' * 70)
@@ -170,9 +192,10 @@ class Command(BaseCommand):
 
         self.stdout.write('\nData Summary:')
         self.stdout.write(f'  Nodes:              {Node.objects.count()}')
-        self.stdout.write(f'  Equipment:          {Equipment.objects.count()}')
         self.stdout.write(f'  Organizations:      {Organization.objects.count()}')
         self.stdout.write(f'  Users:              {User.objects.count()}')
+        self.stdout.write(f'  Equipment:          {Equipment.objects.count()}')
+        self.stdout.write(f'  Funding agencies:   {FundingAgency.objects.count()}')
         self.stdout.write(f'  Email templates:    {EmailTemplate.objects.count()}')
 
         self.stdout.write('\nUser Roles:')
@@ -180,7 +203,7 @@ class Command(BaseCommand):
             count = UserRole.objects.filter(role=role, is_active=True).count()
             self.stdout.write(f'  {role:20s}: {count}')
 
-        self.stdout.write('\nAll CSV users have:')
+        self.stdout.write('\nAll TSV users have:')
         self.stdout.write('  Password:           changeme123')
         self.stdout.write('  Email verified:     yes')
 

@@ -57,12 +57,12 @@ def dashboard(request):
 
         context['pending_feasibility'] = FeasibilityReview.objects.filter(
             node_id__in=my_nodes,
-            is_feasible__isnull=True
+            status='pending'
         ).select_related('application', 'node').order_by('created_at')[:10]
 
         context['feasibility_count'] = FeasibilityReview.objects.filter(
             node_id__in=my_nodes,
-            is_feasible__isnull=True
+            status='pending'
         ).count()
 
         # Get pending resolutions for node coordinators
@@ -130,6 +130,7 @@ def profile(request):
         form = ProfileForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
+            form.save_evaluator_areas()
             messages.success(request, 'Profile updated successfully.')
             return redirect('core:profile')
     else:
@@ -141,5 +142,6 @@ def profile(request):
     context = {
         'form': form,
         'user_roles': user_roles,
+        'profile_incomplete': not user.is_profile_complete,
     }
     return render(request, 'core/profile.html', context)

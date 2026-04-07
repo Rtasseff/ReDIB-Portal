@@ -3,7 +3,7 @@ Forms for the applications app - 5-step application wizard.
 """
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Application, RequestedAccess, FeasibilityReview
+from .models import Application, RequestedAccess, FeasibilityReview, FundingAgency
 from core.models import Equipment
 
 
@@ -18,6 +18,7 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_entity',
             'applicant_email',
             'applicant_phone',
+            'project_name',
             'brief_description'
         ]
         widgets = {
@@ -41,6 +42,10 @@ class ApplicationStep1Form(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Contact phone number'
             }),
+            'project_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Name of your research project'
+            }),
             'brief_description': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'One-line summary of your project (max 100 characters)',
@@ -53,7 +58,8 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_entity': 'Entity',
             'applicant_email': 'Email',
             'applicant_phone': 'Phone',
-            'brief_description': 'Brief Description'
+            'project_name': 'Project Name',
+            'brief_description': 'Project Summary'
         }
         help_texts = {
             'applicant_name': 'Your full name',
@@ -61,21 +67,28 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_entity': 'Your institution or organization',
             'applicant_email': 'Contact email address',
             'applicant_phone': 'Contact phone number',
+            'project_name': 'The name of your research project',
             'brief_description': 'Provide a concise summary of your research project'
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        self._user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Auto-populate applicant fields from user profile if creating new application
-        if user and not self.instance.pk:
-            self.initial['applicant_name'] = user.get_full_name() or f"{user.first_name} {user.last_name}".strip()
-            self.initial['applicant_email'] = user.email
-            if hasattr(user, 'organization') and user.organization:
-                self.initial['applicant_entity'] = user.organization
-            if hasattr(user, 'phone') and user.phone:
-                self.initial['applicant_phone'] = user.phone
+        # Auto-populate from user profile (both new and existing applications)
+        if self._user:
+            self.initial['applicant_name'] = self._user.get_full_name() or f"{self._user.first_name} {self._user.last_name}".strip()
+            self.initial['applicant_email'] = self._user.email
+            if self._user.organization:
+                self.initial['applicant_entity'] = str(self._user.organization)
+            if self._user.phone:
+                self.initial['applicant_phone'] = self._user.phone
+            if self._user.orcid:
+                self.initial['applicant_orcid'] = self._user.orcid
+
+            # Make profile-derived fields read-only (disabled fields don't submit data)
+            for field_name in ['applicant_name', 'applicant_email', 'applicant_entity', 'applicant_phone', 'applicant_orcid']:
+                self.fields[field_name].disabled = True
 
         # Make all fields required except ORCID
         self.fields['applicant_name'].required = True
@@ -83,25 +96,99 @@ class ApplicationStep1Form(forms.ModelForm):
         self.fields['applicant_entity'].required = True
         self.fields['applicant_email'].required = True
         self.fields['applicant_phone'].required = True
+        self.fields['project_name'].required = True
+
+
+class FundingAgencyWithOtherChoiceField(forms.ModelChoiceField):
+    """
+    A ModelChoiceField that accepts the '__other__' sentinel value as valid.
+    The form's clean() method is responsible for converting '__other__' into a real
+    FundingAgency instance based on the new_funding_agency_name field.
+    """
+    OTHER_SENTINEL = '__other__'
+
+    def to_python(self, value):
+        if value == self.OTHER_SENTINEL:
+            return self.OTHER_SENTINEL
+        return super().to_python(value)
+
+    def validate(self, value):
+        if value == self.OTHER_SENTINEL:
+            return
+        super().validate(value)
 
 
 class ApplicationStep2Form(forms.ModelForm):
     """Step 2: Funding & Project Information"""
 
+    # Override the FK field with our custom one that accepts '__other__'
+    funding_agency_obj = FundingAgencyWithOtherChoiceField(
+        queryset=FundingAgency.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label='---------',
+        label='Funding Agency',
+    )
+
+    # Extra field for creating a new funding agency when "Other" is selected
+    new_funding_agency_name = forms.CharField(
+        max_length=200, required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new funding agency name'
+        }),
+        label='New Funding Agency Name',
+    )
+
     class Meta:
         model = Application
         fields = [
-            'project_title', 'project_code', 'funding_agency',
-            'project_type', 'has_competitive_funding', 'subject_area'
+            'has_competitive_funding',
+            'project_title', 'project_code', 'funding_agency_obj',
+            'project_type', 'subject_area'
         ]
         widgets = {
+            'has_competitive_funding': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'project_title': forms.TextInput(attrs={'class': 'form-control'}),
             'project_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'funding_agency': forms.TextInput(attrs={'class': 'form-control'}),
             'project_type': forms.Select(attrs={'class': 'form-select'}),
-            'has_competitive_funding': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'subject_area': forms.Select(attrs={'class': 'form-select'}),
         }
+        labels = {
+            'project_title': 'Funded Project Name',
+            'project_type': 'Origin of Funds',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Append "Other" sentinel to the choices the widget renders
+        agency_choices = list(self.fields['funding_agency_obj'].choices)
+        agency_choices.append(('__other__', 'Other (enter new)'))
+        self.fields['funding_agency_obj'].choices = agency_choices
+
+    def clean(self):
+        cleaned_data = super().clean()
+        has_funding = cleaned_data.get('has_competitive_funding')
+
+        if not has_funding:
+            # Clear funding fields when no competitive funding
+            cleaned_data['project_title'] = ''
+            cleaned_data['project_code'] = ''
+            cleaned_data['funding_agency_obj'] = None
+            cleaned_data['project_type'] = ''
+        else:
+            # Handle "Other" funding agency
+            agency_val = cleaned_data.get('funding_agency_obj')
+            if agency_val == FundingAgencyWithOtherChoiceField.OTHER_SENTINEL:
+                new_name = cleaned_data.get('new_funding_agency_name', '').strip()
+                if not new_name:
+                    self.add_error('new_funding_agency_name', 'Please enter the funding agency name.')
+                    cleaned_data['funding_agency_obj'] = None
+                else:
+                    agency, _ = FundingAgency.objects.get_or_create(name=new_name)
+                    cleaned_data['funding_agency_obj'] = agency
+
+        return cleaned_data
 
 
 class ApplicationStep3Form(forms.ModelForm):
@@ -279,21 +366,22 @@ class ApplicationStep5Form(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        self._user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # If user has auto_data_consent, pre-check and disable the field
+        if self._user and getattr(self._user, 'auto_data_consent', False):
+            self.initial['data_consent'] = True
+            self.fields['data_consent'].disabled = True
+
     def clean(self):
         """Validate declarations"""
         cleaned_data = super().clean()
 
-        # Validate animal ethics if uses animals
-        if cleaned_data.get('uses_animals') and not cleaned_data.get('has_animal_ethics'):
-            raise forms.ValidationError(
-                "If using animals, you must have ethics committee approval."
-            )
-
-        # Validate human ethics if uses humans
-        if cleaned_data.get('uses_humans') and not cleaned_data.get('has_human_ethics'):
-            raise forms.ValidationError(
-                "If using human subjects, you must have ethics committee approval."
-            )
+        # If auto-consent, force it (disabled fields don't submit data)
+        if self._user and getattr(self._user, 'auto_data_consent', False):
+            cleaned_data['data_consent'] = True
 
         # Data consent is required
         if not cleaned_data.get('data_consent'):
@@ -307,22 +395,22 @@ class ApplicationStep5Form(forms.ModelForm):
 class FeasibilityReviewForm(forms.ModelForm):
     """Feasibility review by node coordinator"""
 
-    # Override is_feasible to use radio buttons instead of checkbox
-    is_feasible = forms.TypedChoiceField(
-        choices=[
-            (True, 'Approve - Technically feasible'),
-            (False, 'Reject - Not feasible'),
-        ],
+    DECISION_CHOICES = [
+        ('approved', 'Approve - Technically feasible'),
+        ('rejected', 'Reject - Not feasible'),
+        ('edits_requested', 'Request Edits - Return to applicant for revision'),
+    ]
+
+    decision = forms.ChoiceField(
+        choices=DECISION_CHOICES,
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
-        coerce=lambda x: x in (True, 'True'),  # Convert string or bool to boolean
         label='Feasibility Decision',
         required=True,
-        empty_value=None
     )
 
     class Meta:
         model = FeasibilityReview
-        fields = ['is_feasible', 'comments']
+        fields = ['comments']
         widgets = {
             'comments': forms.Textarea(attrs={
                 'rows': 5,
@@ -335,15 +423,19 @@ class FeasibilityReviewForm(forms.ModelForm):
         }
 
     def clean(self):
-        """Validate that comments are provided if rejected"""
+        """Validate that comments are provided for reject and edits_requested."""
         cleaned_data = super().clean()
-        is_feasible = cleaned_data.get('is_feasible')
+        decision = cleaned_data.get('decision')
         comments = cleaned_data.get('comments')
 
-        # Require comments if rejecting (is_feasible == False)
-        if is_feasible is False and not comments:
+        if decision == 'rejected' and not comments:
             raise forms.ValidationError(
                 "Please provide comments explaining why the application is not feasible."
+            )
+
+        if decision == 'edits_requested' and not comments:
+            raise forms.ValidationError(
+                "Please provide comments explaining what edits the applicant needs to make."
             )
 
         return cleaned_data

@@ -293,12 +293,12 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             })
             continue
 
-        # Check if evaluator's area matches application's specialization
+        # Check if any of the evaluator's areas matches the application's specialization
         evaluator_role = evaluator_roles.filter(user=evaluator).first()
         if (hasattr(application, 'specialization_area') and
             application.specialization_area and
             evaluator_role and
-            evaluator_role.area == application.specialization_area):
+            evaluator_role.has_area(application.specialization_area)):
             area_matched_evaluators.append(evaluator)
         else:
             other_evaluators.append(evaluator)

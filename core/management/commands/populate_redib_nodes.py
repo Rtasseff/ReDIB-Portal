@@ -1,8 +1,8 @@
 """
-Management command to populate ReDIB nodes from CSV file.
+Management command to populate ReDIB nodes from TSV file.
 
-This creates the 4 official ReDIB ICTS nodes from a CSV file.
-By default, loads from data/nodes.csv.
+This creates the 4 official ReDIB ICTS nodes from a TSV file.
+By default, loads from data/nodes.tsv.
 """
 import csv
 from pathlib import Path
@@ -12,35 +12,35 @@ from core.models import Node
 
 
 class Command(BaseCommand):
-    help = 'Populate ReDIB nodes from CSV file (default: data/nodes.csv)'
+    help = 'Populate ReDIB nodes from TSV file (default: data/nodes.tsv)'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--csv',
+            '--tsv',
             type=str,
-            default='data/nodes.csv',
-            help='Path to nodes CSV file (default: data/nodes.csv)'
+            default='data/nodes.tsv',
+            help='Path to nodes TSV file (default: data/nodes.tsv)'
         )
         parser.add_argument(
             '--sync',
             action='store_true',
-            help='Mark nodes not in CSV as inactive (is_active=False)'
+            help='Mark nodes not in TSV as inactive (is_active=False)'
         )
 
     def load_nodes_from_csv(self, csv_path):
-        """Load node data from CSV file."""
+        """Load node data from TSV file."""
         # Get project root directory
         project_root = Path(settings.BASE_DIR)
         csv_file = project_root / csv_path
 
         if not csv_file.exists():
-            raise CommandError(f'CSV file not found: {csv_file}')
+            raise CommandError(f'TSV file not found: {csv_file}')
 
         nodes_data = []
 
         try:
-            with open(csv_file, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
+            with open(csv_file, 'r', encoding='utf-8', newline='') as f:
+                reader = csv.DictReader(f, delimiter='\t')
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 (1 is header)
                     # Validate required fields
                     if not row.get('code') or not row.get('name'):
@@ -66,28 +66,28 @@ class Command(BaseCommand):
                     })
 
         except csv.Error as e:
-            raise CommandError(f'Error reading CSV file: {e}')
+            raise CommandError(f'Error reading TSV file: {e}')
         except Exception as e:
-            raise CommandError(f'Unexpected error reading CSV: {e}')
+            raise CommandError(f'Unexpected error reading TSV: {e}')
 
         return nodes_data
 
     def handle(self, *args, **options):
-        """Create nodes from CSV file"""
+        """Create nodes from TSV file"""
 
-        csv_path = options['csv']
+        csv_path = options['tsv']
         sync_mode = options['sync']
 
         self.stdout.write(f'Loading node data from: {csv_path}')
         if sync_mode:
             self.stdout.write(self.style.WARNING('Sync mode enabled: Will mark orphaned nodes as inactive'))
 
-        # Load node data from CSV
+        # Load node data from TSV
         nodes_data = self.load_nodes_from_csv(csv_path)
 
         created_count = 0
         updated_count = 0
-        processed_node_ids = set()  # Track node IDs processed from CSV
+        processed_node_ids = set()  # Track node IDs processed from TSV
 
         for node_data in nodes_data:
             code = node_data['code']
@@ -128,7 +128,7 @@ class Command(BaseCommand):
         deactivated_count = 0
         if sync_mode:
             self.stdout.write('\n' + '-' * 60)
-            self.stdout.write('Checking for orphaned nodes (in DB but not in CSV)...')
+            self.stdout.write('Checking for orphaned nodes (in DB but not in TSV)...')
 
             # Find all nodes not in the processed set
             orphaned_nodes = Node.objects.exclude(id__in=processed_node_ids).filter(is_active=True)
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                 deactivated_count += 1
                 self.stdout.write(
                     self.style.WARNING(
-                        f'  ⊗ Deactivated: {node.code} - {node.name} (not in CSV)'
+                        f'  ⊗ Deactivated: {node.code} - {node.name} (not in TSV)'
                     )
                 )
 

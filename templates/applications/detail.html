@@ -38,6 +38,25 @@
         </div>
     </div>
 
+    {% if edit_requests %}
+    <div class="alert alert-warning">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Edits Requested</h5>
+        <p>A node coordinator has requested edits to your application before it can proceed.
+           Please review the comments below, edit your application, and resubmit.</p>
+        {% for review in edit_requests %}
+        <hr>
+        <p class="mb-1"><strong>Node:</strong> {{ review.node.name }}</p>
+        <p class="mb-1"><strong>Reviewer:</strong> {{ review.reviewer.get_full_name }}</p>
+        <p class="mb-1"><strong>Comments:</strong></p>
+        <p class="mb-0" style="white-space: pre-wrap;">{{ review.comments }}</p>
+        {% endfor %}
+        <hr>
+        <a href="{% url 'applications:edit_step1' application.pk %}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Edit Application
+        </a>
+    </div>
+    {% endif %}
+
     <!-- Status Timeline -->
     {% if application.status != 'draft' %}
     <div class="card mb-3">
@@ -114,7 +133,7 @@
                 <dt class="col-sm-3">Funding Agency</dt>
                 <dd class="col-sm-9">{{ application.funding_agency|default:"—" }}</dd>
 
-                <dt class="col-sm-3">Project Type</dt>
+                <dt class="col-sm-3">Origin of Funds</dt>
                 <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
 
                 <dt class="col-sm-3">Subject Area</dt>
@@ -197,12 +216,14 @@
                         <tr>
                             <td>{{ item.node.name }} ({{ item.node.code }})</td>
                             <td>
-                                {% if item.status == 'feasible' %}
-                                    <span class="badge bg-success">Feasible</span>
-                                {% elif item.status == 'not_feasible' %}
-                                    <span class="badge bg-danger">Not Feasible</span>
+                                {% if item.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif item.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif item.status == 'edits_requested' %}
+                                    <span class="badge bg-warning text-dark">Edits Requested</span>
                                 {% else %}
-                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    <span class="badge bg-secondary">Pending</span>
                                 {% endif %}
                             </td>
                             <td>{{ item.reviewer.get_full_name|default:"—" }}</td>

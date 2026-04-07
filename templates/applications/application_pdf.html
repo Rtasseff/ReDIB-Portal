@@ -261,7 +261,11 @@
                 <span class="info-value">{{ application.applicant_phone|default:"—" }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Brief Description / Descripcion:</span>
+                <span class="info-label">Project Name / Nombre del proyecto:</span>
+                <span class="info-value">{{ application.project_name|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Project Summary / Resumen del proyecto:</span>
                 <span class="info-value">{{ application.brief_description }}</span>
             </div>
         </div>
@@ -272,7 +276,7 @@
         <div class="section-header">2. Funding Source / Fuente de Financiacion</div>
         <div class="section-content">
             <div class="info-row">
-                <span class="info-label">Project Title / Titulo:</span>
+                <span class="info-label">Funded Project Name / Nombre del proyecto financiado:</span>
                 <span class="info-value">{{ application.project_title|default:"—" }}</span>
             </div>
             <div class="info-row">
@@ -281,10 +285,10 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Funding Agency / Agencia:</span>
-                <span class="info-value">{{ application.funding_agency|default:"—" }}</span>
+                <span class="info-value">{{ application.funding_agency_obj|default:application.funding_agency|default:"—" }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Project Type / Tipo:</span>
+                <span class="info-label">Origin of Funds / Origen de los fondos:</span>
                 <span class="info-value">{{ application.get_project_type_display }}</span>
             </div>
             <div class="info-row">

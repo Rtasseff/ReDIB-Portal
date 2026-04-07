@@ -1,10 +1,10 @@
 """
-Management command to populate ReDIB users from CSV file.
+Management command to populate ReDIB users from TSV file.
 
 This creates core user accounts (coordinators, node coordinators, evaluators)
-from a CSV file. By default, loads from data/users.csv.
+from a TSV file. By default, loads from data/users.tsv.
 
-Role format in CSV:
+Role format in TSV:
 - Simple role: "coordinator" or "evaluator"
 - Node-specific: "node_coordinator:CIC-biomaGUNE"
 - Area-specific: "evaluator:preclinical"
@@ -22,35 +22,35 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Populate ReDIB users from CSV file (default: data/users.csv)'
+    help = 'Populate ReDIB users from TSV file (default: data/users.tsv)'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--csv',
+            '--tsv',
             type=str,
-            default='data/users.csv',
-            help='Path to users CSV file (default: data/users.csv)'
+            default='data/users.tsv',
+            help='Path to users TSV file (default: data/users.tsv)'
         )
         parser.add_argument(
             '--sync',
             action='store_true',
-            help='Mark users not in CSV as inactive (is_active=False)'
+            help='Mark users not in TSV as inactive (is_active=False)'
         )
 
     def load_users_from_csv(self, csv_path):
-        """Load user data from CSV file."""
+        """Load user data from TSV file."""
         # Get project root directory
         project_root = Path(settings.BASE_DIR)
         csv_file = project_root / csv_path
 
         if not csv_file.exists():
-            raise CommandError(f'CSV file not found: {csv_file}')
+            raise CommandError(f'TSV file not found: {csv_file}')
 
         users_data = []
 
         try:
-            with open(csv_file, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
+            with open(csv_file, 'r', encoding='utf-8', newline='') as f:
+                reader = csv.DictReader(f, delimiter='\t')
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 (1 is header)
                     # Validate required fields
                     if not row.get('email') or not row.get('first_name') or not row.get('last_name'):
@@ -64,6 +64,10 @@ class Command(BaseCommand):
                     # Convert boolean fields
                     is_staff = row.get('is_staff', 'FALSE').strip().upper() in ['TRUE', '1', 'YES']
                     is_active = row.get('is_active', 'TRUE').strip().upper() in ['TRUE', '1', 'YES']
+                    # auto_data_consent is optional; missing or blank values default to False
+                    auto_data_consent = (
+                        row.get('auto_data_consent') or ''
+                    ).strip().upper() in ['TRUE', '1', 'YES']
 
                     users_data.append({
                         'email': row['email'].strip().lower(),
@@ -75,29 +79,37 @@ class Command(BaseCommand):
                         'position': row.get('position', '').strip(),
                         'is_staff': is_staff,
                         'is_active': is_active,
+                        'auto_data_consent': auto_data_consent,
                         'roles': row.get('roles', '').strip(),
                     })
 
         except csv.Error as e:
-            raise CommandError(f'Error reading CSV file: {e}')
+            raise CommandError(f'Error reading TSV file: {e}')
         except Exception as e:
-            raise CommandError(f'Unexpected error reading CSV: {e}')
+            raise CommandError(f'Unexpected error reading TSV: {e}')
 
         return users_data
 
     def parse_roles(self, roles_string):
         """
-        Parse roles string into list of (role, node_code, area) tuples.
+        Parse roles string into list of (role, node_code, areas) tuples.
+
+        Format:
+        - Roles are separated by `;`
+        - Within a role, `:` separates role name from qualifier (node code or area(s))
+        - For evaluator, multiple areas can be comma-separated within the qualifier
 
         Examples:
         - "coordinator" -> [('coordinator', None, '')]
         - "node_coordinator:CIC-biomaGUNE" -> [('node_coordinator', 'CIC-biomaGUNE', '')]
         - "evaluator:preclinical" -> [('evaluator', None, 'preclinical')]
-        - "coordinator;evaluator:clinical" -> [('coordinator', None, ''), ('evaluator', None, 'clinical')]
+        - "evaluator:clinical,preclinical" -> [('evaluator', None, 'clinical,preclinical')]
+        - "coordinator;evaluator:clinical,radiochemistry" -> [('coordinator', None, ''), ('evaluator', None, 'clinical,radiochemistry')]
         """
         if not roles_string:
             return []
 
+        valid_areas = ['preclinical', 'clinical', 'radiochemistry']
         parsed_roles = []
         role_entries = roles_string.split(';')
 
@@ -111,23 +123,19 @@ class Command(BaseCommand):
                 role = role.strip()
                 qualifier = qualifier.strip()
 
-                # Determine if qualifier is a node code or area
-                # Node roles: node_coordinator
-                # Area roles: evaluator
+                # Determine if qualifier is a node code or area(s)
                 if role == 'node_coordinator':
                     parsed_roles.append((role, qualifier, ''))
                 elif role == 'evaluator':
-                    # Check if qualifier is a valid area
-                    valid_areas = ['preclinical', 'clinical', 'radiochemistry']
-                    if qualifier in valid_areas:
-                        parsed_roles.append((role, None, qualifier))
-                    else:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f'Invalid evaluator area: {qualifier}. Using empty area.'
-                            )
-                        )
-                        parsed_roles.append((role, None, ''))
+                    # Qualifier may be one or more comma-separated areas
+                    raw_areas = [a.strip() for a in qualifier.split(',') if a.strip()]
+                    valid = [a for a in raw_areas if a in valid_areas]
+                    invalid = [a for a in raw_areas if a not in valid_areas]
+                    if invalid:
+                        self.stdout.write(self.style.WARNING(
+                            f'Invalid evaluator area(s): {", ".join(invalid)}. Ignoring.'
+                        ))
+                    parsed_roles.append((role, None, ','.join(valid)))
                 else:
                     parsed_roles.append((role, None, ''))
             else:
@@ -137,22 +145,22 @@ class Command(BaseCommand):
         return parsed_roles
 
     def handle(self, *args, **options):
-        """Create users from CSV file"""
+        """Create users from TSV file"""
 
-        csv_path = options['csv']
+        csv_path = options['tsv']
         sync_mode = options['sync']
 
         self.stdout.write(f'Loading user data from: {csv_path}')
         if sync_mode:
             self.stdout.write(self.style.WARNING('Sync mode enabled: Will mark orphaned users as inactive'))
 
-        # Load user data from CSV
+        # Load user data from TSV
         users_data = self.load_users_from_csv(csv_path)
 
         created_count = 0
         updated_count = 0
         roles_created_count = 0
-        processed_user_ids = set()  # Track user IDs processed from CSV
+        processed_user_ids = set()  # Track user IDs processed from TSV
 
         for user_data in users_data:
             email = user_data['email']
@@ -163,14 +171,18 @@ class Command(BaseCommand):
                 try:
                     organization = Organization.objects.get(name=user_data['organization_name'])
                 except Organization.DoesNotExist:
-                    # Create organization if it doesn't exist
+                    # Fallback: auto-create with default type. For full org metadata
+                    # (vat, country, address, website), populate data/organizations.tsv
+                    # and run `populate_redib_organizations` BEFORE this command.
                     organization = Organization.objects.create(
                         name=user_data['organization_name'],
-                        organization_type='other'  # Default type
+                        organization_type='other',
                     )
                     self.stdout.write(
                         self.style.WARNING(
-                            f'  → Created organization: {user_data["organization_name"]}'
+                            f'  ⚠ Auto-created stub organization "{user_data["organization_name"]}" '
+                            f'(type=other, no country/vat). Add it to data/organizations.tsv and '
+                            f'run populate_redib_organizations to populate full details.'
                         )
                     )
 
@@ -186,10 +198,11 @@ class Command(BaseCommand):
                     'position': user_data['position'],
                     'is_staff': user_data['is_staff'],
                     'is_active': user_data['is_active'],
+                    'auto_data_consent': user_data['auto_data_consent'],
                 }
             )
 
-            # Always set password so all CSV users have a known password
+            # Always set password so all loaded users have a known password
             user.set_password('changeme123')
             user.save()
 
@@ -220,7 +233,7 @@ class Command(BaseCommand):
 
             # Handle roles
             parsed_roles = self.parse_roles(user_data['roles'])
-            for role_name, node_code, area in parsed_roles:
+            for role_name, node_code, areas in parsed_roles:
                 # Get node if specified
                 node = None
                 if node_code:
@@ -240,7 +253,7 @@ class Command(BaseCommand):
                     role=role_name,
                     node=node,
                     defaults={
-                        'area': area,
+                        'areas': areas,
                         'is_active': True,
                     }
                 )
@@ -248,7 +261,7 @@ class Command(BaseCommand):
                 if role_created:
                     roles_created_count += 1
                     node_info = f" at {node.code}" if node else ""
-                    area_info = f" ({area})" if area else ""
+                    area_info = f" ({areas})" if areas else ""
                     self.stdout.write(
                         f'    → Role: {role_name}{node_info}{area_info}'
                     )
@@ -257,7 +270,7 @@ class Command(BaseCommand):
         deactivated_count = 0
         if sync_mode:
             self.stdout.write('\n' + '-' * 60)
-            self.stdout.write('Checking for orphaned users (in DB but not in CSV)...')
+            self.stdout.write('Checking for orphaned users (in DB but not in TSV)...')
 
             # Find all users not in the processed set, excluding superusers
             orphaned_users = User.objects.exclude(id__in=processed_user_ids).filter(
@@ -271,7 +284,7 @@ class Command(BaseCommand):
                 deactivated_count += 1
                 self.stdout.write(
                     self.style.WARNING(
-                        f'  ⊗ Deactivated: {user.email} ({user.get_full_name()}) (not in CSV)'
+                        f'  ⊗ Deactivated: {user.email} ({user.get_full_name()}) (not in TSV)'
                     )
                 )
 
