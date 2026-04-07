@@ -223,7 +223,7 @@
                         <select class="form-select" id="evaluator_id" name="evaluator_id" required>
                             <option value="">-- Choose an evaluator --</option>
                             {% for evaluator in active_evaluators %}
-                            <option value="{{ evaluator.id }}" data-areas="{{ evaluator.combined_areas|join:',' }}">
+                            <option value="{{ evaluator.id }}" data-areas="{{ evaluator.combined_areas|join:';' }}">
                                 {{ evaluator.get_full_name }}
                                 {% if evaluator.organization %} - {{ evaluator.organization.name }}{% endif %}
                                 {% if evaluator.combined_areas %} [{{ evaluator.combined_areas|join:", " }}]{% endif %}
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Array.from(select.options).forEach(opt => {
             // Strip any prior marker
             opt.text = opt.text.replace(/^✓ /, '');
-            const areas = (opt.getAttribute('data-areas') || '').split(',').map(s => s.trim()).filter(Boolean);
+            const areas = (opt.getAttribute('data-areas') || '').split(';').map(s => s.trim()).filter(Boolean);
             if (appSpec && areas.includes(appSpec)) {
                 opt.text = '✓ ' + opt.text;
             }

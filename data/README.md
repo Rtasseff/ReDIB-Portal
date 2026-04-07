@@ -29,7 +29,7 @@ FK dependencies require this order:
 | Column | Required | Notes |
 |---|---|---|
 | `code` | Yes | Unique identifier (used as natural key) |
-| `name` | Yes | Display name |
+| `organization_name` | Yes | Name of the host organization. Currently mapped to the `Node.name` model field for display. A future change may add a `Node.organization` FK that uses this value to look up an `Organization` record from `organizations.tsv`, providing structured org metadata (VAT, address, country, etc.) |
 | `location` | No | Free text |
 | `description` | No | |
 | `acknowledgment_text` | No | Text for publication acknowledgments |
@@ -76,22 +76,42 @@ be linked to fully-populated org records.
 | `position` | No | Job title |
 | `is_staff` | No | TRUE/FALSE (default FALSE) |
 | `is_active` | No | TRUE/FALSE (default TRUE) |
-| `roles` | No | See role syntax below |
+| `roles` | No | Semicolon `;`-separated role names. See syntax below. |
+| `areas` | No | Semicolon `;`-separated specialization areas. Only meaningful for evaluators. See conventions below. |
 | `auto_data_consent` | No | TRUE/FALSE (default FALSE) — blanket data processing consent for applications |
 
-**Roles syntax** (semicolon `;`-separated for multiple roles):
-- Simple: `coordinator`, `applicant`
-- Node-specific: `node_coordinator:CIC-biomaGUNE`
-- Area-specific (single): `evaluator:preclinical`
-- Area-specific (multiple): `evaluator:clinical,preclinical` — comma `,` separates multiple areas
-- Multiple roles: `coordinator;evaluator:clinical,radiochemistry`
+**Roles syntax** (semicolon `;`-separated):
+- Simple: `coordinator`, `applicant`, `evaluator`
+- Node-specific: `node_coordinator:CIC-biomaGUNE` (the `:NODE_CODE` qualifier is the
+  only place a sub-delimiter is allowed inside a `roles` cell)
+- Multiple roles: `coordinator;evaluator` or `node_coordinator:BioImaC;evaluator`
 
-Allowed area values: `clinical`, `preclinical`, `radiochemistry`.
+**Areas syntax** (semicolon `;`-separated):
+- Single: `clinical`
+- Multiple: `clinical;preclinical;radiochemistry`
+- Allowed values: `clinical`, `preclinical`, `radiochemistry`
+
+**Areas convention:**
+- Areas are stored on the user's evaluator `UserRole` row in the database. If a user has
+  multiple roles (e.g. `coordinator;evaluator`), the `areas` value applies **only to the
+  evaluator role**; other role rows get an empty areas field.
+- If `areas` is set but the user has no evaluator role, the loader emits a warning and
+  the value is ignored.
+- If `areas` contains an unknown value, the loader emits a warning and that value is
+  dropped (the rest are kept).
+- Areas are required at the **profile page** UI level (evaluators must provide at least
+  one area when editing their profile in the portal). They are *not* required at the
+  TSV/admin level — you can leave the cell blank if needed for testing or manual entry.
+
+**Separator consistency:**
+- The `;` character is used **everywhere** that a cell holds multiple values: between
+  roles in the `roles` column, between areas in the `areas` column, and inside the
+  stored `UserRole.areas` model field. The only exception is the `node_coordinator:NODE`
+  qualifier, which uses `:` to separate role from node code.
 
 **Notes:**
 - All loaded users get the default password `changeme123` and a verified email address (allauth `EmailAddress`).
 - The `auto_data_consent` column is optional for backwards compatibility — missing values default to FALSE.
-- Within the `roles` column, **comma is used as a sub-delimiter** for multi-value areas. This is the only place commas have special meaning inside a TSV cell.
 
 ---
 

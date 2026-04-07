@@ -38,8 +38,8 @@ class UserRoleAdminForm(forms.ModelForm):
             self.initial['areas'] = self.instance.area_list
 
     def clean_areas(self):
-        # MultipleChoiceField returns a list; serialize back to a comma-separated string
-        return ','.join(self.cleaned_data.get('areas', []))
+        # MultipleChoiceField returns a list; serialize back to a semicolon-separated string
+        return ';'.join(self.cleaned_data.get('areas', []))
 
 
 @admin.register(Organization)

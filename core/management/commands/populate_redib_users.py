@@ -81,6 +81,7 @@ class Command(BaseCommand):
                         'is_active': is_active,
                         'auto_data_consent': auto_data_consent,
                         'roles': row.get('roles', '').strip(),
+                        'areas': row.get('areas', '').strip(),
                     })
 
         except csv.Error as e:
@@ -92,28 +93,25 @@ class Command(BaseCommand):
 
     def parse_roles(self, roles_string):
         """
-        Parse roles string into list of (role, node_code, areas) tuples.
+        Parse roles string into list of (role, node_code) tuples.
 
         Format:
         - Roles are separated by `;`
-        - Within a role, `:` separates role name from qualifier (node code or area(s))
-        - For evaluator, multiple areas can be comma-separated within the qualifier
+        - Within a role, `:` separates role name from a node qualifier (only for node_coordinator)
+        - Areas (for evaluators) are read from a SEPARATE `areas` column, not from this string
 
         Examples:
-        - "coordinator" -> [('coordinator', None, '')]
-        - "node_coordinator:CIC-biomaGUNE" -> [('node_coordinator', 'CIC-biomaGUNE', '')]
-        - "evaluator:preclinical" -> [('evaluator', None, 'preclinical')]
-        - "evaluator:clinical,preclinical" -> [('evaluator', None, 'clinical,preclinical')]
-        - "coordinator;evaluator:clinical,radiochemistry" -> [('coordinator', None, ''), ('evaluator', None, 'clinical,radiochemistry')]
+        - "coordinator" -> [('coordinator', None)]
+        - "node_coordinator:CIC-biomaGUNE" -> [('node_coordinator', 'CIC-biomaGUNE')]
+        - "evaluator" -> [('evaluator', None)]
+        - "coordinator;evaluator" -> [('coordinator', None), ('evaluator', None)]
+        - "node_coordinator:BioImaC;evaluator" -> [('node_coordinator', 'BioImaC'), ('evaluator', None)]
         """
         if not roles_string:
             return []
 
-        valid_areas = ['preclinical', 'clinical', 'radiochemistry']
         parsed_roles = []
-        role_entries = roles_string.split(';')
-
-        for entry in role_entries:
+        for entry in roles_string.split(';'):
             entry = entry.strip()
             if not entry:
                 continue
@@ -122,25 +120,17 @@ class Command(BaseCommand):
                 role, qualifier = entry.split(':', 1)
                 role = role.strip()
                 qualifier = qualifier.strip()
-
-                # Determine if qualifier is a node code or area(s)
                 if role == 'node_coordinator':
-                    parsed_roles.append((role, qualifier, ''))
-                elif role == 'evaluator':
-                    # Qualifier may be one or more comma-separated areas
-                    raw_areas = [a.strip() for a in qualifier.split(',') if a.strip()]
-                    valid = [a for a in raw_areas if a in valid_areas]
-                    invalid = [a for a in raw_areas if a not in valid_areas]
-                    if invalid:
-                        self.stdout.write(self.style.WARNING(
-                            f'Invalid evaluator area(s): {", ".join(invalid)}. Ignoring.'
-                        ))
-                    parsed_roles.append((role, None, ','.join(valid)))
+                    parsed_roles.append((role, qualifier))
                 else:
-                    parsed_roles.append((role, None, ''))
+                    self.stdout.write(self.style.WARNING(
+                        f'Unexpected qualifier on role "{role}": "{qualifier}". '
+                        f'Only node_coordinator supports the role:qualifier syntax. '
+                        f'For evaluator areas, use the separate `areas` column.'
+                    ))
+                    parsed_roles.append((role, None))
             else:
-                # Simple role without qualifier
-                parsed_roles.append((entry, None, ''))
+                parsed_roles.append((entry, None))
 
         return parsed_roles
 
@@ -231,9 +221,30 @@ class Command(BaseCommand):
             # Track this user as processed
             processed_user_ids.add(user.id)
 
+            # Validate areas from the separate `areas` column.
+            # Convention: areas apply ONLY to the evaluator role. They are stored on
+            # the evaluator UserRole row; non-evaluator UserRole rows get empty areas.
+            valid_areas = ['preclinical', 'clinical', 'radiochemistry']
+            raw_areas = [a.strip() for a in (user_data.get('areas') or '').split(';') if a.strip()]
+            invalid_areas = [a for a in raw_areas if a not in valid_areas]
+            if invalid_areas:
+                self.stdout.write(self.style.WARNING(
+                    f'  ⚠ Invalid evaluator area(s) for {email}: '
+                    f'{", ".join(invalid_areas)}. Ignoring.'
+                ))
+            user_areas = ';'.join(a for a in raw_areas if a in valid_areas)
+
             # Handle roles
             parsed_roles = self.parse_roles(user_data['roles'])
-            for role_name, node_code, areas in parsed_roles:
+
+            # Warn if areas were provided but the user has no evaluator role
+            if user_areas and not any(r[0] == 'evaluator' for r in parsed_roles):
+                self.stdout.write(self.style.WARNING(
+                    f'  ⚠ {email} has areas={user_areas!r} but no evaluator role. '
+                    f'Areas will be ignored.'
+                ))
+
+            for role_name, node_code in parsed_roles:
                 # Get node if specified
                 node = None
                 if node_code:
@@ -247,13 +258,16 @@ class Command(BaseCommand):
                         )
                         continue
 
+                # Areas only apply to the evaluator role
+                role_areas = user_areas if role_name == 'evaluator' else ''
+
                 # Create or update user role
                 role, role_created = UserRole.objects.update_or_create(
                     user=user,
                     role=role_name,
                     node=node,
                     defaults={
-                        'areas': areas,
+                        'areas': role_areas,
                         'is_active': True,
                     }
                 )
@@ -261,7 +275,7 @@ class Command(BaseCommand):
                 if role_created:
                     roles_created_count += 1
                     node_info = f" at {node.code}" if node else ""
-                    area_info = f" ({areas})" if areas else ""
+                    area_info = f" ({role_areas})" if role_areas else ""
                     self.stdout.write(
                         f'    → Role: {role_name}{node_info}{area_info}'
                     )

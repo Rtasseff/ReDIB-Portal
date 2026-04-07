@@ -135,7 +135,7 @@ class ProfileForm(forms.ModelForm):
         if not self._evaluator_role:
             return
         selected = self.cleaned_data.get('evaluator_areas', [])
-        self._evaluator_role.areas = ','.join(selected)
+        self._evaluator_role.areas = ';'.join(selected)
         self._evaluator_role.save(update_fields=['areas'])
 
     def clean(self):

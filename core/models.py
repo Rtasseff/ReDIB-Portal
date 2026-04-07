@@ -263,7 +263,7 @@ class UserRole(models.Model):
     areas = models.CharField(
         max_length=200,
         blank=True,
-        help_text='Comma-separated specialization areas for evaluators (e.g. "clinical,preclinical")'
+        help_text='Semicolon-separated specialization areas for evaluators (e.g. "clinical;preclinical")'
     )
 
     is_active = models.BooleanField(default=True)
@@ -284,7 +284,7 @@ class UserRole(models.Model):
     @property
     def area_list(self):
         """Return areas as a list, e.g. ['clinical', 'preclinical']."""
-        return [a.strip() for a in (self.areas or '').split(',') if a.strip()]
+        return [a.strip() for a in (self.areas or '').split(';') if a.strip()]
 
     def has_area(self, area):
         """Return True if this role covers the given specialization area."""

@@ -42,11 +42,15 @@ class Command(BaseCommand):
             with open(csv_file, 'r', encoding='utf-8', newline='') as f:
                 reader = csv.DictReader(f, delimiter='\t')
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 (1 is header)
-                    # Validate required fields
-                    if not row.get('code') or not row.get('name'):
+                    # The TSV column is `organization_name` (the host org's name).
+                    # It maps to the existing Node.name model field. A future change
+                    # may add a Node.organization FK that uses this value to look up
+                    # an Organization record from the organizations table.
+                    org_name = (row.get('organization_name') or '').strip()
+                    if not row.get('code') or not org_name:
                         self.stdout.write(
                             self.style.WARNING(
-                                f'Row {row_num}: Skipping - missing required fields (code or name)'
+                                f'Row {row_num}: Skipping - missing required fields (code or organization_name)'
                             )
                         )
                         continue
@@ -56,7 +60,7 @@ class Command(BaseCommand):
 
                     nodes_data.append({
                         'code': row['code'].strip(),
-                        'name': row['name'].strip(),
+                        'organization_name': org_name,
                         'location': row.get('location', '').strip(),
                         'description': row.get('description', '').strip(),
                         'acknowledgment_text': row.get('acknowledgment_text', '').strip(),
@@ -92,11 +96,12 @@ class Command(BaseCommand):
         for node_data in nodes_data:
             code = node_data['code']
 
-            # Get or create node
+            # Get or create node. The TSV `organization_name` column maps to the
+            # existing Node.name model field (which holds the host org's name).
             node, node_created = Node.objects.update_or_create(
                 code=code,
                 defaults={
-                    'name': node_data['name'],
+                    'name': node_data['organization_name'],
                     'location': node_data['location'],
                     'description': node_data['description'],
                     'acknowledgment_text': node_data['acknowledgment_text'],
@@ -110,14 +115,14 @@ class Command(BaseCommand):
                 created_count += 1
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'  ✓ Created: {code} - {node_data["name"]}'
+                        f'  ✓ Created: {code} - {node_data["organization_name"]}'
                     )
                 )
             else:
                 updated_count += 1
                 self.stdout.write(
                     self.style.WARNING(
-                        f'  ↻ Updated: {code} - {node_data["name"]}'
+                        f'  ↻ Updated: {code} - {node_data["organization_name"]}'
                     )
                 )
 
