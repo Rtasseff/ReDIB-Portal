@@ -669,10 +669,12 @@ def feasibility_review(request, pk):
                     application.status = 'rejected_feasibility'
                     application.save()
                     status_msg = "rejected"
+                    is_approved = False
                 else:
                     application.status = 'pending_evaluation'
                     application.save()
                     status_msg = "approved and ready for evaluation"
+                    is_approved = True
 
                 try:
                     from communications.tasks import send_email_from_template
@@ -683,6 +685,7 @@ def feasibility_review(request, pk):
                             'applicant_name': application.applicant.get_full_name(),
                             'application_code': application.code,
                             'status': status_msg,
+                            'is_approved': is_approved,
                         },
                         recipient_user_id=application.applicant.id,
                         related_application_id=application.id

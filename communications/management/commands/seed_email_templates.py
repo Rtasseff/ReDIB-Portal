@@ -226,7 +226,11 @@ Please do not reply to this email.''',
                 <p><strong>Status:</strong> {{ status }}</p>
             </div>
 
+            {% if is_approved %}
             <p>You will receive further updates as your application progresses through the evaluation process.</p>
+            {% else %}
+            <p>Unfortunately, your application did not pass the technical feasibility review and will not proceed to evaluation.</p>
+            {% endif %}
 
             <p>If you have any questions, please contact {{ contact_email }}.</p>
 
@@ -248,7 +252,7 @@ The technical feasibility review for your application {{ application_code }} has
 Application Code: {{ application_code }}
 Status: {{ status }}
 
-You will receive further updates as your application progresses through the evaluation process.
+{% if is_approved %}You will receive further updates as your application progresses through the evaluation process.{% else %}Unfortunately, your application did not pass the technical feasibility review and will not proceed to evaluation.{% endif %}
 
 If you have any questions, please contact {{ contact_email }}.
 
@@ -262,7 +266,8 @@ Please do not reply to this email.''',
 {
     "applicant_name": "Full name of the applicant",
     "application_code": "Application unique code",
-    "status": "Feasibility outcome (e.g., approved and ready for evaluation, or rejected)"
+    "status": "Feasibility outcome (e.g., approved and ready for evaluation, or rejected)",
+    "is_approved": "Boolean — True if approved, False if rejected. Used to gate next-steps language."
 }
                 '''
             },
