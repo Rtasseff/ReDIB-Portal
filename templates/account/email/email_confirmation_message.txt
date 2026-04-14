@@ -1,0 +1,19 @@
+{% extends "account/email/base_message.txt" %}
+{% load account %}
+{% load i18n %}
+
+{% block content %}{% autoescape off %}{% user_display user as user_display %}{% blocktranslate with site_domain=current_site.domain %}Welcome to the ReDIB COA Portal!
+
+You are receiving this email because {{ user_display }} has registered an account at {{ site_domain }}.
+
+To complete your registration, please confirm your email address.{% endblocktranslate %}
+
+{% if code %}{% blocktranslate %}Your email verification code is:{% endblocktranslate %}
+
+    {{ code }}
+
+{% blocktranslate %}Please enter this code in your open browser window.{% endblocktranslate %}{% else %}{% blocktranslate %}Please click the link below to verify your email:{% endblocktranslate %}
+
+{{ activate_url }}{% endif %}
+
+{% blocktranslate %}Once verified, you can log in and complete your profile to start submitting COA applications.{% endblocktranslate %}{% endautoescape %}{% endblock content %}

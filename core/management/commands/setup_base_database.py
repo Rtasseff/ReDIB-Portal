@@ -114,6 +114,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
             return
 
+        # Step 7: Configure site
+        self.stdout.write('Step 7: Configuring site...')
+        self.configure_site()
+        self.stdout.write(self.style.SUCCESS('  Done'))
+
         # Summary
         self.print_summary()
 
@@ -179,6 +184,15 @@ class Command(BaseCommand):
                         self.stdout.write(f'    Deleted {count} {model._meta.model_name} records')
         except Exception:
             pass
+
+    def configure_site(self):
+        """Set the Django Site object to ReDIB portal values."""
+        from django.contrib.sites.models import Site
+        site = Site.objects.get(id=1)
+        site.domain = 'portal.redib.net'
+        site.name = 'ReDIB COA Portal'
+        site.save()
+        self.stdout.write(f'    Site: {site.name} ({site.domain})')
 
     def print_summary(self):
         """Print summary of populated data."""

@@ -75,8 +75,13 @@ class Command(BaseCommand):
             users = self.create_users(nodes)
             self.stdout.write(self.style.SUCCESS(f'  Created {len(users)} users'))
 
-            # Step 4: Seed email templates
-            self.stdout.write('Step 4: Seeding email templates...')
+            # Step 4: Configure site
+            self.stdout.write('Step 4: Configuring site...')
+            self.configure_site()
+            self.stdout.write(self.style.SUCCESS('  Site configured'))
+
+            # Step 5: Seed email templates
+            self.stdout.write('Step 5: Seeding email templates...')
             try:
                 from django.core.management import call_command
                 call_command('seed_email_templates', verbosity=0)
@@ -143,6 +148,15 @@ class Command(BaseCommand):
                         self.stdout.write(f'    Deleted {count} {model._meta.model_name} records')
         except Exception:
             pass
+
+    def configure_site(self):
+        """Set the Django Site object to ReDIB portal values."""
+        from django.contrib.sites.models import Site
+        site = Site.objects.get(id=1)
+        site.domain = 'portal.redib.net'
+        site.name = 'ReDIB COA Portal'
+        site.save()
+        self.stdout.write(f'    Site: {site.name} ({site.domain})')
 
     def create_nodes(self):
         """Create the 3 test nodes."""

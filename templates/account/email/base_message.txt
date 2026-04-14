@@ -1,0 +1,9 @@
+{% load i18n %}{% autoescape off %}{% blocktrans %}ReDIB COA Portal{% endblocktrans %}
+---
+
+{% block content %}{% endblock content %}
+
+---
+{% blocktrans %}This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.{% endblocktrans %}
+{% endautoescape %}
