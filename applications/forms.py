@@ -167,6 +167,7 @@ class ApplicationStep2Form(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['subject_area'].required = True
         # Append "Other" sentinel to the choices the widget renders
         agency_choices = list(self.fields['funding_agency_obj'].choices)
         agency_choices.append(('__other__', 'Other (enter new)'))
@@ -265,6 +266,11 @@ class ApplicationStep3Form(forms.ModelForm):
                 '<em>Not all service modalities are available for all installations. In case of doubt, please contact ReDIB technical staff.</em>'
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['service_modality'].required = True
+        self.fields['specialization_area'].required = True
 
 
 class RequestedAccessForm(forms.ModelForm):
@@ -370,6 +376,11 @@ class ApplicationStep4Form(forms.ModelForm):
         help_texts = {
             'expected_contributions': 'Justify your expectations for future scientific-technical contributions and express your commitment to publish and disseminate the ICTS access you are now requesting...',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in self.fields:
+            self.fields[field_name].required = True
 
 
 class ApplicationStep5Form(forms.ModelForm):
