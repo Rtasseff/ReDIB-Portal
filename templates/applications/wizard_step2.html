@@ -44,6 +44,18 @@
                     <form method="post">
                         {% csrf_token %}
 
+                        <!-- Project Summary (always visible) -->
+                        <div class="mb-3">
+                            <label for="{{ form.brief_description.id_for_label }}" class="form-label">
+                                {{ form.brief_description.label }} *
+                            </label>
+                            {{ form.brief_description }}
+                            {% if form.brief_description.errors %}
+                            <div class="text-danger small">{{ form.brief_description.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">One-line summary of your project (max 100 characters)</small>
+                        </div>
+
                         <!-- Subject Area (always visible) -->
                         <div class="mb-3">
                             <label for="{{ form.subject_area.id_for_label }}" class="form-label">
@@ -81,16 +93,6 @@
                                     <h6 class="mb-0">Funding Details</h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="mb-3">
-                                        <label for="{{ form.project_title.id_for_label }}" class="form-label">
-                                            {{ form.project_title.label }}
-                                        </label>
-                                        {{ form.project_title }}
-                                        {% if form.project_title.errors %}
-                                        <div class="text-danger small">{{ form.project_title.errors }}</div>
-                                        {% endif %}
-                                    </div>
-
                                     <div class="mb-3">
                                         <label for="{{ form.project_code.id_for_label }}" class="form-label">
                                             {{ form.project_code.label }}

@@ -55,10 +55,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p><strong>Application Code:</strong> {{ application.code }}</p>
-                            <p><strong>Brief Description:</strong> {{ application.brief_description }}</p>
+                            <p><strong>Project Title:</strong> {{ application.project_name|default:"—" }}</p>
+                            <p><strong>Project Summary:</strong> {{ application.brief_description|default:"—" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Origin of Funds:</strong> {{ application.get_project_type_display }}</p>
+                            <p><strong>Origin of Funds:</strong> {{ application.get_project_type_display|default:"NA" }}</p>
                             <p><strong>Subject Area:</strong> {{ application.subject_area }}</p>
                             <p><strong>Specialization:</strong> {{ application.specialization_area }}</p>
                         </div>

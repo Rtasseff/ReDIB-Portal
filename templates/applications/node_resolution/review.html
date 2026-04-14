@@ -51,8 +51,8 @@
                 <dt class="col-sm-3">Submitted</dt>
                 <dd class="col-sm-9">{{ application.submitted_at|date:"F d, Y H:i" }}</dd>
 
-                <dt class="col-sm-3">Brief Description</dt>
-                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_name|default:"N/A" }}</dd>
             </dl>
         </div>
     </div>
@@ -162,11 +162,14 @@
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Project Title</dt>
-                <dd class="col-sm-9">{{ application.project_title|default:"N/A" }}</dd>
+                <dt class="col-sm-3">Project Summary</dt>
+                <dd class="col-sm-9">{{ application.brief_description|default:"N/A" }}</dd>
+
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency_obj|default:"NA" }}</dd>
 
                 <dt class="col-sm-3">Origin of Funds</dt>
-                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+                <dd class="col-sm-9">{{ application.get_project_type_display|default:"NA" }}</dd>
 
                 <dt class="col-sm-3">Subject Area</dt>
                 <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>

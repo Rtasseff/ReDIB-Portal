@@ -20,7 +20,6 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_email',
             'applicant_phone',
             'project_name',
-            'brief_description'
         ]
         widgets = {
             'applicant_name': forms.TextInput(attrs={
@@ -47,11 +46,6 @@ class ApplicationStep1Form(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Name of your research project'
             }),
-            'brief_description': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'One-line summary of your project (max 100 characters)',
-                'maxlength': '100'
-            }),
         }
         labels = {
             'applicant_name': 'Name and Surname',
@@ -59,8 +53,7 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_entity': 'Entity',
             'applicant_email': 'Email',
             'applicant_phone': 'Phone',
-            'project_name': 'Project Name',
-            'brief_description': 'Project Summary'
+            'project_name': 'Project Title',
         }
         help_texts = {
             'applicant_name': 'Your full name',
@@ -69,7 +62,6 @@ class ApplicationStep1Form(forms.ModelForm):
             'applicant_email': 'Contact email address',
             'applicant_phone': 'Contact phone number',
             'project_name': 'The name of your research project',
-            'brief_description': 'Provide a concise summary of your research project'
         }
 
     def __init__(self, *args, **kwargs):
@@ -151,22 +143,28 @@ class ApplicationStep2Form(forms.ModelForm):
     class Meta:
         model = Application
         fields = [
+            'brief_description',
+            'subject_area',
             'has_competitive_funding',
-            'project_title', 'project_code', 'funding_agency_obj',
-            'subject_area'
+            'project_code', 'funding_agency_obj',
         ]
         widgets = {
+            'brief_description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'One-line summary of your project (max 100 characters)',
+                'maxlength': '100'
+            }),
             'has_competitive_funding': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'project_title': forms.TextInput(attrs={'class': 'form-control'}),
             'project_code': forms.TextInput(attrs={'class': 'form-control'}),
             'subject_area': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
-            'project_title': 'Funded Project Name',
+            'brief_description': 'Project Summary',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['brief_description'].required = True
         self.fields['subject_area'].required = True
         # Append "Other" sentinel to the choices the widget renders
         agency_choices = list(self.fields['funding_agency_obj'].choices)
@@ -186,7 +184,6 @@ class ApplicationStep2Form(forms.ModelForm):
 
         if not has_funding:
             # Clear funding fields when no competitive funding
-            cleaned_data['project_title'] = ''
             cleaned_data['project_code'] = ''
             cleaned_data['funding_agency_obj'] = None
             cleaned_data['project_type'] = ''

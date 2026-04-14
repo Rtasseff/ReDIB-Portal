@@ -38,7 +38,7 @@
                     {% for app in applications %}
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
-                        <td>{{ app.project_title|truncatewords:10 }}</td>
+                        <td>{{ app.project_name|truncatewords:10 }}</td>
                         <td>{{ app.call.code }}</td>
                         <td>
                             {% if app.handoff_email_sent_at %}
@@ -155,7 +155,7 @@
                     {% for app in completed_applications %}
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
-                        <td>{{ app.project_title|truncatewords:10 }}</td>
+                        <td>{{ app.project_name|truncatewords:10 }}</td>
                         <td>
                             <span class="badge bg-success">
                                 <i class="bi bi-check-circle"></i> {{ app.completed_at|date:"M d, Y" }}

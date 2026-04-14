@@ -21,7 +21,7 @@
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Application Code:</strong> {{ application.code }}</p>
-                <p><strong>Project Title:</strong> {{ application.project_title }}</p>
+                <p><strong>Project Title:</strong> {{ application.project_name|default:"—" }}</p>
                 <p><strong>Call:</strong> {{ application.call.code }}</p>
             </div>
             <div class="col-md-6">

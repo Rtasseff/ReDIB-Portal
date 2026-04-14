@@ -157,6 +157,9 @@ def application_create(request, call_pk):
             if user.orcid:
                 application.applicant_orcid = user.orcid
 
+            # Sync project_title from project_name (legacy field kept in sync)
+            application.project_title = application.project_name
+
             application.save()
 
             messages.success(request, "Application draft created. Continue to step 2.")
@@ -199,6 +202,8 @@ def application_edit_step1(request, pk):
                 app.applicant_phone = user.phone
             if user.orcid:
                 app.applicant_orcid = user.orcid
+            # Sync project_title from project_name (legacy field kept in sync)
+            app.project_title = app.project_name
             app.save()
             messages.success(request, "Step 1 saved. Continue to step 2.")
             return redirect('applications:edit_step2', pk=application.pk)

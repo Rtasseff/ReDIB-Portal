@@ -37,7 +37,7 @@
                             {{ app.applicant.get_full_name }}<br>
                             <small class="text-muted">{{ app.applicant_entity }}</small>
                         </td>
-                        <td>{{ app.project_title|truncatewords:8 }}</td>
+                        <td>{{ app.project_name|truncatewords:8 }}</td>
                         <td>
                             <a href="mailto:{{ app.applicant_email }}">{{ app.applicant_email }}</a><br>
                             <small class="text-muted">{{ app.applicant_phone|default:"No phone" }}</small>

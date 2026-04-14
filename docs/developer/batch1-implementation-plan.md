@@ -197,6 +197,7 @@ Most complex workflow change. Adds a third feasibility outcome.
 3. Login → redirected to profile page with "complete your profile" alert
 4. Try navigating to dashboard → blocked, redirected to profile
 5. Fill in: first name, last name, phone, organization (select existing or create new via "Other"), position, ORCID (optional), auto_data_consent (check it)
+- Issue:  Not all fields that should be requiered for an org were actually shown for me to fill in. We will address this when we address a new issue that some of the classes/datamodels have new fields we need to add for the DB to capture for auditing.
 6. Save profile → can now navigate freely
 7. Browse calls → click "Apply" on an open call
 8. Step 1: verify profile fields are pre-filled and read-only, enter brief_description and project_name

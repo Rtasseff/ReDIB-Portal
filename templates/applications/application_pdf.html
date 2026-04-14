@@ -261,35 +261,31 @@
                 <span class="info-value">{{ application.applicant_phone|default:"—" }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Project Name / Nombre del proyecto:</span>
+                <span class="info-label">Project Title / Titulo del proyecto:</span>
                 <span class="info-value">{{ application.project_name|default:"—" }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Project Summary / Resumen del proyecto:</span>
-                <span class="info-value">{{ application.brief_description }}</span>
             </div>
         </div>
     </div>
 
-    <!-- Section 2: Funding & Project -->
+    <!-- Section 2: Project & Funding -->
     <div class="section">
-        <div class="section-header">2. Funding Source / Fuente de Financiacion</div>
+        <div class="section-header">2. Project & Funding / Proyecto y Financiacion</div>
         <div class="section-content">
             <div class="info-row">
-                <span class="info-label">Funded Project Name / Nombre del proyecto financiado:</span>
-                <span class="info-value">{{ application.project_title|default:"—" }}</span>
+                <span class="info-label">Project Summary / Resumen del proyecto:</span>
+                <span class="info-value">{{ application.brief_description|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Funding Agency / Agencia:</span>
+                <span class="info-value">{{ application.funding_agency_obj|default:"NA" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Origin of Funds / Origen de los fondos:</span>
+                <span class="info-value">{{ application.get_project_type_display|default:"NA" }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Project Code / Codigo:</span>
                 <span class="info-value">{{ application.project_code|default:"—" }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Funding Agency / Agencia:</span>
-                <span class="info-value">{{ application.funding_agency_obj|default:application.funding_agency|default:"—" }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Origin of Funds / Origen de los fondos:</span>
-                <span class="info-value">{{ application.get_project_type_display }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Subject Area / Area:</span>
