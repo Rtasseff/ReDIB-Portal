@@ -594,6 +594,7 @@ docker stats --no-stream
 
 ### Emails Not Sending
 
+- Confirm `DEBUG=False` in production. When `DEBUG=True`, `CELERY_TASK_ALWAYS_EAGER` is set to `True` (see `redib/settings.py`), causing tasks to run synchronously in the web process instead of being queued to the Celery worker.
 - Check celery logs: `docker compose -f docker-compose.prod.yml logs celery`
 - Test email manually (see Step 5)
 - Verify `EMAIL_BACKEND` is set to SMTP, not console

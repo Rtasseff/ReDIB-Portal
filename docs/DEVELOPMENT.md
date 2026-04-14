@@ -222,12 +222,19 @@ See [TESTING.md](TESTING.md) for comprehensive testing documentation.
 
 ### Celery (Optional -- Background Tasks)
 
-Celery workers are **not required** for core development. Emails print to the terminal via the console backend, and background tasks are simply skipped unless a worker is running.
+Celery workers are **not required** for core development. When `DEBUG=True`, the setting `CELERY_TASK_ALWAYS_EAGER=True` is set automatically (see `redib/settings.py`), which causes `.delay()` calls to run **synchronously in-process**. This means:
 
-If you need to test background tasks (e.g., scheduled reminders), install Redis and start workers. See [SETUP_GUIDE.md](SETUP_GUIDE.md#running-celery-workers-optional-in-development) for setup instructions.
+- All workflow emails (feasibility requests, evaluation assignments, resolution notifications, etc.) print to the terminal via the console email backend immediately when triggered.
+- No Redis or Celery worker is needed to see these emails during dev.
+- Allauth account emails (signup confirmation, password reset) also print to the terminal — these run synchronously regardless of Celery.
+
+In production (`DEBUG=False`), `CELERY_TASK_ALWAYS_EAGER` is `False` and tasks queue normally to Celery + Redis.
+
+If you specifically want to test the **async behavior** locally (e.g., scheduled reminders via Celery beat), install Redis and start workers. See [SETUP_GUIDE.md](SETUP_GUIDE.md#running-celery-workers-optional-in-development) for setup instructions.
 
 ```bash
-# Start Celery worker (requires Redis running)
+# Start Celery worker (requires Redis running, and you'd typically also set
+# CELERY_TASK_ALWAYS_EAGER=False in your .env to actually exercise the queue)
 celery -A redib worker -l info
 
 # Start Celery beat (scheduled tasks, requires Redis running)

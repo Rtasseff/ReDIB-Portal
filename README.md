@@ -40,8 +40,8 @@ The portal runs in two modes. **Development** needs only Python; **Production** 
 | Web Server | `manage.py runserver` | Gunicorn + Caddy (auto-TLS) |
 | Database | SQLite (automatic, no setup) | PostgreSQL 15 |
 | Cache | In-memory (LocMemCache) | Redis 7 |
-| Task Queue | None required | Celery 5 + Redis |
-| Email | Console (prints to terminal) | SMTP |
+| Task Queue | None required (Celery runs in-process via `CELERY_TASK_ALWAYS_EAGER=DEBUG`) | Celery 5 + Redis |
+| Email | Console (prints to terminal) — workflow + allauth emails both visible | SMTP |
 
 Shared across both modes:
 - **Frontend**: Django Templates + HTMX + Alpine.js + Bootstrap 5

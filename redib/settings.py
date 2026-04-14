@@ -186,6 +186,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# In development (DEBUG=True), run Celery tasks synchronously in-process so
+# workflow emails reach the console backend without needing a Celery worker
+# or Redis broker. In production this stays False so .delay() queues normally.
+CELERY_TASK_ALWAYS_EAGER = DEBUG
+CELERY_TASK_EAGER_PROPAGATES = DEBUG
+
 # Site URL for building absolute links in emails (no trailing slash)
 SITE_URL = env('SITE_URL', default='https://portal.redib.net')
 

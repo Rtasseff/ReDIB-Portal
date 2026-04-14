@@ -115,17 +115,29 @@
         </div>
     </div>
 
-    <!-- Scientific Content (Summary) -->
+    <!-- Scientific Content (Full) -->
     <div class="card mb-3">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Scientific Content</h5>
         </div>
         <div class="card-body">
-            <h6>Methodology and Experimental Design</h6>
+            <h6>1. Scientific and Technical Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—" }}</p>
+
+            <h6 class="mt-3">2. Methodology and Experimental Design</h6>
             <p class="text-pre-wrap">{{ application.methodology_description|default:"—" }}</p>
 
-            <h6 class="mt-3">Scientific Relevance</h6>
-            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—"|truncatewords:100 }}</p>
+            <h6 class="mt-3">3. Expected Contributions</h6>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"—" }}</p>
+
+            <h6 class="mt-3">4. Impact and Advancement of Knowledge</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"—" }}</p>
+
+            <h6 class="mt-3">5. Socioeconomic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"—" }}</p>
+
+            <h6 class="mt-3">6. Opportunity and Translational Impact</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"—" }}</p>
         </div>
     </div>
 
