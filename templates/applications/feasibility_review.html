@@ -149,25 +149,41 @@
                 <dd class="col-sm-6">
                     {% if application.uses_animals %}
                         <span class="badge bg-info">Yes</span>
-                        {% if application.has_animal_ethics %}
-                            <span class="badge bg-success ms-1">Ethics Approved</span>
-                        {% endif %}
                     {% else %}
                         <span class="badge bg-secondary">No</span>
                     {% endif %}
                 </dd>
 
+                {% if application.uses_animals %}
+                <dt class="col-sm-6">Animal ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_animal_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
                 <dt class="col-sm-6">Uses human subjects</dt>
                 <dd class="col-sm-6">
                     {% if application.uses_humans %}
                         <span class="badge bg-info">Yes</span>
-                        {% if application.has_human_ethics %}
-                            <span class="badge bg-success ms-1">Ethics Approved</span>
-                        {% endif %}
                     {% else %}
                         <span class="badge bg-secondary">No</span>
                     {% endif %}
                 </dd>
+
+                {% if application.uses_humans %}
+                <dt class="col-sm-6">Human ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_human_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
             </dl>
         </div>
     </div>
