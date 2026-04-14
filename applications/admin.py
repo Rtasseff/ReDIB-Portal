@@ -141,6 +141,7 @@ class NodeResolutionAdmin(SimpleHistoryAdmin):
 
 @admin.register(FundingAgency)
 class FundingAgencyAdmin(SimpleHistoryAdmin):
-    list_display = ['name', 'created_at']
+    list_display = ['name', 'origin_of_funds', 'created_at']
+    list_filter = ['origin_of_funds']
     search_fields = ['name']
     ordering = ['name']

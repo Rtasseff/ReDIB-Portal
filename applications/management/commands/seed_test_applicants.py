@@ -288,7 +288,7 @@ class Command(BaseCommand):
                 project_title=f'Research Project {app_counter}: {self.get_project_title(spec_area)}',
                 project_code=f'PRJ-2026-{app_counter:04d}',
                 funding_agency='Test Funding Agency' if competitive_funding else '',
-                project_type='national',
+                project_type='spanish_government',
                 has_competitive_funding=competitive_funding,
                 subject_area='bme',
                 service_modality='full_assistance',

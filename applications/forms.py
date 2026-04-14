@@ -3,7 +3,8 @@ Forms for the applications app - 5-step application wizard.
 """
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Application, RequestedAccess, FeasibilityReview, FundingAgency
+import json
+from .models import Application, RequestedAccess, FeasibilityReview, FundingAgency, PROJECT_TYPES
 from core.models import Equipment
 
 
@@ -130,14 +131,21 @@ class ApplicationStep2Form(forms.ModelForm):
         label='Funding Agency',
     )
 
-    # Extra field for creating a new funding agency when "Other" is selected
+    # Extra fields for creating a new funding agency when "Other" is selected
     new_funding_agency_name = forms.CharField(
         max_length=200, required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Enter new funding agency name'
         }),
-        label='New Funding Agency Name',
+        label='Funding Agency Name',
+    )
+
+    new_funding_agency_origin_of_funds = forms.ChoiceField(
+        choices=[('', '---------')] + PROJECT_TYPES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Origin of Funds',
     )
 
     class Meta:
@@ -145,18 +153,16 @@ class ApplicationStep2Form(forms.ModelForm):
         fields = [
             'has_competitive_funding',
             'project_title', 'project_code', 'funding_agency_obj',
-            'project_type', 'subject_area'
+            'subject_area'
         ]
         widgets = {
             'has_competitive_funding': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'project_title': forms.TextInput(attrs={'class': 'form-control'}),
             'project_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'project_type': forms.Select(attrs={'class': 'form-select'}),
             'subject_area': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'project_title': 'Funded Project Name',
-            'project_type': 'Origin of Funds',
         }
 
     def __init__(self, *args, **kwargs):
@@ -165,6 +171,13 @@ class ApplicationStep2Form(forms.ModelForm):
         agency_choices = list(self.fields['funding_agency_obj'].choices)
         agency_choices.append(('__other__', 'Other (enter new)'))
         self.fields['funding_agency_obj'].choices = agency_choices
+
+        # Build JSON map of {agency_id: origin_of_funds} for JavaScript
+        origins = {
+            str(a.pk): a.origin_of_funds
+            for a in FundingAgency.objects.all()
+        }
+        self.fields['funding_agency_obj'].widget.attrs['data-origins'] = json.dumps(origins)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -177,18 +190,58 @@ class ApplicationStep2Form(forms.ModelForm):
             cleaned_data['funding_agency_obj'] = None
             cleaned_data['project_type'] = ''
         else:
-            # Handle "Other" funding agency
             agency_val = cleaned_data.get('funding_agency_obj')
+
             if agency_val == FundingAgencyWithOtherChoiceField.OTHER_SENTINEL:
+                # "Other (enter new)" — require name and origin of funds
                 new_name = cleaned_data.get('new_funding_agency_name', '').strip()
+                new_origin = cleaned_data.get('new_funding_agency_origin_of_funds', '')
+
                 if not new_name:
                     self.add_error('new_funding_agency_name', 'Please enter the funding agency name.')
-                    cleaned_data['funding_agency_obj'] = None
-                else:
-                    agency, _ = FundingAgency.objects.get_or_create(name=new_name)
+                if not new_origin:
+                    self.add_error('new_funding_agency_origin_of_funds', 'Please select the origin of funds.')
+
+                if new_name and new_origin:
+                    agency, created = FundingAgency.objects.get_or_create(
+                        name=new_name,
+                        defaults={'origin_of_funds': new_origin}
+                    )
+                    if not created and not agency.origin_of_funds:
+                        agency.origin_of_funds = new_origin
+                        agency.save()
                     cleaned_data['funding_agency_obj'] = agency
+                    cleaned_data['project_type'] = agency.origin_of_funds
+                else:
+                    cleaned_data['funding_agency_obj'] = None
+
+            elif agency_val and hasattr(agency_val, 'origin_of_funds'):
+                # Existing agency selected
+                if agency_val.origin_of_funds:
+                    cleaned_data['project_type'] = agency_val.origin_of_funds
+                else:
+                    # Agency missing origin_of_funds — require user to provide it
+                    new_origin = cleaned_data.get('new_funding_agency_origin_of_funds', '')
+                    if not new_origin:
+                        self.add_error(
+                            'new_funding_agency_origin_of_funds',
+                            'This agency is missing its Origin of Funds. Please select one.'
+                        )
+                    else:
+                        agency_val.origin_of_funds = new_origin
+                        agency_val.save()
+                        cleaned_data['project_type'] = new_origin
+            else:
+                cleaned_data['project_type'] = ''
 
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.project_type = self.cleaned_data.get('project_type', '')
+        if commit:
+            instance.save()
+        return instance
 
 
 class ApplicationStep3Form(forms.ModelForm):

@@ -5,8 +5,9 @@ Loads applications.FundingAgency records from a TSV file. By default, loads
 from data/funding_agencies.tsv. Uses `name` as the natural key for upserts
 (the FundingAgency.name field is unique=True at the model level).
 
-TSV columns: name
+TSV columns: name, origin_of_funds
 - `name` is required and must be unique
+- `origin_of_funds` is required and must be a valid PROJECT_TYPES key
 
 Provides seed data for the funding agency dropdown in application Step 2.
 Without seed data, applicants must use the "Other" flow to add agencies one
@@ -16,7 +17,9 @@ import csv
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from applications.models import FundingAgency
+from applications.models import FundingAgency, PROJECT_TYPES
+
+VALID_ORIGIN_KEYS = {key for key, label in PROJECT_TYPES}
 
 
 class Command(BaseCommand):
@@ -46,16 +49,28 @@ class Command(BaseCommand):
 
         agencies = []
         seen_names = set()
+        errors = []
 
         try:
             with open(csv_file, 'r', encoding='utf-8', newline='') as f:
                 reader = csv.DictReader(f, delimiter='\t')
                 for row_num, row in enumerate(reader, start=2):
                     name = (row.get('name') or '').strip()
+                    origin_of_funds = (row.get('origin_of_funds') or '').strip()
+
                     if not name:
-                        self.stdout.write(self.style.WARNING(
-                            f'Row {row_num}: Skipping - missing required field (name)'
-                        ))
+                        errors.append(f'Row {row_num}: Missing required field "name"')
+                        continue
+
+                    if not origin_of_funds:
+                        errors.append(f'Row {row_num}: Missing required field "origin_of_funds" for "{name}"')
+                        continue
+
+                    if origin_of_funds not in VALID_ORIGIN_KEYS:
+                        errors.append(
+                            f'Row {row_num}: Invalid origin_of_funds "{origin_of_funds}" for "{name}". '
+                            f'Valid values: {", ".join(sorted(VALID_ORIGIN_KEYS))}'
+                        )
                         continue
 
                     if name in seen_names:
@@ -64,10 +79,15 @@ class Command(BaseCommand):
                         ))
                         continue
                     seen_names.add(name)
-                    agencies.append({'name': name})
+                    agencies.append({'name': name, 'origin_of_funds': origin_of_funds})
 
         except csv.Error as e:
             raise CommandError(f'Error reading TSV file: {e}')
+
+        if errors:
+            for err in errors:
+                self.stderr.write(self.style.ERROR(f'  ERROR: {err}'))
+            raise CommandError(f'{len(errors)} validation error(s) in TSV file. Fix and re-run.')
 
         return agencies
 
@@ -94,16 +114,33 @@ class Command(BaseCommand):
         existed_count = 0
         processed_ids = set()
 
+        updated_count = 0
+
         for data in agencies:
-            agency, created = FundingAgency.objects.get_or_create(name=data['name'])
+            agency, created = FundingAgency.objects.get_or_create(
+                name=data['name'],
+                defaults={'origin_of_funds': data['origin_of_funds']}
+            )
             processed_ids.add(agency.id)
 
             if created:
                 created_count += 1
-                self.stdout.write(self.style.SUCCESS(f'  ✓ Created: {data["name"]}'))
+                self.stdout.write(self.style.SUCCESS(
+                    f'  ✓ Created: {data["name"]} (origin: {data["origin_of_funds"]})'
+                ))
             else:
                 existed_count += 1
-                self.stdout.write(self.style.WARNING(f'  ↻ Already exists: {data["name"]}'))
+                # Update origin_of_funds if it changed or was blank
+                if agency.origin_of_funds != data['origin_of_funds']:
+                    old_val = agency.origin_of_funds or '(blank)'
+                    agency.origin_of_funds = data['origin_of_funds']
+                    agency.save()
+                    updated_count += 1
+                    self.stdout.write(self.style.WARNING(
+                        f'  ↻ Updated: {data["name"]} (origin: {old_val} → {data["origin_of_funds"]})'
+                    ))
+                else:
+                    self.stdout.write(self.style.WARNING(f'  ↻ Already exists: {data["name"]}'))
 
         # Sync mode: list orphans (cannot deactivate - no is_active field)
         if sync_mode:
@@ -130,6 +167,7 @@ class Command(BaseCommand):
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write(self.style.SUCCESS('Funding agency population complete!'))
         self.stdout.write(f'  Funding agencies created: {created_count}')
-        self.stdout.write(f'  Funding agencies already existed: {existed_count}')
+        self.stdout.write(f'  Funding agencies updated: {updated_count}')
+        self.stdout.write(f'  Funding agencies unchanged: {existed_count - updated_count}')
         self.stdout.write(f'  Total processed: {created_count + existed_count}')
         self.stdout.write('=' * 60 + '\n')

@@ -140,11 +140,18 @@ be linked to fully-populated org records.
 | Column | Required | Notes |
 |---|---|---|
 | `name` | Yes | Used as natural key (model has `unique=True`) |
+| `origin_of_funds` | Yes | One of: `spanish_government`, `international_non_eu`, `spanish_regional`, `european_union`, `institutional`, `private`, `other` |
 
-**Why this exists:** The `FundingAgency` model was added in batch 1 (Issue 16). Without
-seed data, applicants must create entries via the "Other" flow during application
-submission. A seed list lets common Spanish/EU agencies appear in the dropdown
-immediately (e.g. AEI, ERC, MCIN, ISCIII).
+The loader validates both fields: missing or invalid values cause an error and abort the
+import (no partial loads). On re-run, existing agencies are matched by `name`; if
+`origin_of_funds` has changed in the TSV, the DB record is updated to match.
+
+**Why this exists:** The `FundingAgency` model backs the funding agency dropdown in
+application Step 2. Without seed data, applicants must create entries via the "Other"
+flow during application submission. A seed list lets common Spanish/EU agencies appear in
+the dropdown immediately (e.g. AEI, ERC, ISCIII). Each agency carries an
+`origin_of_funds` classification that auto-populates the application's "Origin of Funds"
+field when selected.
 
 ---
 

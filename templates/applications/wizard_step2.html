@@ -112,8 +112,8 @@
                                         {% endif %}
                                     </div>
 
-                                    <!-- New agency name (shown when "Other" selected) -->
-                                    <div id="new-agency-field" style="display:none;" class="mb-3">
+                                    <!-- New Funding Agency name (shown when "Other" selected) -->
+                                    <div id="new-agency-name-field" style="display:none;" class="mb-3">
                                         <label for="{{ form.new_funding_agency_name.id_for_label }}" class="form-label">
                                             {{ form.new_funding_agency_name.label }} *
                                         </label>
@@ -123,13 +123,17 @@
                                         {% endif %}
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label for="{{ form.project_type.id_for_label }}" class="form-label">
-                                            {{ form.project_type.label }}
+                                    <!-- Origin of Funds dropdown (shown for "Other" or when existing agency has no origin) -->
+                                    <div id="agency-origin-field" style="display:none;" class="mb-3">
+                                        <label for="{{ form.new_funding_agency_origin_of_funds.id_for_label }}" class="form-label">
+                                            {{ form.new_funding_agency_origin_of_funds.label }} *
                                         </label>
-                                        {{ form.project_type }}
-                                        {% if form.project_type.errors %}
-                                        <div class="text-danger small">{{ form.project_type.errors }}</div>
+                                        <div id="agency-origin-warning" class="alert alert-warning small mb-2" style="display:none;">
+                                            This agency is missing its Origin of Funds classification. Please select one.
+                                        </div>
+                                        {{ form.new_funding_agency_origin_of_funds }}
+                                        {% if form.new_funding_agency_origin_of_funds.errors %}
+                                        <div class="text-danger small">{{ form.new_funding_agency_origin_of_funds.errors }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -196,22 +200,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const fundingCheckbox = document.getElementById('{{ form.has_competitive_funding.id_for_label }}');
     const fundingDetails = document.getElementById('funding-details');
     const agencySelect = document.getElementById('{{ form.funding_agency_obj.id_for_label }}');
-    const newAgencyField = document.getElementById('new-agency-field');
+    const newAgencyNameField = document.getElementById('new-agency-name-field');
+    const agencyOriginField = document.getElementById('agency-origin-field');
+    const agencyOriginWarning = document.getElementById('agency-origin-warning');
+
+    // Parse origin_of_funds map from data attribute: {agency_id: origin_value}
+    let agencyOrigins = {};
+    if (agencySelect && agencySelect.dataset.origins) {
+        agencyOrigins = JSON.parse(agencySelect.dataset.origins);
+    }
 
     function toggleFundingDetails() {
         fundingDetails.style.display = fundingCheckbox.checked ? '' : 'none';
     }
 
-    function toggleNewAgency() {
-        if (agencySelect) {
-            newAgencyField.style.display = agencySelect.value === '__other__' ? '' : 'none';
+    function toggleAgencyFields() {
+        if (!agencySelect) return;
+        const val = agencySelect.value;
+
+        if (val === '__other__') {
+            // "Other (enter new)" — show name + origin fields
+            newAgencyNameField.style.display = '';
+            agencyOriginField.style.display = '';
+            agencyOriginWarning.style.display = 'none';
+        } else if (val && agencyOrigins[val] === '') {
+            // Existing agency with missing origin — show origin field with warning
+            newAgencyNameField.style.display = 'none';
+            agencyOriginField.style.display = '';
+            agencyOriginWarning.style.display = '';
+        } else {
+            // Normal agency or empty selection — hide extra fields
+            newAgencyNameField.style.display = 'none';
+            agencyOriginField.style.display = 'none';
+            agencyOriginWarning.style.display = 'none';
         }
     }
 
     fundingCheckbox.addEventListener('change', toggleFundingDetails);
     if (agencySelect) {
-        agencySelect.addEventListener('change', toggleNewAgency);
-        toggleNewAgency();
+        agencySelect.addEventListener('change', toggleAgencyFields);
+        toggleAgencyFields();
     }
 });
 </script>

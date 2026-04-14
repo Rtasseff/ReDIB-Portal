@@ -250,14 +250,14 @@ class WorkflowTester:
         self.application.project_title = 'Advanced Imaging Research Project'
         self.application.project_code = 'E2E-2025-001'
         self.application.funding_agency = 'Agencia Estatal de Investigación'
-        self.application.project_type = 'national'  # NEW PROJECT TYPE
+        self.application.project_type = 'spanish_government'  # NEW PROJECT TYPE
         self.application.has_competitive_funding = True
         self.application.subject_area = 'bme'  # NEW SUBJECT AREA (Biomedicine)
         self.application.save()
 
         self.log_test(
             "2.7 Project Type (NEW)",
-            self.application.project_type == 'national',
+            self.application.project_type == 'spanish_government',
             f"project_type: {self.application.get_project_type_display()}"
         )
 
@@ -356,8 +356,8 @@ class WorkflowTester:
 
         # Validate project type is one of the 7 new types
         valid_project_types = [
-            'national', 'international_non_european', 'regional',
-            'european', 'internal', 'private', 'other'
+            'spanish_government', 'international_non_eu', 'spanish_regional',
+            'european_union', 'institutional', 'private', 'other'
         ]
 
         self.log_test(

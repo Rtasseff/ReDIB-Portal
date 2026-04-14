@@ -245,3 +245,44 @@ Most complex workflow change. Adds a third feasibility outcome.
 3. Fill in new org name, type, country
 4. Save → new organization created and associated with user
 5. Start new application → applicant_entity shows the new organization name
+
+### Scenario 8: Funding Agency Selection (Origin of Funds Auto-Populated)
+1. Start a new application → reach Step 2
+2. Check "Has competitive funding" → funding fields appear
+3. Verify the **"Origin of Funds"** dropdown is **not visible** — only the Funding Agency dropdown is shown
+4. Select an existing agency (e.g. "Agencia Estatal de Investigacion (AEI)")
+5. Fill in project title, project code, subject area → save / next
+6. Go to Preview → verify "Origin of Funds" displays "Spanish Government" (auto-derived from the agency)
+7. Check the admin or DB: `Application.project_type` should be `spanish_government`
+
+### Scenario 9: Funding Agency "Other (enter new)" Flow
+1. Start a new application → reach Step 2
+2. Check "Has competitive funding"
+3. In the Funding Agency dropdown, select **"Other (enter new)"**
+4. Verify a card appears with two fields: "Funding Agency Name" (text) and "Origin of Funds" (dropdown)
+5. Leave both blank → try to submit → validation errors on both fields
+6. Fill in name only, leave Origin of Funds blank → submit → validation error on Origin of Funds
+7. Fill in both: name = "My New Agency", Origin of Funds = "European Union"
+8. Save / next → should succeed
+9. Go to Preview → verify Funding Agency shows "My New Agency", Origin of Funds shows "European Union"
+10. Start another application → the Funding Agency dropdown should now include "My New Agency"
+11. Check admin: `FundingAgency` table has "My New Agency" with `origin_of_funds=european_union`
+
+### Scenario 10: Funding Agency Without Origin (Edge Case)
+_This scenario tests the rare case where a FundingAgency record exists in the DB but has a blank `origin_of_funds` (e.g. created before this feature was added)._
+1. In Django admin, create a FundingAgency with name "Legacy Agency" and leave `origin_of_funds` blank
+2. Start a new application → reach Step 2
+3. Check "Has competitive funding"
+4. Select "Legacy Agency" from the Funding Agency dropdown
+5. Verify an **"Origin of Funds"** dropdown appears with a warning: "This agency is missing its Origin of Funds classification. Please select one."
+6. Try to submit without selecting an origin → validation error
+7. Select an origin (e.g. "Private / Philanthropic") → save / next → succeeds
+8. Check admin: the "Legacy Agency" `FundingAgency` record now has `origin_of_funds=private` (backfilled)
+9. Start another application → select "Legacy Agency" again → no warning this time, origin is already set
+
+### Scenario 11: Competitive Funding Toggle Clears Fields
+1. Start a new application → reach Step 2
+2. Check "Has competitive funding" → fill in project title, select an agency
+3. Uncheck "Has competitive funding" → funding fields should hide
+4. Save / next → go to Preview → verify no funding information is displayed
+5. Check DB: `project_type`, `project_title`, `funding_agency_obj` should all be blank/null

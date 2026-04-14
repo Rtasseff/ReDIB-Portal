@@ -290,7 +290,7 @@ class Command(BaseCommand):
 
     def create_applications(self, users, calls, equipment):
         """Create test applications in various states."""
-        from applications.models import Application, RequestedAccess
+        from applications.models import Application, RequestedAccess, FundingAgency
 
         apps = {}
         now = timezone.now()
@@ -311,8 +311,9 @@ class Command(BaseCommand):
                 # Project details
                 'project_title': 'Advanced MRI Techniques for Preclinical Research',
                 'project_code': 'PID2024-TEST-001',
-                'funding_agency': 'Agencia Estatal de Investigación',
-                'project_type': 'national',
+                'funding_agency': 'Agencia Estatal de Investigacion (AEI)',
+                'funding_agency_obj': FundingAgency.objects.filter(name='Agencia Estatal de Investigacion (AEI)').first(),
+                'project_type': 'spanish_government',
                 'has_competitive_funding': True,
                 'subject_area': 'bme',
                 'service_modality': 'full_assistance',
@@ -398,7 +399,8 @@ class Command(BaseCommand):
                 'applicant_phone': '+49 987 654 321',
                 # Project details
                 'project_title': 'Clinical Cardiovascular Imaging Study',
-                'project_type': 'international_non_european',
+                'funding_agency_obj': FundingAgency.objects.filter(name='National Institutes of Health (NIH)').first(),
+                'project_type': 'international_non_eu',
                 'has_competitive_funding': True,
                 'subject_area': 'bme',
                 'service_modality': 'full_assistance',

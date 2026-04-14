@@ -22,9 +22,22 @@ def signed_pdf_upload_path(instance, filename):
     return f'signed_applications/{now.year}/{now.month:02d}/{safe_code}_signed.pdf'
 
 
+# Origin of funds classification — shared by Application.project_type and FundingAgency.origin_of_funds
+PROJECT_TYPES = [
+    ('spanish_government', 'Spanish Government'),
+    ('international_non_eu', 'International / Non-EU'),
+    ('spanish_regional', 'Spanish Regional Government'),
+    ('european_union', 'European Union'),
+    ('institutional', 'Institutional / Internal'),
+    ('private', 'Private / Philanthropic'),
+    ('other', 'Other'),
+]
+
+
 class FundingAgency(models.Model):
     """Database-backed funding agency for extensible dropdown."""
     name = models.CharField(max_length=200, unique=True)
+    origin_of_funds = models.CharField(max_length=50, choices=PROJECT_TYPES, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
@@ -54,16 +67,6 @@ class Application(models.Model):
         ('declined_by_applicant', 'Declined by Applicant'),  # Phase 7
         ('expired', 'Acceptance Expired'),  # Phase 7
         ('completed', 'Completed'),  # Phase 8
-    ]
-
-    PROJECT_TYPES = [
-        ('national', 'National (Spain)'),
-        ('regional', 'Regional (Autonomous Communities)'),
-        ('european', 'European Union (EU)'),
-        ('international_non_european', 'International (non-EU)'),
-        ('internal', 'Internal / Institutional'),
-        ('private', 'Private'),
-        ('other', 'Other'),
     ]
 
     # Spanish AEI (Agencia Estatal de Investigación) subject area classification

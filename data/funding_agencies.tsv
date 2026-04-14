@@ -1,1 +1,12 @@
-name
+name	origin_of_funds
+Agencia Estatal de Investigacion (AEI)	spanish_government
+Instituto de Salud Carlos III (ISCIII)	spanish_government
+Ministerio de Ciencia, Innovacion y Universidades (MICIU)	spanish_government
+Centro para el Desarrollo Tecnologico e Industrial (CDTI)	spanish_government
+Fundacion Espanola para la Ciencia y la Tecnologia (FECYT)	spanish_government
+European Research Council (ERC)	european_union
+European Commission - Horizon Europe	european_union
+European Innovation Council (EIC)	european_union
+National Institutes of Health (NIH)	international_non_eu
+Fundacion La Caixa	private
+Fundacion BBVA	private
