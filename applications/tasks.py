@@ -115,11 +115,13 @@ def send_resolution_notifications_task(call_id):
             'resolution_date': application.resolution_date,
         }
 
-        # Send notification email
+        # Send notification email. Prefer the form-declared applicant_email
+        # (the stated PI contact) over the submitting User's account email.
+        recipient_email = application.applicant_email or application.applicant.email
         try:
             send_email_from_template(
                 template_type=template_type,
-                recipient_email=application.applicant.email,
+                recipient_email=recipient_email,
                 context_data=context,
                 recipient_user_id=application.applicant.id,
                 related_application_id=application.id
@@ -217,11 +219,13 @@ def send_single_resolution_notification_task(application_id):
         context['days_to_respond'] = application.days_until_acceptance_deadline
         context['accept_url'] = f'{settings.SITE_URL}/applications/{application.id}/accept/'
 
-    # Send notification email
+    # Send notification email. Prefer the form-declared applicant_email
+    # (the stated PI contact) over the submitting User's account email.
+    recipient_email = application.applicant_email or application.applicant.email
     try:
         send_email_from_template(
             template_type=template_type,
-            recipient_email=application.applicant.email,
+            recipient_email=recipient_email,
             context_data=context,
             recipient_user_id=application.applicant.id,
             related_application_id=application.id
@@ -266,10 +270,12 @@ def process_acceptance_deadlines():
     reminders_sent = 0
 
     for app in reminder_apps:
+        applicant_email = app.applicant_email or app.applicant.email
+
         # Check if reminder already sent recently
         recent_reminder = EmailLog.objects.filter(
             template__template_type='acceptance_reminder',
-            recipient_email=app.applicant.email,
+            recipient_email=applicant_email,
             related_application_id=app.id,
             sent_at__gte=now - timedelta(days=1)
         ).exists()
@@ -295,7 +301,7 @@ def process_acceptance_deadlines():
 
         send_email_from_template(
             template_type='acceptance_reminder',
-            recipient_email=app.applicant.email,
+            recipient_email=applicant_email,
             context_data=context,
             recipient_user_id=app.applicant.id,
             related_application_id=app.id
@@ -320,9 +326,10 @@ def process_acceptance_deadlines():
 
         # Optionally: send expiration notification to applicant
         try:
+            applicant_email = app.applicant_email or app.applicant.email
             send_email_from_template(
                 template_type='acceptance_expired',
-                recipient_email=app.applicant.email,
+                recipient_email=applicant_email,
                 context_data={
                     'applicant_name': app.applicant.get_full_name(),
                     'application_code': app.code,

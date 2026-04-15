@@ -679,9 +679,10 @@ def feasibility_review(request, pk):
                     app_url = request.build_absolute_uri(
                         reverse('applications:detail', kwargs={'pk': application.pk})
                     )
+                    applicant_email = application.applicant_email or application.applicant.email
                     send_email_from_template.delay(
                         template_type='feasibility_edits_requested',
-                        recipient_email=application.applicant.email,
+                        recipient_email=applicant_email,
                         context_data={
                             'applicant_name': application.applicant.get_full_name(),
                             'application_code': application.code,
@@ -722,9 +723,10 @@ def feasibility_review(request, pk):
 
                 try:
                     from communications.tasks import send_email_from_template
+                    applicant_email = application.applicant_email or application.applicant.email
                     send_email_from_template.delay(
                         template_type='feasibility_complete',
-                        recipient_email=application.applicant.email,
+                        recipient_email=applicant_email,
                         context_data={
                             'applicant_name': application.applicant.get_full_name(),
                             'application_code': application.code,
@@ -1137,9 +1139,13 @@ def _send_handoff_email(application):
                 seen_emails.add(email)
                 cc_emails.append(email)
 
+    # Prefer the form-declared applicant_email (the stated PI contact) over
+    # the submitting User's account email.
+    recipient_email = application.applicant_email or application.applicant.email
+
     send_email_from_template(
         template_type='handoff_notification',
-        recipient_email=application.applicant.email,
+        recipient_email=recipient_email,
         context_data=context,
         recipient_user_id=application.applicant.id,
         related_application_id=application.id,

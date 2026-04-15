@@ -5,11 +5,14 @@ Handles coordinator workflow to review evaluated applications, apply regulatory
 auto-approval rules, allocate limited equipment hours, and trigger notifications.
 """
 
+import logging
 from django.db import transaction
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 class ResolutionService:
@@ -269,14 +272,26 @@ class ResolutionService:
         self.call.is_resolution_locked = True
         self.call.save()
 
-        # Trigger notification task (async)
+        # Trigger notification task (async). Any dispatch failure is logged
+        # so silent drops (missing template, broker outage) show up in logs
+        # instead of being swallowed.
+        from applications.tasks import send_resolution_notifications_task
         try:
-            from applications.tasks import send_resolution_notifications_task
             send_resolution_notifications_task.delay(self.call.id)
-        except Exception as e:
-            # Fallback to synchronous if Celery/Redis not available
-            from applications.tasks import send_resolution_notifications_task
-            send_resolution_notifications_task(self.call.id)
+        except Exception:
+            logger.exception(
+                "Celery dispatch failed for bulk resolution notifications "
+                "on call %s; falling back to synchronous send",
+                self.call.code,
+            )
+            try:
+                send_resolution_notifications_task(self.call.id)
+            except Exception:
+                logger.exception(
+                    "Synchronous fallback also failed for bulk resolution "
+                    "notifications on call %s",
+                    self.call.code,
+                )
 
         return {
             'success': True,

@@ -52,9 +52,12 @@ def process_acceptance_deadlines():
             'days_remaining': 3,  # 10 - 7 = 3 days remaining
         }
 
+        applicant_email = (
+            grant.application.applicant_email or grant.application.applicant.email
+        )
         send_email_from_template(
             template_type='acceptance_reminder',
-            recipient_email=grant.application.applicant.email,
+            recipient_email=applicant_email,
             context_data=context,
             recipient_user_id=grant.application.applicant.id,
             related_application_id=grant.application.id
@@ -134,9 +137,10 @@ def send_publication_followups():
             'publication_url': settings.SITE_URL + reverse('access:publication_submit'),
         }
 
+        applicant_email = application.applicant_email or application.applicant.email
         send_email_from_template(
             template_type='publication_followup',
-            recipient_email=application.applicant.email,
+            recipient_email=applicant_email,
             context_data=context,
             recipient_user_id=application.applicant.id,
             related_application_id=application.id
