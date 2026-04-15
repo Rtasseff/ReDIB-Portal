@@ -144,7 +144,8 @@
                                         data-bs-toggle="modal"
                                         data-bs-target="#assignModal"
                                         data-app-id="{{ app.id }}"
-                                        data-app-code="{{ app.code }}">
+                                        data-app-code="{{ app.code }}"
+                                        data-app-spec="{{ app.specialization_area }}">
                                     <i class="bi bi-person-plus"></i> Assign
                                 </button>
                             {% endif %}
@@ -214,7 +215,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Application: <strong id="modal-app-code"></strong></p>
+                <p>Application: <strong id="modal-app-code"></strong> <span class="text-muted">(specialization: <span id="modal-app-spec">—</span>)</span></p>
                 <form id="manualAssignForm">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -222,17 +223,14 @@
                         <select class="form-select" id="evaluator_id" name="evaluator_id" required>
                             <option value="">-- Choose an evaluator --</option>
                             {% for evaluator in active_evaluators %}
-                            <option value="{{ evaluator.id }}">
+                            <option value="{{ evaluator.id }}" data-areas="{{ evaluator.combined_areas|join:';' }}">
                                 {{ evaluator.get_full_name }}
-                                {% if evaluator.organization %}
-                                    - {{ evaluator.organization.name }}
-                                {% endif %}
-                                {% if evaluator.roles.first.area %}
-                                    ({{ evaluator.roles.first.get_area_display }})
-                                {% endif %}
+                                {% if evaluator.organization %} - {{ evaluator.organization.name }}{% endif %}
+                                {% if evaluator.combined_areas %} [{{ evaluator.combined_areas|join:", " }}]{% endif %}
                             </option>
                             {% endfor %}
                         </select>
+                        <small class="form-text text-muted">A ✓ marks evaluators whose areas match this application's specialization.</small>
                     </div>
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>
@@ -260,12 +258,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignModal = document.getElementById('assignModal');
     let currentAppId = null;
 
-    // When modal is opened, capture the application ID
+    // When modal is opened, capture the application ID and mark matching evaluators
     assignModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         currentAppId = button.getAttribute('data-app-id');
         const appCode = button.getAttribute('data-app-code');
+        const appSpec = button.getAttribute('data-app-spec') || '';
         document.getElementById('modal-app-code').textContent = appCode;
+        document.getElementById('modal-app-spec').textContent = appSpec || '—';
+
+        // Add a ✓ prefix to evaluator options whose areas include the app spec
+        const select = document.getElementById('evaluator_id');
+        Array.from(select.options).forEach(opt => {
+            // Strip any prior marker
+            opt.text = opt.text.replace(/^✓ /, '');
+            const areas = (opt.getAttribute('data-areas') || '').split(';').map(s => s.trim()).filter(Boolean);
+            if (appSpec && areas.includes(appSpec)) {
+                opt.text = '✓ ' + opt.text;
+            }
+        });
     });
 
     // Handle assignment submission

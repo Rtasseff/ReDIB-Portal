@@ -18,7 +18,7 @@ All documentation is organized in the `docs/` folder:
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing procedures and guidelines
 - **[docs/TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md)** - Comprehensive test data for manual testing
 - **[docs/TEST_EMAIL_TEMPLATES.md](docs/TEST_EMAIL_TEMPLATES.md)** - Email template testing and verification
-- **[docs/developer/](docs/developer/)** - Developer guides (branding, styles, issue plans)
+- **[docs/developer/](docs/developer/)** - Developer guides (branding, styles, issue plans). See **[developer-notes.md](docs/developer/developer-notes.md)** for design decisions, deferred improvements, and future-work notes.
 - **[docs/reference/](docs/reference/)** - Technical reference and system design documentation
 - **[docs/test-reports/](docs/test-reports/)** - Automated test reports by phase
 
@@ -40,8 +40,8 @@ The portal runs in two modes. **Development** needs only Python; **Production** 
 | Web Server | `manage.py runserver` | Gunicorn + Caddy (auto-TLS) |
 | Database | SQLite (automatic, no setup) | PostgreSQL 15 |
 | Cache | In-memory (LocMemCache) | Redis 7 |
-| Task Queue | None required | Celery 5 + Redis |
-| Email | Console (prints to terminal) | SMTP |
+| Task Queue | None required (Celery runs in-process via `CELERY_TASK_ALWAYS_EAGER=DEBUG`) | Celery 5 + Redis |
+| Email | Console (prints to terminal) — workflow + allauth emails both visible | SMTP |
 
 Shared across both modes:
 - **Frontend**: Django Templates + HTMX + Alpine.js + Bootstrap 5
@@ -61,10 +61,12 @@ redib/
 ├── reports/            # Reporting and exports
 ├── templates/          # HTML templates
 ├── static/             # CSS, JS, images
-└── data/               # CSV fixture files for initial data
-    ├── nodes.csv       # ReDIB network nodes (4 nodes)
-    ├── equipment.csv   # Equipment at each node (17 items)
-    └── users.csv       # Core users (coordinators, evaluators, 8 users)
+└── data/               # TSV reference data (see data/README.md for column specs)
+    ├── nodes.tsv          # ReDIB network nodes
+    ├── organizations.tsv  # Parent organizations
+    ├── users.tsv          # Staff users with roles and areas
+    ├── equipment.tsv      # Imaging devices per node
+    └── funding_agencies.tsv  # Funding agencies with origin_of_funds
 ```
 
 ## Current Implementation Status
@@ -153,20 +155,16 @@ Deploy with Docker Compose, PostgreSQL, Redis, Celery, and Caddy (auto-TLS).
 
 ### Local Docker Testing (optional)
 
-Run the full production-like stack locally for integration testing.
-
-1. Copy `.env.docker` to `.env`
-2. Follow the "Local Docker Testing" section in **[docs/QUICKSTART.md](docs/QUICKSTART.md)**
+Run the full production-like stack locally for integration testing. Start from `.env.production.template`, adjust to local values (DEBUG=True, simple passwords, `ALLOWED_HOSTS=localhost,127.0.0.1`), then follow the "Local Docker Testing" section in **[docs/QUICKSTART.md](docs/QUICKSTART.md)**.
 
 ### Environment Files
 
-The app reads a single `.env` file. Three templates are provided:
+The app reads a single `.env` file. Two templates are provided:
 
 | Template File | Copy to `.env` when... | Key Defaults |
 |---------------|----------------------|--------------|
-| `.env.example` | Developing locally (venv + SQLite) | `DEBUG=True`, `USE_REDIS=False`, SQLite DB |
-| `.env.docker` | Testing with local Docker Compose | `DEBUG=True`, `USE_REDIS=True`, PostgreSQL |
-| `.env.production.template` | Deploying to production VPS | `DEBUG=False`, `USE_REDIS=True`, PostgreSQL, SMTP |
+| `.env.example` | Developing locally (venv + SQLite + console email) | `DEBUG=True`, `USE_REDIS=False`, SQLite DB, `SITE_URL=http://127.0.0.1:8000` |
+| `.env.production.template` | Deploying to production VPS (Docker + PostgreSQL + Redis + SMTP) | `DEBUG=False`, `USE_REDIS=True`, PostgreSQL, SMTP, `SITE_URL=https://portal.redib.net` |
 
 See **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** for a full reference of all environment variables and how to switch between modes.
 

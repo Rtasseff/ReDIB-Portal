@@ -33,7 +33,7 @@
                 <dd class="col-sm-9">{{ application.call.code }} - {{ application.call.name }}</dd>
 
                 <dt class="col-sm-3">Project Title</dt>
-                <dd class="col-sm-9">{{ application.project_title|default:"N/A" }}</dd>
+                <dd class="col-sm-9">{{ application.project_name|default:"N/A" }}</dd>
 
                 <dt class="col-sm-3">Status</dt>
                 <dd class="col-sm-9"><span class="badge bg-success">{{ application.get_status_display }}</span></dd>

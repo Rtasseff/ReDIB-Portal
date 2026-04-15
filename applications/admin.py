@@ -4,7 +4,7 @@ Django admin configuration for applications models.
 
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Application, RequestedAccess, FeasibilityReview, NodeResolution
+from .models import Application, RequestedAccess, FeasibilityReview, NodeResolution, FundingAgency
 
 
 class RequestedAccessInline(admin.TabularInline):
@@ -16,7 +16,7 @@ class RequestedAccessInline(admin.TabularInline):
 class FeasibilityReviewInline(admin.TabularInline):
     model = FeasibilityReview
     extra = 0
-    fields = ['node', 'reviewer', 'is_feasible', 'comments', 'reviewed_at']
+    fields = ['node', 'reviewer', 'status', 'is_feasible', 'comments', 'reviewed_at']
     readonly_fields = ['reviewed_at']
 
 
@@ -31,14 +31,14 @@ class NodeResolutionInline(admin.TabularInline):
 class ApplicationAdmin(SimpleHistoryAdmin):
     list_display = ['code', 'applicant_name', 'applicant_entity', 'call', 'status', 'resolution', 'final_score', 'submitted_at']
     list_filter = ['status', 'resolution', 'call', 'subject_area', 'service_modality']
-    search_fields = ['code', 'brief_description', 'applicant__email', 'applicant_name', 'applicant_email', 'project_title']
+    search_fields = ['code', 'brief_description', 'applicant__email', 'applicant_name', 'applicant_email', 'project_name']
     ordering = ['-submitted_at', '-created_at']
     inlines = [RequestedAccessInline, FeasibilityReviewInline, NodeResolutionInline]
     readonly_fields = ['code', 'final_score', 'submitted_at', 'created_at', 'updated_at']
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('code', 'call', 'applicant', 'status', 'brief_description', 'submitted_at')
+            'fields': ('code', 'call', 'applicant', 'status', 'project_name', 'brief_description', 'submitted_at')
         }),
         ('Applicant Details', {
             'fields': (
@@ -49,7 +49,7 @@ class ApplicationAdmin(SimpleHistoryAdmin):
         }),
         ('Funding Source', {
             'fields': (
-                'project_title', 'project_code', 'funding_agency',
+                'project_code', 'funding_agency_obj', 'funding_agency',
                 'project_type', 'has_competitive_funding'
             ),
             'classes': ('collapse',)
@@ -113,8 +113,8 @@ class RequestedAccessAdmin(SimpleHistoryAdmin):
 
 @admin.register(FeasibilityReview)
 class FeasibilityReviewAdmin(SimpleHistoryAdmin):
-    list_display = ['application', 'node', 'reviewer', 'is_feasible', 'reviewed_at']
-    list_filter = ['node', 'is_feasible']
+    list_display = ['application', 'node', 'reviewer', 'status', 'is_feasible', 'reviewed_at']
+    list_filter = ['node', 'status', 'is_feasible']
     search_fields = ['application__code', 'reviewer__email']
     ordering = ['-reviewed_at']
     readonly_fields = ['created_at', 'updated_at']
@@ -137,3 +137,11 @@ class NodeResolutionAdmin(SimpleHistoryAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(FundingAgency)
+class FundingAgencyAdmin(SimpleHistoryAdmin):
+    list_display = ['name', 'origin_of_funds', 'created_at']
+    list_filter = ['origin_of_funds']
+    search_fields = ['name']
+    ordering = ['name']

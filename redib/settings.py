@@ -5,6 +5,7 @@ Django settings for ReDIB COA portal.
 from pathlib import Path
 import os
 import environ
+from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -67,6 +68,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'core.middleware.ProfileCompletionMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',  # HTMX support
     'simple_history.middleware.HistoryRequestMiddleware',  # Audit trail
@@ -166,6 +168,13 @@ AUTHENTICATION_BACKENDS = [
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+# Map Django message levels to Bootstrap alert classes.
+# Django uses 'error' but Bootstrap uses 'danger', so we override the mapping
+# so that messages.error() renders as alert-danger (red).
+MESSAGE_TAGS = {
+    message_constants.ERROR: 'danger',
+}
+
 # Email Configuration
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@redib.net')
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
@@ -184,6 +193,16 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# In development (DEBUG=True) or when running the test runner, execute Celery
+# tasks synchronously in-process. Tests run with DEBUG=False but still need
+# eager execution so mail.outbox captures outgoing workflow emails and tests
+# aren't silently broken by an absent broker. In production neither flag is
+# set so .delay() queues to the real broker normally.
+import sys as _sys
+_IS_TESTING = 'test' in _sys.argv or 'pytest' in _sys.argv[0]
+CELERY_TASK_ALWAYS_EAGER = DEBUG or _IS_TESTING
+CELERY_TASK_EAGER_PROPAGATES = DEBUG or _IS_TESTING
 
 # Site URL for building absolute links in emails (no trailing slash)
 SITE_URL = env('SITE_URL', default='https://portal.redib.net')

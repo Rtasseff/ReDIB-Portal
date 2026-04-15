@@ -99,19 +99,35 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Email templates may already exist: {e}'))
 
-        # Step 6: Test applicants (optional)
+        # Step 6: Configure site
+        self.stdout.write('Step 6: Configuring site...')
+        self.configure_site()
+        self.stdout.write(self.style.SUCCESS('  ✓ Site configured'))
+
+        # Step 7: Test applicants (optional)
         if not options['skip_applicants']:
-            self.stdout.write('Step 6: Seeding test applicants...')
+            self.stdout.write('Step 7: Seeding test applicants...')
             try:
                 call_command('seed_test_applicants', verbosity=0)
                 self.stdout.write(self.style.SUCCESS('  ✓ Test applicants created'))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'  ✗ Failed to create test applicants: {e}'))
         else:
-            self.stdout.write('Step 6: Skipping test applicants (--skip-applicants)')
+            self.stdout.write('Step 7: Skipping test applicants (--skip-applicants)')
 
         # Print summary
         self.print_summary()
+
+    def configure_site(self):
+        """Set the Django Site object. Reads SITE_DOMAIN/SITE_NAME from env
+        so dev environments can point at localhost."""
+        import os
+        from django.contrib.sites.models import Site
+        site = Site.objects.get(id=1)
+        site.domain = os.environ.get('SITE_DOMAIN', 'portal.redib.net')
+        site.name = os.environ.get('SITE_NAME', 'ReDIB COA Portal')
+        site.save()
+        Site.objects.clear_cache()
 
     def reset_database(self):
         """Clear all data from the database except superusers."""

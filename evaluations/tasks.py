@@ -293,12 +293,12 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
             })
             continue
 
-        # Check if evaluator's area matches application's specialization
+        # Check if any of the evaluator's areas matches the application's specialization
         evaluator_role = evaluator_roles.filter(user=evaluator).first()
         if (hasattr(application, 'specialization_area') and
             application.specialization_area and
             evaluator_role and
-            evaluator_role.area == application.specialization_area):
+            evaluator_role.has_area(application.specialization_area)):
             area_matched_evaluators.append(evaluator)
         else:
             other_evaluators.append(evaluator)
@@ -453,35 +453,69 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
 
     application = Application.objects.select_related('call', 'applicant').get(id=application_id)
 
-    # Get all active ReDIB coordinators
-    recipients = User.objects.filter(
-        roles__role='coordinator',
-        roles__is_active=True
+    # Find node(s) involved in this application (have requested equipment)
+    involved_node_ids = list(
+        application.requested_access.values_list('equipment__node_id', flat=True).distinct()
     )
 
-    # Also notify node coordinators whose nodes are involved in this application
-    involved_node_ids = application.requested_access.values_list(
-        'equipment__node_id', flat=True
-    ).distinct()
-    node_coordinators = User.objects.filter(
-        roles__role='node_coordinator',
-        roles__node_id__in=involved_node_ids,
-        roles__is_active=True
+    # ReDIB coordinators — link to the application detail (resolution view)
+    coordinator_ids = list(
+        User.objects.filter(
+            roles__role='coordinator', roles__is_active=True
+        ).values_list('id', flat=True).distinct()
     )
 
-    # Combine and deduplicate
-    all_recipients = (recipients | node_coordinators).distinct()
+    # Node coordinators whose node is involved in this application.
+    # Build a map {user_id: [node_id, ...]} so each recipient gets a direct
+    # link to the correct per-node resolution page (or their queue if they
+    # coordinate multiple involved nodes).
+    nc_roles = UserRole.objects.filter(
+        role='node_coordinator',
+        node_id__in=involved_node_ids,
+        is_active=True,
+    ).values('user_id', 'node_id')
+
+    node_coord_map = {}
+    for role in nc_roles:
+        # Skip pure coordinators; they already get the application-detail link.
+        if role['user_id'] in coordinator_ids:
+            continue
+        node_coord_map.setdefault(role['user_id'], []).append(role['node_id'])
+
+    # Pre-build URLs
+    app_detail_url = settings.SITE_URL + reverse(
+        'applications:detail', kwargs={'pk': application.id}
+    )
+    nc_queue_url = settings.SITE_URL + reverse('applications:node_resolution_queue')
+
+    # Collect all recipient user ids
+    recipient_ids = set(coordinator_ids) | set(node_coord_map.keys())
+    recipients = User.objects.filter(id__in=recipient_ids)
 
     notifications_sent = 0
-
-    for coordinator in all_recipients:
+    for coordinator in recipients:
         # Check notification preferences
         if hasattr(coordinator, 'notification_preferences'):
             prefs = coordinator.notification_preferences
             if not prefs.notify_application_updates:
                 continue
 
-        # Prepare email context
+        # Choose the URL based on the user's role for this application
+        if coordinator.id in coordinator_ids:
+            application_url = app_detail_url
+        else:
+            # Pure node coordinator — link directly to the per-node review
+            # page if there's exactly one involved node, otherwise to the
+            # queue so they can handle each node separately.
+            node_ids = node_coord_map.get(coordinator.id, [])
+            if len(node_ids) == 1:
+                application_url = settings.SITE_URL + reverse(
+                    'applications:node_resolution_review',
+                    kwargs={'application_id': application.id, 'node_id': node_ids[0]},
+                )
+            else:
+                application_url = nc_queue_url
+
         context = {
             'coordinator_name': coordinator.get_full_name(),
             'application_code': application.code,
@@ -489,11 +523,10 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
             'call_code': application.call.code,
             'average_score': round(average_score, 2),
             'num_evaluations': application.evaluations.count(),
-            'application_url': settings.SITE_URL + reverse('applications:detail', kwargs={'pk': application.id}),
+            'application_url': application_url,
             'brief_description': application.brief_description,
         }
 
-        # Send notification email
         send_email_from_template(
             template_type='evaluations_complete',
             recipient_email=coordinator.email,

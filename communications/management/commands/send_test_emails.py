@@ -99,7 +99,7 @@ class Command(BaseCommand):
                 applicant_entity='CIC biomaGUNE',
                 applicant_email=recipient_email,
                 applicant_phone='+34 000 000 000',
-                project_title='Email Link Verification Project',
+                project_name='Email Link Verification Project',
                 service_modality='full_assistance',
                 final_score='9.50',
                 resolution='accepted',
@@ -125,7 +125,7 @@ class Command(BaseCommand):
             user=user,
             role='evaluator',
             node=None,
-            defaults={'area': 'preclinical'},
+            defaults={'areas': 'preclinical'},
         )
 
         # Create evaluation
@@ -256,7 +256,7 @@ class Command(BaseCommand):
                 'applicant_email': recipient_email,
                 'applicant_phone': '+34 000 000 000',
                 'application_code': app.code,
-                'project_title': app.project_title,
+                'project_name': app.project_name,
                 'brief_description': app.brief_description,
                 'service_modality': 'Full Assistance',
                 'node_names': node_name,
@@ -281,7 +281,7 @@ class Command(BaseCommand):
             ('publication_followup', {
                 'applicant_name': user_name,
                 'application_code': app.code,
-                'project_title': app.project_title,
+                'project_name': app.project_name,
                 'handoff_date': (now - timedelta(days=180)).strftime('%B %d, %Y'),
                 'acknowledgment_text': (
                     'This work was supported by the ReDIB-ICTS infrastructure '

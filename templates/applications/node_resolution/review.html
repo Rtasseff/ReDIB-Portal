@@ -51,8 +51,8 @@
                 <dt class="col-sm-3">Submitted</dt>
                 <dd class="col-sm-9">{{ application.submitted_at|date:"F d, Y H:i" }}</dd>
 
-                <dt class="col-sm-3">Brief Description</dt>
-                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_name|default:"N/A" }}</dd>
             </dl>
         </div>
     </div>
@@ -162,11 +162,14 @@
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Project Title</dt>
-                <dd class="col-sm-9">{{ application.project_title|default:"N/A" }}</dd>
+                <dt class="col-sm-3">Project Summary</dt>
+                <dd class="col-sm-9">{{ application.brief_description|default:"N/A" }}</dd>
 
-                <dt class="col-sm-3">Project Type</dt>
-                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency_obj|default:"NA" }}</dd>
+
+                <dt class="col-sm-3">Origin of Funds</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display|default:"NA" }}</dd>
 
                 <dt class="col-sm-3">Subject Area</dt>
                 <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
@@ -186,14 +189,23 @@
             <h5 class="mb-0">Scientific Content</h5>
         </div>
         <div class="card-body">
-            <h6>Methodology and Experimental Design</h6>
+            <h6>Scientific Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Methodology and Experimental Design</h6>
             <p class="text-pre-wrap">{{ application.methodology_description|default:"N/A" }}</p>
 
-            <h6 class="mt-3">Scientific Relevance</h6>
-            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"N/A"|truncatewords:150 }}</p>
-
             <h6 class="mt-3">Expected Contributions</h6>
-            <p class="text-pre-wrap">{{ application.expected_contributions|default:"N/A"|truncatewords:100 }}</p>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Impact &amp; Strengths</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Socio-Economic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Opportunity Criteria</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"N/A" }}</p>
         </div>
     </div>
 

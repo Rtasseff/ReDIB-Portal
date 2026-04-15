@@ -126,7 +126,7 @@ def get_blind_application_data(application):
         # - applicant_email
         # - applicant_phone
         # - applicant_orcid
-        # - project_title (may contain identifying information)
+        # - project_name (may contain identifying information)
         # - project_code
         # - funding_agency
     }

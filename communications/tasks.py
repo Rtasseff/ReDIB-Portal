@@ -12,18 +12,22 @@ from .models import EmailTemplate, EmailLog
 
 @shared_task
 def send_email_from_template(template_type, recipient_email, context_data, recipient_user_id=None,
-                             related_call_id=None, related_application_id=None, related_evaluation_id=None):
+                             related_call_id=None, related_application_id=None, related_evaluation_id=None,
+                             cc_emails=None):
     """
     Send an email using a template.
 
     Args:
         template_type: Type of email template to use
-        recipient_email: Email address to send to
+        recipient_email: Email address to send to (primary To)
         context_data: Dictionary of variables for template rendering
         recipient_user_id: Optional User ID for logging
         related_call_id: Optional Call ID for logging
         related_application_id: Optional Application ID for logging
         related_evaluation_id: Optional Evaluation ID for logging
+        cc_emails: Optional list of email addresses to CC. All CC'd
+            addresses will be visible to every recipient (including the
+            primary) so they can Reply All to coordinate.
 
     Returns:
         Boolean indicating success
@@ -58,11 +62,16 @@ def send_email_from_template(template_type, recipient_email, context_data, recip
         )
 
         # Send email
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,
-            to=[recipient_email]
-        )
+        email_kwargs = {
+            'subject': subject,
+            'body': text_content,
+            'to': [recipient_email],
+        }
+        if cc_emails:
+            # Deduplicate and drop the primary address from the CC list to
+            # avoid the same person appearing in both To and CC.
+            email_kwargs['cc'] = [e for e in dict.fromkeys(cc_emails) if e and e != recipient_email]
+        email = EmailMultiAlternatives(**email_kwargs)
         email.attach_alternative(html_content, "text/html")
         email.send()
 

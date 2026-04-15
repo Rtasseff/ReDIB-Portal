@@ -22,6 +22,34 @@ def signed_pdf_upload_path(instance, filename):
     return f'signed_applications/{now.year}/{now.month:02d}/{safe_code}_signed.pdf'
 
 
+# Origin of funds classification — shared by Application.project_type and FundingAgency.origin_of_funds
+PROJECT_TYPES = [
+    ('spanish_government', 'Spanish Government'),
+    ('international_non_eu', 'International / Non-EU'),
+    ('spanish_regional', 'Spanish Regional Government'),
+    ('european_union', 'European Union'),
+    ('institutional', 'Institutional / Internal'),
+    ('private', 'Private / Philanthropic'),
+    ('other', 'Other'),
+]
+
+
+class FundingAgency(models.Model):
+    """Database-backed funding agency for extensible dropdown."""
+    name = models.CharField(max_length=200, unique=True)
+    origin_of_funds = models.CharField(max_length=50, choices=PROJECT_TYPES, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name_plural = 'funding agencies'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Application(models.Model):
     """COA application submitted by researcher"""
 
@@ -39,16 +67,6 @@ class Application(models.Model):
         ('declined_by_applicant', 'Declined by Applicant'),  # Phase 7
         ('expired', 'Acceptance Expired'),  # Phase 7
         ('completed', 'Completed'),  # Phase 8
-    ]
-
-    PROJECT_TYPES = [
-        ('national', 'National'),
-        ('international_non_european', 'International, non-European'),
-        ('regional', 'Regional'),
-        ('european', 'European'),
-        ('internal', 'Internal'),
-        ('private', 'Private'),
-        ('other', 'Other'),
     ]
 
     # Spanish AEI (Agencia Estatal de Investigación) subject area classification
@@ -99,6 +117,7 @@ class Application(models.Model):
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='applications')
     code = models.CharField(max_length=30, unique=True, help_text='Auto-generated application code')
     status = models.CharField(max_length=30, choices=APPLICATION_STATUSES, default='draft')
+    project_name = models.CharField(max_length=300, blank=True, help_text='Name of the research project')
     brief_description = models.CharField(max_length=100, help_text='One-line description')
 
     # Applicant information (snapshot at submission time)
@@ -109,9 +128,12 @@ class Application(models.Model):
     applicant_phone = models.CharField(max_length=30, blank=True, help_text='Contact phone')
 
     # Funding source
-    project_title = models.CharField(max_length=300, blank=True)
     project_code = models.CharField(max_length=100, blank=True)
-    funding_agency = models.CharField(max_length=200, blank=True)
+    funding_agency = models.CharField(max_length=200, blank=True, help_text='Legacy text field')
+    funding_agency_obj = models.ForeignKey(
+        FundingAgency, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='applications', help_text='Funding agency from DB list'
+    )
     project_type = models.CharField(max_length=50, choices=PROJECT_TYPES, blank=True)
     has_competitive_funding = models.BooleanField(default=False)
 
@@ -236,7 +258,7 @@ class Application(models.Model):
     VALID_TRANSITIONS = {
         'draft': ['submitted'],
         'submitted': ['under_feasibility_review', 'rejected_feasibility'],
-        'under_feasibility_review': ['rejected_feasibility', 'pending_evaluation'],
+        'under_feasibility_review': ['rejected_feasibility', 'pending_evaluation', 'draft'],
         'rejected_feasibility': [],  # Terminal state
         'pending_evaluation': ['under_evaluation'],
         'under_evaluation': ['evaluated'],
@@ -475,6 +497,13 @@ class RequestedAccess(models.Model):
 class FeasibilityReview(models.Model):
     """Node technical feasibility assessment"""
 
+    REVIEW_STATUSES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('edits_requested', 'Edits Requested'),
+    ]
+
     application = models.ForeignKey(
         Application,
         on_delete=models.CASCADE,
@@ -487,7 +516,8 @@ class FeasibilityReview(models.Model):
         related_name='feasibility_reviews_conducted'
     )
 
-    is_feasible = models.BooleanField(null=True, blank=True)
+    is_feasible = models.BooleanField(null=True, blank=True)  # Legacy field
+    status = models.CharField(max_length=20, choices=REVIEW_STATUSES, default='pending')
     comments = models.TextField(blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
@@ -501,12 +531,7 @@ class FeasibilityReview(models.Model):
         unique_together = ['application', 'node']
 
     def __str__(self):
-        status = 'Pending'
-        if self.is_feasible is True:
-            status = 'Feasible'
-        elif self.is_feasible is False:
-            status = 'Not Feasible'
-        return f"{self.application.code} - {self.node.code}: {status}"
+        return f"{self.application.code} - {self.node.code}: {self.get_status_display()}"
 
 
 class NodeResolution(models.Model):

@@ -45,30 +45,21 @@
                 <dt class="col-sm-3">Phone</dt>
                 <dd class="col-sm-9">{{ application.applicant_phone|default:"—" }}</dd>
 
-                <dt class="col-sm-3">Brief Description</dt>
-                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_name|default:"—" }}</dd>
             </dl>
         </div>
     </div>
 
-    <!-- Funding & Project -->
+    <!-- Project & Funding -->
     <div class="card mb-3">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">2. Funding & Project Information</h5>
+            <h5 class="mb-0">2. Project & Funding Information</h5>
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Project Title</dt>
-                <dd class="col-sm-9">{{ application.project_title|default:"—" }}</dd>
-
-                <dt class="col-sm-3">Project Code</dt>
-                <dd class="col-sm-9">{{ application.project_code|default:"—" }}</dd>
-
-                <dt class="col-sm-3">Funding Agency</dt>
-                <dd class="col-sm-9">{{ application.funding_agency|default:"—" }}</dd>
-
-                <dt class="col-sm-3">Project Type</dt>
-                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+                <dt class="col-sm-3">Project Summary</dt>
+                <dd class="col-sm-9">{{ application.brief_description|default:"—" }}</dd>
 
                 <dt class="col-sm-3">Subject Area</dt>
                 <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
@@ -81,6 +72,17 @@
                         <span class="badge bg-secondary">No</span>
                     {% endif %}
                 </dd>
+
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency_obj|default:"NA" }}</dd>
+
+                <dt class="col-sm-3">Origin of Funds</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display|default:"NA" }}</dd>
+
+                {% if application.has_competitive_funding %}
+                <dt class="col-sm-3">Project Code</dt>
+                <dd class="col-sm-9">{{ application.project_code|default:"—" }}</dd>
+                {% endif %}
             </dl>
         </div>
     </div>
@@ -221,62 +223,37 @@
         </div>
     </div>
 
-    <!-- Download & Submit Actions -->
+    <!-- Submit Actions -->
     <div class="card border-primary mb-4">
-        <div class="card-body">
-            <h5 class="card-title text-primary"><i class="bi bi-file-earmark-pdf"></i> Download & Sign</h5>
-
-            <!-- Download Section -->
-            <div class="row mb-4">
-                <div class="col-md-8">
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle"></i>
-                        <strong>Step 1:</strong> You must download the PDF and upload a signed copy to complete your submission.
-                        Sign the PDF using AutoFirma or your qualified electronic certificate (DNIe, FNMT, etc.).
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-center justify-content-end">
-                    <a href="{% url 'applications:download_pdf' application.pk %}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-download"></i> Download Application PDF
-                    </a>
-                </div>
-            </div>
-
-            <hr>
-
-            <!-- Upload Section -->
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="alert {% if application.pdf_generated_at %}alert-success{% else %}alert-secondary{% endif %} mb-0">
-                        <i class="bi bi-{% if application.pdf_generated_at %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                        <strong>Step 2:</strong> Submit your application by uploading the PDF with your official electronic signature. Only add the signature, do not change your application details in the PDF.
-                        {% if not application.pdf_generated_at %}
-                        <br><small class="text-muted">Please download the PDF first before you can upload.</small>
-                        {% else %}
-                        <br><small class="text-muted">PDF downloaded on {{ application.pdf_generated_at|date:"M d, Y H:i" }}. Ready to upload!</small>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-center justify-content-end">
-                    {% if application.pdf_generated_at %}
-                    <a href="{% url 'applications:upload_signed_pdf' application.pk %}" class="btn btn-success btn-lg">
-                        <i class="bi bi-upload"></i> Upload & Submit
-                    </a>
-                    {% else %}
-                    <button class="btn btn-secondary btn-lg" disabled title="Please download the PDF first">
-                        <i class="bi bi-upload"></i> Upload & Submit
-                    </button>
-                    {% endif %}
-                </div>
+        <div class="card-body text-center">
+            <form method="post" action="{% url 'applications:submit' application.pk %}" onsubmit="return confirm('Once submitted, you cannot make further changes. Continue?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-send"></i> Submit Application
+                </button>
+            </form>
+            <div class="mt-3">
+                <a href="{% url 'applications:download_pdf' application.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-download"></i> Download PDF for your records (optional)
+                </a>
             </div>
         </div>
     </div>
 
     <!-- Navigation -->
     <div class="d-flex justify-content-between mb-4">
-        <a href="{% url 'applications:edit_step5' application.pk %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Edit
-        </a>
+        <div>
+            <a href="{% url 'applications:edit_step5' application.pk %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Edit
+            </a>
+            <form method="post" action="{% url 'applications:cancel' application.pk %}" class="d-inline ms-2"
+                  onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-x-circle"></i> Cancel Application
+                </button>
+            </form>
+        </div>
         <span class="text-muted align-self-center">
             <strong>Deadline:</strong> {{ application.call.submission_end|date:"F d, Y H:i" }}
         </span>

@@ -35,50 +35,28 @@
                     <h5 class="mb-0">Step 2: Funding & Project Information</h5>
                 </div>
                 <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
                     <form method="post">
                         {% csrf_token %}
 
+                        <!-- Project Summary (always visible) -->
                         <div class="mb-3">
-                            <label for="{{ form.project_title.id_for_label }}" class="form-label">
-                                {{ form.project_title.label }} *
+                            <label for="{{ form.brief_description.id_for_label }}" class="form-label">
+                                {{ form.brief_description.label }} *
                             </label>
-                            {{ form.project_title }}
-                            {% if form.project_title.errors %}
-                            <div class="text-danger small">{{ form.project_title.errors }}</div>
+                            {{ form.brief_description }}
+                            {% if form.brief_description.errors %}
+                            <div class="text-danger small">{{ form.brief_description.errors }}</div>
                             {% endif %}
+                            <small class="form-text text-muted">One-line summary of your project (max 100 characters)</small>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.project_code.id_for_label }}" class="form-label">
-                                {{ form.project_code.label }}
-                            </label>
-                            {{ form.project_code }}
-                            {% if form.project_code.errors %}
-                            <div class="text-danger small">{{ form.project_code.errors }}</div>
-                            {% endif %}
-                            <small class="form-text text-muted">Optional: Internal project identifier</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.funding_agency.id_for_label }}" class="form-label">
-                                {{ form.funding_agency.label }}
-                            </label>
-                            {{ form.funding_agency }}
-                            {% if form.funding_agency.errors %}
-                            <div class="text-danger small">{{ form.funding_agency.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.project_type.id_for_label }}" class="form-label">
-                                {{ form.project_type.label }} *
-                            </label>
-                            {{ form.project_type }}
-                            {% if form.project_type.errors %}
-                            <div class="text-danger small">{{ form.project_type.errors }}</div>
-                            {% endif %}
-                        </div>
-
+                        <!-- Subject Area (always visible) -->
                         <div class="mb-3">
                             <label for="{{ form.subject_area.id_for_label }}" class="form-label">
                                 {{ form.subject_area.label }} *
@@ -89,10 +67,13 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-4">
+                        <hr class="my-4">
+
+                        <!-- Competitive Funding Checkbox (gating control) -->
+                        <div class="mb-3">
                             <div class="form-check">
                                 {{ form.has_competitive_funding }}
-                                <label class="form-check-label" for="{{ form.has_competitive_funding.id_for_label }}">
+                                <label class="form-check-label fw-bold" for="{{ form.has_competitive_funding.id_for_label }}">
                                     {{ form.has_competitive_funding.label }}
                                 </label>
                             </div>
@@ -100,8 +81,65 @@
                             <div class="text-danger small">{{ form.has_competitive_funding.errors }}</div>
                             {% endif %}
                             <small class="form-text text-muted">
-                                Check if this project has competitive funding from external agencies
+                                Check if this project has competitive funding from external agencies.
+                                If checked, provide the funding details below.
                             </small>
+                        </div>
+
+                        <!-- Conditional Funding Details -->
+                        <div id="funding-details" {% if not form.has_competitive_funding.value %}style="display:none;"{% endif %}>
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Funding Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="{{ form.project_code.id_for_label }}" class="form-label">
+                                            {{ form.project_code.label }}
+                                        </label>
+                                        {{ form.project_code }}
+                                        {% if form.project_code.errors %}
+                                        <div class="text-danger small">{{ form.project_code.errors }}</div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">Optional: Internal project identifier</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.funding_agency_obj.id_for_label }}" class="form-label">
+                                            {{ form.funding_agency_obj.label }}
+                                        </label>
+                                        {{ form.funding_agency_obj }}
+                                        {% if form.funding_agency_obj.errors %}
+                                        <div class="text-danger small">{{ form.funding_agency_obj.errors }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- New Funding Agency name (shown when "Other" selected) -->
+                                    <div id="new-agency-name-field" style="display:none;" class="mb-3">
+                                        <label for="{{ form.new_funding_agency_name.id_for_label }}" class="form-label">
+                                            {{ form.new_funding_agency_name.label }} *
+                                        </label>
+                                        {{ form.new_funding_agency_name }}
+                                        {% if form.new_funding_agency_name.errors %}
+                                        <div class="text-danger small">{{ form.new_funding_agency_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Origin of Funds dropdown (shown for "Other" or when existing agency has no origin) -->
+                                    <div id="agency-origin-field" style="display:none;" class="mb-3">
+                                        <label for="{{ form.new_funding_agency_origin_of_funds.id_for_label }}" class="form-label">
+                                            {{ form.new_funding_agency_origin_of_funds.label }} *
+                                        </label>
+                                        <div id="agency-origin-warning" class="alert alert-warning small mb-2" style="display:none;">
+                                            This agency is missing its Origin of Funds classification. Please select one.
+                                        </div>
+                                        {{ form.new_funding_agency_origin_of_funds }}
+                                        {% if form.new_funding_agency_origin_of_funds.errors %}
+                                        <div class="text-danger small">{{ form.new_funding_agency_origin_of_funds.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="alert alert-info">
@@ -110,13 +148,20 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'applications:my_applications' %}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Back to My Applications
+                            <a href="{% url 'applications:edit_step1' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 Next: Equipment Request <i class="bi bi-arrow-right"></i>
                             </button>
                         </div>
+                    </form>
+                    <form method="post" action="{% url 'applications:cancel' application.pk %}" class="mt-2"
+                          onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-x-circle"></i> Cancel Application
+                        </button>
                     </form>
                 </div>
             </div>
@@ -151,4 +196,53 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fundingCheckbox = document.getElementById('{{ form.has_competitive_funding.id_for_label }}');
+    const fundingDetails = document.getElementById('funding-details');
+    const agencySelect = document.getElementById('{{ form.funding_agency_obj.id_for_label }}');
+    const newAgencyNameField = document.getElementById('new-agency-name-field');
+    const agencyOriginField = document.getElementById('agency-origin-field');
+    const agencyOriginWarning = document.getElementById('agency-origin-warning');
+
+    // Parse origin_of_funds map from data attribute: {agency_id: origin_value}
+    let agencyOrigins = {};
+    if (agencySelect && agencySelect.dataset.origins) {
+        agencyOrigins = JSON.parse(agencySelect.dataset.origins);
+    }
+
+    function toggleFundingDetails() {
+        fundingDetails.style.display = fundingCheckbox.checked ? '' : 'none';
+    }
+
+    function toggleAgencyFields() {
+        if (!agencySelect) return;
+        const val = agencySelect.value;
+
+        if (val === '__other__') {
+            // "Other (enter new)" — show name + origin fields
+            newAgencyNameField.style.display = '';
+            agencyOriginField.style.display = '';
+            agencyOriginWarning.style.display = 'none';
+        } else if (val && agencyOrigins[val] === '') {
+            // Existing agency with missing origin — show origin field with warning
+            newAgencyNameField.style.display = 'none';
+            agencyOriginField.style.display = '';
+            agencyOriginWarning.style.display = '';
+        } else {
+            // Normal agency or empty selection — hide extra fields
+            newAgencyNameField.style.display = 'none';
+            agencyOriginField.style.display = 'none';
+            agencyOriginWarning.style.display = 'none';
+        }
+    }
+
+    fundingCheckbox.addEventListener('change', toggleFundingDetails);
+    if (agencySelect) {
+        agencySelect.addEventListener('change', toggleAgencyFields);
+        toggleAgencyFields();
+    }
+});
+</script>
 {% endblock %}

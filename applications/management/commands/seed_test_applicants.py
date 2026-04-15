@@ -285,10 +285,10 @@ class Command(BaseCommand):
                 applicant_entity=applicant.organization.name if applicant.organization else 'Test Organization',
                 applicant_email=applicant.email,
                 applicant_phone='+34 900 000 000',
-                project_title=f'Research Project {app_counter}: {self.get_project_title(spec_area)}',
+                project_name=f'Research Project {app_counter}: {self.get_project_name(spec_area)}',
                 project_code=f'PRJ-2026-{app_counter:04d}',
                 funding_agency='Test Funding Agency' if competitive_funding else '',
-                project_type='national',
+                project_type='spanish_government',
                 has_competitive_funding=competitive_funding,
                 subject_area='bme',
                 service_modality='full_assistance',
@@ -433,7 +433,7 @@ class Command(BaseCommand):
 
             app_counter += 1
 
-    def get_project_title(self, spec_area):
+    def get_project_name(self, spec_area):
         """Generate diverse project titles based on specialization area."""
         titles = {
             'preclinical': [

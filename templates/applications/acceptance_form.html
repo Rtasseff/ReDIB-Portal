@@ -25,8 +25,7 @@
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Application Code:</strong> {{ application.code }}</p>
-                <p><strong>Project Title:</strong> {{ application.project_title }}</p>
-                <p><strong>Brief Description:</strong> {{ application.brief_description }}</p>
+                <p><strong>Project Title:</strong> {{ application.project_name|default:"—" }}</p>
             </div>
             <div class="col-md-6">
                 <p><strong>Call:</strong> {{ application.call.code }}</p>

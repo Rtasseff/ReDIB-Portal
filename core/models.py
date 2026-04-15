@@ -13,15 +13,13 @@ class Organization(models.Model):
     """Parent organizations (ministries, universities, companies)"""
 
     ORG_TYPES = [
-        ('university', 'University'),
-        ('research_center', 'Research Center'),
-        ('hospital', 'Hospital'),
-        ('company', 'Company'),
-        ('ministry', 'Ministry'),
-        ('other', 'Other'),
+        ('company', 'Company / Empresa'),
+        ('university', 'University / Universidad'),
+        ('other', 'Other / Otro'),
     ]
 
     name = models.CharField(max_length=255)
+    vat = models.CharField(max_length=50, blank=True, help_text='VAT/NIF number')
     country = models.CharField(max_length=100, default='Spain')
     organization_type = models.CharField(max_length=50, choices=ORG_TYPES)
     address = models.TextField(blank=True)
@@ -189,6 +187,12 @@ class User(AbstractUser):
     phone = models.CharField(max_length=30, blank=True)
     position = models.CharField(max_length=200, blank=True, help_text='Job title/position')
 
+    # Consent
+    auto_data_consent = models.BooleanField(
+        default=False,
+        help_text='Automatic data processing consent for all future applications'
+    )
+
     # Email preferences
     receive_call_notifications = models.BooleanField(
         default=True,
@@ -215,6 +219,17 @@ class User(AbstractUser):
         """Return the first_name plus the last_name, with a space in between."""
         full_name = f"{self.first_name} {self.last_name}".strip()
         return full_name if full_name else self.email
+
+    @property
+    def is_profile_complete(self):
+        """Check if all required profile fields are filled."""
+        return all([
+            self.first_name,
+            self.last_name,
+            self.phone,
+            self.organization_id,
+            self.position,
+        ])
 
 
 class UserRole(models.Model):
@@ -245,11 +260,10 @@ class UserRole(models.Model):
         help_text='For node-specific roles (node_coordinator)',
         related_name='staff'
     )
-    area = models.CharField(
-        max_length=50,
-        choices=AREAS,
+    areas = models.CharField(
+        max_length=200,
         blank=True,
-        help_text='Specialization area for evaluators'
+        help_text='Semicolon-separated specialization areas for evaluators (e.g. "clinical;preclinical")'
     )
 
     is_active = models.BooleanField(default=True)
@@ -266,3 +280,12 @@ class UserRole(models.Model):
         if self.node:
             return f"{self.user.email} - {self.get_role_display()} at {self.node.code}"
         return f"{self.user.email} - {self.get_role_display()}"
+
+    @property
+    def area_list(self):
+        """Return areas as a list, e.g. ['clinical', 'preclinical']."""
+        return [a.strip() for a in (self.areas or '').split(';') if a.strip()]
+
+    def has_area(self, area):
+        """Return True if this role covers the given specialization area."""
+        return area in self.area_list

@@ -86,17 +86,19 @@ class SpecValidator:
         print("2. VALIDATING PROJECT TYPES (MUST HAVE 7 TYPES)")
         print("="*60)
 
+        from applications.models import PROJECT_TYPES
+
         expected_types = [
-            ('national', 'National'),
-            ('international_non_european', 'International, non-European'),
-            ('regional', 'Regional'),
-            ('european', 'European'),
-            ('internal', 'Internal'),
-            ('private', 'Private'),
+            ('spanish_government', 'Spanish Government'),
+            ('international_non_eu', 'International / Non-EU'),
+            ('spanish_regional', 'Spanish Regional Government'),
+            ('european_union', 'European Union'),
+            ('institutional', 'Institutional / Internal'),
+            ('private', 'Private / Philanthropic'),
             ('other', 'Other'),
         ]
 
-        actual_types = Application.PROJECT_TYPES
+        actual_types = PROJECT_TYPES
 
         self.test(
             "Has exactly 7 project types",

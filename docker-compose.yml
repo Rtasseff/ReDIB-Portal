@@ -1,7 +1,12 @@
-# ReDIB Portal Docker Compose Configuration
+# ReDIB Portal Docker Compose Configuration (local development)
+#
+# This compose file runs the stack in Docker for local testing. Most devs use
+# venv + SQLite + runserver instead (see .env.example and README).
 #
 # Usage:
-#   1. Copy .env.docker to .env:  cp .env.docker .env
+#   1. Copy .env.production.template to .env and adjust for local testing
+#      (use simple passwords, set DEBUG=True, set ALLOWED_HOSTS=localhost,127.0.0.1,
+#      and set the *_HOST services to db/redis as in the compose file).
 #   2. Start all services:        docker-compose up -d
 #   3. Run migrations:            docker-compose exec web python manage.py migrate
 #   4. Create superuser:          docker-compose exec web python manage.py createsuperuser

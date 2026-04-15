@@ -50,8 +50,8 @@
                 <dt class="col-sm-3">Submitted</dt>
                 <dd class="col-sm-9">{{ application.submitted_at|date:"F d, Y H:i" }}</dd>
 
-                <dt class="col-sm-3">Brief Description</dt>
-                <dd class="col-sm-9">{{ application.brief_description }}</dd>
+                <dt class="col-sm-3">Project Title</dt>
+                <dd class="col-sm-9">{{ application.project_name|default:"—" }}</dd>
             </dl>
         </div>
     </div>
@@ -94,11 +94,14 @@
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Project Title</dt>
-                <dd class="col-sm-9">{{ application.project_title|default:"—" }}</dd>
+                <dt class="col-sm-3">Project Summary</dt>
+                <dd class="col-sm-9">{{ application.brief_description|default:"—" }}</dd>
 
-                <dt class="col-sm-3">Project Type</dt>
-                <dd class="col-sm-9">{{ application.get_project_type_display }}</dd>
+                <dt class="col-sm-3">Funding Agency</dt>
+                <dd class="col-sm-9">{{ application.funding_agency_obj|default:"NA" }}</dd>
+
+                <dt class="col-sm-3">Origin of Funds</dt>
+                <dd class="col-sm-9">{{ application.get_project_type_display|default:"NA" }}</dd>
 
                 <dt class="col-sm-3">Subject Area</dt>
                 <dd class="col-sm-9">{{ application.get_subject_area_display }}</dd>
@@ -112,17 +115,29 @@
         </div>
     </div>
 
-    <!-- Scientific Content (Summary) -->
+    <!-- Scientific Content (Full) -->
     <div class="card mb-3">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">Scientific Content</h5>
         </div>
         <div class="card-body">
-            <h6>Methodology and Experimental Design</h6>
+            <h6>1. Scientific and Technical Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—" }}</p>
+
+            <h6 class="mt-3">2. Methodology and Experimental Design</h6>
             <p class="text-pre-wrap">{{ application.methodology_description|default:"—" }}</p>
 
-            <h6 class="mt-3">Scientific Relevance</h6>
-            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"—"|truncatewords:100 }}</p>
+            <h6 class="mt-3">3. Expected Contributions</h6>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"—" }}</p>
+
+            <h6 class="mt-3">4. Impact and Advancement of Knowledge</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"—" }}</p>
+
+            <h6 class="mt-3">5. Socioeconomic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"—" }}</p>
+
+            <h6 class="mt-3">6. Opportunity and Translational Impact</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"—" }}</p>
         </div>
     </div>
 
@@ -146,25 +161,41 @@
                 <dd class="col-sm-6">
                     {% if application.uses_animals %}
                         <span class="badge bg-info">Yes</span>
-                        {% if application.has_animal_ethics %}
-                            <span class="badge bg-success ms-1">Ethics Approved</span>
-                        {% endif %}
                     {% else %}
                         <span class="badge bg-secondary">No</span>
                     {% endif %}
                 </dd>
 
+                {% if application.uses_animals %}
+                <dt class="col-sm-6">Animal ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_animal_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
+
                 <dt class="col-sm-6">Uses human subjects</dt>
                 <dd class="col-sm-6">
                     {% if application.uses_humans %}
                         <span class="badge bg-info">Yes</span>
-                        {% if application.has_human_ethics %}
-                            <span class="badge bg-success ms-1">Ethics Approved</span>
-                        {% endif %}
                     {% else %}
                         <span class="badge bg-secondary">No</span>
                     {% endif %}
                 </dd>
+
+                {% if application.uses_humans %}
+                <dt class="col-sm-6">Human ethics approval</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_human_ethics %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
+                {% endif %}
             </dl>
         </div>
     </div>
@@ -185,8 +216,8 @@
                 {% csrf_token %}
 
                 <div class="mb-4">
-                    <label class="form-label"><strong>{{ form.is_feasible.label }} *</strong></label>
-                    {% for radio in form.is_feasible %}
+                    <label class="form-label"><strong>{{ form.decision.label }} *</strong></label>
+                    {% for radio in form.decision %}
                     <div class="form-check">
                         {{ radio.tag }}
                         <label class="form-check-label" for="{{ radio.id_for_label }}">
@@ -194,8 +225,8 @@
                         </label>
                     </div>
                     {% endfor %}
-                    {% if form.is_feasible.errors %}
-                    <div class="text-danger small">{{ form.is_feasible.errors }}</div>
+                    {% if form.decision.errors %}
+                    <div class="text-danger small">{{ form.decision.errors }}</div>
                     {% endif %}
                 </div>
 
@@ -209,14 +240,21 @@
                     {% endif %}
                     <small class="form-text text-muted">
                         Provide comments on technical feasibility, resource availability, or any concerns.
-                        <strong>Required if rejecting.</strong>
+                        <strong>Required if rejecting or requesting edits.</strong>
                     </small>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>If requesting edits:</strong> Please provide clear and specific comments explaining
+                    what the applicant needs to change. The applicant will see your comments and use them
+                    to revise their application.
                 </div>
 
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
                     Your decision will be recorded immediately. If all nodes approve, the application proceeds to evaluation.
-                    If any node rejects, the application is rejected.
+                    If any node rejects, the application is rejected. If edits are requested, the application returns to the applicant.
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
@@ -224,7 +262,7 @@
                         <i class="bi bi-arrow-left"></i> Back to Queue
                     </a>
                     <button type="submit" class="btn btn-danger btn-lg"
-                            onclick="return confirm('Are you sure? This decision cannot be changed.')">
+                            onclick="return confirm('Are you sure? This decision will be recorded immediately.')">
                         <i class="bi bi-send"></i> Submit Feasibility Decision
                     </button>
                 </div>

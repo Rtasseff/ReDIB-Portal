@@ -213,17 +213,17 @@ class Command(BaseCommand):
                     user=user,
                     role=role_name,
                     node=node,
-                    defaults={'area': area, 'is_active': True}
+                    defaults={'areas': area, 'is_active': True}
                 )
                 if role_created:
                     display = f"{role_name} at {node.code}" if node else role_name
                     self.stdout.write(f'    → Assigned role: {display}')
                 else:
-                    # Update area if it changed
-                    if role.area != area:
-                        role.area = area
+                    # Update areas if they changed
+                    if role.areas != area:
+                        role.areas = area
                         role.save()
-                        self.stdout.write(f'    → Updated role area: {role_name}')
+                        self.stdout.write(f'    → Updated role areas: {role_name}')
 
         return users
 
@@ -290,7 +290,7 @@ class Command(BaseCommand):
 
     def create_applications(self, users, calls, equipment):
         """Create test applications in various states."""
-        from applications.models import Application, RequestedAccess
+        from applications.models import Application, RequestedAccess, FundingAgency
 
         apps = {}
         now = timezone.now()
@@ -309,10 +309,11 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant1@test.redib.net',
                 'applicant_phone': '+34 123 456 789',
                 # Project details
-                'project_title': 'Advanced MRI Techniques for Preclinical Research',
+                'project_name': 'Advanced MRI Techniques for Preclinical Research',
                 'project_code': 'PID2024-TEST-001',
-                'funding_agency': 'Agencia Estatal de Investigación',
-                'project_type': 'national',
+                'funding_agency': 'Agencia Estatal de Investigacion (AEI)',
+                'funding_agency_obj': FundingAgency.objects.filter(name='Agencia Estatal de Investigacion (AEI)').first(),
+                'project_type': 'spanish_government',
                 'has_competitive_funding': True,
                 'subject_area': 'bme',
                 'service_modality': 'full_assistance',
@@ -347,7 +348,7 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant2@test.redib.net',
                 'applicant_phone': '+49 987 654 321',
                 # Project details
-                'project_title': 'Basic PET Imaging Study',
+                'project_name': 'Basic PET Imaging Study',
                 'project_type': 'private',
                 'has_competitive_funding': False,
                 'subject_area': 'bio',
@@ -397,8 +398,9 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant2@test.redib.net',
                 'applicant_phone': '+49 987 654 321',
                 # Project details
-                'project_title': 'Clinical Cardiovascular Imaging Study',
-                'project_type': 'international_non_european',
+                'project_name': 'Clinical Cardiovascular Imaging Study',
+                'funding_agency_obj': FundingAgency.objects.filter(name='National Institutes of Health (NIH)').first(),
+                'project_type': 'international_non_eu',
                 'has_competitive_funding': True,
                 'subject_area': 'bme',
                 'service_modality': 'full_assistance',
