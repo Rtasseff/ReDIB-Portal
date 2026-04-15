@@ -75,3 +75,36 @@ files (6 Python, 10 templates) and a coordinated rename wasn't urgent.
 - `data/organizations.tsv` (seed with the 4 host orgs)
 - `data/README.md` (update nodes.tsv schema description)
 - New migration: `core/migrations/000X_node_organization_fk.py`
+
+---
+
+## Editing Call dates after publication is safe (verified 2026-04-15)
+
+**Status:** No change needed — documented to avoid re-investigation.
+
+A coordinator can edit `submission_end` and `evaluation_deadline` on a
+published `Call` and every downstream behaviour picks up the new values on
+the next check. Specifically:
+
+- `Call.is_open` reads `submission_end` live (`calls/models.py:63-70`).
+- `application_submit` checks `call.submission_end > now()` live
+  (`applications/views.py`).
+- Scheduled tasks filter on current values every run —
+  `check_call_deadlines` (`calls/tasks.py:22`),
+  `send_evaluation_reminders` and `notify_overdue_evaluators` and
+  `notify_coordinator_overdue_evaluations` all join through
+  `application__call__evaluation_deadline` (`evaluations/tasks.py:29,87,145`).
+- Assignment emails read `application.call.evaluation_deadline` live
+  (`evaluations/tasks.py:345`).
+
+`execution_start` and `execution_end` are cosmetic — no runtime code
+branches on them.
+
+**The one gotcha:** `Application.acceptance_deadline` is snapshotted from
+`resolution_date + 10 days` when a resolution aggregates, not derived
+from the call. Editing Call dates therefore has no effect on
+already-resolved applications' acceptance clocks (which is the right
+behaviour — those clocks belong to the applicant response, not the call
+window).
+
+No migration or code change is needed.
