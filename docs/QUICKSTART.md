@@ -128,7 +128,7 @@ If you want to test with the full production-like stack (PostgreSQL, Redis, Cele
 
 5. Load test data:
    ```bash
-   docker compose exec web python manage.py setup_localtest1_database
+   docker compose exec web python manage.py setup_localtest2_database --reset --yes
    ```
 
 6. Access the portal at http://localhost:8000

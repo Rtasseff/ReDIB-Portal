@@ -15,7 +15,7 @@ Django 5.0 / Python 3.11 COA management system for the ReDIB distributed biomedi
 - **Development (local):** Python venv + SQLite + `runserver`. No Docker, Redis, or Celery required.
 - **Production (VPS):** Docker Compose with PostgreSQL, Redis, Celery, Caddy (auto-TLS) on IONOS VPS (`portal.redib.net`). Currently deployed and running.
 
-The app reads a single `.env` file (gitignored). Three tracked templates are provided — see [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for the full environment variable reference.
+The app reads a single `.env` file (gitignored). Two tracked templates are provided (`.env.example` for dev, `.env.production.template` for prod) — see [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for the full environment variable reference.
 
 **Deployment workflow:** merge to main → push → SSH to VPS → `git pull` → rebuild containers. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -51,20 +51,26 @@ tests/              # Integration tests by workflow phase
 
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` → `evaluated` → `accepted` / `pending` / `rejected`
 
-Terminal states: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `expired`
+`pending` is the waitlist state. The applicant gets the same 10-day accept/decline window as `accepted`, but the hand-off fires only when a node coordinator promotes the application to `accepted` via "Mark as Accepted" on the Access Tracking page (`applications:promote_waitlisted`).
+
+Terminal states: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `expired`, `completed`.
 
 ## Key Models
 
-- **User** (`core/models.py`): Extended with ORCID, organization, phone
-- **UserRole** (`core/models.py`): Role assignments with `role` (applicant/evaluator/coordinator/node_coordinator) and `area` field
+- **User** (`core/models.py`): Extended with ORCID (regex-validated), phone (regex-validated), `organization`, `position`, `auto_data_consent`
+- **UserRole** (`core/models.py`): Role assignments with `role` (`applicant` / `evaluator` / `coordinator` / `node_coordinator`) and `areas` (semicolon-separated multi-area CharField for evaluators)
 - **Node** / **Equipment** (`core/models.py`): ReDIB network nodes and imaging equipment
 - **Call** (`calls/models.py`): COA call periods with dates, status, equipment allocations
-- **Application** (`applications/models.py`): Full application with scientific content, PDF signature fields
-- **RequestedAccess** (`applications/models.py`): Equipment hours requests per application
-- **FeasibilityReview** (`applications/models.py`): Per-node technical assessments
+- **Application** (`applications/models.py`): Full application with scientific content; human-subject declarations include `uses_humans`, `has_human_ethics`, `has_insurance`, `has_informed_consent`
+- **RequestedAccess** (`applications/models.py`): Equipment hours requests per application (`hours_requested`, `hours_approved`)
+- **FeasibilityReview** (`applications/models.py`): Per-node technical assessment with `status` (`pending` / `approved` / `rejected` / `edits_requested`) — the authoritative field (legacy `is_feasible` boolean still present for history)
+- **FundingAgency** (`applications/models.py`): Funding agency directory, `origin_of_funds` matches the 7-key `PROJECT_TYPES` set
 - **Evaluation** (`evaluations/models.py`): 6 scoring criteria (0-2 each), `completed_at` timestamp, recommendation
 - **AccessGrant** / **Publication** (`access/models.py`): Approved access and publication outcomes
 - **EmailTemplate** / **EmailLog** (`communications/models.py`): Email templates and send history
+
+### Email recipients
+Applicant-facing emails prefer `Application.applicant_email` (the form-declared PI contact) and fall back to `Application.applicant.email`. The hand-off email is sent as one message with `to=[applicant]` and `cc=[node_coordinators]` so everyone can reply-all. ReDIB coordinators no longer receive a per-app `evaluations_complete` email — they are covered by the daily `notify_coordinator_overdue_evaluations` and by `coordinator_evaluations_locked` at window close.
 
 ## Important Conventions
 

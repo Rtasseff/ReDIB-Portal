@@ -86,6 +86,10 @@ When you need a fully clean slate (new database file, fresh migrations):
 rm db.sqlite3
 python manage.py migrate
 python manage.py createsuperuser
+# For manual testing (self-contained — nodes, equipment, orgs, funding
+# agencies, users, calls, sample applications, all inline)
+python manage.py setup_localtest2_database --reset --yes
+# OR, to load real reference data from data/*.tsv
 python manage.py setup_base_database
 ```
 
@@ -171,7 +175,7 @@ python manage.py send_test_emails --to your-email@example.com
 python manage.py send_test_emails --cleanup
 ```
 
-See [docs/TEST_EMAIL_TEMPLATES.md](docs/TEST_EMAIL_TEMPLATES.md) for full details on what is created and how to verify.
+See [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) for full details on what is created and how to verify.
 
 ### Contact Email
 

@@ -85,14 +85,19 @@ This guide walks through the complete COA lifecycle with specific steps to valid
 ### Prerequisites
 
 Before starting, ensure:
-1. Development environment is running (Django + PostgreSQL/SQLite + Celery + Redis)
-2. Email templates are seeded: `python manage.py seed_email_templates`
-3. Core data is populated:
+1. Development environment is running (Django; SQLite is fine for local dev — Redis and Celery are only needed in production).
+2. A superuser exists (`python manage.py createsuperuser`).
+3. Test data is loaded. **Recommended path for full manual testing:**
    ```bash
-   python manage.py populate_redib_nodes
-   python manage.py populate_redib_equipment
-   python manage.py populate_redib_users
+   python manage.py setup_localtest2_database --reset --yes
    ```
+   This creates nodes, equipment, organizations, funding agencies, users,
+   calls, sample applications (including one in each workflow state), and
+   seeds email templates — in a single command. All test accounts use the
+   password `testpass123` and are pre-verified.
+
+   If you prefer to test against the real seed data from `data/*.tsv`,
+   use `setup_base_database` instead (users get `changeme123`).
 
 ---
 
@@ -104,7 +109,7 @@ Before starting, ensure:
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
 | 0.1 | Login to Django admin at `/admin/` | `admin` (superuser) | Access admin panel | had to make an admin account using creatsuperuser |
-| 0.2 | Verify nodes populated | `admin` | See 4 nodes: CIC biomaGUNE, TRIMA@CNIC, MSSM (NY), SIN | |
+| 0.2 | Verify nodes populated | `admin` | See 4 nodes: BioImaC (Madrid), CIC biomaGUNE (San Sebastián), Imaging La Fe (Valencia), CNIC (Madrid) | |
 | 0.3 | Verify equipment populated | `admin` | See 17+ equipment items across nodes | |
 | 0.4 | Verify users populated | `admin` | See 8 core users (coordinators, evaluators, applicants) | no applicants in initial user test batch |
 | 0.5 | Check user roles in Core > User Roles | `admin` | Verify coordinator, evaluator (with areas), applicant roles | no applicants in initial user test batch |
