@@ -4,6 +4,7 @@ Based on design document section 7.3 - Periodic Tasks.
 """
 
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from .models import FeasibilityReview
@@ -214,7 +215,6 @@ def send_single_resolution_notification_task(application_id):
     if application.resolution == 'accepted' and application.acceptance_deadline:
         context['acceptance_deadline'] = application.acceptance_deadline
         context['days_to_respond'] = application.days_until_acceptance_deadline
-        from django.conf import settings
         context['accept_url'] = f'{settings.SITE_URL}/applications/{application.id}/accept/'
 
     # Send notification email
@@ -290,7 +290,7 @@ def process_acceptance_deadlines():
             'brief_description': app.brief_description,
             'deadline': app.acceptance_deadline,
             'days_remaining': app.days_until_acceptance_deadline,
-            'acceptance_url': f'/applications/{app.id}/accept/',  # Use reverse() in production
+            'acceptance_url': f'{settings.SITE_URL}/applications/{app.id}/accept/',
         }
 
         send_email_from_template(

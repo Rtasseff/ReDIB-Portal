@@ -1,6 +1,7 @@
 """
 Views for the applications app - 5-step application wizard.
 """
+from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
@@ -1466,11 +1467,13 @@ def mark_equipment_done(request, application_id, requested_access_id):
 
 @node_coordinator_required
 @transaction.atomic
-def node_confirm_equipment_done(request, requested_access_id):
+def node_confirm_equipment_done(request, application_id, requested_access_id):
     """
     Node coordinator marks equipment as completed.
 
-    Can override actual hours if needed.
+    Can override actual hours if needed. The application_id in the URL is
+    ignored (the application is derived from req_access.application) but
+    must be present so the URL pattern resolves.
     """
     from core.models import UserRole
     from applications.forms import EquipmentCompletionForm
