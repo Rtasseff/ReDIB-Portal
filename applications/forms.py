@@ -668,14 +668,16 @@ class NodeResolutionForm(forms.Form):
 
         # Validate: competitive funding cannot be rejected
         if self.has_competitive_funding and resolution == 'reject':
-            raise forms.ValidationError(
+            self.add_error(
+                'resolution',
                 "Applications with competitive funding cannot be rejected."
             )
 
         # Require comments if rejecting
         if resolution == 'reject' and not cleaned_data.get('comments'):
-            raise forms.ValidationError(
-                "Please provide comments explaining why you are rejecting this application."
+            self.add_error(
+                'comments',
+                "Comments are required when rejecting an application. Please explain the reason."
             )
 
         return cleaned_data

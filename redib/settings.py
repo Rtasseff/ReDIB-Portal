@@ -5,6 +5,7 @@ Django settings for ReDIB COA portal.
 from pathlib import Path
 import os
 import environ
+from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -166,6 +167,13 @@ AUTHENTICATION_BACKENDS = [
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# Map Django message levels to Bootstrap alert classes.
+# Django uses 'error' but Bootstrap uses 'danger', so we override the mapping
+# so that messages.error() renders as alert-danger (red).
+MESSAGE_TAGS = {
+    message_constants.ERROR: 'danger',
+}
 
 # Email Configuration
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@redib.net')

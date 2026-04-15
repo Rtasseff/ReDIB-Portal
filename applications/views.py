@@ -1345,6 +1345,13 @@ def node_resolution_review(request, application_id, node_id):
 
             except Exception as e:
                 messages.error(request, str(e))
+        else:
+            # Surface form errors as a top-of-page banner so node coordinators
+            # don't miss the inline errors buried further down the page.
+            messages.error(
+                request,
+                "Your resolution was NOT submitted. Please correct the errors highlighted below and try again."
+            )
     else:
         # Prepopulate form if existing resolution
         initial = {}
