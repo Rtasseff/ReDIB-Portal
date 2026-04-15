@@ -142,7 +142,6 @@ class Command(BaseCommand):
             (Node, 'nodes'),
             (FundingAgency, 'funding agencies'),
             (UserRole, 'user roles'),
-            (EmailAddress, 'email addresses'),
             (Organization, 'organizations'),
             (EmailLog, 'email logs'),
             (NotificationPreference, 'notification preferences'),
@@ -152,6 +151,14 @@ class Command(BaseCommand):
             if count:
                 model.objects.all().delete()
                 self.stdout.write(f'    Deleted {count} {name}')
+
+        # Only delete EmailAddress records for non-superuser accounts so the
+        # superuser's allauth verification state survives a reset.
+        non_super_emails = EmailAddress.objects.filter(user__is_superuser=False)
+        count = non_super_emails.count()
+        if count:
+            non_super_emails.delete()
+            self.stdout.write(f'    Deleted {count} email addresses (kept superuser)')
 
         count = User.objects.filter(is_superuser=False).count()
         if count:
@@ -710,6 +717,7 @@ class Command(BaseCommand):
                     defaults={
                         'reviewer': nc_for_node[node_code],
                         'is_feasible': True,
+                        'status': 'approved',
                         'reviewed_at': now - timedelta(days=60),
                         'comments': 'Equipment available, schedule confirmed.',
                     }

@@ -403,7 +403,40 @@ def application_submit(request, pk):
         status='draft'
     )
 
-    # Validate application is complete
+    # Validate application is complete. We check the model fields directly
+    # so a user who POSTs to /submit/ without walking the wizard still gets
+    # bounced back to the first incomplete step instead of submitting a
+    # half-filled draft.
+    step_required_fields = [
+        ('edit_step1', [
+            'applicant_name', 'applicant_entity', 'applicant_email',
+            'applicant_phone', 'project_name',
+        ]),
+        ('edit_step2', ['subject_area', 'brief_description']),
+        ('edit_step3', ['service_modality', 'specialization_area']),
+        ('edit_step4', [
+            'scientific_relevance', 'methodology_description',
+            'expected_contributions', 'impact_strengths',
+            'socioeconomic_significance', 'opportunity_criteria',
+        ]),
+    ]
+    for step_name, fields in step_required_fields:
+        missing = [f for f in fields if not getattr(application, f, None)]
+        if missing:
+            messages.error(
+                request,
+                f"Please complete the following required fields: {', '.join(missing)}."
+            )
+            return redirect(f'applications:{step_name}', pk=application.pk)
+
+    # Step 2 conditional: has_competitive_funding requires a funding agency
+    if application.has_competitive_funding and not application.funding_agency_obj:
+        messages.error(
+            request,
+            "Please select a funding agency for your competitive funding."
+        )
+        return redirect('applications:edit_step2', pk=application.pk)
+
     if not application.requested_access.exists():
         messages.error(request, "You must request at least one equipment access.")
         return redirect('applications:edit_step3', pk=application.pk)

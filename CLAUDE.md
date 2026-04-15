@@ -69,11 +69,21 @@ Terminal states: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `e
 ## Important Conventions
 
 ### Role Checks
+Roles live on `UserRole` — query them off the user:
 ```python
-user.has_role('coordinator')
-user.has_role('node_coordinator', node=node_obj)
-user.has_role('evaluator', area='preclinical')
+# Any active role of a given type
+user.roles.filter(role='coordinator', is_active=True).exists()
+
+# Scoped to a specific node
+user.roles.filter(role='node_coordinator', node=node_obj, is_active=True).exists()
+
+# Evaluators have multi-area assignments; use UserRole.has_area() to match one
+any(r.has_area('preclinical')
+    for r in user.roles.filter(role='evaluator', is_active=True))
 ```
+Shortcut decorators live in `core/decorators.py`: `@coordinator_required`,
+`@node_coordinator_required`, `@evaluator_required`, `@applicant_required`,
+and the generic `@role_required('role_a', 'role_b')`.
 
 ### Email Notifications
 ```python

@@ -1344,6 +1344,200 @@ This is an automated reminder from the ReDIB COA Management System.''',
 
 </body></html>''',
                 'available_variables': '''Variables: applicant_name, application_code, project_title, handoff_date, acknowledgment_text, publication_url'''
+            },
+            {
+                'template_type': 'call_published',
+                'subject': 'ReDIB COA: New Call {{ call_code }} Now Open',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>New Call for Applications</p>
+        </div>
+        <div class="content">
+            <p>Dear colleague,</p>
+            <p>A new ReDIB Competitive Open Access call has been published and is now accepting applications.</p>
+            <div class="info-box">
+                <p><strong>Call Code:</strong> {{ call_code }}</p>
+                <p><strong>Title:</strong> {{ call_title }}</p>
+                <p><strong>Submission deadline:</strong> {{ submission_end }}</p>
+            </div>
+            <p style="text-align: center;">
+                <a href="{{ call_url }}" class="button">View Call &amp; Apply</a>
+            </p>
+            <p>You are receiving this notification because your account is set to receive new-call announcements. You can update this preference in your profile.</p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear colleague,
+
+A new ReDIB Competitive Open Access call has been published and is now accepting applications.
+
+Call Details:
+- Call Code: {{ call_code }}
+- Title: {{ call_title }}
+- Submission deadline: {{ submission_end }}
+
+View Call & Apply:
+{{ call_url }}
+
+You are receiving this notification because your account is set to receive new-call announcements. You can update this preference in your profile.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: call_code, call_title, submission_end, call_url'''
+            },
+            {
+                'template_type': 'feasibility_reminder',
+                'subject': 'ReDIB COA: Feasibility review pending for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .info-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Feasibility Review Reminder</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ reviewer_name }},</p>
+            <p>A feasibility review is still pending for an application at your node and has been waiting for {{ days_pending }} days. Please review it as soon as possible so the application can proceed.</p>
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Project Summary:</strong> {{ application_title }}</p>
+                <p><strong>Your Node:</strong> {{ node_name }}</p>
+                <p><strong>Call evaluation deadline:</strong> {{ deadline }}</p>
+            </div>
+            <p>Sign in to the portal to open the feasibility queue and complete your review.</p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ reviewer_name }},
+
+A feasibility review is still pending for an application at your node and has been waiting for {{ days_pending }} days. Please review it as soon as possible so the application can proceed.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Project Summary: {{ application_title }}
+- Your Node: {{ node_name }}
+- Call evaluation deadline: {{ deadline }}
+
+Sign in to the portal to open the feasibility queue and complete your review.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: reviewer_name, application_code, application_title, node_name, days_pending, deadline'''
+            },
+            {
+                'template_type': 'acceptance_reminder',
+                'subject': 'ReDIB COA: Reminder to accept access for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Action Required: Accept or Decline Your Access Grant</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+            <p>This is a reminder that your application has been approved and awaits your formal acceptance. You have <strong>{{ days_remaining }} days</strong> remaining to respond before the grant expires.</p>
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Response deadline:</strong> {{ deadline }}</p>
+            </div>
+            <p style="text-align: center;">
+                <a href="{{ acceptance_url }}" class="button">Accept or Decline</a>
+            </p>
+            <p>If you do not respond by the deadline the access grant will be automatically expired and offered to the next applicant on the waiting list.</p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+This is a reminder that your application has been approved and awaits your formal acceptance. You have {{ days_remaining }} days remaining to respond before the grant expires.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Response deadline: {{ deadline }}
+
+Accept or Decline:
+{{ acceptance_url }}
+
+If you do not respond by the deadline the access grant will be automatically expired and offered to the next applicant on the waiting list.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: applicant_name, application_code, deadline, days_remaining, acceptance_url'''
             }
         ]
 
