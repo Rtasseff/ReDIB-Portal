@@ -1062,30 +1062,30 @@ def _send_handoff_email(application):
         'requested_access': requested_access_list,
     }
 
-    # Send to applicant
-    send_email_from_template(
-        template_type='handoff_notification',
-        recipient_email=application.applicant.email,
-        context_data=context,
-        recipient_user_id=application.applicant.id,
-        related_application_id=application.id
-    )
-
-    # Send to node coordinators
+    # Collect all node coordinator emails across the involved nodes.
+    # These go in CC (along with the applicant in To) so every recipient
+    # sees the others' addresses and can Reply All to coordinate scheduling.
+    cc_emails = []
+    seen_emails = set()
     for node in nodes:
         node_coordinators = UserRole.objects.filter(
             node=node,
             role='node_coordinator'
         ).select_related('user')
-
         for user_role in node_coordinators:
-            send_email_from_template(
-                template_type='handoff_notification',
-                recipient_email=user_role.user.email,
-                context_data=context,
-                recipient_user_id=user_role.user.id,
-                related_application_id=application.id
-            )
+            email = user_role.user.email
+            if email and email not in seen_emails:
+                seen_emails.add(email)
+                cc_emails.append(email)
+
+    send_email_from_template(
+        template_type='handoff_notification',
+        recipient_email=application.applicant.email,
+        context_data=context,
+        recipient_user_id=application.applicant.id,
+        related_application_id=application.id,
+        cc_emails=cc_emails,
+    )
 
 
 @login_required
