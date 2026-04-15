@@ -1042,10 +1042,12 @@ def _send_handoff_email(application):
     requested_access_list = []
     for req_access in application.requested_access.select_related('equipment__node'):
         nodes.add(req_access.equipment.node)
+        hours_approved = req_access.hours_approved
         requested_access_list.append({
-            'node': req_access.equipment.node.name,
-            'equipment': req_access.equipment.name,
-            'hours': float(req_access.hours_requested),
+            'node_name': req_access.equipment.node.name,
+            'equipment_name': req_access.equipment.name,
+            'hours_requested': float(req_access.hours_requested),
+            'hours_approved': float(hours_approved) if hours_approved is not None else None,
         })
 
     # Build email context

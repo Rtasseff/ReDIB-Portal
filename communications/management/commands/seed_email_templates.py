@@ -1155,10 +1155,10 @@ ReDIB COA Team''',
                 <li><strong>Brief Description:</strong> {{ brief_description }}</li>
             </ul>
 
-            <h3>REQUESTED ACCESS</h3>
+            <h3>APPROVED ACCESS</h3>
             <p><strong>Service Modality:</strong> {{ service_modality }}</p>
             {% for access in requested_access %}
-            <p>- <strong>{{ access.node_name }}</strong> / {{ access.equipment_name }}: {{ access.hours_requested }} hours requested</p>
+            <p>- <strong>{{ access.node_name }}</strong> / {{ access.equipment_name }}: requested {{ access.hours_requested }} h, approved {{ access.hours_approved|default:"—" }} h</p>
             {% endfor %}
 
             <h3>NEXT STEPS</h3>
@@ -1191,9 +1191,9 @@ APPLICATION DETAILS
 - Project: {{ project_title }}
 - Brief Description: {{ brief_description }}
 
-REQUESTED ACCESS
+APPROVED ACCESS
 Service Modality: {{ service_modality }}
-{% for access in requested_access %}- {{ access.node_name }} / {{ access.equipment_name }}: {{ access.hours_requested }} hours requested
+{% for access in requested_access %}- {{ access.node_name }} / {{ access.equipment_name }}: requested {{ access.hours_requested }} h, approved {{ access.hours_approved|default:"—" }} h
 {% endfor %}
 
 NEXT STEPS
