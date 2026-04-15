@@ -36,22 +36,37 @@ def my_applications(request):
 
 @login_required
 def application_detail(request, pk):
-    """View application details (applicant or coordinator view)"""
-    # Check if user is coordinator/superuser or the applicant
+    """View application details.
+
+    Accessible by:
+    - Applicant (owns the application)
+    - ReDIB coordinator / superuser (any application)
+    - Node coordinator of a node whose equipment is requested in the
+      application (so they can see the full detail of applications they
+      need to act on, e.g. after marking access complete)
+    """
+    from core.models import UserRole
+
     user = request.user
     user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
     is_coordinator = 'coordinator' in user_roles or user.is_superuser
 
-    if is_coordinator:
-        # Coordinators can view any application
-        application = get_object_or_404(Application, pk=pk)
-    else:
-        # Regular users can only view their own applications
-        application = get_object_or_404(
-            Application,
-            pk=pk,
-            applicant=request.user
+    application = get_object_or_404(Application, pk=pk)
+
+    if not is_coordinator and application.applicant_id != user.id:
+        # Permit a node coordinator whose node has equipment in this application.
+        requested_node_ids = set(
+            application.requested_access.values_list('equipment__node_id', flat=True)
         )
+        nc_node_ids = set(
+            UserRole.objects.filter(
+                user=user,
+                role='node_coordinator',
+                is_active=True,
+            ).values_list('node_id', flat=True)
+        )
+        if not (requested_node_ids & nc_node_ids):
+            raise Http404("Application not found.")
 
     requested_access = application.requested_access.select_related(
         'equipment__node'
