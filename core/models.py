@@ -4,9 +4,27 @@ Includes: User, Organization, Node, Equipment, UserRole
 """
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
+
+
+# ORCID iDs are sixteen digits in four groups of four separated by hyphens,
+# with the final character allowed to be an X (the checksum). Example:
+# 0000-0002-1825-0097
+ORCID_VALIDATOR = RegexValidator(
+    regex=r'^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$',
+    message='ORCID iD must be in the format XXXX-XXXX-XXXX-XXXX '
+            '(last character may be X).',
+)
+
+# Loose phone validator: digits, spaces, and common separators (+ - . ( ))
+# only. Rejects alphabetic characters so typos like "+34 O00..." are caught.
+PHONE_VALIDATOR = RegexValidator(
+    regex=r'^[\d\s()+\-.]{5,}$',
+    message='Phone numbers may contain only digits, spaces, and the '
+            'characters + - . ( ).',
+)
 
 
 class Organization(models.Model):
@@ -182,9 +200,10 @@ class User(AbstractUser):
     orcid = models.CharField(
         max_length=20,
         blank=True,
-        help_text='ORCID iD (e.g., 0000-0002-1234-5678)'
+        validators=[ORCID_VALIDATOR],
+        help_text='ORCID iD in the format XXXX-XXXX-XXXX-XXXX'
     )
-    phone = models.CharField(max_length=30, blank=True)
+    phone = models.CharField(max_length=30, blank=True, validators=[PHONE_VALIDATOR])
     position = models.CharField(max_length=200, blank=True, help_text='Job title/position')
 
     # Consent

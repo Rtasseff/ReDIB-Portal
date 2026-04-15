@@ -377,8 +377,24 @@ class ApplicationStep4Form(forms.ModelForm):
             'socioeconomic_significance': '5. Socioeconomic Significance',
             'opportunity_criteria': '6. Opportunity and Translational Impact',
         }
+        # Keep help text visible next to the field while the applicant is
+        # typing — placeholders disappear as soon as the box has content.
         help_texts = {
-            'expected_contributions': 'Justify your expectations for future scientific-technical contributions and express your commitment to publish and disseminate the ICTS access you are now requesting...',
+            'scientific_relevance':
+                'Describe the scientific and technical relevance, quality, and '
+                'originality of your project.',
+            'methodology_description':
+                'Describe your experimental and methodological design.',
+            'expected_contributions':
+                'Justify your expectations for future scientific-technical '
+                'contributions and express your commitment to publish and '
+                'disseminate the ICTS access you are now requesting.',
+            'impact_strengths':
+                'Describe the strengths and potential for advancement of knowledge.',
+            'socioeconomic_significance':
+                'Describe the social, economic, and industrial significance.',
+            'opportunity_criteria':
+                'Describe opportunity criteria and translational impact.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -398,6 +414,8 @@ class ApplicationStep5Form(forms.ModelForm):
             'has_animal_ethics',
             'uses_humans',
             'has_human_ethics',
+            'has_insurance',
+            'has_informed_consent',
             'data_consent'
         ]
         widgets = {
@@ -406,6 +424,8 @@ class ApplicationStep5Form(forms.ModelForm):
             'has_animal_ethics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'uses_humans': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'has_human_ethics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'has_insurance': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'has_informed_consent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'data_consent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {

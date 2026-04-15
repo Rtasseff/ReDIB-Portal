@@ -477,6 +477,30 @@
                     {% endif %}
                 </span>
             </div>
+            <div class="declaration-item">
+                <span class="declaration-label" style="padding-left: 20px;">
+                    Civil liability insurance in place / Dispone de seguro de responsabilidad civil
+                </span>
+                <span class="declaration-value">
+                    {% if application.has_insurance %}
+                        <span class="badge badge-yes">Yes / Sí</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="declaration-item">
+                <span class="declaration-label" style="padding-left: 20px;">
+                    Informed consent protocol in place / Dispone de protocolo de consentimiento informado
+                </span>
+                <span class="declaration-value">
+                    {% if application.has_informed_consent %}
+                        <span class="badge badge-yes">Yes / Sí</span>
+                    {% else %}
+                        <span class="badge badge-no">No</span>
+                    {% endif %}
+                </span>
+            </div>
             {% endif %}
 
             <div class="declaration-item" style="border-bottom: none;">

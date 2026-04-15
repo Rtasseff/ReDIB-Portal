@@ -123,8 +123,33 @@
                                 {% if form.has_human_ethics.errors %}
                                 <div class="text-danger small">{{ form.has_human_ethics.errors }}</div>
                                 {% endif %}
+
+                                <div class="form-check mt-3">
+                                    {{ form.has_insurance }}
+                                    <label class="form-check-label" for="{{ form.has_insurance.id_for_label }}">
+                                        Civil liability insurance in place
+                                    </label>
+                                </div>
+                                {% if form.has_insurance.errors %}
+                                <div class="text-danger small">{{ form.has_insurance.errors }}</div>
+                                {% endif %}
+
+                                <div class="form-check mt-3">
+                                    {{ form.has_informed_consent }}
+                                    <label class="form-check-label" for="{{ form.has_informed_consent.id_for_label }}">
+                                        Informed consent protocol in place
+                                    </label>
+                                </div>
+                                {% if form.has_informed_consent.errors %}
+                                <div class="text-danger small">{{ form.has_informed_consent.errors }}</div>
+                                {% endif %}
+
                                 <small class="form-text text-muted d-block mt-2">
-                                    Ethics committee approval is recommended before starting experiments involving human subjects.
+                                    Ethics committee approval, civil liability insurance, and an
+                                    informed-consent protocol are recommended before starting
+                                    experiments involving human subjects. You may submit without
+                                    checking these boxes — a node coordinator may request
+                                    updates during feasibility review.
                                 </small>
                             </div>
                         </div>
