@@ -189,14 +189,23 @@
             <h5 class="mb-0">Scientific Content</h5>
         </div>
         <div class="card-body">
-            <h6>Methodology and Experimental Design</h6>
+            <h6>Scientific Relevance</h6>
+            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Methodology and Experimental Design</h6>
             <p class="text-pre-wrap">{{ application.methodology_description|default:"N/A" }}</p>
 
-            <h6 class="mt-3">Scientific Relevance</h6>
-            <p class="text-pre-wrap">{{ application.scientific_relevance|default:"N/A"|truncatewords:150 }}</p>
-
             <h6 class="mt-3">Expected Contributions</h6>
-            <p class="text-pre-wrap">{{ application.expected_contributions|default:"N/A"|truncatewords:100 }}</p>
+            <p class="text-pre-wrap">{{ application.expected_contributions|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Impact &amp; Strengths</h6>
+            <p class="text-pre-wrap">{{ application.impact_strengths|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Socio-Economic Significance</h6>
+            <p class="text-pre-wrap">{{ application.socioeconomic_significance|default:"N/A" }}</p>
+
+            <h6 class="mt-3">Opportunity Criteria</h6>
+            <p class="text-pre-wrap">{{ application.opportunity_criteria|default:"N/A" }}</p>
         </div>
     </div>
 

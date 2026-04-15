@@ -158,6 +158,7 @@ class Command(BaseCommand):
         site.domain = os.environ.get('SITE_DOMAIN', 'portal.redib.net')
         site.name = os.environ.get('SITE_NAME', 'ReDIB COA Portal')
         site.save()
+        Site.objects.clear_cache()
         self.stdout.write(f'    Site: {site.name} ({site.domain})')
 
     def create_nodes(self):

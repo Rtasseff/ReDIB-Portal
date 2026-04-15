@@ -187,6 +187,9 @@ class ApplicationStep2Form(forms.ModelForm):
             cleaned_data['project_code'] = ''
             cleaned_data['funding_agency_obj'] = None
             cleaned_data['project_type'] = ''
+            # Also clear the legacy text CharField so stale values don't
+            # survive in previews/PDFs when a user toggles funding off.
+            cleaned_data['funding_agency'] = ''
         else:
             agency_val = cleaned_data.get('funding_agency_obj')
 
@@ -237,6 +240,10 @@ class ApplicationStep2Form(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.project_type = self.cleaned_data.get('project_type', '')
+        # Clear the legacy text field when competitive funding is off;
+        # it isn't in Meta.fields so we set it explicitly on the instance.
+        if not self.cleaned_data.get('has_competitive_funding'):
+            instance.funding_agency = ''
         if commit:
             instance.save()
         return instance
@@ -672,9 +679,9 @@ class NodeResolutionForm(forms.Form):
                 'resolution',
                 "Applications with competitive funding cannot be rejected."
             )
-
-        # Require comments if rejecting
-        if resolution == 'reject' and not cleaned_data.get('comments'):
+        # Require comments if rejecting (only if the reject itself was allowed,
+        # otherwise we'd surface two errors for the same field).
+        elif resolution == 'reject' and not cleaned_data.get('comments'):
             self.add_error(
                 'comments',
                 "Comments are required when rejecting an application. Please explain the reason."

@@ -127,6 +127,7 @@ class Command(BaseCommand):
         site.domain = os.environ.get('SITE_DOMAIN', 'portal.redib.net')
         site.name = os.environ.get('SITE_NAME', 'ReDIB COA Portal')
         site.save()
+        Site.objects.clear_cache()
 
     def reset_database(self):
         """Clear all data from the database except superusers."""

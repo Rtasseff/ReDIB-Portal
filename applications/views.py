@@ -1029,14 +1029,26 @@ def application_acceptance(request, pk):
             application.accepted_at = timezone.now()
             application.save()
 
-            # Send handoff email to applicant + node coordinators
-            _send_handoff_email(application)
-            application.handoff_email_sent_at = timezone.now()
-            application.save()
-
-            messages.success(request,
-                "You have accepted the access grant. Handoff email sent to node coordinators."
-            )
+            # Send handoff email to applicant + node coordinators. Acceptance
+            # must succeed even if the email fails (missing template, SMTP
+            # outage, etc.) — we log the failure and leave
+            # handoff_email_sent_at unset so coordinators can retry.
+            try:
+                _send_handoff_email(application)
+                application.handoff_email_sent_at = timezone.now()
+                application.save(update_fields=['handoff_email_sent_at'])
+                messages.success(request,
+                    "You have accepted the access grant. Handoff email sent to node coordinators."
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception(
+                    "Handoff email failed for application %s", application.code
+                )
+                messages.success(request,
+                    "You have accepted the access grant. "
+                    "The handoff email could not be sent automatically — a coordinator will follow up."
+                )
             return redirect('applications:detail', pk=application.pk)
 
         elif action == 'decline':
@@ -1106,7 +1118,8 @@ def _send_handoff_email(application):
     for node in nodes:
         node_coordinators = UserRole.objects.filter(
             node=node,
-            role='node_coordinator'
+            role='node_coordinator',
+            is_active=True
         ).select_related('user')
         for user_role in node_coordinators:
             email = user_role.user.email
@@ -1303,7 +1316,7 @@ def node_resolution_review(request, application_id, node_id):
     """
     from core.models import UserRole, Node
     from applications.services import NodeResolutionService
-    from applications.forms import NodeResolutionForm, NodeResolutionEquipmentForm
+    from applications.forms import NodeResolutionForm
     from decimal import Decimal
 
     application = get_object_or_404(Application, pk=application_id)

@@ -194,11 +194,15 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# In development (DEBUG=True), run Celery tasks synchronously in-process so
-# workflow emails reach the console backend without needing a Celery worker
-# or Redis broker. In production this stays False so .delay() queues normally.
-CELERY_TASK_ALWAYS_EAGER = DEBUG
-CELERY_TASK_EAGER_PROPAGATES = DEBUG
+# In development (DEBUG=True) or when running the test runner, execute Celery
+# tasks synchronously in-process. Tests run with DEBUG=False but still need
+# eager execution so mail.outbox captures outgoing workflow emails and tests
+# aren't silently broken by an absent broker. In production neither flag is
+# set so .delay() queues to the real broker normally.
+import sys as _sys
+_IS_TESTING = 'test' in _sys.argv or 'pytest' in _sys.argv[0]
+CELERY_TASK_ALWAYS_EAGER = DEBUG or _IS_TESTING
+CELERY_TASK_EAGER_PROPAGATES = DEBUG or _IS_TESTING
 
 # Site URL for building absolute links in emails (no trailing slash)
 SITE_URL = env('SITE_URL', default='https://portal.redib.net')
