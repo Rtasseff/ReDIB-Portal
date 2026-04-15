@@ -1151,7 +1151,7 @@ ReDIB COA Team''',
                 <li><strong>Applicant:</strong> {{ applicant_name }} ({{ applicant_entity }})</li>
                 <li><strong>Email:</strong> {{ applicant_email }}</li>
                 <li><strong>Phone:</strong> {{ applicant_phone }}</li>
-                <li><strong>Project:</strong> {{ project_title }}</li>
+                <li><strong>Project:</strong> {{ project_name }}</li>
                 <li><strong>Brief Description:</strong> {{ brief_description }}</li>
             </ul>
 
@@ -1188,7 +1188,7 @@ APPLICATION DETAILS
 - Applicant: {{ applicant_name }} ({{ applicant_entity }})
 - Email: {{ applicant_email }}
 - Phone: {{ applicant_phone }}
-- Project: {{ project_title }}
+- Project: {{ project_name }}
 - Brief Description: {{ brief_description }}
 
 APPROVED ACCESS
@@ -1207,7 +1207,7 @@ ReDIB COA Team
 ---
 This is an automated notification from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: applicant_name, applicant_entity, applicant_email, applicant_phone, application_code, project_title, brief_description, service_modality, node_names, requested_access (list)'''
+                'available_variables': '''Variables: applicant_name, applicant_entity, applicant_email, applicant_phone, application_code, project_name, brief_description, service_modality, node_names, requested_access (list)'''
             },
             {
                 'template_type': 'acceptance_expired',
@@ -1287,7 +1287,7 @@ Please do not reply to this email.''',
 
 We hope your research using ReDIB COA resources was successful!
 
-It has been approximately 6 months since your access was granted for application {{ application_code }} - "{{ project_title }}".
+It has been approximately 6 months since your access was granted for application {{ application_code }} - "{{ project_name }}".
 
 We would greatly appreciate it if you could report any publications that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.
 
@@ -1317,7 +1317,7 @@ This is an automated reminder from the ReDIB COA Management System.''',
 
 <p>We hope your research using ReDIB COA resources was successful!</p>
 
-<p>It has been approximately <strong>6 months</strong> since your access was granted for application <strong>{{ application_code }}</strong> - "{{ project_title }}".</p>
+<p>It has been approximately <strong>6 months</strong> since your access was granted for application <strong>{{ application_code }}</strong> - "{{ project_name }}".</p>
 
 <p>We would greatly appreciate it if you could <strong>report any publications</strong> that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.</p>
 
@@ -1343,7 +1343,7 @@ This is an automated reminder from the ReDIB COA Management System.''',
 <p style="font-size: 12px; color: #718096;">This is an automated reminder from the ReDIB COA Management System.</p>
 
 </body></html>''',
-                'available_variables': '''Variables: applicant_name, application_code, project_title, handoff_date, acknowledgment_text, publication_url'''
+                'available_variables': '''Variables: applicant_name, application_code, project_name, handoff_date, acknowledgment_text, publication_url'''
             },
             {
                 'template_type': 'call_published',

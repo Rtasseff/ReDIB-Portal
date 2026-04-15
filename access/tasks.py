@@ -128,7 +128,7 @@ def send_publication_followups():
         context = {
             'applicant_name': application.applicant.get_full_name(),
             'application_code': application.code,
-            'project_title': application.project_title or application.brief_description,
+            'project_name': application.project_name or application.brief_description,
             'handoff_date': application.handoff_email_sent_at,
             'acknowledgment_text': 'This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU).',
             'publication_url': settings.SITE_URL + reverse('access:publication_submit'),

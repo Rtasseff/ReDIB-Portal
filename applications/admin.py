@@ -31,7 +31,7 @@ class NodeResolutionInline(admin.TabularInline):
 class ApplicationAdmin(SimpleHistoryAdmin):
     list_display = ['code', 'applicant_name', 'applicant_entity', 'call', 'status', 'resolution', 'final_score', 'submitted_at']
     list_filter = ['status', 'resolution', 'call', 'subject_area', 'service_modality']
-    search_fields = ['code', 'brief_description', 'applicant__email', 'applicant_name', 'applicant_email', 'project_title']
+    search_fields = ['code', 'brief_description', 'applicant__email', 'applicant_name', 'applicant_email', 'project_name']
     ordering = ['-submitted_at', '-created_at']
     inlines = [RequestedAccessInline, FeasibilityReviewInline, NodeResolutionInline]
     readonly_fields = ['code', 'final_score', 'submitted_at', 'created_at', 'updated_at']
@@ -49,7 +49,7 @@ class ApplicationAdmin(SimpleHistoryAdmin):
         }),
         ('Funding Source', {
             'fields': (
-                'project_title', 'project_code', 'funding_agency_obj', 'funding_agency',
+                'project_code', 'funding_agency_obj', 'funding_agency',
                 'project_type', 'has_competitive_funding'
             ),
             'classes': ('collapse',)

@@ -128,7 +128,6 @@ class Application(models.Model):
     applicant_phone = models.CharField(max_length=30, blank=True, help_text='Contact phone')
 
     # Funding source
-    project_title = models.CharField(max_length=300, blank=True, help_text='Name of the funded project')
     project_code = models.CharField(max_length=100, blank=True)
     funding_agency = models.CharField(max_length=200, blank=True, help_text='Legacy text field')
     funding_agency_obj = models.ForeignKey(

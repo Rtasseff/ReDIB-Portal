@@ -247,7 +247,7 @@ class WorkflowTester:
         )
 
         # Step 2: Fill in funding information (NEW project types and subject areas)
-        self.application.project_title = 'Advanced Imaging Research Project'
+        self.application.project_name = 'Advanced Imaging Research Project'
         self.application.project_code = 'E2E-2025-001'
         self.application.funding_agency = 'Agencia Estatal de Investigación'
         self.application.project_type = 'spanish_government'  # NEW PROJECT TYPE
@@ -384,7 +384,7 @@ class WorkflowTester:
             "3.4 Complete Workflow",
             all([
                 self.application.brief_description,
-                self.application.project_title,
+                self.application.project_name,
                 self.application.service_modality,
                 self.application.requested_access.exists(),
                 self.application.scientific_relevance,

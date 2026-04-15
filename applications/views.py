@@ -158,9 +158,6 @@ def application_create(request, call_pk):
             if user.orcid:
                 application.applicant_orcid = user.orcid
 
-            # Sync project_title from project_name (legacy field kept in sync)
-            application.project_title = application.project_name
-
             application.save()
 
             messages.success(request, "Application draft created. Continue to step 2.")
@@ -203,8 +200,6 @@ def application_edit_step1(request, pk):
                 app.applicant_phone = user.phone
             if user.orcid:
                 app.applicant_orcid = user.orcid
-            # Sync project_title from project_name (legacy field kept in sync)
-            app.project_title = app.project_name
             app.save()
             messages.success(request, "Step 1 saved. Continue to step 2.")
             return redirect('applications:edit_step2', pk=application.pk)
@@ -1103,7 +1098,7 @@ def _send_handoff_email(application):
         'applicant_email': application.applicant.email,
         'applicant_phone': application.applicant_phone or 'Not provided',
         'application_code': application.code,
-        'project_title': application.project_title,
+        'project_name': application.project_name,
         'brief_description': application.brief_description,
         'service_modality': application.get_service_modality_display() if application.service_modality else 'Not specified',
         'node_names': ', '.join([n.name for n in nodes]),

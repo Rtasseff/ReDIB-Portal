@@ -190,11 +190,11 @@ class Application(models.Model):
     status = models.CharField(choices=APPLICATION_STATUSES)
     
     # Basic info
+    project_name = models.CharField(max_length=300, blank=True)
     brief_description = models.CharField(max_length=100)
     submitted_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Funding source
-    project_title = models.CharField(max_length=300, blank=True)
     project_code = models.CharField(max_length=100, blank=True)
     funding_agency = models.CharField(max_length=200, blank=True)
     project_type = models.CharField(choices=PROJECT_TYPES)

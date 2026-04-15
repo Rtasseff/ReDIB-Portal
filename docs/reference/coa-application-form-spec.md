@@ -47,7 +47,7 @@ The main `Application` model should contain these fields:
 
 | Field | Type | Required | Max Length | Notes |
 |-------|------|----------|------------|-------|
-| `project_title` | CharField | No | 500 | "Project Title" - can be blank if no external funding |
+| `project_name` | CharField | Yes | 300 | "Project Title" entered in Step 1, shown on every view |
 | `project_code` | CharField | No | 100 | "Official code Project" |
 | `funding_agency` | CharField | No | 300 | "Funding agency" |
 | `project_type` | CharField | Yes | 30 | "Type of Project" - single select from choices |

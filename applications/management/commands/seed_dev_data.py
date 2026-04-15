@@ -309,7 +309,7 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant1@test.redib.net',
                 'applicant_phone': '+34 123 456 789',
                 # Project details
-                'project_title': 'Advanced MRI Techniques for Preclinical Research',
+                'project_name': 'Advanced MRI Techniques for Preclinical Research',
                 'project_code': 'PID2024-TEST-001',
                 'funding_agency': 'Agencia Estatal de Investigacion (AEI)',
                 'funding_agency_obj': FundingAgency.objects.filter(name='Agencia Estatal de Investigacion (AEI)').first(),
@@ -348,7 +348,7 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant2@test.redib.net',
                 'applicant_phone': '+49 987 654 321',
                 # Project details
-                'project_title': 'Basic PET Imaging Study',
+                'project_name': 'Basic PET Imaging Study',
                 'project_type': 'private',
                 'has_competitive_funding': False,
                 'subject_area': 'bio',
@@ -398,7 +398,7 @@ class Command(BaseCommand):
                 'applicant_email': 'applicant2@test.redib.net',
                 'applicant_phone': '+49 987 654 321',
                 # Project details
-                'project_title': 'Clinical Cardiovascular Imaging Study',
+                'project_name': 'Clinical Cardiovascular Imaging Study',
                 'funding_agency_obj': FundingAgency.objects.filter(name='National Institutes of Health (NIH)').first(),
                 'project_type': 'international_non_eu',
                 'has_competitive_funding': True,
