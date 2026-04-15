@@ -57,6 +57,11 @@
     </div>
     {% endif %}
 
+    <!-- Phase Tracker -->
+    {% if phase_tracker %}
+        {% include "includes/phase_tracker.html" %}
+    {% endif %}
+
     <!-- Status Timeline -->
     {% if application.status != 'draft' %}
     <div class="card mb-3">
@@ -192,6 +197,79 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Evaluation Summary (Coordinator Only) -->
+    {% if is_coordinator and evaluation_summary %}
+    <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Evaluation Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <small class="text-muted">Completed evaluations</small>
+                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.count }}</strong></p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Average score</small>
+                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.average|default:"—" }}</strong> / 12</p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Min</small>
+                    <p class="mb-0">{{ evaluation_summary.min|default:"—" }}</p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">Max</small>
+                    <p class="mb-0">{{ evaluation_summary.max|default:"—" }}</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Evaluator</th>
+                            <th>Quality</th>
+                            <th>Method</th>
+                            <th>Contrib.</th>
+                            <th>Knowledge</th>
+                            <th>Impact</th>
+                            <th>Exploit.</th>
+                            <th>Total</th>
+                            <th>Recommendation</th>
+                            <th>Completed</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ev in evaluation_summary.evaluations %}
+                        <tr>
+                            <td>{{ ev.evaluator.get_full_name|default:ev.evaluator.email }}</td>
+                            <td>{{ ev.score_quality_originality|default:"—" }}</td>
+                            <td>{{ ev.score_methodology_design|default:"—" }}</td>
+                            <td>{{ ev.score_expected_contributions|default:"—" }}</td>
+                            <td>{{ ev.score_knowledge_advancement|default:"—" }}</td>
+                            <td>{{ ev.score_social_economic_impact|default:"—" }}</td>
+                            <td>{{ ev.score_exploitation_dissemination|default:"—" }}</td>
+                            <td><strong>{{ ev.total_score|default:"—" }}</strong></td>
+                            <td>
+                                {% if ev.recommendation == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif ev.recommendation == 'denied' %}
+                                    <span class="badge bg-danger">Denied</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ ev.completed_at|date:"M d, Y"|default:"—" }}</td>
+                            <td class="text-pre-wrap">{{ ev.comments|default:"—"|truncatewords:30 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Feasibility Review Status (Coordinator Only) -->
     {% if is_coordinator and feasibility_status %}

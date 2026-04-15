@@ -84,6 +84,7 @@ def application_detail(request, pk):
         'requested_access': requested_access,
         'is_coordinator': is_coordinator,
         'edit_requests': edit_requests,
+        'phase_tracker': _build_phase_tracker(application),
     }
 
     # Add feasibility review status for coordinators
@@ -128,7 +129,99 @@ def application_detail(request, pk):
 
         context['feasibility_status'] = unique_feasibility
 
+        # Evaluation summary for coordinators — per-evaluator scores,
+        # average, recommendations, completion timestamps.
+        completed_evals = list(
+            application.evaluations.select_related('evaluator')
+            .exclude(completed_at__isnull=True)
+            .order_by('completed_at')
+        )
+        if completed_evals:
+            totals = [float(e.total_score) for e in completed_evals if e.total_score is not None]
+            context['evaluation_summary'] = {
+                'evaluations': completed_evals,
+                'count': len(completed_evals),
+                'average': round(sum(totals) / len(totals), 2) if totals else None,
+                'min': min(totals) if totals else None,
+                'max': max(totals) if totals else None,
+            }
+
     return render(request, 'applications/detail.html', context)
+
+
+def _build_phase_tracker(application):
+    """Build a list of (label, state) tuples representing the workflow
+    phases for this application.
+
+    `state` is one of 'complete', 'current', 'pending', 'terminal-fail'.
+    The tracker short-circuits on terminal-failure statuses so the UI can
+    communicate "this application did not proceed past phase X".
+    """
+    status = application.status
+
+    # Map every status to a position in the phase sequence.
+    PHASES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('feasibility', 'Feasibility Review'),
+        ('evaluation', 'Evaluation'),
+        ('resolution', 'Resolution'),
+        ('acceptance', 'Acceptance'),
+        ('access', 'Access'),
+    ]
+
+    # Which phase is the application currently at? (keyed by phase id)
+    status_phase = {
+        'draft': 'draft',
+        'submitted': 'submitted',
+        'under_feasibility_review': 'feasibility',
+        'rejected_feasibility': 'feasibility',
+        'pending_evaluation': 'evaluation',
+        'under_evaluation': 'evaluation',
+        'evaluated': 'resolution',
+        'accepted': 'acceptance',
+        'pending': 'acceptance',
+        'rejected': 'resolution',
+        'declined_by_applicant': 'acceptance',
+        'expired': 'acceptance',
+        'completed': 'access',
+    }.get(status, 'draft')
+
+    # Once the applicant has accepted and the handoff email has been sent,
+    # consider the 'acceptance' phase complete and highlight 'access'.
+    if status == 'accepted' and application.accepted_by_applicant and application.handoff_email_sent_at:
+        status_phase = 'access'
+    # 'completed' is a terminal success on 'access'.
+    if application.is_completed:
+        status_phase = 'access'
+
+    terminal_fail_statuses = {
+        'rejected_feasibility', 'rejected',
+        'declined_by_applicant', 'expired',
+    }
+    is_terminal_fail = status in terminal_fail_statuses
+    phase_order = [p_id for p_id, _ in PHASES]
+
+    try:
+        current_idx = phase_order.index(status_phase)
+    except ValueError:
+        current_idx = 0
+
+    tracker = []
+    for idx, (phase_id, label) in enumerate(PHASES):
+        if is_terminal_fail and idx == current_idx:
+            state = 'terminal-fail'
+        elif idx < current_idx:
+            state = 'complete'
+        elif idx == current_idx and application.is_completed:
+            state = 'complete'
+        elif idx == current_idx:
+            state = 'current'
+        else:
+            state = 'pending' if not is_terminal_fail else 'pending'
+        tracker.append({'id': phase_id, 'label': label, 'state': state})
+
+    return tracker
 
 
 @login_required

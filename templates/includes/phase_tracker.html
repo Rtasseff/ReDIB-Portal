@@ -1,0 +1,40 @@
+{% comment %}
+Phase tracker for an Application.
+
+Expects `phase_tracker` in context — a list of dicts with keys:
+  id     : short slug (e.g. 'feasibility')
+  label  : human label (e.g. 'Feasibility Review')
+  state  : 'complete' | 'current' | 'pending' | 'terminal-fail'
+
+Renders a horizontal stepper using Bootstrap utility classes.
+{% endcomment %}
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap align-items-center gap-1">
+            {% for phase in phase_tracker %}
+            <div class="d-flex align-items-center">
+                {% if phase.state == 'complete' %}
+                    <span class="badge rounded-pill bg-success">
+                        <i class="bi bi-check-circle-fill"></i> {{ phase.label }}
+                    </span>
+                {% elif phase.state == 'current' %}
+                    <span class="badge rounded-pill bg-primary">
+                        <i class="bi bi-arrow-right-circle-fill"></i> {{ phase.label }}
+                    </span>
+                {% elif phase.state == 'terminal-fail' %}
+                    <span class="badge rounded-pill bg-danger">
+                        <i class="bi bi-x-circle-fill"></i> {{ phase.label }}
+                    </span>
+                {% else %}
+                    <span class="badge rounded-pill bg-light text-muted border">
+                        {{ phase.label }}
+                    </span>
+                {% endif %}
+                {% if not forloop.last %}
+                <span class="text-muted mx-1">&rsaquo;</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
