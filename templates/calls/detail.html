@@ -178,9 +178,7 @@
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
                         <td>{{ app.applicant.get_full_name }}</td>
-                        <td>
-                            <span class="badge bg-secondary">{{ app.get_status_display }}</span>
-                        </td>
+                        <td>{% include "includes/status_badge.html" %}</td>
                         <td>{{ app.submitted_at|date:"M d, Y H:i" }}</td>
                         <td>
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
