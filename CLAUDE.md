@@ -43,7 +43,7 @@ communications/     # Email templates (DB-stored) and Celery send tasks
 reports/            # Statistics dashboard and Excel exports
 templates/          # All HTML templates
 static/             # CSS, images, JS source files
-data/               # CSV fixtures (nodes.csv, equipment.csv, users.csv)
+data/               # TSV fixtures (nodes.tsv, organizations.tsv, users.tsv, equipment.tsv, funding_agencies.tsv)
 tests/              # Integration tests by workflow phase
 ```
 
@@ -103,17 +103,20 @@ Email templates are stored in the database. Seed with `python manage.py seed_ema
 
 | Command | Purpose |
 |---------|---------|
-| `setup_base_database` | Populate real reference data only (nodes, equipment, users, email templates) |
+| `setup_localtest2_database` | **Recommended for dev manual testing.** Self-contained: nodes/equipment/orgs/funding agencies/users/calls/sample apps. No TSV required. |
+| `setup_base_database` | Populate real reference data from `data/*.tsv` (nodes, organizations, users, equipment, funding agencies, email templates) |
 | `setup_test_database` | Full test setup (base data + fake calls, applications, test applicants) |
+| `setup_localtest1_database` | Minimal test setup (legacy — use `setup_localtest2_database` instead) |
 | `seed_email_templates` | Load/update email templates (run after DB reset) |
-| `populate_redib_nodes` | Load nodes from CSV (must run before users/equipment) |
-| `populate_redib_users` | Load users from CSV (requires nodes), sets password + email verification |
-| `populate_redib_equipment` | Load equipment from CSV (requires nodes) |
-| `setup_localtest1_database` | Minimal test setup |
-| `seed_dev_data` | Seed calls and organizations |
+| `populate_redib_nodes` | Load nodes from `data/nodes.tsv` (must run before users/equipment) |
+| `populate_redib_organizations` | Load organizations from `data/organizations.tsv` |
+| `populate_redib_users` | Load users from `data/users.tsv` (requires nodes + organizations); sets password + email verification |
+| `populate_redib_equipment` | Load equipment from `data/equipment.tsv` (requires nodes) |
+| `populate_redib_funding_agencies` | Load funding agencies from `data/funding_agencies.tsv` |
+| `seed_dev_data` | Seed calls and organizations (used inside `setup_test_database`) |
 | `seed_test_applicants` | Create test applicants with applications at various stages |
 
-All population commands support `--sync` flag to update without deleting existing records.
+All `populate_redib_*` commands support `--sync` flag to update without deleting existing records.
 
 ## Code Style
 

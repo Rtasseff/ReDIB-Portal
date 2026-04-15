@@ -214,9 +214,8 @@ def send_single_resolution_notification_task(application_id):
     if application.resolution == 'accepted' and application.acceptance_deadline:
         context['acceptance_deadline'] = application.acceptance_deadline
         context['days_to_respond'] = application.days_until_acceptance_deadline
-        from django.contrib.sites.models import Site
-        domain = Site.objects.get_current().domain
-        context['accept_url'] = f'https://{domain}/applications/{application.id}/accept/'
+        from django.conf import settings
+        context['accept_url'] = f'{settings.SITE_URL}/applications/{application.id}/accept/'
 
     # Send notification email
     try:

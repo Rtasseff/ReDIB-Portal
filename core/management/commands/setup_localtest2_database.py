@@ -247,11 +247,14 @@ class Command(BaseCommand):
     # Step 3: Organizations
     # -------------------------------------------------------------------------
     def configure_site(self):
-        """Set the Django Site object to ReDIB portal values."""
+        """Set the Django Site object. Reads SITE_DOMAIN/SITE_NAME from env so
+        dev environments can point at localhost while production uses
+        portal.redib.net."""
+        import os
         from django.contrib.sites.models import Site
         site = Site.objects.get(id=1)
-        site.domain = 'portal.redib.net'
-        site.name = 'ReDIB COA Portal'
+        site.domain = os.environ.get('SITE_DOMAIN', 'portal.redib.net')
+        site.name = os.environ.get('SITE_NAME', 'ReDIB COA Portal')
         site.save()
         self.stdout.write(f'    Site: {site.name} ({site.domain})')
 

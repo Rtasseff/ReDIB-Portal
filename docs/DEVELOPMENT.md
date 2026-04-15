@@ -42,53 +42,39 @@ If you haven't done these steps yet, follow [QUICKSTART.md](QUICKSTART.md) for a
 
 ## Quick Database Setup
 
-### Base Data Only (Real Reference Data)
+Pick one of the three setup commands based on what you need. All support `--reset --yes` to wipe non-superuser data first.
 
-For a clean database with only real nodes, equipment, users, and email templates — no fake test data:
+### Option A: `setup_localtest2_database` (recommended for manual testing)
+
+Self-contained test environment with everything pre-wired (nodes, equipment, orgs, funding agencies, users, calls, sample applications). **No TSV data files required.**
 
 ```bash
-# Step 1: Delete the old database and create a fresh one
-rm db.sqlite3
-python manage.py migrate
-
-# Step 2: Create your superuser (interactive — enter email and password)
-python manage.py createsuperuser
-
-# Step 3: Populate real reference data
-python manage.py setup_base_database
+python manage.py setup_localtest2_database --reset --yes
 ```
 
-This loads:
-- **4 nodes** from `data/nodes.csv`
-- **17 equipment items** from `data/equipment.csv` (across all nodes)
-- **9 staff users** from `data/users.csv` (coordinator, node coordinators, evaluators)
-- **15+ email templates** for all workflow notifications
+Creates 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users (password `testpass123`), 2 calls, 3 sample applications. One applicant has an intentionally incomplete profile for Scenario 1 testing.
 
-All CSV users get password `changeme123` and pre-verified email (ready to log in immediately).
+### Option B: `setup_base_database` (real reference data only)
 
-If your superuser email matches a row in `data/users.csv`, that user also gets the CSV roles assigned and password set to `changeme123`.
-
-### Base Data + Test Data
-
-For a database that also includes fake calls, applications, and test applicants at various workflow stages:
+Loads real ReDIB data from `data/*.tsv` files. No fake calls or applications.
 
 ```bash
-python manage.py setup_test_database --reset --yes
-```
-
-See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for test data documentation.
-
-### Soft Reset (Preserve Superuser)
-
-To clear all data except superusers and repopulate without deleting the database file:
-
-```bash
-# Base data only
 python manage.py setup_base_database --reset --yes
+```
 
-# Or with test data
+All TSV users get password `changeme123` and pre-verified emails. If your superuser email matches a row in `data/users.tsv`, that user also gets the TSV roles assigned.
+
+### Option C: `setup_test_database` (real reference data + test applicants)
+
+Extends `setup_base_database` with `seed_dev_data` and `seed_test_applicants` (7 test applicants, 17 apps across all workflow states).
+
+```bash
 python manage.py setup_test_database --reset --yes
 ```
+
+Pass `--skip-applicants` if you just want the base data.
+
+See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for the full applicant inventory.
 
 ## Database Management
 
@@ -107,45 +93,39 @@ python manage.py setup_base_database
 
 ## Data Loading
 
-### Initial Data Setup
+The recommended path is to use one of the `setup_*_database` commands above. Run the individual population commands only when you need fine-grained control.
 
-After creating a fresh database, load the required data in the following order:
-
-**IMPORTANT:** Commands must be run in this specific order due to dependencies.
+### Individual Population Commands (dependency order)
 
 ```bash
-# 1. Load email templates (no dependencies)
+# 1. Email templates (no dependencies)
 python manage.py seed_email_templates
 
-# 2. Load ReDIB nodes FIRST (required by users and equipment)
+# 2. Nodes (no dependencies; required by users and equipment)
 python manage.py populate_redib_nodes
 
-# 3. Load users (depends on nodes existing)
+# 3. Organizations (no dependencies; users link to these)
+python manage.py populate_redib_organizations
+
+# 4. Users (requires nodes + organizations)
 python manage.py populate_redib_users
 
-# 4. Load equipment (depends on nodes existing)
+# 5. Equipment (requires nodes)
 python manage.py populate_redib_equipment
+
+# 6. Funding agencies (no dependencies)
+python manage.py populate_redib_funding_agencies
 ```
 
-### Data Loading Dependencies
-
-- `seed_email_templates` - No dependencies, can run anytime
-- `populate_redib_nodes` - **MUST run first** - loads 4 nodes from `data/nodes.csv`
-- `populate_redib_users` - Requires nodes to exist, loads users from `data/users.csv`
-- `populate_redib_equipment` - Requires nodes to exist, loads equipment from `data/equipment.csv`
+All commands read from `data/*.tsv` files — see [data/README.md](../data/README.md) for the TSV format and column reference.
 
 ### Sync Mode
 
-All population commands support `--sync` mode for updating existing data without deleting records:
+All `populate_redib_*` commands support `--sync` to update existing records without deleting:
 
 ```bash
-# Update nodes without deleting existing data
 python manage.py populate_redib_nodes --sync
-
-# Update users without deleting existing data
 python manage.py populate_redib_users --sync
-
-# Update equipment without deleting existing data
 python manage.py populate_redib_equipment --sync
 ```
 
@@ -181,7 +161,7 @@ This is also run automatically during deployment via the Docker entrypoint.
 
 ### Testing All Templates
 
-Send all 15 templates to a single recipient to verify rendering and links:
+Send all workflow email templates to a single recipient to verify rendering and links:
 
 ```bash
 # Send test emails
@@ -257,15 +237,20 @@ python manage.py sqlmigrate core 0001
 ### Creating Test Data
 
 ```bash
-# Complete test database setup (recommended - runs all seed scripts)
+# Self-contained dev test environment (no TSV needed) — recommended for manual testing
+python manage.py setup_localtest2_database --reset --yes
+
+# Real reference data only (loads from data/*.tsv)
+python manage.py setup_base_database --reset --yes
+
+# Real reference data + test applicants (17 apps across all workflow states)
 python manage.py setup_test_database --reset --yes
 
-# Or seed just the test applicants (if base data already exists)
+# Seed just the test applicants (if base data already exists)
 python manage.py seed_test_applicants --clear
-
-# Or seed just development data (calls, orgs)
-python manage.py seed_dev_data
 ```
+
+See [SETUP_GUIDE.md#initial-data-setup](SETUP_GUIDE.md#initial-data-setup) for the full breakdown of what each command creates.
 
 ## Quick Reference: Complete Setup from Scratch
 

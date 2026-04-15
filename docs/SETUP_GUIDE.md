@@ -8,45 +8,33 @@ Detailed configuration reference for the ReDIB Portal. For a quick first-time se
 
 ### How the App Determines Its Mode
 
-The application reads a single `.env` file in the project root (`redib/settings.py`). Three templates are provided:
+The application reads a single `.env` file in the project root (`redib/settings.py`). Two templates are provided:
 
 | Template | Purpose | Copy Command |
 |----------|---------|-------------|
-| `.env.example` | Local development (venv + SQLite) | `cp .env.example .env` |
-| `.env.docker` | Local Docker testing (PostgreSQL + Redis) | `cp .env.docker .env` |
-| `.env.production.template` | Production VPS deployment | `cp .env.production.template .env` |
+| `.env.example` | Local development (venv + SQLite + console email) | `cp .env.example .env` |
+| `.env.production.template` | Production VPS deployment (Docker + PostgreSQL + Redis + SMTP) | `cp .env.production.template .env` |
+
+For rare cases where you want to run the full stack locally in Docker, start from `.env.production.template` and adjust values (DEBUG=True, simple passwords, `ALLOWED_HOSTS=localhost,127.0.0.1`).
 
 ### Key Settings That Control Behavior
 
 | Setting | Dev Default | Prod Value | Effect |
 |---------|-----------|------------|--------|
-| `DEBUG` | `True` | `False` | Enables debug toolbar; when False, enables HSTS, secure cookies |
+| `DEBUG` | `True` | `False` | Enables debug toolbar; when False, enables HSTS, secure cookies. When True, also runs Celery tasks synchronously (`CELERY_TASK_ALWAYS_EAGER`). |
 | `DATABASE_URL` | `sqlite:///db.sqlite3` | `postgres://...` | Database engine |
 | `USE_REDIS` | `False` | `True` | Cache backend: LocMemCache (dev) vs Redis (prod) |
 | `EMAIL_BACKEND` | `console` | `django.core.mail.backends.smtp.EmailBackend` | Emails print to terminal (dev) vs real SMTP delivery (prod) |
 | `SECRET_KEY` | Insecure dev default | **Must set unique value** | Cryptographic signing |
 | `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Your domain | HTTP Host header validation |
-| `SITE_URL` | `https://portal.redib.net` | Your domain URL | Absolute URLs in emails |
+| `SITE_URL` | `http://127.0.0.1:8000` | `https://portal.redib.net` | Full URL used in emailed links (must point to the actual host) |
+| `SITE_DOMAIN` | `127.0.0.1:8000` | `portal.redib.net` | Host:port written to the Django Site record (used by allauth email templates) |
+| `SITE_NAME` | `ReDIB COA Portal` | `ReDIB COA Portal` | Display name in email headers |
 | `CELERY_BROKER_URL` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Celery broker (only matters if workers are running) |
 
 When `DEBUG=False`, Django automatically enables: HSTS, secure cookies, CSRF cookie security, and proxy SSL header detection. See `redib/settings.py`.
 
-### Switching Between Modes
-
-**Development to Docker testing:**
-```bash
-docker compose down          # if previously running
-cp .env.docker .env
-docker compose up -d --build
-```
-
-**Docker testing back to development:**
-```bash
-docker compose down
-cp .env.example .env
-source venv/bin/activate
-python manage.py runserver
-```
+After changing `SITE_URL`/`SITE_DOMAIN`/`SITE_NAME`, re-run your setup command (`setup_localtest2_database`, etc.) so the Django Site record in the database picks up the new values.
 
 **Production deployment** is a one-way setup on a VPS -- see [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -74,131 +62,82 @@ You'll be prompted for:
 
 ---
 
-## Initial Data Setup (Detailed)
+## Initial Data Setup
 
-After creating the database and superuser, load the required data using the provided management commands.
+After migrating the database and creating a superuser, populate data using one of the setup commands below. Most users should just pick one.
 
-**IMPORTANT**: Commands must be run in the specific order below due to data dependencies.
+### Option A: `setup_localtest2_database` — Recommended for manual testing (dev)
 
-### Step 1: Load Email Templates
-
-Load all required email templates (no dependencies):
+Self-contained test environment. **Does not require any TSV data files.**
 
 ```bash
-python manage.py seed_email_templates
+python manage.py setup_localtest2_database --reset --yes
 ```
 
-This creates all required email templates:
-- call_published
-- application_received
-- feasibility_request
-- feasibility_reminder
-- feasibility_rejected
-- evaluation_assigned
-- evaluation_reminder
-- resolution_accepted / resolution_pending / resolution_rejected
-- acceptance_reminder
-- access_scheduled
-- publication_followup
+Creates: 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users, 2 calls (1 open + 1 resolved), 3 sample applications at different workflow stages, and all email templates. All users have password `testpass123`. See the test accounts table in [QUICKSTART.md](QUICKSTART.md#test-accounts-after-running-setup_localtest2_database).
 
-### Step 2: Load ReDIB Nodes (REQUIRED FIRST)
+### Option B: `setup_base_database` — Real reference data only
 
-**This must run before loading users or equipment.**
+Loads real ReDIB data from `data/*.tsv` files. No fake calls or applications. Useful for production setup or when you want to test with the real node/equipment inventory.
 
 ```bash
-python manage.py populate_redib_nodes
+python manage.py setup_base_database --reset --yes
 ```
 
-Loads 4 ReDIB nodes from `data/nodes.csv`:
-- **CIC biomaGUNE** (CICBIO) - San Sebastian
-- **BioImaC** (BIOIMAC) - Murcia
-- **La Fe** (LAFE) - Valencia
-- **CNIC** (CNIC) - Madrid
+Runs (in order): `populate_redib_nodes` → `populate_redib_organizations` → `populate_redib_users` → `populate_redib_equipment` → `populate_redib_funding_agencies` → `seed_email_templates` → `configure_site`. All TSV users get password `changeme123` and pre-verified emails.
 
-### Step 3: Load ReDIB Users
+### Option C: `setup_test_database` — Real reference data + test applicants
 
-**Requires nodes to exist** (depends on Step 2):
-
-```bash
-python manage.py populate_redib_users
-```
-
-Loads 8 core staff from `data/users.csv`:
-- ReDIB Coordinator
-- Node Coordinators (one per node)
-- Evaluators with assigned research areas
-- All users created with role assignments
-
-### Step 4: Load Equipment
-
-**Requires nodes to exist** (depends on Step 2):
-
-```bash
-python manage.py populate_redib_equipment
-```
-
-Loads 17 imaging devices from `data/equipment.csv`:
-- MRI scanners (3T, 7T)
-- PET-CT scanners
-- Cyclotrons
-- Optical imaging equipment
-- And more...
-
-### Updating Data with Sync Mode
-
-To update existing data without deleting records, use `--sync` mode:
-
-```bash
-# Update nodes without deleting
-python manage.py populate_redib_nodes --sync
-
-# Update users without deleting
-python manage.py populate_redib_users --sync
-
-# Update equipment without deleting
-python manage.py populate_redib_equipment --sync
-```
-
-**Use sync mode** when:
-- Adding new nodes/users/equipment to existing data
-- Updating information for existing records
-- Preserving relationships and historical data
-
-### CSV Data Sources
-
-All data is loaded from CSV files in the `data/` directory:
-- `data/nodes.csv` - 4 ReDIB network nodes
-- `data/users.csv` - 8 core staff members
-- `data/equipment.csv` - 17 imaging devices
-
-You can edit these CSV files to customize the data before loading.
-
----
-
-## Quick Test Data Setup
-
-Instead of loading data manually with the steps above, use a single command:
+Runs `setup_base_database` equivalent plus `seed_dev_data` (calls, orgs) and `seed_test_applicants` (7 test applicants with 17 applications in all workflow states).
 
 ```bash
 python manage.py setup_test_database --reset --yes
 ```
 
-This creates:
-- **8 test users** with different roles (all password: `testpass123`)
-- **2 nodes** (CICBIO and CNIC) with 4 equipment items
-- **2 calls** (one resolved, one open)
-- **4 applications** in different states (draft, feasibility review, rejected, completed)
-- **Complete workflow** examples with evaluations, grants, and publications
+Pass `--skip-applicants` to skip the test applicants step.
 
-**Test user accounts:**
-- `admin@test.redib.net` - Administrator
-- `coordinator@test.redib.net` - ReDIB Coordinator
-- `cic@test.redib.net` - Node Coordinator for CICBIO
-- `cnic@test.redib.net` - Node Coordinator for CNIC
-- `eval1@test.redib.net` - Evaluator (preclinical)
-- `eval2@test.redib.net` - Evaluator (clinical)
-- `applicant1@test.redib.net` - Applicant
-- `applicant2@test.redib.net` - Applicant
+### Individual Population Commands
+
+If you need fine-grained control, run the individual commands in dependency order. They read from `data/*.tsv` files (see [data/README.md](../data/README.md) for TSV format details):
+
+```bash
+# 1. Email templates (no dependencies)
+python manage.py seed_email_templates
+
+# 2. Nodes (no dependencies; required by users and equipment)
+python manage.py populate_redib_nodes
+
+# 3. Organizations (no dependencies; users link to these)
+python manage.py populate_redib_organizations
+
+# 4. Users (requires nodes and organizations)
+python manage.py populate_redib_users
+
+# 5. Equipment (requires nodes)
+python manage.py populate_redib_equipment
+
+# 6. Funding agencies (no dependencies)
+python manage.py populate_redib_funding_agencies
+```
+
+All `populate_redib_*` commands support `--sync` mode to update existing records without deleting:
+
+```bash
+python manage.py populate_redib_nodes --sync
+python manage.py populate_redib_users --sync
+python manage.py populate_redib_equipment --sync
+```
+
+### TSV Data Sources
+
+All population commands read tab-separated value files from `data/`:
+- `data/nodes.tsv` — ReDIB network nodes
+- `data/organizations.tsv` — Parent organizations
+- `data/users.tsv` — Staff users with roles and areas
+- `data/equipment.tsv` — Imaging devices per node
+- `data/funding_agencies.tsv` — Funding agencies with origin_of_funds
+
+See [data/README.md](../data/README.md) for TSV column reference and value constraints.
 
 ---
 

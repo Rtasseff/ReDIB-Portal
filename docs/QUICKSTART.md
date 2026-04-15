@@ -47,10 +47,21 @@ python manage.py createsuperuser
 ## 4. Load Test Data (recommended)
 
 ```bash
-python manage.py setup_test_database
+python manage.py setup_localtest2_database --reset --yes
 ```
 
-This single command loads nodes, equipment, users, email templates, calls, and test applicants with applications in various workflow stages. See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for details on what gets created.
+This single command creates a self-contained test environment with:
+- 3 nodes, 6 equipment items
+- 2 organizations
+- 7 funding agencies (with origin_of_funds values)
+- 10 users (coordinator, 3 node coordinators, 3 evaluators, 3 applicants)
+- 2 calls (1 resolved, 1 open)
+- 3 sample applications at different workflow stages
+- All email templates
+
+No TSV data files required. See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for more on test data, and the table below for test account credentials.
+
+> Alternative: `python manage.py setup_test_database --reset --yes` loads from the real `data/*.tsv` files (4 real ReDIB nodes, 87 equipment items, etc.) and is closer to production. Use `setup_localtest2_database` for most manual testing.
 
 ## 5. Run the Development Server
 
@@ -62,7 +73,7 @@ python manage.py runserver
 - Admin: http://localhost:8000/admin
 - Login: http://localhost:8000/accounts/login/
 
-### Test Accounts (after running setup_test_database)
+### Test Accounts (after running setup_localtest2_database)
 
 All test accounts use password: `testpass123`
 
@@ -74,10 +85,10 @@ All test accounts use password: `testpass123`
 | nc.cnic@test.redib.net | Node Coordinator (CNIC) |
 | eval.preclinical@test.redib.net | Evaluator (preclinical) |
 | eval.clinical@test.redib.net | Evaluator (clinical) |
-| eval.radiotracers@test.redib.net | Evaluator (radiotracers) |
-| applicant1@test.redib.net | Applicant |
-| applicant2@test.redib.net | Applicant |
-| applicant3@test.redib.net | Applicant |
+| eval.radiochemistry@test.redib.net | Evaluator (radiochemistry) |
+| applicant1@test.redib.net | Applicant (complete profile) |
+| applicant2@test.redib.net | Applicant (complete profile) |
+| applicant3@test.redib.net | Applicant (**incomplete** profile — for Scenario 1 testing) |
 
 ---
 
@@ -98,9 +109,10 @@ If you want to test with the full production-like stack (PostgreSQL, Redis, Cele
 
 1. Install [Docker](https://docs.docker.com/get-docker/) and Docker Compose
 
-2. Copy the Docker environment file:
+2. Create your `.env` from the production template (adjust to local values — DEBUG=True, ALLOWED_HOSTS=localhost,127.0.0.1, simple passwords, and use service names `db`/`redis` as the hosts):
    ```bash
-   cp .env.docker .env
+   cp .env.production.template .env
+   # Edit .env to set DEBUG=True, simple passwords, and local ALLOWED_HOSTS
    ```
 
 3. Build and start all services:
@@ -173,13 +185,13 @@ python manage.py runserver
 ## Troubleshooting
 
 ### Issue: Database connection errors
-**Solution**: In development mode, the default SQLite database requires no setup -- just run `python manage.py migrate`. If you see PostgreSQL connection errors, make sure your `.env` file was copied from `.env.example` (not `.env.docker` or `.env.production.template`).
+**Solution**: In development mode, the default SQLite database requires no setup -- just run `python manage.py migrate`. If you see PostgreSQL connection errors, make sure your `.env` file was copied from `.env.example` (not `.env.production.template`).
 
 ### Issue: "Error connecting to redis:6379" when logging in
 **Solution**: Your `.env` may have `USE_REDIS=True`. For development, set `USE_REDIS=False` or re-copy from `.env.example`. Redis is not needed for local development.
 
 ### Issue: Celery tasks not running
-**Solution**: In development mode, Celery workers are not needed. Emails print to the terminal via the console backend. If you want to test Celery, see the optional setup in [SETUP_GUIDE.md](SETUP_GUIDE.md#running-celery-workers-optional-in-development).
+**Solution**: In development mode (`DEBUG=True`), Celery tasks run synchronously in-process via `CELERY_TASK_ALWAYS_EAGER=True`, and all emails (workflow + allauth) print to the terminal via the console backend. No Redis or Celery worker needed. If you specifically want to test the async Celery queue, see the optional setup in [SETUP_GUIDE.md](SETUP_GUIDE.md#running-celery-workers-optional-in-development).
 
 ### Issue: Static files not loading
 **Solution**: Run `python manage.py collectstatic`

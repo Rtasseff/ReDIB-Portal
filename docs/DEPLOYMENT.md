@@ -238,12 +238,17 @@ Fill in every value. The critical ones:
 | Variable | How to Set |
 |----------|------------|
 | `SECRET_KEY` | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` |
-| `DOMAIN` | Your domain (e.g., `portal.redib.net`) |
-| `ALLOWED_HOSTS` | Same domain (e.g., `portal.redib.net`) |
+| `DOMAIN` | Your domain (e.g., `portal.redib.net`) — used by Caddy |
+| `ALLOWED_HOSTS` | Same domain (e.g., `portal.redib.net,www.portal.redib.net`) |
 | `CSRF_TRUSTED_ORIGINS` | With scheme (e.g., `https://portal.redib.net`) |
+| `SITE_URL` | Full URL (e.g., `https://portal.redib.net`) — used in emailed links |
+| `SITE_DOMAIN` | Host only (e.g., `portal.redib.net`) — written to Django Site record, used by allauth email templates |
+| `SITE_NAME` | Display name in emails (default `ReDIB COA Portal`) |
 | `POSTGRES_PASSWORD` | A strong random password |
 | `DATABASE_URL` | Update password to match `POSTGRES_PASSWORD` |
 | `EMAIL_*` | Your SMTP provider credentials |
+
+`SITE_DOMAIN` and `SITE_NAME` are applied to the Django `Site` record on every container start by `docker/entrypoint.sh` and by the `setup_base_database` command.
 
 ### 4.3 Start the Stack
 
@@ -288,11 +293,13 @@ EmailAddress.objects.get_or_create(user=u, email=u.email, defaults={'verified': 
 
 ### 4.5 Load Initial ReDIB Data
 
+Run the base database setup command, which populates nodes, organizations, users, equipment, funding agencies, email templates, and configures the Site record — all in dependency order:
+
 ```bash
-docker compose -f docker-compose.prod.yml exec web python manage.py populate_redib_nodes
-docker compose -f docker-compose.prod.yml exec web python manage.py populate_redib_users
-docker compose -f docker-compose.prod.yml exec web python manage.py populate_redib_equipment
+docker compose -f docker-compose.prod.yml exec web python manage.py setup_base_database
 ```
+
+If you need to populate piece-by-piece instead (e.g., to debug a specific TSV), run the individual `populate_redib_*` commands in dependency order: nodes → organizations → users → equipment → funding_agencies. See [SETUP_GUIDE.md#individual-population-commands](SETUP_GUIDE.md#individual-population-commands) for details.
 
 ### 4.6 Verify
 
