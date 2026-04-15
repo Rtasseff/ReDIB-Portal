@@ -264,7 +264,7 @@ class Application(models.Model):
         'under_evaluation': ['evaluated'],
         'evaluated': ['accepted', 'pending', 'rejected'],
         'accepted': ['declined_by_applicant', 'expired', 'completed'],  # Phase 7/8: Decline, expire, or complete
-        'pending': ['accepted', 'rejected'],  # Can be promoted from waiting list
+        'pending': ['accepted', 'rejected', 'declined_by_applicant', 'expired'],  # Waitlist: promote, reject, or applicant decline / timeout
         'rejected': [],  # Terminal state
         'declined_by_applicant': [],  # Terminal state - Phase 7
         'expired': [],  # Terminal state - Phase 7

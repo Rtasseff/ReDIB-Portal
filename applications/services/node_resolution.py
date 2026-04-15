@@ -309,13 +309,15 @@ class NodeResolutionService:
                 all_comments.append(f"[{nr.node.code}]: {nr.comments}")
         application.resolution_comments = "\n\n".join(all_comments) if all_comments else ''
 
-        # Update status based on resolution
+        # Update status based on resolution. Both accepted and pending
+        # (waitlist) give the applicant the same 10-day window to accept or
+        # decline; the email body differs but the deadline mechanics match.
         if final_resolution == 'accepted':
             application.status = 'accepted'
-            # Set acceptance deadline (resolution_date + 10 days)
             application.acceptance_deadline = application.resolution_date + timedelta(days=10)
         elif final_resolution == 'pending':
             application.status = 'pending'
+            application.acceptance_deadline = application.resolution_date + timedelta(days=10)
         elif final_resolution == 'rejected':
             application.status = 'rejected'
 

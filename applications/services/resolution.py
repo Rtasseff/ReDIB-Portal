@@ -260,10 +260,11 @@ class ResolutionService:
             'rejected': resolved_apps.filter(resolution='rejected').count(),
         }
 
-        # Phase 7: Set acceptance deadline for accepted applications
-        # Per REDIB-02-PDA section 6.1.6: "10 days to accept or reject"
+        # Phase 7: Set acceptance deadline for accepted AND pending (waitlist)
+        # applications. Both give the applicant the same 10-day window —
+        # the email body differs but the acceptance mechanics match.
         from datetime import timedelta
-        for application in resolved_apps.filter(resolution='accepted'):
+        for application in resolved_apps.filter(resolution__in=['accepted', 'pending']):
             if not application.acceptance_deadline and application.resolution_date:
                 application.acceptance_deadline = application.resolution_date + timedelta(days=10)
                 application.save()

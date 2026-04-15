@@ -213,8 +213,10 @@ def send_single_resolution_notification_task(application_id):
         'equipment_details': equipment_details,
     }
 
-    # Add acceptance deadline and accept URL for accepted applications
-    if application.resolution == 'accepted' and application.acceptance_deadline:
+    # Add acceptance deadline and accept URL for applications with an
+    # applicant response window. Both 'accepted' and 'pending' (waitlist)
+    # give the applicant the same 10-day window.
+    if application.resolution in ('accepted', 'pending') and application.acceptance_deadline:
         context['acceptance_deadline'] = application.acceptance_deadline
         context['days_to_respond'] = application.days_until_acceptance_deadline
         context['accept_url'] = f'{settings.SITE_URL}/applications/{application.id}/accept/'

@@ -1105,8 +1105,12 @@ def application_acceptance(request, pk):
         applicant=request.user
     )
 
-    # Check if already responded or wrong status
-    if application.status != 'accepted':
+    # Check if already responded or wrong status. Both 'accepted' and
+    # 'pending' (waitlist) let the applicant accept/decline; they differ
+    # only in whether the handoff fires immediately (accepted) or waits
+    # for a node coordinator to promote the app later (pending).
+    is_waitlist = application.status == 'pending'
+    if application.status not in ('accepted', 'pending'):
         messages.warning(request,
             f"This application is in '{application.get_status_display()}' status and cannot be accepted/declined."
         )
@@ -1129,10 +1133,19 @@ def application_acceptance(request, pk):
         action = request.POST.get('action')
 
         if action == 'accept':
-            # Accept application and send handoff email
+            # Record the applicant's acceptance. On the waitlist path the
+            # handoff email is deferred until a node coordinator promotes
+            # the application to accepted.
             application.accepted_by_applicant = True
             application.accepted_at = timezone.now()
             application.save()
+
+            if is_waitlist:
+                messages.success(request,
+                    "You have accepted the waitlist offer. A node coordinator "
+                    "will contact you if a slot becomes available."
+                )
+                return redirect('applications:detail', pk=application.pk)
 
             # Send handoff email to applicant + node coordinators. Acceptance
             # must succeed even if the email fails (missing template, SMTP
@@ -1179,8 +1192,115 @@ def application_acceptance(request, pk):
         'requested_access': requested_access,
         'days_remaining': application.days_until_acceptance_deadline,
         'deadline': application.acceptance_deadline,
+        'is_waitlist': is_waitlist,
     }
     return render(request, 'applications/acceptance_form.html', context)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def promote_waitlisted_application(request, pk):
+    """Node coordinator promotes a waitlisted (pending) application into
+    the accepted lifecycle.
+
+    Requirements:
+    - Application is in 'pending' status AND the applicant has already
+      accepted the waitlist offer (accepted_by_applicant=True).
+    - Caller is a coordinator / superuser, OR is a node_coordinator whose
+      node has equipment on this application.
+
+    Effect:
+    - status: pending -> accepted
+    - resolution: pending -> accepted
+    - resolution_date refreshed to now; acceptance_deadline is cleared
+      (applicant has already accepted — no second clock needed)
+    - resolution_accepted notification + handoff email dispatched to
+      applicant and node coordinators.
+    """
+    from core.models import UserRole
+
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
+    is_coordinator = 'coordinator' in user_roles or user.is_superuser
+    if not is_coordinator:
+        requested_node_ids = set(
+            application.requested_access.values_list('equipment__node_id', flat=True)
+        )
+        nc_node_ids = set(
+            UserRole.objects.filter(
+                user=user, role='node_coordinator', is_active=True,
+            ).values_list('node_id', flat=True)
+        )
+        if not (requested_node_ids & nc_node_ids):
+            messages.error(request, "You are not authorised to promote this application.")
+            return redirect('access:access_tracking')
+
+    if application.status != 'pending':
+        messages.error(
+            request,
+            f"Cannot promote application {application.code}: status is "
+            f"'{application.get_status_display()}', not Pending (Waitlist)."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if not application.accepted_by_applicant:
+        messages.error(
+            request,
+            f"Cannot promote {application.code}: the applicant has not yet "
+            "accepted the waitlist offer."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    application.status = 'accepted'
+    application.resolution = 'accepted'
+    application.resolution_date = timezone.now()
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[PROMOTED FROM WAITLIST] by {user.get_full_name() or user.email} "
+          f"on {timezone.now().date()}"
+    ).strip()
+    application.acceptance_deadline = None  # applicant has already accepted
+    application.save()
+
+    # Fire resolution_accepted email + handoff email. Any send failure is
+    # logged but does not undo the promotion — the data change is the
+    # authoritative record.
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        from applications.tasks import send_single_resolution_notification_task
+        send_single_resolution_notification_task.delay(application.id)
+    except Exception:
+        log.exception(
+            "Celery dispatch failed for resolution_accepted notification "
+            "on promotion of %s; falling back to sync",
+            application.code,
+        )
+        try:
+            send_single_resolution_notification_task(application.id)
+        except Exception:
+            log.exception(
+                "Synchronous fallback also failed for resolution_accepted "
+                "notification on promotion of %s",
+                application.code,
+            )
+
+    try:
+        _send_handoff_email(application)
+        application.handoff_email_sent_at = timezone.now()
+        application.save(update_fields=['handoff_email_sent_at'])
+    except Exception:
+        log.exception("Handoff email failed on promotion of %s", application.code)
+
+    messages.success(
+        request,
+        f"Application {application.code} has been promoted from the waitlist. "
+        "The applicant and node coordinators have been notified."
+    )
+    return redirect('applications:detail', pk=application.pk)
 
 
 def _send_handoff_email(application):
