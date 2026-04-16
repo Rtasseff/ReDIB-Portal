@@ -986,7 +986,7 @@ ReDIB COA Team''',
             },
             {
                 'template_type': 'resolution_pending',
-                'subject': 'ReDIB COA: Application {{ application_code }} Pending',
+                'subject': 'ReDIB COA: Application {{ application_code }} Placed on Waitlist',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -996,29 +996,41 @@ ReDIB COA Team''',
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #f39c12; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background-color: #f9f9f9; }
-        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #f39c12; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
         .info-box { background-color: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>ReDIB COA Portal</h1>
-            <p>Application Pending (Waiting List)</p>
+            <p>Application Placed on Waitlist</p>
         </div>
 
         <div class="content">
             <p>Dear {{ applicant_name }},</p>
 
-            <p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been marked as <strong>PENDING</strong> (waiting list).</p>
+            <p>Your application <strong>{{ application_code }}</strong> for call {{ call_code }} has been placed on the <strong>waitlist</strong>. You will be notified by the node coordinator if time becomes available.</p>
 
             <div class="info-box">
                 <p><strong>Final Score:</strong> {{ final_score }}/12.00</p>
+                {% if acceptance_deadline %}
+                <p><strong>Response deadline:</strong> {{ acceptance_deadline|date:"F d, Y" }} ({{ days_to_respond }} days remaining)</p>
+                {% endif %}
             </div>
 
             {% if resolution_comments %}<p>{{ resolution_comments }}</p>{% endif %}
 
-            <p>You will be notified if hours become available.</p>
+            <p>Please confirm whether you would like to stay on the waitlist or decline. If you accept, no action is required now — a node coordinator will contact you directly if a slot opens. If you decline, your spot will be released to the next applicant.</p>
+
+            {% if accept_url %}
+            <p style="text-align: center;">
+                <a href="{{ accept_url }}" class="button">Accept or Decline Waitlist Offer</a>
+            </p>
+            {% endif %}
+
+            <p>If you do not respond by the deadline, your waitlist offer will expire automatically.</p>
 
             <p>Best regards,<br>
             ReDIB COA Team</p>
@@ -1031,17 +1043,22 @@ ReDIB COA Team''',
     </div>
 </body>
 </html>''',
-                'text_content': '''Application Pending (Waiting List)
+                'text_content': '''Application Placed on Waitlist
 
 Dear {{ applicant_name }},
 
-Your application {{ application_code }} for call {{ call_code }} has been marked as PENDING (waiting list).
+Your application {{ application_code }} for call {{ call_code }} has been placed on the waitlist. You will be notified by the node coordinator if time becomes available.
 
 Final Score: {{ final_score }}/12.00
+{% if acceptance_deadline %}Response deadline: {{ acceptance_deadline|date:"F d, Y" }} ({{ days_to_respond }} days remaining){% endif %}
 
 {% if resolution_comments %}{{ resolution_comments }}{% endif %}
 
-You will be notified if hours become available.
+Please confirm whether you would like to stay on the waitlist or decline. If you accept, no action is required now — a node coordinator will contact you directly if a slot opens. If you decline, your spot will be released to the next applicant.
+
+{% if accept_url %}Accept or Decline Waitlist Offer: {{ accept_url }}{% endif %}
+
+If you do not respond by the deadline, your waitlist offer will expire automatically.
 
 Best regards,
 ReDIB COA Team
@@ -1049,7 +1066,7 @@ ReDIB COA Team
 ---
 This is an automated message from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date'''
+                'available_variables': '''Variables: applicant_name, application_code, call_code, final_score, resolution, hours_granted, resolution_comments, resolution_date, acceptance_deadline, days_to_respond, accept_url'''
             },
             {
                 'template_type': 'resolution_rejected',

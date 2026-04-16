@@ -458,39 +458,28 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
         application.requested_access.values_list('equipment__node_id', flat=True).distinct()
     )
 
-    # ReDIB coordinators — link to the application detail (resolution view)
-    coordinator_ids = list(
-        User.objects.filter(
-            roles__role='coordinator', roles__is_active=True
-        ).values_list('id', flat=True).distinct()
-    )
-
-    # Node coordinators whose node is involved in this application.
-    # Build a map {user_id: [node_id, ...]} so each recipient gets a direct
-    # link to the correct per-node resolution page (or their queue if they
-    # coordinate multiple involved nodes).
+    # Only node coordinators receive the per-application evaluations-complete
+    # email — they are the ones who need to take the next action (resolution).
+    # ReDIB coordinators are covered by notify_coordinator_overdue_evaluations
+    # (daily at 09:45) and coordinator_evaluations_locked once the window
+    # closes, so they don't need a per-app notification here.
     nc_roles = UserRole.objects.filter(
         role='node_coordinator',
         node_id__in=involved_node_ids,
         is_active=True,
     ).values('user_id', 'node_id')
 
+    # Build a map {user_id: [node_id, ...]} so each recipient gets a direct
+    # link to the correct per-node resolution page (or their queue if they
+    # coordinate multiple involved nodes).
     node_coord_map = {}
     for role in nc_roles:
-        # Skip pure coordinators; they already get the application-detail link.
-        if role['user_id'] in coordinator_ids:
-            continue
         node_coord_map.setdefault(role['user_id'], []).append(role['node_id'])
 
-    # Pre-build URLs
-    app_detail_url = settings.SITE_URL + reverse(
-        'applications:detail', kwargs={'pk': application.id}
-    )
+    # Pre-build queue URL used when a node coord handles multiple involved nodes
     nc_queue_url = settings.SITE_URL + reverse('applications:node_resolution_queue')
 
-    # Collect all recipient user ids
-    recipient_ids = set(coordinator_ids) | set(node_coord_map.keys())
-    recipients = User.objects.filter(id__in=recipient_ids)
+    recipients = User.objects.filter(id__in=node_coord_map.keys())
 
     notifications_sent = 0
     for coordinator in recipients:
@@ -500,21 +489,17 @@ def notify_coordinator_evaluations_complete(application_id, average_score):
             if not prefs.notify_application_updates:
                 continue
 
-        # Choose the URL based on the user's role for this application
-        if coordinator.id in coordinator_ids:
-            application_url = app_detail_url
+        # Link directly to the per-node review page if there's exactly one
+        # involved node for this recipient; otherwise to the queue so they
+        # can handle each node separately.
+        node_ids = node_coord_map.get(coordinator.id, [])
+        if len(node_ids) == 1:
+            application_url = settings.SITE_URL + reverse(
+                'applications:node_resolution_review',
+                kwargs={'application_id': application.id, 'node_id': node_ids[0]},
+            )
         else:
-            # Pure node coordinator — link directly to the per-node review
-            # page if there's exactly one involved node, otherwise to the
-            # queue so they can handle each node separately.
-            node_ids = node_coord_map.get(coordinator.id, [])
-            if len(node_ids) == 1:
-                application_url = settings.SITE_URL + reverse(
-                    'applications:node_resolution_review',
-                    kwargs={'application_id': application.id, 'node_id': node_ids[0]},
-                )
-            else:
-                application_url = nc_queue_url
+            application_url = nc_queue_url
 
         context = {
             'coordinator_name': coordinator.get_full_name(),

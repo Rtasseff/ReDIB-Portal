@@ -75,3 +75,92 @@ files (6 Python, 10 templates) and a coordinated rename wasn't urgent.
 - `data/organizations.tsv` (seed with the 4 host orgs)
 - `data/README.md` (update nodes.tsv schema description)
 - New migration: `core/migrations/000X_node_organization_fk.py`
+
+---
+
+## Editing Call dates after publication is safe (verified 2026-04-15)
+
+**Status:** No change needed — documented to avoid re-investigation.
+
+A coordinator can edit `submission_end` and `evaluation_deadline` on a
+published `Call` and every downstream behaviour picks up the new values on
+the next check. Specifically:
+
+- `Call.is_open` reads `submission_end` live (`calls/models.py:63-70`).
+- `application_submit` checks `call.submission_end > now()` live
+  (`applications/views.py`).
+- Scheduled tasks filter on current values every run —
+  `check_call_deadlines` (`calls/tasks.py:22`),
+  `send_evaluation_reminders` and `notify_overdue_evaluators` and
+  `notify_coordinator_overdue_evaluations` all join through
+  `application__call__evaluation_deadline` (`evaluations/tasks.py:29,87,145`).
+- Assignment emails read `application.call.evaluation_deadline` live
+  (`evaluations/tasks.py:345`).
+
+`execution_start` and `execution_end` are cosmetic — no runtime code
+branches on them.
+
+**The one gotcha:** `Application.acceptance_deadline` is snapshotted from
+`resolution_date + 10 days` when a resolution aggregates, not derived
+from the call. Editing Call dates therefore has no effect on
+already-resolved applications' acceptance clocks (which is the right
+behaviour — those clocks belong to the applicant response, not the call
+window).
+
+No migration or code change is needed.
+
+---
+
+## Competitive funding reject protection — single source of truth
+
+**Status:** Implemented (batch 2, post-localtest3 walkthrough).
+
+**Rule.** At the resolution phase, applications with
+`has_competitive_funding=True` cannot be rejected by a coordinator
+*unless* at least one completed evaluation recommended `denied`. The
+evaluator's independent denial provides grounds for the reject. Feasibility
+rejection (phase 3) and evaluator denial (phase 5) remain available
+regardless of funding status — this rule only governs the resolution
+phase.
+
+**Why a single property.** The check is needed in four places (two forms,
+two services) and the same condition fires from each. We added one
+`@property` on the model so all call sites stay in sync:
+
+```python
+# applications/models.py
+@property
+def has_any_denied_evaluation(self):
+    return self.evaluations.filter(
+        completed_at__isnull=False,
+        recommendation='denied',
+    ).exists()
+```
+
+**Where it's enforced:**
+
+- `applications/forms.py::NodeResolutionForm.__init__` — removes the
+  `reject` choice when `has_competitive_funding and not
+  has_evaluator_denial`. The view passes `has_evaluator_denial` in.
+- `applications/forms.py::ApplicationResolutionForm.__init__` — same
+  pattern but reads the property directly off the bound `application`.
+- `applications/services/node_resolution.py::apply_node_resolution` —
+  raises `ValidationError` if a reject snuck through with the protection
+  still active.
+- `applications/services/resolution.py::apply_resolution` — same guard
+  on the bulk/single coordinator path.
+
+**Auto-allocation is unchanged.** `bulk_auto_allocate` still
+auto-accepts competitive-funding apps regardless of evaluator
+recommendation. The new rule is about *manual rejection*, not
+auto-acceptance.
+
+**Tests.** Smoke-checked manually in the localtest3 walkthrough
+(LIVE-008 has competitive funding + low scores → both evaluators denied
+→ reject re-enabled). No dedicated unit test yet; if/when behaviour
+changes here, add one to `tests/test_phase6_node_resolution.py`.
+
+**Docs:** End-user wording lives in
+[`docs/USER_GUIDE.md` → Phase 6](../USER_GUIDE.md#phase-6-resolution-and-prioritization).
+Operator/admin wording lives in [`CLAUDE.md` → Application Workflow
+States](../../CLAUDE.md#competitive-funding--reject-protection).

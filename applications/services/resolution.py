@@ -5,11 +5,14 @@ Handles coordinator workflow to review evaluated applications, apply regulatory
 auto-approval rules, allocate limited equipment hours, and trigger notifications.
 """
 
+import logging
 from django.db import transaction
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 class ResolutionService:
@@ -91,10 +94,16 @@ class ResolutionService:
         Raises:
             ValidationError if validation fails
         """
-        # Validate: competitive funding cannot be rejected
-        if application.has_competitive_funding and resolution == 'rejected':
+        # Validate: competitive funding cannot be rejected unless at least one
+        # evaluator independently recommended denial.
+        if (
+            application.has_competitive_funding
+            and not application.has_any_denied_evaluation
+            and resolution == 'rejected'
+        ):
             raise ValidationError(
-                "Applications with competitive funding cannot be rejected. "
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial. "
                 "They must be either accepted or marked as pending."
             )
 
@@ -257,10 +266,11 @@ class ResolutionService:
             'rejected': resolved_apps.filter(resolution='rejected').count(),
         }
 
-        # Phase 7: Set acceptance deadline for accepted applications
-        # Per REDIB-02-PDA section 6.1.6: "10 days to accept or reject"
+        # Phase 7: Set acceptance deadline for accepted AND pending (waitlist)
+        # applications. Both give the applicant the same 10-day window —
+        # the email body differs but the acceptance mechanics match.
         from datetime import timedelta
-        for application in resolved_apps.filter(resolution='accepted'):
+        for application in resolved_apps.filter(resolution__in=['accepted', 'pending']):
             if not application.acceptance_deadline and application.resolution_date:
                 application.acceptance_deadline = application.resolution_date + timedelta(days=10)
                 application.save()
@@ -269,14 +279,26 @@ class ResolutionService:
         self.call.is_resolution_locked = True
         self.call.save()
 
-        # Trigger notification task (async)
+        # Trigger notification task (async). Any dispatch failure is logged
+        # so silent drops (missing template, broker outage) show up in logs
+        # instead of being swallowed.
+        from applications.tasks import send_resolution_notifications_task
         try:
-            from applications.tasks import send_resolution_notifications_task
             send_resolution_notifications_task.delay(self.call.id)
-        except Exception as e:
-            # Fallback to synchronous if Celery/Redis not available
-            from applications.tasks import send_resolution_notifications_task
-            send_resolution_notifications_task(self.call.id)
+        except Exception:
+            logger.exception(
+                "Celery dispatch failed for bulk resolution notifications "
+                "on call %s; falling back to synchronous send",
+                self.call.code,
+            )
+            try:
+                send_resolution_notifications_task(self.call.id)
+            except Exception:
+                logger.exception(
+                    "Synchronous fallback also failed for bulk resolution "
+                    "notifications on call %s",
+                    self.call.code,
+                )
 
         return {
             'success': True,

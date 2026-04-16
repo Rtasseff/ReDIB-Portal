@@ -246,7 +246,15 @@ Fill in every value. The critical ones:
 | `SITE_NAME` | Display name in emails (default `ReDIB COA Portal`) |
 | `POSTGRES_PASSWORD` | A strong random password |
 | `DATABASE_URL` | Update password to match `POSTGRES_PASSWORD` |
-| `EMAIL_*` | Your SMTP provider credentials |
+| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USE_TLS` | SMTP connection (e.g., `smtp.ionos.es` / `587` / `True`) |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP credentials |
+| `DEFAULT_FROM_EMAIL` | Envelope-from address (e.g., `noreply@redib.net`) |
+| `CONTACT_EMAIL` | Contact address rendered in every email template (e.g., `info@redib.net`) |
+| `USE_REDIS` | `True` |
+| `REDIS_URL` | `redis://redis:6379/0` (default — matches the Redis container) |
+| `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | `redis://redis:6379/0` |
+| `SENTRY_DSN` | _(optional)_ Sentry project DSN for error reporting; leave blank to disable |
 
 `SITE_DOMAIN` and `SITE_NAME` are applied to the Django `Site` record on every container start by `docker/entrypoint.sh` and by the `setup_base_database` command.
 
@@ -610,4 +618,56 @@ docker stats --no-stream
 
 ## Pre-Launch Checklist
 
-- [ ] **License**: Choose and add a license to `LICENSE` file and update `README.md` (currently says "[To be determined]")
+Run through this list once before cutting over production traffic and again
+before each deploy.
+
+**Environment & secrets**
+- [ ] `.env` is populated from `.env.production.template`; every `CHANGE_ME`
+      or empty value is set.
+- [ ] `SECRET_KEY` is a fresh random string (never reuse dev default).
+- [ ] `DEBUG=False`.
+- [ ] `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` match the real domain(s).
+- [ ] `SITE_URL`, `SITE_DOMAIN`, `SITE_NAME` match the real host.
+- [ ] `POSTGRES_PASSWORD` is strong and matches the one inside `DATABASE_URL`.
+- [ ] SMTP credentials tested (see Step 5 in this guide).
+
+**Data**
+- [ ] Migrations applied: `docker compose -f docker-compose.prod.yml exec web python manage.py migrate` reports `No migrations to apply`.
+- [ ] Email templates seeded (the entrypoint runs `seed_email_templates` on
+      every start — confirm in the web container logs).
+- [ ] Real reference data loaded via `setup_base_database` **or** TSVs in
+      `data/` populated via the individual `populate_redib_*` commands.
+      Verify in the admin: Nodes, Equipment, Organizations, Users,
+      FundingAgencies all non-empty.
+- [ ] Superuser account created and its allauth `EmailAddress` row marked
+      verified + primary (see Step 4.4 in this guide).
+- [ ] Django `Site` record domain and name match `SITE_DOMAIN` / `SITE_NAME`
+      (the entrypoint sets this, but verify once via the Django admin).
+
+**Runtime**
+- [ ] All containers healthy: `docker compose -f docker-compose.prod.yml ps`
+      shows `web`, `db`, `redis`, `celery`, `celery-beat`, `caddy` as `Up`.
+- [ ] Caddy has obtained its Let's Encrypt certificate — hit `https://<domain>/`
+      in a browser and confirm the padlock.
+- [ ] An end-to-end smoke test: register a new user, verify the verification
+      email arrives, log in, create a draft application, submit, run through
+      the feasibility workflow.
+- [ ] Backup script is scheduled (`scripts/backup-db.sh` in cron) and the
+      first backup file landed in the configured backup dir.
+- [ ] Sentry (if configured) receives its first deploy event.
+
+**Monitoring & operations**
+- [ ] Someone owns the `info@redib.net` (or equivalent) inbox for inbound
+      user support.
+- [ ] The daily Celery Beat tasks ran successfully at least once: check the
+      `EmailLog` model in the admin for recent rows.
+- [ ] Log rotation is configured on the VPS (Docker logs can grow without
+      bound otherwise).
+
+**Governance**
+- [ ] **License**: Choose and add a license to `LICENSE` file and update
+      `README.md` (currently says "[To be determined]").
+- [ ] Access to the production VPS (SSH keys, `sudo`) is limited to the
+      people who need it.
+- [ ] Credentials (SMTP password, Postgres password, SECRET_KEY) are stored
+      in a password manager; the `.env` file is not committed anywhere.

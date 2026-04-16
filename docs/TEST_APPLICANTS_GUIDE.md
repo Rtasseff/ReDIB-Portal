@@ -2,6 +2,13 @@
 
 This guide describes the test data created by the `seed_test_applicants` management command.
 
+> **Looking for a one-shot manual-test sandbox?** For full end-to-end
+> testing across every workflow phase, prefer
+> `python manage.py setup_localtest3_database --reset --yes` —
+> see [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md).
+> `seed_test_applicants` (this guide) is still useful when you want extra
+> applicant variety on top of `setup_base_database`.
+
 ## Overview
 
 The script creates **7 test applicants** with **17 applications** across all workflow stages to facilitate comprehensive testing of the ReDIB COA Portal.
@@ -68,13 +75,13 @@ The script creates applications in the following stages:
 ## Testing Scenarios
 
 ### Test Feasibility Review (Phase 3)
-1. Login as `node.cic@redib.net` or `node.cnic@redib.net` (password: need to set via admin)
+1. Login as `node.cic@redib.net` or `node.cnic@redib.net` (password: `changeme123` for users created via `populate_redib_users`, `testpass123` for users created via `setup_localtest2_database`).
 2. View applications under feasibility review
 3. Approve or reject based on technical feasibility
 4. Test multi-node applications (some applications request equipment from multiple nodes)
 
 ### Test Evaluator Assignment (Phase 4)
-1. Login as `coordinator@redib.net` (password: need to set via admin)
+1. Login as `coordinator@redib.net` (password: `changeme123`).
 2. Navigate to call management
 3. Assign evaluators to applications in "Pending Evaluation" status
 4. Verify COI detection (evaluators from same organization excluded)
@@ -132,17 +139,25 @@ The script creates applications in the following stages:
 ## Running the Script
 
 ### Initial Setup
+
+The fastest path is `setup_test_database`, which chains the base data load,
+test calls, and test applicants in one command:
+
 ```bash
-# 1. Ensure basic data is seeded
-python manage.py seed_email_templates
-python manage.py populate_redib_nodes
-python manage.py populate_redib_equipment
-python manage.py populate_redib_users
+python manage.py setup_test_database --reset --yes
+```
 
-# 2. Create organizations and calls (if not already done)
-# See the inline shell script in the implementation
+If you prefer to run the pieces individually:
 
-# 3. Run the test applicants script
+```bash
+# 1. Base reference data (nodes, equipment, users, organizations,
+#    funding agencies, email templates) — reads data/*.tsv files
+python manage.py setup_base_database
+
+# 2. Test calls (creates one open and one resolved call)
+python manage.py seed_dev_data
+
+# 3. Test applicants with 17 applications in various states
 python manage.py seed_test_applicants
 ```
 
@@ -158,7 +173,7 @@ python manage.py seed_test_applicants --clear
 
 This script works alongside:
 - `seed_dev_data.py`: Creates basic roles and 2 applicants with simple applications
-- `populate_redib_*`: Loads nodes, equipment, and core users from CSV files
+- `populate_redib_*`: Loads nodes, equipment, and core users from TSV files
 - `seed_email_templates`: Loads email templates
 
 The test applicants script requires:

@@ -46,4 +46,7 @@ urlpatterns = [
     path('<int:pk>/accept/', views.application_acceptance, name='application_acceptance'),
     path('handoff/', views.handoff_dashboard, name='handoff_dashboard'),
     path('<int:pk>/mark-completed/', views.mark_completed, name='mark_completed'),
+
+    # Node-coordinator promotion of a waitlisted (pending) application
+    path('<int:pk>/promote-waitlist/', views.promote_waitlisted_application, name='promote_waitlisted'),
 ]

@@ -85,14 +85,26 @@ This guide walks through the complete COA lifecycle with specific steps to valid
 ### Prerequisites
 
 Before starting, ensure:
-1. Development environment is running (Django + PostgreSQL/SQLite + Celery + Redis)
-2. Email templates are seeded: `python manage.py seed_email_templates`
-3. Core data is populated:
+1. Development environment is running (Django; SQLite is fine for local dev — Redis and Celery are only needed in production).
+2. A superuser exists (`python manage.py createsuperuser`).
+3. Test data is loaded. **Recommended path for full manual testing:**
    ```bash
-   python manage.py populate_redib_nodes
-   python manage.py populate_redib_equipment
-   python manage.py populate_redib_users
+   python manage.py setup_localtest3_database --reset --yes
    ```
+   This creates a self-contained sandbox: 10 users (1 ReDIB coordinator,
+   2 node coordinators, 3 evaluators, 4 applicants), 2 calls (1 open + 1
+   resolved), and 16 applications spanning every live and terminal status,
+   plus seeded email templates. Prints a tester cheat-sheet at the end that
+   maps each app code to "what to test with it." All accounts use the
+   password `testpass123` and are pre-verified. See
+   [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md)
+   for the full spec.
+
+   For a smaller sandbox (3 sample apps), use
+   `setup_localtest2_database --reset --yes` instead.
+
+   If you prefer to test against the real seed data from `data/*.tsv`,
+   use `setup_base_database` instead (users get `changeme123`).
 
 ---
 
@@ -104,7 +116,7 @@ Before starting, ensure:
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
 | 0.1 | Login to Django admin at `/admin/` | `admin` (superuser) | Access admin panel | had to make an admin account using creatsuperuser |
-| 0.2 | Verify nodes populated | `admin` | See 4 nodes: CIC biomaGUNE, TRIMA@CNIC, MSSM (NY), SIN | |
+| 0.2 | Verify nodes populated | `admin` | See 4 nodes: BioImaC (Madrid), CIC biomaGUNE (San Sebastián), Imaging La Fe (Valencia), CNIC (Madrid) | |
 | 0.3 | Verify equipment populated | `admin` | See 17+ equipment items across nodes | |
 | 0.4 | Verify users populated | `admin` | See 8 core users (coordinators, evaluators, applicants) | no applicants in initial user test batch |
 | 0.5 | Check user roles in Core > User Roles | `admin` | Verify coordinator, evaluator (with areas), applicant roles | no applicants in initial user test batch |
@@ -517,12 +529,20 @@ Per REDIB-01-RCA section 7: *"The Coordinator will prepare a PRIORITIZED LIST of
 
 Per REDIB-01-RCA 6.1: *"Proposals that are part of R&D&I projects financed by a competitive call... will be automatically approved"*
 
+The reject protection is **conditional** at the resolution phase: a
+coordinator may reject a competitively-funded application only if at least
+one evaluator independently recommended **Denied** (the evaluator's denial
+provides the grounds). Feasibility rejection (phase 3) and evaluator denial
+(phase 5) remain available regardless of funding status. See
+[USER_GUIDE.md → Phase 6](USER_GUIDE.md#phase-6-resolution-and-prioritization).
+
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
 | 6.8 | Check App-X with competitive funding | System | has_competitive_funding = True | |
 | 6.9 | Verify auto-approval | System | App-X shows "Auto-approved (competitive funding)" | |
-| 6.10 | Verify cannot reject | System | Coordinator cannot reject app with competitive funding | |
-| 6.11 | Even with low score | System | App with 6.0/12 + competitive funding = still approved | |
+| 6.10 | Verify reject blocked when all evaluators approved | System | Coordinator cannot reject; reject option hidden | All eval recommendations = `approved` |
+| 6.11 | Verify reject allowed when an evaluator denied | System | Reject option re-enabled; coordinator can reject with comments | At least one eval recommendation = `denied` |
+| 6.12 | Even with low score (no eval denial) | System | App with 6.0/12 + competitive funding = still approved | |
 
 **Threshold-Based Resolution**
 
@@ -575,7 +595,7 @@ Per REDIB-01-RCA 6.1: *"Proposals that are part of R&D&I projects financed by a 
 **Validations:**
 - ☐ Scores displayed as "X.X / 12" (NOT /5)
 - ☐ Auto-prioritization: highest score first, tie-break by code
-- ☐ Competitive funding apps auto-approved (cannot reject)
+- ☐ Competitive funding apps auto-approved (cannot reject unless an evaluator recommended Denied)
 - ☐ Threshold-based auto-allocation (e.g., ≥ 9.0/12)
 - ☐ Hours tracking is dynamic (no pre-allocated hours_offered)
 - ☐ Manual override allowed with comments

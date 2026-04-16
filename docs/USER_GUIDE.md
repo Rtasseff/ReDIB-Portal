@@ -1,6 +1,6 @@
 # ReDIB COA Portal - User Guide
 
-**Version 1.0** | **Last Updated: January 2026**
+**Version 1.1** | **Last Updated: April 2026**
 
 ---
 
@@ -111,22 +111,40 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - The system calculates final scores by averaging all evaluators' scores
 
 ### Phase 6: Resolution and Prioritization
-**Who:** Coordinators
-- Coordinators review evaluated applications and make final decisions
-- Applications are prioritized by score (highest first)
-- Three possible outcomes:
-  - **Accepted:** Access approved and equipment hours allocated
-  - **Pending:** Quality acceptable, placed on waiting list
-  - **Rejected:** Does not meet quality threshold
-- **Special rule:** Applications with competitive funding are automatically accepted
-- Once finalized, all applicants receive resolution notifications
+**Who:** Node coordinators (per-node decision) + ReDIB coordinator (oversight)
+- Each node coordinator independently decides for the equipment at their node:
+  accept, waitlist (pending), or reject.
+- Per-node decisions aggregate to a final application outcome:
+  - **All nodes accept →** application is **Accepted**
+  - **Any node rejects →** application is **Rejected**
+  - **No rejects but at least one waitlist →** application is **Pending** (waitlisted)
+- Applications with competitive funding normally cannot be rejected at the
+  resolution phase. The exception: if at least one evaluator recommended
+  **Denied**, the node coordinator may use that independent denial as grounds
+  to reject. (Feasibility rejection and evaluator denial remain available at
+  their own phases regardless of funding status.)
+- Approved hours are recorded per equipment; on reject the service layer
+  forces approved hours to zero so Access Tracking doesn't show phantom
+  approved time.
+- Once aggregation finalises, the applicant receives a resolution email
+  (accepted, pending, or rejected).
 
 ### Phase 7: Acceptance and Handoff
-**Who:** Applicants (Accepted researchers)
-- Accepted applicants have **10 days** to accept or decline the granted access
-- Upon acceptance, applicants and node coordinators receive handoff emails with scheduling instructions
-- If no response within 10 days, the access is automatically declined
-- Declined access releases equipment hours for pending applications
+**Who:** Applicants, then node coordinators for waitlist promotions
+- Accepted applicants have **10 days** to accept or decline the granted access.
+- **Pending (waitlist)** applicants get the same 10-day accept/decline window
+  but the wording differs — accepting the waitlist offer only keeps the
+  application in the queue; no hand-off fires yet.
+- When an applicant accepts an accepted grant, a single hand-off email goes
+  to the applicant (`To`) with all relevant node coordinators on `Cc`, so
+  they can reply-all to coordinate scheduling directly.
+- When a slot frees up for a waitlisted application whose applicant has
+  already accepted the waitlist offer, a node coordinator clicks
+  **"Mark as Accepted"** on the Access Tracking page. That promotes the
+  application to Accepted and triggers the same resolution-accepted and
+  hand-off emails as a normal accepted application.
+- If an applicant does not respond within 10 days, the application is
+  automatically expired and hours are released.
 
 ### Phase 8: Execution and Completion
 **Who:** Node Coordinators and Applicants
@@ -319,7 +337,7 @@ The portal uses a **role-based access system** to control what each user can see
 - **Evaluation reminder** at 7 and 14 days if evaluations are pending
 - **Deadline warnings** when evaluation deadlines are approaching
 
-**Your specialization matters:** Evaluators have optional specialization areas (preclinical, clinical, radiotracers). The system preferentially assigns you to applications matching your expertise.
+**Your specialization matters:** Evaluators can declare one or more specialization areas (e.g. `clinical`, `preclinical`, `radiotracers`). The system preferentially assigns you to applications matching any of your declared areas.
 
 ---
 
@@ -364,9 +382,15 @@ The portal uses a **role-based access system** to control what each user can see
 
 #### Notifications you receive
 
-- **Evaluation completion** when all evaluators finish reviewing a call
-- **Applicant declination** when accepted applicants decline access
-- **Publication submission** when applicants report research outcomes
+- **Evaluator overdue reminder** (daily) for each evaluator who has an
+  evaluation past the call's evaluation deadline, plus a lockout email
+  the day the window closes.
+- **Applicant declination** when accepted applicants decline access.
+- **Publication submission** when applicants report research outcomes.
+
+You do **not** receive a per-application "evaluations complete" email —
+node coordinators own the next action (resolution). Track evaluation
+progress from the call detail and resolution dashboard instead.
 
 **Special authority:** Coordinators are the **only users who can create calls**. This ensures centralized control over the COA process.
 

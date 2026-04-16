@@ -11,11 +11,14 @@ Aggregation Logic:
 - No rejects but >=1 waitlist -> Application pending (waitlisted)
 """
 
+import logging
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from datetime import timedelta
+
+logger = logging.getLogger(__name__)
 
 
 class NodeResolutionService:
@@ -171,10 +174,17 @@ class NodeResolutionService:
                 f"User is not an active node coordinator for {self.node.code}"
             )
 
-        # Validate: competitive funding cannot be rejected
-        if application.has_competitive_funding and resolution == 'reject':
+        # Validate: competitive funding cannot be rejected unless at least one
+        # evaluator independently recommended denial (the evaluator's denial
+        # provides the grounds on which the node coordinator may reject).
+        if (
+            application.has_competitive_funding
+            and not application.has_any_denied_evaluation
+            and resolution == 'reject'
+        ):
             raise ValidationError(
-                "Applications with competitive funding cannot be rejected. "
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial. "
                 "They must be either accepted or marked as waitlist."
             )
 
@@ -205,10 +215,13 @@ class NodeResolutionService:
         node_resolution.reviewer = user
         node_resolution.save()
 
-        # Update hours_approved for equipment at this node
+        # Update hours_approved for equipment at this node.
+        # On reject, force hours_approved to 0 regardless of what the form
+        # submitted — the UI pre-fills the input with hours_requested, which
+        # would otherwise leak through as approved hours on a rejected app.
         for equipment_id, hours in approved_hours_dict.items():
             req_access = application.requested_access.get(equipment_id=equipment_id)
-            req_access.hours_approved = hours
+            req_access.hours_approved = 0 if resolution == 'reject' else hours
             req_access.save()
 
         # Attempt to aggregate resolution (check if all nodes have decided)
@@ -303,13 +316,15 @@ class NodeResolutionService:
                 all_comments.append(f"[{nr.node.code}]: {nr.comments}")
         application.resolution_comments = "\n\n".join(all_comments) if all_comments else ''
 
-        # Update status based on resolution
+        # Update status based on resolution. Both accepted and pending
+        # (waitlist) give the applicant the same 10-day window to accept or
+        # decline; the email body differs but the deadline mechanics match.
         if final_resolution == 'accepted':
             application.status = 'accepted'
-            # Set acceptance deadline (resolution_date + 10 days)
             application.acceptance_deadline = application.resolution_date + timedelta(days=10)
         elif final_resolution == 'pending':
             application.status = 'pending'
+            application.acceptance_deadline = application.resolution_date + timedelta(days=10)
         elif final_resolution == 'rejected':
             application.status = 'rejected'
 
@@ -332,20 +347,30 @@ class NodeResolutionService:
         """
         Trigger resolution notification to applicant.
 
+        Fires the Celery task when a broker is available, otherwise runs it
+        in-process. Any failure is logged so silent drops surface in logs /
+        Sentry instead of vanishing.
+
         Args:
             application: Application instance with aggregated resolution
         """
+        from applications.tasks import send_single_resolution_notification_task
         try:
-            from applications.tasks import send_single_resolution_notification_task
             send_single_resolution_notification_task.delay(application.id)
         except Exception:
-            # Fallback to sync if Celery not available or task doesn't exist
+            logger.exception(
+                "Celery dispatch failed for resolution notification on %s; "
+                "falling back to synchronous send",
+                application.code,
+            )
             try:
-                from applications.tasks import send_single_resolution_notification_task
                 send_single_resolution_notification_task(application.id)
             except Exception:
-                # Task may not exist yet - we'll add it later
-                pass
+                logger.exception(
+                    "Synchronous fallback also failed for resolution "
+                    "notification on %s",
+                    application.code,
+                )
 
     def get_resolution_summary_for_call(self, call):
         """

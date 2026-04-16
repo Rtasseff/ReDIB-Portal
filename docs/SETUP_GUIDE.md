@@ -21,20 +21,30 @@ For rare cases where you want to run the full stack locally in Docker, start fro
 
 | Setting | Dev Default | Prod Value | Effect |
 |---------|-----------|------------|--------|
-| `DEBUG` | `True` | `False` | Enables debug toolbar; when False, enables HSTS, secure cookies. When True, also runs Celery tasks synchronously (`CELERY_TASK_ALWAYS_EAGER`). |
-| `DATABASE_URL` | `sqlite:///db.sqlite3` | `postgres://...` | Database engine |
-| `USE_REDIS` | `False` | `True` | Cache backend: LocMemCache (dev) vs Redis (prod) |
-| `EMAIL_BACKEND` | `console` | `django.core.mail.backends.smtp.EmailBackend` | Emails print to terminal (dev) vs real SMTP delivery (prod) |
-| `SECRET_KEY` | Insecure dev default | **Must set unique value** | Cryptographic signing |
-| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Your domain | HTTP Host header validation |
-| `SITE_URL` | `http://127.0.0.1:8000` | `https://portal.redib.net` | Full URL used in emailed links (must point to the actual host) |
-| `SITE_DOMAIN` | `127.0.0.1:8000` | `portal.redib.net` | Host:port written to the Django Site record (used by allauth email templates) |
-| `SITE_NAME` | `ReDIB COA Portal` | `ReDIB COA Portal` | Display name in email headers |
-| `CELERY_BROKER_URL` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Celery broker (only matters if workers are running) |
+| `DEBUG` | `True` | `False` | Debug toolbar on; when `False`, enables HSTS, secure cookies, proxy SSL header detection. |
+| `SECRET_KEY` | Insecure dev default | **Must set unique value** | Cryptographic signing. Rotate on deploy. |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Your domain(s) | HTTP Host header validation. Comma-separated. |
+| `CSRF_TRUSTED_ORIGINS` | _(empty)_ | `https://your.domain` | Required for HTTPS POSTs behind a reverse proxy. Include the `https://` scheme. |
+| `DATABASE_URL` | `sqlite:///db.sqlite3` | `postgres://user:pw@db:5432/redib` | Database engine. |
+| `USE_REDIS` | `False` | `True` | Cache backend: LocMemCache (dev) vs Redis (prod). |
+| `REDIS_URL` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Redis location (used when `USE_REDIS=True`). |
+| `CELERY_BROKER_URL` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Celery broker. |
+| `CELERY_RESULT_BACKEND` | `redis://localhost:6379/0` | `redis://redis:6379/0` | Celery result store. |
+| `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` | `django.core.mail.backends.smtp.EmailBackend` | Console vs real SMTP. |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USE_TLS` | — | `smtp.ionos.es` / `587` / `True` | SMTP connection (only needed when the backend is SMTP). |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | — | SMTP creds | SMTP auth. |
+| `DEFAULT_FROM_EMAIL` | `noreply@redib.net` | `noreply@redib.net` | Envelope-from for all outgoing mail. |
+| `CONTACT_EMAIL` | `info@redib.net` | `info@redib.net` | Contact address rendered in every email template. |
+| `SITE_URL` | `http://127.0.0.1:8000` | `https://portal.redib.net` | Full URL used in emailed links (must match the real host). |
+| `SITE_DOMAIN` | `127.0.0.1:8000` | `portal.redib.net` | Host written to the Django Site record (used by allauth). |
+| `SITE_NAME` | `ReDIB COA Portal` | `ReDIB COA Portal` | Display name in email headers. |
+| `SENTRY_DSN` | _(empty)_ | _(optional)_ | Sentry error reporting; leave blank to disable. |
 
-When `DEBUG=False`, Django automatically enables: HSTS, secure cookies, CSRF cookie security, and proxy SSL header detection. See `redib/settings.py`.
+**Celery eager mode.** `CELERY_TASK_ALWAYS_EAGER` is set automatically — True whenever `DEBUG=True` **or** the test runner is active (see `redib/settings.py`). You never set it by hand. Result: in development, workflow emails print to the console without needing a running worker; under tests, `mail.outbox` captures sent messages.
 
-After changing `SITE_URL`/`SITE_DOMAIN`/`SITE_NAME`, re-run your setup command (`setup_localtest2_database`, etc.) so the Django Site record in the database picks up the new values.
+**Security auto-enables when `DEBUG=False`:** HSTS, secure session + CSRF cookies, `SECURE_PROXY_SSL_HEADER` for Caddy. See `redib/settings.py`.
+
+After changing `SITE_URL`/`SITE_DOMAIN`/`SITE_NAME`, re-run your setup command (`setup_localtest2_database`, `setup_base_database`, `setup_test_database`) so the Django Site record in the database picks up the new values. In production, the `docker/entrypoint.sh` reads these env vars on container start, so a `docker compose up` is enough.
 
 **Production deployment** is a one-way setup on a VPS -- see [DEPLOYMENT.md](DEPLOYMENT.md).
 

@@ -195,6 +195,24 @@
                         <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
                     {% endif %}
                 </dd>
+
+                <dt class="col-sm-6">Civil liability insurance</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_insurance %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-6">Informed consent protocol</dt>
+                <dd class="col-sm-6">
+                    {% if application.has_informed_consent %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No</span>
+                    {% endif %}
+                </dd>
                 {% endif %}
             </dl>
         </div>

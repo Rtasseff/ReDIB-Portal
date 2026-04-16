@@ -4,7 +4,11 @@
 
 {% block dashboard_content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    {% if is_waitlist %}
+    <h1 class="h2"><i class="bi bi-hourglass-split"></i> Accept or Decline Waitlist Offer</h1>
+    {% else %}
     <h1 class="h2"><i class="bi bi-check-circle"></i> Accept or Decline Access</h1>
+    {% endif %}
 </div>
 
 <!-- Deadline Warning -->
@@ -18,8 +22,14 @@
 
 <!-- Application Details -->
 <div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Your Application Has Been Accepted!</h5>
+    <div class="card-header {% if is_waitlist %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+        <h5 class="mb-0">
+            {% if is_waitlist %}
+            Your Application Has Been Placed on the Waitlist
+            {% else %}
+            Your Application Has Been Accepted!
+            {% endif %}
+        </h5>
     </div>
     <div class="card-body">
         <div class="row">
@@ -84,6 +94,23 @@
             <div class="col-md-6">
                 <div class="card border-success h-100">
                     <div class="card-body">
+                        {% if is_waitlist %}
+                        <h5 class="text-success"><i class="bi bi-check-circle-fill"></i> Accept Waitlist Offer</h5>
+                        <p class="text-muted">By accepting the waitlist offer, you confirm that:</p>
+                        <ul class="text-muted">
+                            <li>Your application will remain on the waitlist</li>
+                            <li>A node coordinator will contact you if a slot becomes available</li>
+                            <li>No access is scheduled yet — no scheduling action is required now</li>
+                            <li>You can decline later if the offer arrives at an inconvenient time</li>
+                        </ul>
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="accept">
+                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-check-circle"></i> Accept Waitlist Offer
+                            </button>
+                        </form>
+                        {% else %}
                         <h5 class="text-success"><i class="bi bi-check-circle-fill"></i> Accept Access</h5>
                         <p class="text-muted">By accepting, you confirm that:</p>
                         <ul class="text-muted">
@@ -99,6 +126,7 @@
                                 <i class="bi bi-check-circle"></i> Accept Access
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>

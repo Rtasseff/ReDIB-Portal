@@ -377,8 +377,24 @@ class ApplicationStep4Form(forms.ModelForm):
             'socioeconomic_significance': '5. Socioeconomic Significance',
             'opportunity_criteria': '6. Opportunity and Translational Impact',
         }
+        # Keep help text visible next to the field while the applicant is
+        # typing — placeholders disappear as soon as the box has content.
         help_texts = {
-            'expected_contributions': 'Justify your expectations for future scientific-technical contributions and express your commitment to publish and disseminate the ICTS access you are now requesting...',
+            'scientific_relevance':
+                'Describe the scientific and technical relevance, quality, and '
+                'originality of your project.',
+            'methodology_description':
+                'Describe your experimental and methodological design.',
+            'expected_contributions':
+                'Justify your expectations for future scientific-technical '
+                'contributions and express your commitment to publish and '
+                'disseminate the ICTS access you are now requesting.',
+            'impact_strengths':
+                'Describe the strengths and potential for advancement of knowledge.',
+            'socioeconomic_significance':
+                'Describe the social, economic, and industrial significance.',
+            'opportunity_criteria':
+                'Describe opportunity criteria and translational impact.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -398,6 +414,8 @@ class ApplicationStep5Form(forms.ModelForm):
             'has_animal_ethics',
             'uses_humans',
             'has_human_ethics',
+            'has_insurance',
+            'has_informed_consent',
             'data_consent'
         ]
         widgets = {
@@ -406,6 +424,8 @@ class ApplicationStep5Form(forms.ModelForm):
             'has_animal_ethics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'uses_humans': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'has_human_ethics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'has_insurance': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'has_informed_consent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'data_consent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
@@ -544,9 +564,13 @@ class ApplicationResolutionForm(forms.ModelForm):
         self.application = kwargs.pop('application', None)
         super().__init__(*args, **kwargs)
 
-        # Remove 'rejected' choice if has_competitive_funding
-        if self.application and self.application.has_competitive_funding:
-            # Filter out rejected option
+        # Reject protection: only remove the 'rejected' choice when competitive
+        # funding AND no evaluator has independently recommended denial.
+        if (
+            self.application
+            and self.application.has_competitive_funding
+            and not self.application.has_any_denied_evaluation
+        ):
             original_choices = self.fields['resolution'].choices
             filtered_choices = [
                 choice for choice in original_choices
@@ -554,9 +578,9 @@ class ApplicationResolutionForm(forms.ModelForm):
             ]
             self.fields['resolution'].choices = filtered_choices
 
-            # Add help text
             self.fields['resolution'].help_text = (
-                "This application has competitive funding and cannot be rejected. "
+                "This application has competitive funding and cannot be rejected "
+                "because all completed evaluations recommended approval. "
                 "It must be either accepted or marked as pending."
             )
 
@@ -567,13 +591,17 @@ class ApplicationResolutionForm(forms.ModelForm):
         cleaned_data = super().clean()
         resolution = cleaned_data.get('resolution')
 
-        # Validate: competitive funding cannot be rejected
-        if self.application and self.application.has_competitive_funding:
-            if resolution == 'rejected':
-                raise forms.ValidationError(
-                    "Applications with competitive funding cannot be rejected. "
-                    "They must be either accepted or marked as pending."
-                )
+        # Validate: competitive funding cannot be rejected unless an evaluator denied
+        if (
+            self.application
+            and self.application.has_competitive_funding
+            and not self.application.has_any_denied_evaluation
+            and resolution == 'rejected'
+        ):
+            raise forms.ValidationError(
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial."
+            )
 
         return cleaned_data
 
@@ -652,19 +680,24 @@ class NodeResolutionForm(forms.Form):
         """
         Customize form based on application properties.
 
-        If application has competitive funding, remove 'reject' option.
+        Reject protection for competitive funding is waived when at least one
+        evaluator has independently recommended denial; in that case the node
+        coordinator may use the evaluator's denial as grounds for rejection.
         """
         self.has_competitive_funding = kwargs.pop('has_competitive_funding', False)
+        self.has_evaluator_denial = kwargs.pop('has_evaluator_denial', False)
         super().__init__(*args, **kwargs)
 
-        # Remove 'reject' choice if has_competitive_funding
-        if self.has_competitive_funding:
+        # Remove 'reject' choice only when reject is actually forbidden:
+        # competitive funding AND no evaluator denial.
+        if self.has_competitive_funding and not self.has_evaluator_denial:
             self.fields['resolution'].choices = [
                 choice for choice in self.RESOLUTION_CHOICES
                 if choice[0] != 'reject'
             ]
             self.fields['resolution'].help_text = (
-                "This application has competitive funding and cannot be rejected. "
+                "This application has competitive funding and cannot be rejected "
+                "because all completed evaluations recommended approval. "
                 "You must either accept or waitlist."
             )
 
@@ -673,11 +706,16 @@ class NodeResolutionForm(forms.Form):
         cleaned_data = super().clean()
         resolution = cleaned_data.get('resolution')
 
-        # Validate: competitive funding cannot be rejected
-        if self.has_competitive_funding and resolution == 'reject':
+        # Validate: competitive funding cannot be rejected unless an evaluator denied
+        if (
+            self.has_competitive_funding
+            and not self.has_evaluator_denial
+            and resolution == 'reject'
+        ):
             self.add_error(
                 'resolution',
-                "Applications with competitive funding cannot be rejected."
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial."
             )
         # Require comments if rejecting (only if the reject itself was allowed,
         # otherwise we'd surface two errors for the same field).

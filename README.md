@@ -71,69 +71,38 @@ redib/
 
 ## Current Implementation Status
 
-### ✅ All Phases Completed (Production-Ready)
+All ten design-document phases (Phase 0 Foundation → Phase 10 Reporting)
+are implemented and in rapid-iteration bug-fix / content-update mode.
+The workflow below is what the system actually supports today:
 
-- **Phase 0**: Foundation & Dashboard ✅
-  - User authentication & role-based access control
-  - Base templates and navigation
+1. **Call publication** — coordinators create calls with submission,
+   evaluation, and execution windows and allocate per-equipment hours.
+2. **Application submission** — 5-step wizard with applicant snapshot,
+   funding source (FundingAgency + origin-of-funds), service modality,
+   scientific content (six 0-2 criteria), and declarations
+   (animal/human ethics, insurance, informed consent, data consent).
+3. **Feasibility review** — per-node technical sign-off by node
+   coordinators with approve / reject / request-edits actions.
+4. **Evaluator assignment & scoring** — COI detection, auto + manual
+   assignment, blind scoring across six criteria.
+5. **Resolution** — per-node coordinator decisions aggregated to
+   `accepted`, `pending` (waitlist), or `rejected`. Competitive-funding
+   applications are reject-protected at this phase unless at least one
+   evaluator independently recommended denial.
+6. **Acceptance & hand-off** — applicant accept/decline within 10 days.
+   Waitlisted applications use the same accept/decline flow and can
+   be promoted to `accepted` by a node coordinator via the
+   "Mark as Accepted" action on Access Tracking.
+7. **Access tracking & completion** — node coordinators and
+   applicants both see an access-tracking dashboard; either can mark
+   an equipment block complete with actual hours used.
+8. **Publication tracking** — applicants report publications with a
+   6-month follow-up reminder, ReDIB acknowledgment verified.
+9. **Reports** — coordinator statistics dashboard, Excel export per
+   call, publication statistics.
 
-- **Phase 1**: Call Management ✅
-  - Create and publish COA calls
-  - Equipment allocation management
-  - Public call listings
-
-- **Phase 2**: Application Submission ✅
-  - 5-step wizard workflow
-  - **5 applicant information fields** (name, ORCID, entity, email, phone)
-  - **7 project types** (expanded from 5)
-  - **20 AEI subject area classifications** (expanded from 13)
-  - Auto-population from user profile
-  - Equipment access requests
-
-- **Phase 3**: Feasibility Review ✅
-  - Multi-node technical feasibility reviews
-  - Approval/rejection workflow
-  - Automated state transitions
-  - Email notifications
-
-- **Phase 4**: Evaluator Assignment ✅
-  - Conflict of interest (COI) detection and prevention
-  - Automated evaluator assignment
-  - Manual override capabilities
-  - Email notifications to evaluators
-
-- **Phase 5**: Evaluation Process ✅
-  - 6-criteria evaluation system (0-2 scale)
-  - Evaluator dashboard and forms
-  - Progress tracking
-  - Completion notifications
-
-- **Phase 6**: Resolution & Prioritization ✅
-  - Node coordinator resolution workflow (distributed ownership)
-  - Multi-node aggregation (ALL accept → accepted, ANY reject → rejected)
-  - Per-equipment hours approval by node coordinators
-  - Competitive funding protection (cannot reject funded applications)
-  - Score-based ranking and prioritization
-
-- **Phase 7 & 8**: Acceptance & Handoff (Simplified) ✅
-  - Applicant acceptance/decline workflow
-  - 10-day acceptance deadline enforcement
-  - Handoff email automation
-  - Direct access coordination (no internal scheduling)
-
-- **Phase 9**: Publication Tracking ✅
-  - Publication submission by applicants
-  - 6-month follow-up reminders
-  - ReDIB acknowledgment tracking
-  - Coordinator verification
-
-- **Phase 10**: Reporting & Statistics ✅
-  - Statistics dashboard for coordinators
-  - Excel export for call reports (3-sheet workbooks)
-  - Publication statistics integration
-  - Report generation tracking
-
-**Complete system with comprehensive automated test suites (47+ tests across all phases).**
+For the current active work, see
+**[docs/developer/](docs/developer/)** (batch plans and progress files).
 
 ---
 
@@ -174,17 +143,18 @@ See **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** for a full reference of all e
 - **Organization**: Parent organizations (universities, research centers, etc.)
 - **Node**: ReDIB network nodes (4 nodes: CICbiomaGUNE, BioImaC, La Fe, CNIC)
 - **Equipment**: Imaging equipment at each node
-- **User**: Extended user model with ORCID and affiliations
-- **UserRole**: Role assignments (applicant, evaluator, coordinator, etc.)
+- **User**: Extended user model with ORCID and phone (both regex-validated), affiliations
+- **UserRole**: Role assignments (`applicant`, `evaluator`, `coordinator`, `node_coordinator`) with a semicolon-separated `areas` field for evaluator specialisations
 
 ### Call Management
-- **Call**: COA call periods with dates and status
+- **Call**: COA call periods with submission, evaluation, and execution windows
 - **CallEquipmentAllocation**: Hours offered per equipment per call
 
 ### Applications
-- **Application**: COA applications with full scientific content
-- **RequestedAccess**: Equipment access requests within applications
-- **FeasibilityReview**: Node technical feasibility assessments
+- **Application**: COA applications with full scientific content, human/animal declarations (ethics, insurance, informed consent), and acceptance tracking (waitlist lifecycle included)
+- **RequestedAccess**: Equipment access requests within applications (per-equipment requested + approved hours)
+- **FeasibilityReview**: Node technical feasibility assessments with explicit `status` (pending / approved / rejected / edits_requested)
+- **FundingAgency**: Funding-agency reference list with `origin_of_funds` (spanish_government, international_non_eu, spanish_regional, european_union, institutional, private, other)
 
 ### Evaluations
 - **Evaluation**: Evaluator scores and comments (0-2 scale on 6 criteria)
@@ -192,6 +162,10 @@ See **[docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** for a full reference of all e
 ### Access Tracking
 - **AccessGrant**: Approved access with scheduling and usage tracking
 - **Publication**: Publications resulting from COA access
+
+### Communications
+- **EmailTemplate**: DB-stored Django templates for every workflow email
+- **EmailLog**: Every send is logged with recipient, subject, template, and status for debugging and audit
 
 ## Development
 

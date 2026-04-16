@@ -84,6 +84,7 @@ def application_detail(request, pk):
         'requested_access': requested_access,
         'is_coordinator': is_coordinator,
         'edit_requests': edit_requests,
+        'phase_tracker': _build_phase_tracker(application),
     }
 
     # Add feasibility review status for coordinators
@@ -128,7 +129,100 @@ def application_detail(request, pk):
 
         context['feasibility_status'] = unique_feasibility
 
+        # Evaluation summary for coordinators — per-evaluator scores,
+        # average, recommendations, completion timestamps.
+        completed_evals = list(
+            application.evaluations.select_related('evaluator')
+            .exclude(completed_at__isnull=True)
+            .order_by('completed_at')
+        )
+        if completed_evals:
+            totals = [float(e.total_score) for e in completed_evals if e.total_score is not None]
+            context['evaluation_summary'] = {
+                'evaluations': completed_evals,
+                'count': len(completed_evals),
+                'assigned': application.evaluations.count(),
+                'average': round(sum(totals) / len(totals), 2) if totals else None,
+                'min': min(totals) if totals else None,
+                'max': max(totals) if totals else None,
+            }
+
     return render(request, 'applications/detail.html', context)
+
+
+def _build_phase_tracker(application):
+    """Build a list of (label, state) tuples representing the workflow
+    phases for this application.
+
+    `state` is one of 'complete', 'current', 'pending', 'terminal-fail'.
+    The tracker short-circuits on terminal-failure statuses so the UI can
+    communicate "this application did not proceed past phase X".
+    """
+    status = application.status
+
+    # Map every status to a position in the phase sequence.
+    PHASES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('feasibility', 'Feasibility Review'),
+        ('evaluation', 'Evaluation'),
+        ('resolution', 'Resolution'),
+        ('acceptance', 'Acceptance'),
+        ('access', 'Access'),
+    ]
+
+    # Which phase is the application currently at? (keyed by phase id)
+    status_phase = {
+        'draft': 'draft',
+        'submitted': 'submitted',
+        'under_feasibility_review': 'feasibility',
+        'rejected_feasibility': 'feasibility',
+        'pending_evaluation': 'evaluation',
+        'under_evaluation': 'evaluation',
+        'evaluated': 'resolution',
+        'accepted': 'acceptance',
+        'pending': 'acceptance',
+        'rejected': 'resolution',
+        'declined_by_applicant': 'acceptance',
+        'expired': 'acceptance',
+        'completed': 'access',
+    }.get(status, 'draft')
+
+    # Once the applicant has accepted and the handoff email has been sent,
+    # consider the 'acceptance' phase complete and highlight 'access'.
+    if status == 'accepted' and application.accepted_by_applicant and application.handoff_email_sent_at:
+        status_phase = 'access'
+    # 'completed' is a terminal success on 'access'.
+    if application.is_completed:
+        status_phase = 'access'
+
+    terminal_fail_statuses = {
+        'rejected_feasibility', 'rejected',
+        'declined_by_applicant', 'expired',
+    }
+    is_terminal_fail = status in terminal_fail_statuses
+    phase_order = [p_id for p_id, _ in PHASES]
+
+    try:
+        current_idx = phase_order.index(status_phase)
+    except ValueError:
+        current_idx = 0
+
+    tracker = []
+    for idx, (phase_id, label) in enumerate(PHASES):
+        if is_terminal_fail and idx == current_idx:
+            state = 'terminal-fail'
+        elif idx < current_idx:
+            state = 'complete'
+        elif idx == current_idx and application.is_completed:
+            state = 'complete'
+        elif idx == current_idx:
+            state = 'current'
+        else:
+            state = 'pending' if not is_terminal_fail else 'pending'
+        tracker.append({'id': phase_id, 'label': label, 'state': state})
+
+    return tracker
 
 
 @login_required
@@ -679,9 +773,10 @@ def feasibility_review(request, pk):
                     app_url = request.build_absolute_uri(
                         reverse('applications:detail', kwargs={'pk': application.pk})
                     )
+                    applicant_email = application.applicant_email or application.applicant.email
                     send_email_from_template.delay(
                         template_type='feasibility_edits_requested',
-                        recipient_email=application.applicant.email,
+                        recipient_email=applicant_email,
                         context_data={
                             'applicant_name': application.applicant.get_full_name(),
                             'application_code': application.code,
@@ -722,9 +817,10 @@ def feasibility_review(request, pk):
 
                 try:
                     from communications.tasks import send_email_from_template
+                    applicant_email = application.applicant_email or application.applicant.email
                     send_email_from_template.delay(
                         template_type='feasibility_complete',
-                        recipient_email=application.applicant.email,
+                        recipient_email=applicant_email,
                         context_data={
                             'applicant_name': application.applicant.get_full_name(),
                             'application_code': application.code,
@@ -1010,8 +1106,12 @@ def application_acceptance(request, pk):
         applicant=request.user
     )
 
-    # Check if already responded or wrong status
-    if application.status != 'accepted':
+    # Check if already responded or wrong status. Both 'accepted' and
+    # 'pending' (waitlist) let the applicant accept/decline; they differ
+    # only in whether the handoff fires immediately (accepted) or waits
+    # for a node coordinator to promote the app later (pending).
+    is_waitlist = application.status == 'pending'
+    if application.status not in ('accepted', 'pending'):
         messages.warning(request,
             f"This application is in '{application.get_status_display()}' status and cannot be accepted/declined."
         )
@@ -1034,10 +1134,19 @@ def application_acceptance(request, pk):
         action = request.POST.get('action')
 
         if action == 'accept':
-            # Accept application and send handoff email
+            # Record the applicant's acceptance. On the waitlist path the
+            # handoff email is deferred until a node coordinator promotes
+            # the application to accepted.
             application.accepted_by_applicant = True
             application.accepted_at = timezone.now()
             application.save()
+
+            if is_waitlist:
+                messages.success(request,
+                    "You have accepted the waitlist offer. A node coordinator "
+                    "will contact you if a slot becomes available."
+                )
+                return redirect('applications:detail', pk=application.pk)
 
             # Send handoff email to applicant + node coordinators. Acceptance
             # must succeed even if the email fails (missing template, SMTP
@@ -1084,8 +1193,115 @@ def application_acceptance(request, pk):
         'requested_access': requested_access,
         'days_remaining': application.days_until_acceptance_deadline,
         'deadline': application.acceptance_deadline,
+        'is_waitlist': is_waitlist,
     }
     return render(request, 'applications/acceptance_form.html', context)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def promote_waitlisted_application(request, pk):
+    """Node coordinator promotes a waitlisted (pending) application into
+    the accepted lifecycle.
+
+    Requirements:
+    - Application is in 'pending' status AND the applicant has already
+      accepted the waitlist offer (accepted_by_applicant=True).
+    - Caller is a coordinator / superuser, OR is a node_coordinator whose
+      node has equipment on this application.
+
+    Effect:
+    - status: pending -> accepted
+    - resolution: pending -> accepted
+    - resolution_date refreshed to now; acceptance_deadline is cleared
+      (applicant has already accepted — no second clock needed)
+    - resolution_accepted notification + handoff email dispatched to
+      applicant and node coordinators.
+    """
+    from core.models import UserRole
+
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
+    is_coordinator = 'coordinator' in user_roles or user.is_superuser
+    if not is_coordinator:
+        requested_node_ids = set(
+            application.requested_access.values_list('equipment__node_id', flat=True)
+        )
+        nc_node_ids = set(
+            UserRole.objects.filter(
+                user=user, role='node_coordinator', is_active=True,
+            ).values_list('node_id', flat=True)
+        )
+        if not (requested_node_ids & nc_node_ids):
+            messages.error(request, "You are not authorised to promote this application.")
+            return redirect('access:access_tracking')
+
+    if application.status != 'pending':
+        messages.error(
+            request,
+            f"Cannot promote application {application.code}: status is "
+            f"'{application.get_status_display()}', not Pending (Waitlist)."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if not application.accepted_by_applicant:
+        messages.error(
+            request,
+            f"Cannot promote {application.code}: the applicant has not yet "
+            "accepted the waitlist offer."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    application.status = 'accepted'
+    application.resolution = 'accepted'
+    application.resolution_date = timezone.now()
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[PROMOTED FROM WAITLIST] by {user.get_full_name() or user.email} "
+          f"on {timezone.now().date()}"
+    ).strip()
+    application.acceptance_deadline = None  # applicant has already accepted
+    application.save()
+
+    # Fire resolution_accepted email + handoff email. Any send failure is
+    # logged but does not undo the promotion — the data change is the
+    # authoritative record.
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        from applications.tasks import send_single_resolution_notification_task
+        send_single_resolution_notification_task.delay(application.id)
+    except Exception:
+        log.exception(
+            "Celery dispatch failed for resolution_accepted notification "
+            "on promotion of %s; falling back to sync",
+            application.code,
+        )
+        try:
+            send_single_resolution_notification_task(application.id)
+        except Exception:
+            log.exception(
+                "Synchronous fallback also failed for resolution_accepted "
+                "notification on promotion of %s",
+                application.code,
+            )
+
+    try:
+        _send_handoff_email(application)
+        application.handoff_email_sent_at = timezone.now()
+        application.save(update_fields=['handoff_email_sent_at'])
+    except Exception:
+        log.exception("Handoff email failed on promotion of %s", application.code)
+
+    messages.success(
+        request,
+        f"Application {application.code} has been promoted from the waitlist. "
+        "The applicant and node coordinators have been notified."
+    )
+    return redirect('applications:detail', pk=application.pk)
 
 
 def _send_handoff_email(application):
@@ -1137,9 +1353,13 @@ def _send_handoff_email(application):
                 seen_emails.add(email)
                 cc_emails.append(email)
 
+    # Prefer the form-declared applicant_email (the stated PI contact) over
+    # the submitting User's account email.
+    recipient_email = application.applicant_email or application.applicant.email
+
     send_email_from_template(
         template_type='handoff_notification',
-        recipient_email=application.applicant.email,
+        recipient_email=recipient_email,
         context_data=context,
         recipient_user_id=application.applicant.id,
         related_application_id=application.id,
@@ -1363,7 +1583,8 @@ def node_resolution_review(request, application_id, node_id):
     if request.method == 'POST':
         form = NodeResolutionForm(
             request.POST,
-            has_competitive_funding=application.has_competitive_funding
+            has_competitive_funding=application.has_competitive_funding,
+            has_evaluator_denial=application.has_any_denied_evaluation,
         )
 
         # Build approved hours dict from POST data
@@ -1421,7 +1642,8 @@ def node_resolution_review(request, application_id, node_id):
             }
         form = NodeResolutionForm(
             initial=initial,
-            has_competitive_funding=application.has_competitive_funding
+            has_competitive_funding=application.has_competitive_funding,
+            has_evaluator_denial=application.has_any_denied_evaluation,
         )
 
     # Prepare equipment data for template

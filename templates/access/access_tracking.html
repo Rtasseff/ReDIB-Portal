@@ -28,8 +28,6 @@
                         <th>Applicant</th>
                         <th>Status</th>
                         <th>Submitted</th>
-                        <th>Equipment & Hours</th>
-                        <th>Completed</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -41,89 +39,30 @@
                             {{ app.applicant.get_full_name }}<br>
                             <small class="text-muted">{{ app.applicant_entity }}</small>
                         </td>
-                        <td>
-                            {% if app.status == 'accepted' and app.accepted_by_applicant %}
-                                <span class="badge bg-success">Accepted</span>
-                            {% elif app.status == 'accepted' %}
-                                <span class="badge bg-warning">Awaiting Acceptance</span>
-                            {% elif app.status == 'rejected' %}
-                                <span class="badge bg-danger">Rejected</span>
-                            {% elif app.status == 'declined_by_applicant' %}
-                                <span class="badge bg-secondary">Declined</span>
-                            {% else %}
-                                <span class="badge bg-info">{{ app.get_status_display }}</span>
-                            {% endif %}
-                        </td>
+                        <td>{% include "includes/status_badge.html" %}</td>
                         <td>{{ app.submitted_at|date:"M d, Y" }}</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#hours-{{ app.id }}">
-                                <i class="bi bi-clock"></i> View Hours
-                            </button>
-                        </td>
-                        <td>
-                            {% if app.is_completed %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> {{ app.completed_at|date:"M d, Y" }}
-                                </span>
-                            {% elif app.accepted_by_applicant %}
-                                <span class="text-muted">In Progress</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
+                            <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary" title="View application">
                                 <i class="bi bi-eye"></i> View
                             </a>
-                            {% if app.accepted_by_applicant and not app.is_completed %}
+                            {% if app.status == 'pending' and app.accepted_by_applicant %}
+                                <form method="post" action="{% url 'applications:promote_waitlisted' app.pk %}"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Promote {{ app.code }} from the waitlist to Accepted? The applicant will receive the acceptance email and the handoff email will go out to node coordinators.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-fast-forward"></i> Promote to Accepted
+                                    </button>
+                                </form>
+                            {% elif app.status == 'accepted' and app.accepted_by_applicant and not app.is_completed %}
                                 <a href="{% url 'access:mark_complete' app.id %}" class="btn btn-sm btn-success">
-                                    <i class="bi bi-check-circle"></i> Mark Complete
+                                    <i class="bi bi-check-circle"></i> Mark Complete + Log Hours
                                 </a>
+                            {% elif app.is_completed %}
+                                <span class="badge bg-success ms-1">
+                                    <i class="bi bi-check-circle"></i> Completed {{ app.completed_at|date:"M d, Y" }}
+                                </span>
                             {% endif %}
-                        </td>
-                    </tr>
-                    <!-- Hours Details (Collapsible) -->
-                    <tr class="collapse" id="hours-{{ app.id }}">
-                        <td colspan="7">
-                            <div class="p-3 bg-light">
-                                <h6>Equipment Hours:</h6>
-                                <table class="table table-sm table-bordered mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Node</th>
-                                            <th>Equipment</th>
-                                            <th>Requested</th>
-                                            <th>Approved</th>
-                                            <th>Actual Used</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for access in app.requested_access.all %}
-                                        <tr>
-                                            <td>{{ access.equipment.node.code }}</td>
-                                            <td>{{ access.equipment.name }}</td>
-                                            <td>{{ access.hours_requested }}</td>
-                                            <td>
-                                                {% if access.hours_approved %}
-                                                    <span class="badge bg-success">{{ access.hours_approved }}</span>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if access.actual_hours_used %}
-                                                    <strong>{{ access.actual_hours_used }}</strong>
-                                                {% else %}
-                                                    <span class="text-muted">Not reported</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
                         </td>
                     </tr>
                     {% endfor %}

@@ -57,6 +57,7 @@
             <div class="mb-3">
                 <label for="{{ form.authors.id_for_label }}" class="form-label">
                     {{ form.authors.label }}
+                    <span class="text-danger">*</span>
                 </label>
                 {{ form.authors }}
                 {% if form.authors.errors %}
@@ -73,6 +74,7 @@
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.journal.id_for_label }}" class="form-label">
                         {{ form.journal.label }}
+                        <span class="text-danger">*</span>
                     </label>
                     {{ form.journal }}
                     {% if form.journal.errors %}
@@ -85,6 +87,7 @@
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.doi.id_for_label }}" class="form-label">
                         {{ form.doi.label }}
+                        <span class="text-danger">*</span>
                     </label>
                     {{ form.doi }}
                     {% if form.doi.errors %}
@@ -101,6 +104,7 @@
             <div class="mb-3">
                 <label for="{{ form.publication_date.id_for_label }}" class="form-label">
                     {{ form.publication_date.label }}
+                    <span class="text-danger">*</span>
                 </label>
                 {{ form.publication_date }}
                 {% if form.publication_date.errors %}

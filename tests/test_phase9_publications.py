@@ -103,26 +103,42 @@ class PublicationSubmissionTest(TestCase):
         self.assertEqual(self.application.publications.count(), 1)
         self.assertEqual(self.application.publications.first(), publication)
 
-    def test_form_shows_only_accepted_applications(self):
-        """Test publication form only shows user's accepted applications."""
+    def test_form_shows_only_completed_applications(self):
+        """Publication form must only list COMPLETED applications.
+
+        Updated for the rule that publications can only be reported against
+        completed access (an in-progress accepted application is not yet
+        eligible). Drafts and accepted-but-not-completed apps are excluded.
+        """
         from access.forms import PublicationForm
 
-        # Create another application (not accepted)
+        # An accepted-but-not-yet-completed app (the one from setUp). Should
+        # be excluded under the new rule.
+        # A completed app for the same applicant. Should be included.
+        completed_app = Application.objects.create(
+            applicant=self.applicant,
+            call=self.call,
+            code='TEST-APP-002-COMPLETED',
+            brief_description='Completed application',
+            status='completed',
+            resolution='accepted',
+            accepted_by_applicant=True,
+            is_completed=True,
+            completed_at=timezone.now() - timedelta(days=10),
+        )
+        # And a draft, also excluded.
         draft_app = Application.objects.create(
             applicant=self.applicant,
             call=self.call,
-            code='TEST-APP-002',
+            code='TEST-APP-003-DRAFT',
             brief_description='Draft application',
-            status='draft'
+            status='draft',
         )
 
-        # Create form with user context
         form = PublicationForm(user=self.applicant)
-
-        # Should only show accepted application
         available_apps = list(form.fields['application'].queryset)
-        self.assertEqual(len(available_apps), 1)
-        self.assertEqual(available_apps[0], self.application)
+        self.assertEqual(available_apps, [completed_app])
+        self.assertNotIn(self.application, available_apps)
         self.assertNotIn(draft_app, available_apps)
 
     def test_publication_list_query_filters_by_user(self):

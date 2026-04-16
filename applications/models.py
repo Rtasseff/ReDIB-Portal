@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from simple_history.models import HistoricalRecords
 from calls.models import Call
-from core.models import Equipment, Node
+from core.models import Equipment, Node, ORCID_VALIDATOR, PHONE_VALIDATOR
 
 
 def signed_pdf_upload_path(instance, filename):
@@ -122,10 +122,18 @@ class Application(models.Model):
 
     # Applicant information (snapshot at submission time)
     applicant_name = models.CharField(max_length=200, blank=True, help_text='Auto-filled from user profile')
-    applicant_orcid = models.CharField(max_length=20, blank=True, help_text='Optional ORCID identifier')
+    applicant_orcid = models.CharField(
+        max_length=20, blank=True,
+        validators=[ORCID_VALIDATOR],
+        help_text='Optional ORCID identifier (XXXX-XXXX-XXXX-XXXX)'
+    )
     applicant_entity = models.CharField(max_length=200, blank=True, help_text='Institution/organization')
     applicant_email = models.EmailField(blank=True, help_text='Contact email')
-    applicant_phone = models.CharField(max_length=30, blank=True, help_text='Contact phone')
+    applicant_phone = models.CharField(
+        max_length=30, blank=True,
+        validators=[PHONE_VALIDATOR],
+        help_text='Contact phone'
+    )
 
     # Funding source
     project_code = models.CharField(max_length=100, blank=True)
@@ -144,29 +152,39 @@ class Application(models.Model):
     service_modality = models.CharField(max_length=50, choices=SERVICE_MODALITIES, blank=True)
     specialization_area = models.CharField(max_length=50, choices=SPECIALIZATION_AREAS, blank=True)
 
-    # Scientific content (for evaluation)
+    # Scientific content (for evaluation). Capped at 5000 chars per field
+    # so the applicant-facing form has a clear boundary and preview/PDF
+    # rendering stays predictable.
+    SCIENTIFIC_CONTENT_MAX_LENGTH = 5000
+
     scientific_relevance = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Scientific relevance and originality'
     )
     methodology_description = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Methodology and experimental design'
     )
     expected_contributions = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Expected contributions and results'
     )
     impact_strengths = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Impact and strengths'
     )
     socioeconomic_significance = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Socioeconomic significance'
     )
     opportunity_criteria = models.TextField(
         blank=True,
+        max_length=SCIENTIFIC_CONTENT_MAX_LENGTH,
         help_text='Opportunity criteria and justification'
     )
 
@@ -179,6 +197,18 @@ class Application(models.Model):
     has_animal_ethics = models.BooleanField(default=False)
     uses_humans = models.BooleanField(default=False)
     has_human_ethics = models.BooleanField(default=False)
+    # Extra applicant-side declarations shown only when uses_humans=True.
+    # These are informational: applicants may submit with or without
+    # checking them. Reviewers see the state but cannot modify the
+    # application (see docs/developer/batch2-implementation-plan.md).
+    has_insurance = models.BooleanField(
+        default=False,
+        help_text='Civil liability insurance in place for human subjects work'
+    )
+    has_informed_consent = models.BooleanField(
+        default=False,
+        help_text='Informed consent protocol in place for human subjects work'
+    )
     data_consent = models.BooleanField(default=False, help_text='Data processing consent')
 
     # Signed PDF document tracking
@@ -264,7 +294,7 @@ class Application(models.Model):
         'under_evaluation': ['evaluated'],
         'evaluated': ['accepted', 'pending', 'rejected'],
         'accepted': ['declined_by_applicant', 'expired', 'completed'],  # Phase 7/8: Decline, expire, or complete
-        'pending': ['accepted', 'rejected'],  # Can be promoted from waiting list
+        'pending': ['accepted', 'rejected', 'declined_by_applicant', 'expired'],  # Waitlist: promote, reject, or applicant decline / timeout
         'rejected': [],  # Terminal state
         'declined_by_applicant': [],  # Terminal state - Phase 7
         'expired': [],  # Terminal state - Phase 7
@@ -416,6 +446,21 @@ class Application(models.Model):
         return self.requested_access.aggregate(
             total=models.Sum('hours_requested')
         )['total'] or 0
+
+    @property
+    def has_any_denied_evaluation(self):
+        """True if at least one completed evaluation recommended 'denied'.
+
+        Used to relax the competitive-funding reject protection: a node or
+        ReDIB coordinator may reject a competitively-funded application at the
+        resolution phase when at least one evaluator has independently
+        recommended denial (feasibility and evaluation phases retain their
+        own independent reject pathways).
+        """
+        return self.evaluations.filter(
+            completed_at__isnull=False,
+            recommendation='denied',
+        ).exists()
 
 
 class RequestedAccess(models.Model):
