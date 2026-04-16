@@ -142,6 +142,11 @@ Notes:
 
 ## Future enhancements (nice-to-haves, not current-version bugs)
 
+> **Now tracked in [`backlog.md`](backlog.md).** The two items below have
+> been copied into the `UX polish` section there (entries #1 and #2).
+> New ideas surfaced after this walkthrough should go directly into
+> `backlog.md`, not here. The list is preserved for historical context.
+
 | # | Phase | Idea | Priority |
 |---|-------|------|----------|
 | 1 | P1 (calls listing) | Let users see equipment details from the calls page (click or hover on equipment — UI TBD). Currently equipment is listed by name only without a way to drill in. | Low |

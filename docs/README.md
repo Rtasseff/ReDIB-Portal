@@ -12,6 +12,8 @@ This directory contains all project documentation, reference materials, and test
 
 **I'm adding a feature or fixing a bug** → [DEVELOPMENT.md](DEVELOPMENT.md), then the latest file in [developer/](developer/).
 
+**I have an idea / found a small UX nit / spotted a known test failure** → drop it in [developer/backlog.md](developer/backlog.md) for the next batch.
+
 **I want to test the system end to end** → [TESTING.md](TESTING.md) plus [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for seeded data, and [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) for verifying outgoing mail.
 
 ## Documentation Index
@@ -40,6 +42,7 @@ This directory contains all project documentation, reference materials, and test
 
 ### `/developer/`
 Developer guides, planning documents, and running notes:
+- `backlog.md` — **Dynamic backlog** of feature requests, UX polish, and known test issues to address in future batches. Add new ideas here when they come up but aren't being implemented immediately.
 - `developer-notes.md` — Running log of design decisions, deferred improvements, and gotchas
 - `branding-and-styles.md` — How to change branding, logo, colors, and CSS
 - `tier1-manual-test-checklist.md` — Manual QA checklist

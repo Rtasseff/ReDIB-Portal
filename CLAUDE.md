@@ -6,7 +6,7 @@ Django 5.0 / Python 3.11 COA management system for the ReDIB distributed biomedi
 
 **Current Phase:** Rapid iterative improvement — fixing bugs, adding features, and updating content based on recent testing. Changes are developed and tested locally (often on feature branches), merged to main, pushed to origin, then pulled on the production VPS.
 
-**Active Branch:** `fixes-batch-2` — next round of bug fixes and content changes. Merge to main when the batch is tested and ready. (`fixes-batch-1` was merged to main.)
+**Active Branch:** None — `fixes-batch-2` was merged to `main` on 2026-04-16. Next batch will start as `fixes-batch-3` when there's enough scoped work; check [docs/developer/backlog.md](docs/developer/backlog.md) for candidate items.
 
 ## Environment Context
 
@@ -29,6 +29,7 @@ Key references:
 - **Testing:** [TESTING.md](docs/TESTING.md), [TEST_APPLICANTS_GUIDE.md](docs/TEST_APPLICANTS_GUIDE.md)
 - **System design:** [reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md)
 - **Branding/styles:** [developer/branding-and-styles.md](docs/developer/branding-and-styles.md)
+- **Backlog:** [developer/backlog.md](docs/developer/backlog.md) — drop new feature requests, UX polish, and known test issues here when they aren't going into the current batch
 
 ## Project Structure
 
