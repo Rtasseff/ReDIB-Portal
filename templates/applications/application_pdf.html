@@ -236,6 +236,21 @@
         </div>
     </div>
 
+    {% if blind %}
+    <!-- Section 1 omitted: blind PDF for evaluators (applicant identity hidden
+         to mirror the blind portal view in
+         evaluations.utils.get_blind_application_data). -->
+    <div class="section">
+        <div class="section-header">1. Applicant Information / Informacion del Solicitante</div>
+        <div class="section-content">
+            <div class="info-row">
+                <span class="info-value" style="font-style: italic; color: #666;">
+                    Hidden for blind evaluation. / Oculto para evaluacion ciega.
+                </span>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <!-- Section 1: Basic Information -->
     <div class="section">
         <div class="section-header">1. Applicant Information / Informacion del Solicitante</div>
@@ -266,6 +281,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Section 2: Project & Funding -->
     <div class="section">
@@ -275,18 +291,22 @@
                 <span class="info-label">Project Summary / Resumen del proyecto:</span>
                 <span class="info-value">{{ application.brief_description|default:"—" }}</span>
             </div>
+            {% if not blind %}
             <div class="info-row">
                 <span class="info-label">Funding Agency / Agencia:</span>
                 <span class="info-value">{{ application.funding_agency_obj|default:"NA" }}</span>
             </div>
+            {% endif %}
             <div class="info-row">
                 <span class="info-label">Origin of Funds / Origen de los fondos:</span>
                 <span class="info-value">{{ application.get_project_type_display|default:"NA" }}</span>
             </div>
+            {% if not blind %}
             <div class="info-row">
                 <span class="info-label">Project Code / Codigo:</span>
                 <span class="info-value">{{ application.project_code|default:"—" }}</span>
             </div>
+            {% endif %}
             <div class="info-row">
                 <span class="info-label">Subject Area / Area:</span>
                 <span class="info-value">{{ application.get_subject_area_display }}</span>

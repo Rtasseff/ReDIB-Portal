@@ -13,7 +13,12 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Application {{ application.code|default:"DRAFT" }}</h1>
-        <div>
+        <div class="d-flex align-items-center gap-2">
+            {% if application.status != 'draft' %}
+            <a href="{% url 'applications:download_pdf' application.pk %}" class="btn btn-outline-secondary btn-sm" title="Download PDF of this application">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+            </a>
+            {% endif %}
             {% if application.status == 'draft' %}
                 <span class="badge bg-secondary fs-5">Draft</span>
             {% elif application.status == 'submitted' %}
