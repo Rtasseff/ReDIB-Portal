@@ -34,6 +34,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    {% if contact_email %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="mailto:{{ contact_email }}?subject=ReDIB%20COA%20Portal%20%E2%80%94%20help" title="Email us if you hit any issue">
+                                <i class="bi bi-life-preserver"></i> Need help?
+                            </a>
+                        </li>
+                    {% endif %}
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="/">Dashboard</a>
@@ -85,7 +92,13 @@
     <footer class="bg-light mt-5 py-4">
         <div class="container text-center">
             <p class="mb-0">&copy; 2025 ReDIB - Red Distribuida de Imagen Biomédica</p>
-            <p class="small text-muted">Competitive Open Access Management System</p>
+            <p class="small text-muted mb-1">Competitive Open Access Management System</p>
+            {% if contact_email %}
+                <p class="small mb-0">
+                    Need help or hit a problem?
+                    <a href="mailto:{{ contact_email }}?subject=ReDIB%20COA%20Portal%20%E2%80%94%20help">{{ contact_email }}</a>
+                </p>
+            {% endif %}
         </div>
     </footer>
 

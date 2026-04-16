@@ -1,6 +1,14 @@
 """
 Context processors for adding custom context to all templates.
 """
+from django.conf import settings
+
+
+def contact_email(request):
+    """Expose settings.CONTACT_EMAIL to every template as `contact_email`,
+    so help links in the navbar/footer share the email-template source of
+    truth (overridable via the CONTACT_EMAIL env var)."""
+    return {'contact_email': settings.CONTACT_EMAIL}
 
 
 def user_roles(request):
