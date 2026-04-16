@@ -62,8 +62,11 @@ class Command(BaseCommand):
                             f'Run `populate_redib_organizations` first, or fix the TSV.'
                         )
 
-                    is_active_raw = (row.get('is_active') or 'TRUE').strip().upper()
-                    is_active = is_active_raw in ('TRUE', '1', 'YES')
+                    # Booleans: blank = False; only TRUE/1/YES enables.
+                    # Matches the rule used by every other populate_redib_* loader.
+                    is_active = (row.get('is_active') or '').strip().upper() in (
+                        'TRUE', '1', 'YES'
+                    )
 
                     nodes_data.append({
                         'code': code,

@@ -4,6 +4,17 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+# NOTE — refresh-only migration. Promotes Node.organization from a denormalized
+# string field to a real FK. The added Node.organization column uses default=1
+# below, which would point every existing Node row at Organization id=1
+# regardless of correctness. We only run this migration against a fresh DB
+# (production was wiped at deploy time per the real-data prep policy);
+# applying it on top of existing Node data would mis-link every node, and the
+# old Node.name string is irrecoverable. If a future reset is undesirable,
+# write a data migration to repopulate Node.organization from the dropped
+# Node.name BEFORE running this one.
+
+
 class Migration(migrations.Migration):
 
     dependencies = [

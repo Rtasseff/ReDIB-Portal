@@ -61,10 +61,10 @@ class Command(BaseCommand):
                 for row_num, row in enumerate(reader, start=2):
                     name = (row.get('name') or '').strip()
                     if not name:
-                        self.stdout.write(self.style.WARNING(
-                            f'Row {row_num}: Skipping - missing required field (name)'
-                        ))
-                        continue
+                        raise CommandError(
+                            f'Row {row_num}: missing required field "name". '
+                            f'Loader does not do partial loads.'
+                        )
 
                     iso2 = (row.get('ISO2') or '').strip().upper()
                     country = (row.get('country') or '').strip()

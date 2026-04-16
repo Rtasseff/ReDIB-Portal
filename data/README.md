@@ -219,7 +219,7 @@ but no longer in the TSV. Behavior depends on the model:
 
 ## Bulk Setup
 
-The `setup_base_database` management command runs all six steps in the correct dependency
+The `setup_base_database` management command runs all seven steps in the correct dependency
 order with sensible defaults:
 
 1. `populate_redib_organizations`
@@ -228,6 +228,7 @@ order with sensible defaults:
 4. `populate_redib_equipment`
 5. `populate_redib_funding_agencies`
 6. `seed_email_templates`
+7. Site config (sets `Site.domain` / `Site.name` from `SITE_DOMAIN` / `SITE_NAME` env vars)
 
 Use `--reset --yes` to clear existing data first (preserves superusers).
 

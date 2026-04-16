@@ -1,6 +1,6 @@
 # ReDIB COA Portal - User Guide
 
-**Version 1.1** | **Last Updated: April 2026**
+**Version 1.2** | **Last Updated: April 2026**
 
 ---
 
@@ -12,6 +12,11 @@
 4. [Getting Started](#getting-started-phase-0)
 5. [User Roles and Permissions](#user-roles-and-permissions)
 6. [Using the Portal](#using-the-portal)
+   - [For Applicants](#for-applicants-researchers)
+   - [For Node Coordinators](#for-node-coordinators)
+   - [For Evaluators](#for-evaluators)
+   - [For ReDIB Coordinators](#for-redib-coordinators)
+7. [Getting Help](#getting-help)
 
 ---
 
@@ -548,292 +553,332 @@ If you have multiple roles, you'll see sections from all your roles combined. Fo
 
 ## Using the Portal
 
-This section provides step-by-step instructions for using the portal. Each subsection corresponds to a phase in the COA workflow and includes detailed guidance for completing tasks.
+This section walks through what each user actually sees and does at the portal,
+written as if you were sitting in front of the screen. After login, your
+dashboard and the menu down the left side are tailored to your role(s). If
+you have multiple roles (e.g. evaluator + applicant), the panels combine.
+
+A few things every role sees at all times:
+
+- A **navigation bar at the top** with the ReDIB logo, your name menu (Profile /
+  Logout), and a **"Need help?"** link that opens an email to the ReDIB support
+  address.
+- A **footer** with the same support address.
+- If your profile is missing a required field (phone, organization, position,
+  …), the system redirects you to your **Profile** page until you fill it in.
+  This matters most on first login — finish the profile, then the rest of the
+  portal becomes available.
+
+Pick the section below that matches your role:
+
+- [For Applicants](#for-applicants-researchers)
+- [For Node Coordinators](#for-node-coordinators)
+- [For Evaluators](#for-evaluators)
+- [For ReDIB Coordinators](#for-redib-coordinators)
 
 ---
 
-### Phase 1: Creating and Managing Calls (For Coordinators)
+### For Applicants (researchers)
 
-This phase guides you through creating, publishing, and managing calls for Competitive Open Access applications.
+You apply for time on imaging equipment, follow the application through review
+and resolution, accept the offer if granted, and report any publications that
+result.
 
-#### Prerequisites
+#### Your dashboard
 
-Before starting:
-- You must have the **Coordinator** or **Admin** role
-- You must have your login credentials
-- Equipment and nodes should be configured in the system (Phase 0)
+After logging in you see **My Applications** — a card listing every application
+you've created, with a status badge on each one (Draft / Under Review / Pending
+Evaluation / Evaluated / Accepted / Pending (Waitlist) / Rejected / etc.) and
+the action button you can take next: *Continue editing*, *Accept*, *Decline*,
+or *Add publication*.
 
-**First-time login:** If this is your first time logging in, you'll need to set your password. Contact your administrator to have your password set via the admin panel at `/admin/`.
+The left sidebar (under the **Applicant** heading) gives you:
 
----
+- **My Applications** — the same list, in full detail.
+- **My Active Access** — applications that have been accepted; this becomes
+  your hand-off page once you say yes to a granted slot.
+- **Publications** — your reported publications + the form to add new ones.
+- **Open Calls** — currently-published calls you can apply to.
 
-#### Step 1: Log In to the Portal
+#### Submitting an application
 
-1. Navigate to the portal homepage at `/`
-2. You will be automatically redirected to the **Coordinator Dashboard**
-3. If you see a login page instead, enter your credentials:
-   - **Email:** Your assigned coordinator email (e.g., `coordinator@redib.net`)
-   - **Password:** Your assigned password
+1. Click **Open Calls** (or *Browse Open Calls* on the dashboard). Each open
+   call shows the submission deadline, the equipment available across nodes,
+   and a description.
+2. On a call's detail page, click **Apply**. You enter a **5-step wizard**.
+   Drafts auto-save after each step — you can leave the wizard and come back
+   any time from **My Applications → Continue**.
+   - **Step 1 — Applicant info**: name, ORCID, organization, email, phone,
+     project name. Most fields pre-fill from your profile. The email and
+     phone you enter *here* are what node coordinators will use to reach you,
+     so they can be different from your account email if needed.
+   - **Step 2 — Project details**: short summary, funding agency (pick from
+     the dropdown — about 375 entries seeded; use *Other (enter new)* if
+     yours isn't listed), origin of funds, subject area, service modality.
+   - **Step 3 — Equipment request**: select equipment items from the call
+     and enter the hours you need for each. You can request equipment from
+     more than one node in the same application.
+   - **Step 4 — Scientific content**: six free-text sections — quality and
+     originality, methodology, expected contributions, advancement of
+     knowledge, social/economic impact, exploitation/dissemination.
+     Evaluators score each one 0–2.
+   - **Step 5 — Declarations**: animal/human use, ethics-committee
+     approval, insurance, informed consent, and data-processing consent.
+     Some checkboxes only appear if upstream answers warrant them.
+3. When you click **Submit**, the application status moves to **Under
+   Feasibility Review** and feasibility-review emails go out to the relevant
+   node coordinators.
 
-**Expected Result:** You should see the coordinator dashboard with sections for active calls, resolution statistics, and recent applications. 
+#### What happens after you submit
 
-**Note:** If this is your first login you will be required to confirm your email if you have not yet done so. This is done by an automated email sent to your login email address.
+Each status change emails you, and the dashboard shows the current state:
 
----
+- **Feasibility result**: each requested node either approves, rejects, or
+  asks you for edits. If any node rejects on technical grounds the whole
+  application is rejected. If any node asks for edits, the application
+  returns to draft so you can revise and resubmit.
+- **Evaluation**: after the submission window closes, evaluators score your
+  application (you don't see scores during this phase). Once all evaluators
+  submit, the status moves to **Evaluated**.
+- **Resolution**: each node coordinator decides Accept / Pending (waitlist) /
+  Reject for the equipment at *their* node. The combination becomes your
+  overall outcome — see *Phase 6* in the workflow overview for the
+  aggregation rule.
+- **Acceptance**: if your outcome is **Accepted** or **Pending (waitlist)**,
+  you have **10 days** to respond. From your dashboard click **Accept Access**
+  or **Decline Access**. If you do nothing within 10 days, the application
+  auto-expires and the hours are released.
 
-#### Step 2: Navigate to Call Management
+#### After you've been accepted
 
-1. In the left sidebar, click **"Call Management"**
-2. You will see a list of existing calls (if any)
+- The **My Active Access** page lists your accepted applications with the
+  per-equipment hours approved and the contact info for each node
+  coordinator. **Scheduling happens off-portal** — by email or phone
+  with the node coordinators (they were CC'd on the hand-off email, so the
+  easiest start is to reply-all).
+- When the work is done, click **Mark Complete** on the access entry and
+  log the actual hours used per equipment.
 
-**First-time experience:** If no calls exist yet, you'll see a message: "No Calls Yet" with a button labeled **"Create First Call"**
+#### Publications
 
-**What you'll see:**
-- A table listing all calls with their code, title, status, submission period, equipment count, and application count
-- Action buttons for each call (View, Edit, Publish/Close, Delete for drafts)
-
----
-
-#### Step 3: Create a New Call
-
-1. Click the **"Create New Call"** button (or **"Create First Call"** if it's your first call)
-2. You'll be taken to the call creation form
-
-Fill out the following information:
-
-**Call Details:**
-
-3. **Call Code** (Required)
-   - Enter a unique identifier for the call
-   - Format: `COA-YYYY-NN` (e.g., `COA-2026-01`)
-   - This code will be visible to applicants
-
-4. **Title** (Required)
-   - Enter a descriptive title for the call
-   - Example: "Competitive Open Access Call - January 2026"
-
-5. **Status** (Required)
-   - Select **"Draft"** (default)
-   - Leave as draft until you're ready to publish
-   - **Note:** Only published calls (status = "Open") are visible to applicants
-
-6. **Description** (Required)
-   - Write a multi-line description of the call scope
-   - This text will be visible to applicants on the public call page
-   - You can use HTML formatting if needed
-
-7. **Guidelines** (Optional)
-   - Provide application guidelines and requirements
-   - Example: Eligibility criteria, required documents, etc.
-
----
-
-**Important Dates:**
-
-All dates are **date-only** (no time selection needed). The system automatically sets deadlines to 23:59 (end of day).
-
-8. **Submission Period - Start Date** (Required)
-   - Select the date when applications can start being submitted
-   - Example: Today's date or a future date
-
-9. **Submission Period - End Date** (Required)
-   - Select the deadline for application submissions
-   - Must be **after** the submission start date
-   - Recommended: 45 days after start date
-   - **Note:** Applications can be submitted until 23:59 on this date
-
-10. **Evaluation Deadline** (Required)
-    - Select the deadline for evaluators to complete their reviews
-    - Must be **after** the submission end date
-    - Recommended: 15 days after submission end (60 days from start)
-
-11. **Execution Period - Start Date** (Required)
-    - Select when approved applicants can begin using the equipment
-    - Recommended: 30-60 days after evaluation deadline
-
-12. **Execution Period - End Date** (Required)
-    - Select when equipment access must be completed
-    - Must be **after** execution start date
-    - Recommended: 90-180 days after execution start
-
-**Validation:** The form will prevent you from:
-- Setting evaluation deadline before submission end date
-- Setting execution end before execution start date
-- Creating overlapping or illogical date ranges
+Six months after your access completes you'll get a follow-up email asking
+about publications. From the **Publications** page (or the *Add Publication*
+button next to a completed application), submit each publication with title,
+authors, journal, DOI, publication date, and the acknowledgment text from the
+article. Publications are how ReDIB demonstrates research impact, so this
+matters even when the work is years downstream.
 
 ---
 
-**Equipment Allocations:**
+### For Node Coordinators
 
-13. **Review Equipment List**
-    - Scroll down to the "Equipment Allocations" section
-    - You'll see a table showing **all active equipment** from all nodes
-    - **By default, all equipment is included** in the call
+You handle two technical decisions per application that requests equipment from
+your node: **feasibility** (can we actually do this?) and **resolution** (do we
+accept this on our equipment?). After the applicant accepts, you also coordinate
+scheduling with them directly.
 
-14. **Remove Equipment (Optional)**
-    - If you want to **exclude** specific equipment from this call, check the "Remove" checkbox next to that equipment
-    - **Note:** The description says "Check the box next to any equipment you want to **exclude** from this call"
-    - Equipment without a checkmark will be included in the call
+#### Your dashboard
 
-**Important:** You must include at least one equipment item. The system will prevent you from publishing a call with no equipment allocations.
+Two queues at the top:
 
----
+- **Pending Feasibility Reviews** — applications just submitted that request
+  equipment at your node.
+- **Pending Resolution Decisions** — applications that have finished
+  evaluation and are waiting for your accept/waitlist/reject call.
 
-15. **Save the Call (Draft)**
-    - Click the **"Save Call"** button at the bottom
-    - The call will be saved with status = "Draft"
+The left sidebar (under **Node Coordinator**) gives you:
 
-**Expected Result:**
-- You'll see a success message: "Call [CODE] created successfully"
-- You'll be redirected to the call edit page
-- The call is **not yet visible** to applicants (it's still a draft)
+- **Feasibility Reviews** — full feasibility queue.
+- **Resolution Queue** — full resolution queue.
+- **Scheduling** — accepted applications at your node.
+- **Access Tracking** — master list of all applications at your node, plus
+  the buttons for **promoting waitlisted** applications to accepted and for
+  **marking access complete + logging hours**.
 
----
+#### Feasibility review
 
-#### Step 4: Review Your Call
+1. Click **Review** on a queue entry (or open **Feasibility Reviews**). You
+   see the full application — applicant info, project details, equipment
+   requested **at your node only** (other nodes' equipment is their call,
+   not yours), and the scientific content.
+2. Pick one of three actions:
+   - **Approve** — equipment is feasible at your node.
+   - **Request edits** — applicant needs to revise before you can sign off
+     (you must include a comment explaining what to change).
+   - **Reject** — technically infeasible at your node (you must include a
+     comment).
+3. Submit. The system aggregates across all requested nodes: every node must
+   approve before the application moves to evaluation. If any node rejects,
+   the application is terminally rejected. If any node requests edits, it
+   returns to the applicant for revision.
 
-After saving, you can:
+#### Resolution
 
-1. **View the call details** by clicking the **eye icon** in the Call Management dashboard
-2. **Edit the call** by clicking the **pencil icon** or by being on the edit page already
-3. **Check the equipment allocations** to ensure the correct equipment is included
+After all evaluators submit their scores, the application appears in your
+**Resolution Queue**.
 
-**At this point, you can:**
-- Continue editing the call
-- Delete the draft call if needed (red "Delete Call" button)
-- Publish the call when ready (green "Publish Call" button)
+1. Click **Resolve**. You see the average score, each evaluator's individual
+   score and recommendation, and a per-equipment table for *your node* with
+   the **hours requested** and a field for **hours approved** (you can grant
+   fewer hours than requested).
+2. Pick a decision: **Accept**, **Pending (waitlist)**, or **Reject**.
+   - If the application has **competitive funding**, **Reject is greyed
+     out** *unless* at least one evaluator independently recommended
+     Denied — see *Phase 6* in the workflow overview for why.
+3. Add an optional comment and submit. Other nodes' decisions (if any) are
+   visible on the page so you can see the full picture.
 
----
+When all involved nodes have decided, the application status finalizes
+(Accepted / Pending / Rejected) and the applicant gets the resolution email.
 
-#### Step 5: Publish the Call
+#### Access tracking + waitlist promotion
 
-When you're ready to make the call visible to applicants:
+Open **Access Tracking**:
 
-**Option A: From the Edit Page**
+- For applications that are **Pending (waitlist)** *and* the applicant has
+  said yes to the waitlist offer, a **Promote to Accepted** button appears.
+  Click it when a slot frees up — that flips the status to Accepted, fires
+  the resolution-accepted and hand-off emails, and starts scheduling.
+- For applications that are **Accepted** (and the applicant has confirmed),
+  a **Mark Complete + Log Hours** button appears once the work is done.
+  Use it to record the actual hours used per equipment.
 
-1. While editing the call, locate the **"Publish Call"** button (green button on the right)
-2. Click **"Publish Call"**
-3. Confirm the action when prompted: "Publish this call? This will send notification emails to users."
-
-**Option B: From the Call Management Dashboard**
-
-1. Find your draft call in the table
-2. Click the **"Publish"** button (green send icon) in the Actions column
-3. Confirm the action when prompted
-
-**Option C: By Changing Status**
-
-1. Edit the call
-2. Change the **Status** dropdown from "Draft" to "Open for Submissions"
-3. Click **"Save Call"**
-
-**Expected Result:**
-- Call status changes to **"Open"**
-- The `published_at` timestamp is set to the current date/time
-- **Notification emails are sent** to all users who have enabled call notifications
-- The call becomes **visible on the public call listing** (if the submission period has started)
-
----
-
-#### Step 6: Verify Public Visibility
-
-1. Open a new browser tab or log out
-2. Navigate to the public calls page at `/calls/`
-3. Check if your call appears:
-   - **Currently Open:** If today's date is within the submission period
-   - **Upcoming Calls:** If the submission start date is in the future
-
-**What applicants will see:**
-- Call code and title
-- Description (truncated)
-- Submission deadline (date only, no time)
-- Number of equipment items available
-- "Apply Now" button (if logged in) or "Login to Apply" button
+You only see applications at your node(s); multi-node applications appear
+in multiple coordinators' queues.
 
 ---
 
-#### Step 7: Managing Published Calls
+### For Evaluators
 
-Once a call is published, you can:
+You score applications assigned to you. The system hides applicant identity
+so your scoring is independent.
 
-**Close the Call for Submissions:**
+#### Your dashboard
 
-1. In the Call Management dashboard, find the open call
-2. Click the **"Close"** button (lock icon)
-3. Confirm the action
-4. The call status changes to **"Closed"**
-5. New applications can no longer be submitted
-6. The call is ready for evaluator assignment (Phase 4)
+You see **My Pending Evaluations** — every application currently assigned to
+you, with the call code, the date you were assigned, and the evaluation
+deadline. Each row has an **Evaluate** button.
 
-**Edit a Published Call:**
+The left sidebar (under **Evaluator**) has a single entry: **My Evaluations**.
+That page is the full version of the dashboard list, plus an *Overdue* section
+(if you have any past-deadline assignments) and a *Completed* section showing
+your past submissions read-only.
 
-1. You can still edit call details (title, description, dates)
-2. Be careful changing dates after applications have been submitted
-3. Equipment allocations can be modified
+#### Submitting an evaluation
 
-**Delete a Call:**
+1. Click **Evaluate** on an application. You land on the evaluation form.
+   The header has a **Download Blind PDF** button — useful if you'd rather
+   review the application offline.
+2. **Read the application.** You see the project title, summary, funding
+   origin, subject area, equipment requested, and the six scientific-content
+   sections. **You do not see** the applicant's name, ORCID, organization,
+   contact info, project code, or funding agency — that's the blind-review
+   protection.
+3. **Score the six criteria**, each on a 0–2 scale (0 = Poor, 1 = Good,
+   2 = Excellent). The total runs 0–12 and the form keeps a live total
+   as you go.
+   - Category I — Scientific & Technical Relevance: quality/originality,
+     methodology, expected contributions.
+   - Category II — Timeliness & Impact: knowledge advancement,
+     social/economic impact, exploitation/dissemination.
+4. Pick a recommendation: **Approved** or **Denied**.
+   - If you pick **Denied**, **a comment is required** — your independent
+     denial is the documented basis for rejecting an application that has
+     competitive funding (see *Phase 6*).
+5. **Submit.** Once submitted, your scores are locked. If the evaluation
+   deadline has passed by more than 7 days (the grace period), the form
+   auto-locks even if you haven't submitted, and the ReDIB coordinator is
+   notified.
 
-**Important:** You can only delete **draft** calls. Published calls cannot be deleted.
-
-To delete a draft call:
-
-1. **Option A (Edit Page):** Click the red **"Delete Call"** button
-2. **Option B (Dashboard):** Click the trash icon in the Actions column
-3. Confirm the deletion when prompted: "WARNING: This will permanently delete this call and all associated equipment allocations. This action cannot be undone. Are you sure?"
-
-**Expected Result:**
-- The call and all equipment allocations are permanently deleted
-- You're redirected to the Call Management dashboard
-- You'll see a success message: "Call [CODE] has been permanently deleted"
-
-**Safety Features:**
-- Only draft calls can be deleted
-- Calls with applications cannot be deleted (additional safety check)
-- JavaScript confirmation prevents accidental deletion
-
----
-
-#### Common Issues and Tips
-
-**Q: I created a call but applicants can't see it**
-A: Check two things:
-1. Is the call **published** (status = "Open")? Draft calls are not visible to applicants.
-2. Has the submission period **started**? Calls only appear in "Currently Open" if today's date is within the submission period.
-
-**Q: The form won't let me save**
-A: Check for validation errors:
-- Evaluation deadline must be **after** submission end date
-- Execution end must be **after** execution start
-- All required fields must be filled
-
-**Q: How do I unpublish a call?**
-A: You cannot unpublish a call once it's been published. You can only:
-- Close it (prevents new applications)
-- Edit its details
-- If it has no applications, you could close it and ask an administrator to change the status back to draft via the admin panel
-
-**Q: Can I delete a published call?**
-A: No, only draft calls can be deleted. This prevents accidental deletion of calls with applications.
-
-**Q: What happens to the equipment I unchecked?**
-A: Equipment without a checkmark in the "Remove" column will be **included** in the call. Equipment with a checkmark will be **excluded**.
-
-**Q: Why don't I see all nodes' equipment?**
-A: You should see all active equipment from all nodes. If equipment is missing, it may be marked as inactive. Contact an administrator to activate equipment via the admin panel.
+If you have multiple specialization areas declared on your profile
+(preclinical / clinical / radiochemistry), the system tries to assign you
+applications matching one of them. Update your areas any time on your
+**Profile** page.
 
 ---
 
-#### Next Steps
+### For ReDIB Coordinators
 
-After publishing your call:
+You run the calls and watch the workflow end-to-end. You don't do feasibility
+(that's the node coordinators) or evaluation (that's the evaluators), but you
+have visibility into everything and you make sure each call closes cleanly.
 
-1. **Monitor applications** as they come in (Phase 2)
-2. Wait for the **submission deadline** to pass
-3. **Close the call** for submissions
-4. **Assign evaluators** to applications (Phase 4)
-5. Continue through the workflow phases...
+#### Your dashboard
 
-For details on subsequent phases, see the workflow overview in the "Understanding the COA Workflow" section.
+Three panels:
+
+- **Active Calls** — quick view of open and recently-closed calls with status
+  and an action button per call.
+- **Quick Stats** — pending-resolution count + recent-application count + a
+  button into Reports.
+- **Recent Applications** — a table across all calls so you can spot stuck
+  applications.
+
+The left sidebar (under **Coordinator**) gives you four entry points:
+
+- **Call Management** — create / edit / publish / close calls.
+- **Assign Evaluators** — assign evaluators per application, or run
+  auto-assign for a whole call.
+- **Resolution** — overview of every application's resolution status.
+- **Reports** — statistics dashboard + Excel exports.
+
+#### Creating a call
+
+1. From **Call Management** click **Create New Call** (or *Create First Call*
+   on a fresh system). Fill in:
+   - **Call Code** (e.g. `COA-2026-01`), **Title**, **Description**, optional
+     Guidelines.
+   - **Status** — leave as **Draft** until you're ready to publish; only
+     `Open` calls are visible to applicants.
+   - **Submission period** (start + end), **Evaluation deadline**, **Execution
+     period** (start + end). All dates are date-only; the system uses 23:59
+     as the end-of-day cutoff. The form rejects illogical ordering.
+   - **Equipment Allocations** — every active equipment item across all
+     nodes is included by default. Tick the **Remove** column to exclude
+     any. You must keep at least one.
+2. **Save Call** — the call is saved as a Draft, only you can see it.
+3. When ready, click **Publish Call** (with confirmation). Status moves to
+   **Open**, the `published_at` timestamp is set, a notification email goes
+   out to every user who opted in to call announcements, and the call appears
+   on the public `/calls/` page.
+4. After the submission deadline, click **Close** to stop new submissions and
+   open the call for evaluator assignment.
+
+You can edit a call after publication, but you **cannot delete** it once
+published or unpublish it. To revert a published-but-empty call to Draft you
+have to use the admin panel at `/admin/`.
+
+#### Assigning evaluators
+
+After a call is closed, open **Assign Evaluators** and pick the call. The
+system shows every application that needs evaluators with suggested matches
+based on evaluator areas + conflict-of-interest detection (same organization).
+Accept the suggestion or override manually. **Today this fires assignment
+emails immediately** — there's a backlog item to add a confirm-and-review
+preview step (#4 in `docs/developer/backlog.md`).
+
+You can re-assign or add evaluators at any time before the deadline.
+
+#### Watching resolution
+
+The **Resolution** dashboard shows every application by status across calls.
+Per-application, you can drill into the evaluation summary (per-criterion
+average + per-evaluator scores + recommendations + comments). You don't make
+the resolution decisions yourself — the **node coordinators** at each
+requested node do that. Your job is to flag stuck applications and follow up
+on overdue evaluators.
+
+The system already fires daily reminder emails for overdue evaluators (and
+copies you on the lockout when an evaluator misses the grace-period
+deadline), so you don't need to chase by hand.
+
+#### Reports
+
+The **Reports** page shows statistics across all calls — total apps, average
+score, acceptance rate, breakdown by status, publication-acknowledgment rate.
+The big affordance is **Download Excel Report** for any call: a multi-sheet
+workbook (applications + equipment usage + summary) suitable for ministry
+compliance reporting.
 
 ---
 
@@ -882,5 +927,8 @@ Now that you understand the portal workflow and your role, you're ready to start
 
 **Document Version History**
 - v1.0 (January 2026): Initial user guide created for ReDIB COA Portal
+- v1.2 (April 2026): "Using the Portal" rewritten as four role-based
+  walkthroughs (Applicants, Node Coordinators, Evaluators, ReDIB
+  Coordinators) covering each role end-to-end as the user sees it.
 
 ---

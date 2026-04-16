@@ -121,7 +121,6 @@ class Command(BaseCommand):
             (Equipment, 'equipment'),
             (Node, 'nodes'),
             (UserRole, 'user roles'),
-            (EmailAddress, 'email addresses'),
             (Organization, 'organizations'),
             (EmailLog, 'email logs'),
             (NotificationPreference, 'notification preferences'),
@@ -131,6 +130,14 @@ class Command(BaseCommand):
             if count:
                 model.objects.all().delete()
                 self.stdout.write(f'    Deleted {count} {name}')
+
+        # Delete non-superuser EmailAddresses (preserve superuser's verified
+        # email so allauth login still works after reset).
+        non_super_emails = EmailAddress.objects.filter(user__is_superuser=False)
+        count = non_super_emails.count()
+        if count:
+            non_super_emails.delete()
+            self.stdout.write(f'    Deleted {count} email addresses (kept superuser)')
 
         # Delete non-superusers
         count = User.objects.filter(is_superuser=False).count()
