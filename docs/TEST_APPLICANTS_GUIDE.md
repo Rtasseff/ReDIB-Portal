@@ -2,6 +2,13 @@
 
 This guide describes the test data created by the `seed_test_applicants` management command.
 
+> **Looking for a one-shot manual-test sandbox?** For full end-to-end
+> testing across every workflow phase, prefer
+> `python manage.py setup_localtest3_database --reset --yes` —
+> see [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md).
+> `seed_test_applicants` (this guide) is still useful when you want extra
+> applicant variety on top of `setup_base_database`.
+
 ## Overview
 
 The script creates **7 test applicants** with **17 applications** across all workflow stages to facilitate comprehensive testing of the ReDIB COA Portal.

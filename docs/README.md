@@ -45,6 +45,8 @@ Developer guides, planning documents, and running notes:
 - `tier1-manual-test-checklist.md` — Manual QA checklist
 - `batch1-implementation-plan.md` / `batch1-progress.md` — Batch 1 (merged to main)
 - `batch2-implementation-plan.md` / `batch2-progress.md` — Batch 2 (current)
+- `localtest3-database-plan.md` — Spec for the `setup_localtest3_database` sandbox (10 users, 2 calls, 16 apps spanning every status)
+- `localtest3-test-log.md` — Running log of the manual end-to-end walkthrough against the localtest3 sandbox
 - `issue-action-plan-20260204.md`, `issues-actionplan-20260301.md` — Older dated action plans (historical)
 
 ### `/reference/`

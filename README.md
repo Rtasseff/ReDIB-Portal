@@ -87,7 +87,8 @@ The workflow below is what the system actually supports today:
    assignment, blind scoring across six criteria.
 5. **Resolution** — per-node coordinator decisions aggregated to
    `accepted`, `pending` (waitlist), or `rejected`. Competitive-funding
-   applications are reject-protected.
+   applications are reject-protected at this phase unless at least one
+   evaluator independently recommended denial.
 6. **Acceptance & hand-off** — applicant accept/decline within 10 days.
    Waitlisted applications use the same accept/decline flow and can
    be promoted to `accepted` by a node coordinator via the

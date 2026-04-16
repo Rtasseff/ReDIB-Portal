@@ -128,17 +128,77 @@ Issues #14 (parts 1, 4, 5), #15.
 Both are field-metadata only (choices / validators / max_length) — no
 data migration needed.
 
+## Phase 6 — Localtest3 manual walkthrough + 12 follow-on fixes
+
+**Commits:** `e646478` "Add localtest3 sandbox + batch of fixes uncovered
+while testing it" and `ec7ee26` "Publication form and tracking polish from
+P9–P10 walkthrough".
+
+A new self-contained sandbox command —
+`setup_localtest3_database` — produces 10 users, 2 calls (1 open + 1
+resolved), and 16 applications spanning every live and terminal status,
+plus a tester cheat-sheet at the end. See
+[`localtest3-database-plan.md`](localtest3-database-plan.md) for the
+spec and [`localtest3-test-log.md`](localtest3-test-log.md) for the
+walkthrough log.
+
+The 11-phase manual walkthrough surfaced and fixed 12 issues, the most
+significant of which:
+
+- **Competitive-funding reject protection nuanced** (see
+  [`developer-notes.md` → Competitive funding reject protection](developer-notes.md#competitive-funding-reject-protection--single-source-of-truth)).
+  New `Application.has_any_denied_evaluation` property; relaxed in
+  `NodeResolutionForm`, `ApplicationResolutionForm`, and both resolution
+  services.
+- **Evaluation summary card on application detail**: scores of `0` were
+  rendered as `—` due to Django's `|default` falsy-check; switched to
+  `|default_if_none`. Added `count/assigned` denominator.
+- **Evaluation form**: incomplete seeded evaluations no longer pre-fill
+  the `comments` textarea with a seed marker. A `denied` recommendation
+  now requires a comment server-side, mirroring the feasibility-review
+  pattern.
+- **Seed funding invariant**: `_base_application_fields` now enforces
+  `funding_agency_obj` IFF `has_competitive_funding=True`. Three
+  terminal-state PAST apps in the sandbox are non-competitive for
+  variety.
+- **Applicant Accept/Decline**: My Applications and Dashboard now expose
+  Accept/Decline buttons for both `accepted` and waitlist (`pending`)
+  states; previously waitlist had no UI path despite the backend
+  supporting it.
+- **Access Tracking**: dropped the noisy "Completed" and "Equipment &
+  Hours" columns; folded completion badge into Actions; renamed buttons
+  for clarity ("Promote to Accepted", "Mark Complete + Log Hours").
+- **Publication submit form**: queryset corrected from `status='accepted'`
+  to `status='completed'` (only completed access can spawn publications).
+  Added "Add Publication" deep-link from My Applications. Tightened
+  required-field set (all required except `acknowledgment_text`).
+- **Status badge polish**: Completed apps now use `bg-secondary` to match
+  Expired / Declined / Rejected (all terminal states share the same
+  boring-grey badge).
+
+**Test suite:** updated `tests/test_phase9_publications.py` to match the
+new "completed-only" rule (renamed `test_form_shows_only_accepted_…` →
+`test_form_shows_only_completed_…`). Net regressions vs `main`: zero. New
+batch-2 tests (`tests/test_batch2_phase{1,4,5}.py`) all pass.
+
 ## Test suite state
 
-Running `python manage.py test tests -v 2` on each phase produced the
-same 11 pre-existing failures as on `main`; zero new regressions.
+Running `python manage.py test tests -v 0` on this branch produces the
+same 11 pre-existing failures as on `main`; zero new regressions. The 11
+failures are all caused by the profile-completion middleware redirecting
+test users created without a complete profile — a pre-existing issue
+unrelated to this batch.
 
 ## Deployment checklist when this branch merges
 
 1. `python manage.py migrate` — applies 0012 and 0008.
 2. `python manage.py seed_email_templates` — refreshes the
    `resolution_pending` body with the waitlist-specific copy.
-3. Re-run the manual test plan from `batch2-implementation-plan.md`.
-4. Update `CLAUDE.md` to point at the next active branch (or back to
+3. (Optional, dev-only) `python manage.py setup_localtest3_database
+   --reset --yes` to validate the sandbox builds cleanly against the
+   merged code.
+4. Re-run the manual test plan from `batch2-implementation-plan.md` and
+   the 11-phase walkthrough from `localtest3-database-plan.md`.
+5. Update `CLAUDE.md` to point at the next active branch (or back to
    `main`) and close issues #14–#28 (with any notes from #16 / #21 /
    #23 per the Close-only table above).

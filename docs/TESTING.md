@@ -89,12 +89,19 @@ Before starting, ensure:
 2. A superuser exists (`python manage.py createsuperuser`).
 3. Test data is loaded. **Recommended path for full manual testing:**
    ```bash
-   python manage.py setup_localtest2_database --reset --yes
+   python manage.py setup_localtest3_database --reset --yes
    ```
-   This creates nodes, equipment, organizations, funding agencies, users,
-   calls, sample applications (including one in each workflow state), and
-   seeds email templates — in a single command. All test accounts use the
-   password `testpass123` and are pre-verified.
+   This creates a self-contained sandbox: 10 users (1 ReDIB coordinator,
+   2 node coordinators, 3 evaluators, 4 applicants), 2 calls (1 open + 1
+   resolved), and 16 applications spanning every live and terminal status,
+   plus seeded email templates. Prints a tester cheat-sheet at the end that
+   maps each app code to "what to test with it." All accounts use the
+   password `testpass123` and are pre-verified. See
+   [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md)
+   for the full spec.
+
+   For a smaller sandbox (3 sample apps), use
+   `setup_localtest2_database --reset --yes` instead.
 
    If you prefer to test against the real seed data from `data/*.tsv`,
    use `setup_base_database` instead (users get `changeme123`).
@@ -522,12 +529,20 @@ Per REDIB-01-RCA section 7: *"The Coordinator will prepare a PRIORITIZED LIST of
 
 Per REDIB-01-RCA 6.1: *"Proposals that are part of R&D&I projects financed by a competitive call... will be automatically approved"*
 
+The reject protection is **conditional** at the resolution phase: a
+coordinator may reject a competitively-funded application only if at least
+one evaluator independently recommended **Denied** (the evaluator's denial
+provides the grounds). Feasibility rejection (phase 3) and evaluator denial
+(phase 5) remain available regardless of funding status. See
+[USER_GUIDE.md → Phase 6](USER_GUIDE.md#phase-6-resolution-and-prioritization).
+
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|
 | 6.8 | Check App-X with competitive funding | System | has_competitive_funding = True | |
 | 6.9 | Verify auto-approval | System | App-X shows "Auto-approved (competitive funding)" | |
-| 6.10 | Verify cannot reject | System | Coordinator cannot reject app with competitive funding | |
-| 6.11 | Even with low score | System | App with 6.0/12 + competitive funding = still approved | |
+| 6.10 | Verify reject blocked when all evaluators approved | System | Coordinator cannot reject; reject option hidden | All eval recommendations = `approved` |
+| 6.11 | Verify reject allowed when an evaluator denied | System | Reject option re-enabled; coordinator can reject with comments | At least one eval recommendation = `denied` |
+| 6.12 | Even with low score (no eval denial) | System | App with 6.0/12 + competitive funding = still approved | |
 
 **Threshold-Based Resolution**
 
@@ -580,7 +595,7 @@ Per REDIB-01-RCA 6.1: *"Proposals that are part of R&D&I projects financed by a 
 **Validations:**
 - ☐ Scores displayed as "X.X / 12" (NOT /5)
 - ☐ Auto-prioritization: highest score first, tie-break by code
-- ☐ Competitive funding apps auto-approved (cannot reject)
+- ☐ Competitive funding apps auto-approved (cannot reject unless an evaluator recommended Denied)
 - ☐ Threshold-based auto-allocation (e.g., ≥ 9.0/12)
 - ☐ Hours tracking is dynamic (no pre-allocated hours_offered)
 - ☐ Manual override allowed with comments
