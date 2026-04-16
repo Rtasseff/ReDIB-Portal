@@ -8,9 +8,14 @@
 <div class="container mt-4">
     <!-- Header -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <h2>Evaluation: {{ application.code }}</h2>
-            <p class="text-muted">Call: {{ evaluation.application.call.code }}</p>
+        <div class="col-md-12 d-flex justify-content-between align-items-start">
+            <div>
+                <h2>Evaluation: {{ application.code }}</h2>
+                <p class="text-muted">Call: {{ evaluation.application.call.code }}</p>
+            </div>
+            <a href="{% url 'applications:download_pdf' application.id %}" class="btn btn-outline-secondary btn-sm" title="Download a printable blind copy of this application">
+                <i class="bi bi-file-earmark-pdf"></i> Download Blind PDF
+            </a>
         </div>
     </div>
 

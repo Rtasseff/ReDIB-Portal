@@ -1815,52 +1815,89 @@ def node_confirm_equipment_done(request, application_id, requested_access_id):
 @login_required
 def download_application_pdf(request, pk):
     """
-    Generate and download the application PDF for the applicant's records.
+    Generate and download the application PDF.
 
-    This view generates a PDF from the application data using WeasyPrint
-    and returns the PDF as a download.
+    Permission scope mirrors what each role can already see in the portal:
+    - Applicant: their own application (full content; bumps pdf_generated_at).
+    - ReDIB coordinator / superuser: any application (full content).
+    - Node coordinator: any application requesting equipment at one of
+      their nodes (full content).
+    - Evaluator: any application they're assigned to evaluate
+      (BLIND PDF — applicant-identity sections suppressed to match the
+      blind portal view in `evaluations.utils.get_blind_application_data`).
+
+    Anyone outside those scopes gets a 404.
     """
     from django.http import HttpResponse
     from django.template.loader import render_to_string
     from weasyprint import HTML
+    from core.models import UserRole
     import logging
 
     logger = logging.getLogger(__name__)
 
-    application = get_object_or_404(
-        Application,
-        pk=pk,
-        applicant=request.user,
+    application = get_object_or_404(Application, pk=pk)
+    user = request.user
+
+    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
+    is_coordinator = 'coordinator' in user_roles or user.is_superuser
+    is_applicant = (application.applicant_id == user.id)
+
+    is_node_coordinator = False
+    if not (is_coordinator or is_applicant):
+        requested_node_ids = set(
+            application.requested_access.values_list('equipment__node_id', flat=True)
+        )
+        nc_node_ids = set(
+            UserRole.objects.filter(
+                user=user,
+                role='node_coordinator',
+                is_active=True,
+            ).values_list('node_id', flat=True)
+        )
+        is_node_coordinator = bool(requested_node_ids & nc_node_ids)
+
+    is_assigned_evaluator = False
+    if not (is_coordinator or is_applicant or is_node_coordinator):
+        is_assigned_evaluator = application.evaluations.filter(evaluator=user).exists()
+
+    if not (is_coordinator or is_applicant or is_node_coordinator or is_assigned_evaluator):
+        raise Http404("Application not found.")
+
+    # Evaluators get the blind PDF unless they also hold a privileged role
+    # on this application (in which case the privileged view wins).
+    blind = is_assigned_evaluator and not (
+        is_coordinator or is_applicant or is_node_coordinator
     )
 
-    # Get related data
     requested_access = application.requested_access.select_related(
         'equipment__node'
     ).order_by('equipment__node__code')
 
-    # Render the HTML template
     html_string = render_to_string('applications/application_pdf.html', {
         'application': application,
         'requested_access': requested_access,
         'generated_at': timezone.now(),
+        'blind': blind,
     })
 
-    # Generate PDF using WeasyPrint
     try:
         html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
         pdf_content = html.write_pdf()
     except Exception as e:
         logger.error(f"PDF generation failed for application {application.code}: {e}")
         messages.error(request, "Failed to generate PDF. Please try again or contact support.")
-        return redirect('applications:preview', pk=pk)
+        return redirect('applications:detail', pk=pk)
 
-    # Update pdf_generated_at timestamp
-    application.pdf_generated_at = timezone.now()
-    application.save(update_fields=['pdf_generated_at'])
+    # pdf_generated_at is the applicant-side "I have a copy of my submission"
+    # timestamp; reviewer downloads should not move it.
+    if is_applicant:
+        application.pdf_generated_at = timezone.now()
+        application.save(update_fields=['pdf_generated_at'])
 
-    # Create HTTP response with PDF
     response = HttpResponse(pdf_content, content_type='application/pdf')
-    filename = f"{application.code}_application.pdf"
+    filename_suffix = '_blind' if blind else ''
+    filename = f"{application.code}_application{filename_suffix}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     return response
