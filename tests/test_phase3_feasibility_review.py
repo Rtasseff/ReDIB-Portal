@@ -76,7 +76,7 @@ class Phase3Tester:
         # Create test organization
         org, _ = Organization.objects.get_or_create(
             name='Phase 3 Test Org',
-            defaults={'country': 'Spain', 'organization_type': 'research_center'}
+            defaults={'iso2': 'ES', 'country': 'Spain', 'organization_type': 'pro'}
         )
 
         # Create or get existing nodes
@@ -86,9 +86,13 @@ class Phase3Tester:
         ]
 
         for code, name, location in node_configs:
+            host_org, _ = Organization.objects.get_or_create(
+                name=name,
+                defaults={'organization_type': 'pro', 'iso2': 'ES', 'country': 'Spain'},
+            )
             node, created = Node.objects.get_or_create(
                 code=code,
-                defaults={'name': name, 'location': location}
+                defaults={'organization': host_org, 'location': location}
             )
             self.nodes[code] = node
 

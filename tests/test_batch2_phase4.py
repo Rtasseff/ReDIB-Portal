@@ -32,7 +32,8 @@ User = get_user_model()
 def _make_complete_user(**overrides):
     """Helper: create a User whose profile passes ProfileCompletionMiddleware."""
     org, _ = Organization.objects.get_or_create(
-        name='Test Org', defaults={'organization_type': 'other'},
+        name='Test Org',
+        defaults={'organization_type': 'other', 'iso2': 'ES', 'country': 'Spain'},
     )
     kwargs = dict(
         username=overrides.pop('username', 'u'),
@@ -68,7 +69,11 @@ class PendingWaitlistLifecycleTest(TestCase):
     def setUp(self):
         _seed_templates()
         self.applicant = _make_complete_user(username='a1', email='a1@test.com')
-        self.node = Node.objects.create(code='N1', name='Node 1', location='Here')
+        host_org, _ = Organization.objects.get_or_create(
+            name='Node 1 Host',
+            defaults={'organization_type': 'pro', 'iso2': 'ES', 'country': 'Spain'},
+        )
+        self.node = Node.objects.create(code='N1', organization=host_org, location='Here')
         self.equipment = Equipment.objects.create(
             node=self.node, name='Scanner', category='mri',
         )

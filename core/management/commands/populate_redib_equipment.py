@@ -1,9 +1,15 @@
 """
 Management command to populate ReDIB equipment across all nodes.
 
-This creates equipment items from a TSV file. By default, loads from
-data/equipment.tsv which contains the 17 official equipment items specified
-in REDIB-APP-application-form-coa-redib.docx form.
+Loads from data/equipment.tsv. Uses (`node`, `name`) as the natural key for
+upserts. Hard-errors on:
+  - missing node_code (run populate_redib_nodes first)
+  - invalid category (must be in Equipment.EQUIPMENT_CATEGORIES)
+  - invalid area (must be in Equipment.AREAS, blank allowed)
+  - missing required field (node_code, name, category)
+
+Boolean columns (is_essential, is_active) follow the strict rule used across
+all loaders: blank → False, only TRUE/1/YES enables.
 """
 import csv
 from pathlib import Path
@@ -30,7 +36,6 @@ class Command(BaseCommand):
 
     def load_equipment_from_csv(self, csv_path):
         """Load equipment data from TSV file."""
-        # Get project root directory
         project_root = Path(settings.BASE_DIR)
         csv_file = project_root / csv_path
 
@@ -38,49 +43,54 @@ class Command(BaseCommand):
             raise CommandError(f'TSV file not found: {csv_file}')
 
         equipment_data = []
-        valid_categories = dict(Equipment.EQUIPMENT_CATEGORIES).keys()
+        valid_categories = {c for c, _ in Equipment.EQUIPMENT_CATEGORIES}
+        valid_areas = {a for a, _ in Equipment.AREAS}
 
         try:
             with open(csv_file, 'r', encoding='utf-8', newline='') as f:
                 reader = csv.DictReader(f, delimiter='\t')
-                for row_num, row in enumerate(reader, start=2):  # Start at 2 (1 is header)
-                    # Validate required fields
+                for row_num, row in enumerate(reader, start=2):
                     if not row.get('node_code') or not row.get('name') or not row.get('category'):
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f'Row {row_num}: Skipping - missing required fields (node_code, name, or category)'
-                            )
-                        )
+                        self.stdout.write(self.style.WARNING(
+                            f'Row {row_num}: Skipping - missing required field '
+                            f'(node_code, name, or category)'
+                        ))
                         continue
 
-                    # Validate category
                     category = row['category'].strip()
                     if category not in valid_categories:
                         raise CommandError(
-                            f'Row {row_num}: Invalid category "{category}". '
-                            f'Must be one of: {", ".join(valid_categories)}'
+                            f'Row {row_num}: invalid category "{category}". '
+                            f'Must be one of: {sorted(valid_categories)}'
                         )
 
-                    # Convert boolean fields
-                    is_essential = row.get('is_essential', 'TRUE').strip().upper() in ['TRUE', '1', 'YES']
-                    is_active = row.get('is_active', 'TRUE').strip().upper() in ['TRUE', '1', 'YES']
+                    area = (row.get('area') or '').strip()
+                    if area and area not in valid_areas:
+                        raise CommandError(
+                            f'Row {row_num}: invalid area "{area}". '
+                            f'Must be one of: {sorted(valid_areas)} (or blank).'
+                        )
 
                     equipment_data.append({
                         'node_code': row['node_code'].strip(),
                         'name': row['name'].strip(),
                         'category': category,
-                        'description': row.get('description', '').strip(),
-                        'technical_specs': row.get('technical_specs', '').strip(),
-                        'is_essential': is_essential,
-                        'is_active': is_active,
+                        'description': (row.get('description') or '').strip(),
+                        'technical_specs': (row.get('technical_specs') or '').strip(),
+                        'area': area,
+                        'is_essential': self._parse_bool(row.get('is_essential')),
+                        'is_active': self._parse_bool(row.get('is_active')),
                     })
 
         except csv.Error as e:
             raise CommandError(f'Error reading TSV file: {e}')
-        except Exception as e:
-            raise CommandError(f'Unexpected error reading TSV: {e}')
 
         return equipment_data
+
+    @staticmethod
+    def _parse_bool(value):
+        """Blank → False; only TRUE/1/YES (case-insensitive) flips to True."""
+        return (value or '').strip().upper() in ('TRUE', '1', 'YES')
 
     def handle(self, *args, **options):
         """Create equipment for all nodes from TSV file"""
@@ -97,7 +107,6 @@ class Command(BaseCommand):
 
         created_count = 0
         updated_count = 0
-        node_count = 0
         processed_equipment_ids = set()  # Track equipment IDs processed from TSV
 
         for equip_data in equipment_data:
@@ -105,55 +114,39 @@ class Command(BaseCommand):
             equipment_name = equip_data['name']
             category = equip_data['category']
 
-            # Get or create node
-            node, node_created = Node.objects.get_or_create(
-                code=node_code,
-                defaults={
-                    'name': node_code.replace('-', ' '),
-                    'location': 'TBD',  # Should be set via populate_redib_nodes command
-                }
-            )
-
-            if node_created:
-                node_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f'Created node: {node_code}')
+            # Node must already exist (Node.organization is a required FK, so
+            # we can't auto-stub one here). Run populate_redib_nodes first.
+            try:
+                node = Node.objects.get(code=node_code)
+            except Node.DoesNotExist:
+                raise CommandError(
+                    f'Equipment row references unknown node_code "{node_code}". '
+                    f'Run `populate_redib_nodes` first, or fix data/equipment.tsv.'
                 )
 
-            # Get or create equipment
-            equipment, equipment_created = Equipment.objects.get_or_create(
+            equipment, equipment_created = Equipment.objects.update_or_create(
                 node=node,
                 name=equipment_name,
                 defaults={
                     'category': category,
-                    'description': equip_data.get('description', ''),
-                    'technical_specs': equip_data.get('technical_specs', ''),
-                    'is_essential': equip_data.get('is_essential', True),
-                    'is_active': equip_data.get('is_active', True),
-                }
+                    'description': equip_data['description'],
+                    'technical_specs': equip_data['technical_specs'],
+                    'area': equip_data['area'],
+                    'is_essential': equip_data['is_essential'],
+                    'is_active': equip_data['is_active'],
+                },
             )
 
             if equipment_created:
                 created_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'  ✓ Created: {node_code} - {equipment_name} ({category})'
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(
+                    f'  ✓ Created: {node_code} - {equipment_name} ({category}, {equip_data["area"] or "no area"})'
+                ))
             else:
-                # Update existing equipment to ensure correct values from TSV
-                equipment.category = category
-                equipment.description = equip_data.get('description', '')
-                equipment.technical_specs = equip_data.get('technical_specs', '')
-                equipment.is_essential = equip_data.get('is_essential', True)
-                equipment.is_active = equip_data.get('is_active', True)
-                equipment.save()
                 updated_count += 1
-                self.stdout.write(
-                    self.style.WARNING(
-                        f'  ↻ Updated: {node_code} - {equipment_name} ({category})'
-                    )
-                )
+                self.stdout.write(self.style.WARNING(
+                    f'  ↻ Updated: {node_code} - {equipment_name} ({category}, {equip_data["area"] or "no area"})'
+                ))
 
             # Track this equipment as processed
             processed_equipment_ids.add(equipment.id)
@@ -187,12 +180,9 @@ class Command(BaseCommand):
                 f'Equipment population complete!'
             )
         )
-        if node_count > 0:
-            self.stdout.write(f'  Nodes created: {node_count}')
         self.stdout.write(f'  Equipment created: {created_count}')
         self.stdout.write(f'  Equipment updated: {updated_count}')
         if sync_mode and deactivated_count > 0:
             self.stdout.write(f'  Equipment deactivated: {deactivated_count}')
         self.stdout.write(f'  Total equipment: {created_count + updated_count} items')
-        self.stdout.write('\n' + self.style.WARNING('Note: Run "python manage.py populate_redib_nodes" to set proper node details'))
         self.stdout.write('=' * 60 + '\n')

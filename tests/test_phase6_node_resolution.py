@@ -83,17 +83,19 @@ class Phase6NodeResolutionTester:
         # Create test organization
         self.org = Organization.objects.create(
             name='Node Resolution Test Org',
-            organization_type='research_center'
+            iso2='ES',
+            country='Spain',
+            organization_type='pro'
         )
 
         # Create TWO nodes for multi-node testing
         self.node1 = Node.objects.create(
             code='NR-TEST-NODE1',
-            name='Node Resolution Test Node 1'
+            organization=self.org,
         )
         self.node2 = Node.objects.create(
             code='NR-TEST-NODE2',
-            name='Node Resolution Test Node 2'
+            organization=self.org,
         )
 
         # Create equipment for each node

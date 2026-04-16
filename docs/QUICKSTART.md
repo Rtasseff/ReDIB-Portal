@@ -47,7 +47,7 @@ python manage.py createsuperuser
 ## 4. Load Test Data (recommended)
 
 ```bash
-python manage.py setup_localtest2_database --reset --yes
+python manage.py setup_localtest3_database --reset --yes
 ```
 
 This single command creates a self-contained test environment with:
@@ -56,12 +56,12 @@ This single command creates a self-contained test environment with:
 - 7 funding agencies (with origin_of_funds values)
 - 10 users (coordinator, 3 node coordinators, 3 evaluators, 3 applicants)
 - 2 calls (1 resolved, 1 open)
-- 3 sample applications at different workflow stages
+- 16 sample applications spanning every live + terminal status (full manual-test surface)
 - All email templates
 
 No TSV data files required. See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for more on test data, and the table below for test account credentials.
 
-> Alternative: `python manage.py setup_test_database --reset --yes` loads from the real `data/*.tsv` files (4 real ReDIB nodes, 87 equipment items, etc.) and is closer to production. Use `setup_localtest2_database` for most manual testing.
+> Alternative: `python manage.py setup_test_database --reset --yes` loads from the real `data/*.tsv` files (4 real ReDIB nodes, 87 equipment items, etc.) and is closer to production. Use `setup_localtest3_database` for most manual testing.
 
 ## 5. Run the Development Server
 
@@ -73,7 +73,7 @@ python manage.py runserver
 - Admin: http://localhost:8000/admin
 - Login: http://localhost:8000/accounts/login/
 
-### Test Accounts (after running setup_localtest2_database)
+### Test Accounts (after running setup_localtest3_database)
 
 All test accounts use password: `testpass123`
 
@@ -128,7 +128,7 @@ If you want to test with the full production-like stack (PostgreSQL, Redis, Cele
 
 5. Load test data:
    ```bash
-   docker compose exec web python manage.py setup_localtest2_database --reset --yes
+   docker compose exec web python manage.py setup_localtest3_database --reset --yes
    ```
 
 6. Access the portal at http://localhost:8000

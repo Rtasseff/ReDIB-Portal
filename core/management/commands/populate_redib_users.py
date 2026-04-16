@@ -39,7 +39,6 @@ class Command(BaseCommand):
 
     def load_users_from_csv(self, csv_path):
         """Load user data from TSV file."""
-        # Get project root directory
         project_root = Path(settings.BASE_DIR)
         csv_file = project_root / csv_path
 
@@ -52,44 +51,44 @@ class Command(BaseCommand):
             with open(csv_file, 'r', encoding='utf-8', newline='') as f:
                 reader = csv.DictReader(f, delimiter='\t')
                 for row_num, row in enumerate(reader, start=2):  # Start at 2 (1 is header)
-                    # Validate required fields
                     if not row.get('email') or not row.get('first_name') or not row.get('last_name'):
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f'Row {row_num}: Skipping - missing required fields (email, first_name, or last_name)'
-                            )
-                        )
+                        self.stdout.write(self.style.WARNING(
+                            f'Row {row_num}: Skipping - missing required field '
+                            f'(email, first_name, or last_name)'
+                        ))
                         continue
 
-                    # Convert boolean fields
-                    is_staff = row.get('is_staff', 'FALSE').strip().upper() in ['TRUE', '1', 'YES']
-                    is_active = row.get('is_active', 'TRUE').strip().upper() in ['TRUE', '1', 'YES']
-                    # auto_data_consent is optional; missing or blank values default to False
-                    auto_data_consent = (
-                        row.get('auto_data_consent') or ''
-                    ).strip().upper() in ['TRUE', '1', 'YES']
+                    # Booleans: blank = False; only TRUE/1/YES enables.
+                    is_staff = self._parse_bool(row.get('is_staff'))
+                    is_active = self._parse_bool(row.get('is_active'))
+                    auto_data_consent = self._parse_bool(row.get('auto_data_consent'))
 
                     users_data.append({
+                        'row_num': row_num,
                         'email': row['email'].strip().lower(),
                         'first_name': row['first_name'].strip(),
                         'last_name': row['last_name'].strip(),
-                        'organization_name': row.get('organization_name', '').strip(),
-                        'orcid': row.get('orcid', '').strip(),
-                        'phone': row.get('phone', '').strip(),
-                        'position': row.get('position', '').strip(),
+                        'organization_name': (row.get('organization_name') or '').strip(),
+                        'orcid': (row.get('orcid') or '').strip(),
+                        'phone': (row.get('phone') or '').strip(),
+                        'position': (row.get('position') or '').strip(),
                         'is_staff': is_staff,
                         'is_active': is_active,
                         'auto_data_consent': auto_data_consent,
-                        'roles': row.get('roles', '').strip(),
-                        'areas': row.get('areas', '').strip(),
+                        'roles': (row.get('roles') or '').strip(),
+                        'areas': (row.get('areas') or '').strip(),
                     })
 
         except csv.Error as e:
             raise CommandError(f'Error reading TSV file: {e}')
-        except Exception as e:
-            raise CommandError(f'Unexpected error reading TSV: {e}')
 
         return users_data
+
+    @staticmethod
+    def _parse_bool(value):
+        """All three boolean columns default to False when blank or missing.
+        Only the literal TRUE / 1 / YES (case-insensitive) flips to True."""
+        return (value or '').strip().upper() in ('TRUE', '1', 'YES')
 
     def parse_roles(self, roles_string):
         """
@@ -154,26 +153,20 @@ class Command(BaseCommand):
 
         for user_data in users_data:
             email = user_data['email']
+            row_num = user_data['row_num']
 
-            # Get or create organization
+            # Look up organization (FK). Must already exist — run
+            # populate_redib_organizations first.
             organization = None
             if user_data['organization_name']:
                 try:
                     organization = Organization.objects.get(name=user_data['organization_name'])
                 except Organization.DoesNotExist:
-                    # Fallback: auto-create with default type. For full org metadata
-                    # (vat, country, address, website), populate data/organizations.tsv
-                    # and run `populate_redib_organizations` BEFORE this command.
-                    organization = Organization.objects.create(
-                        name=user_data['organization_name'],
-                        organization_type='other',
-                    )
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f'  ⚠ Auto-created stub organization "{user_data["organization_name"]}" '
-                            f'(type=other, no country/vat). Add it to data/organizations.tsv and '
-                            f'run populate_redib_organizations to populate full details.'
-                        )
+                    raise CommandError(
+                        f'Row {row_num} ("{email}"): organization_name '
+                        f'"{user_data["organization_name"]}" does not match any '
+                        f'Organization. Run `populate_redib_organizations` first, '
+                        f'or fix the TSV.'
                     )
 
             # Get or create user
@@ -228,11 +221,11 @@ class Command(BaseCommand):
             raw_areas = [a.strip() for a in (user_data.get('areas') or '').split(';') if a.strip()]
             invalid_areas = [a for a in raw_areas if a not in valid_areas]
             if invalid_areas:
-                self.stdout.write(self.style.WARNING(
-                    f'  ⚠ Invalid evaluator area(s) for {email}: '
-                    f'{", ".join(invalid_areas)}. Ignoring.'
-                ))
-            user_areas = ';'.join(a for a in raw_areas if a in valid_areas)
+                raise CommandError(
+                    f'Row {row_num} ("{email}"): invalid evaluator area(s) '
+                    f'{invalid_areas}. Allowed: {valid_areas}.'
+                )
+            user_areas = ';'.join(raw_areas)
 
             # Handle roles
             parsed_roles = self.parse_roles(user_data['roles'])
@@ -245,18 +238,17 @@ class Command(BaseCommand):
                 ))
 
             for role_name, node_code in parsed_roles:
-                # Get node if specified
+                # Get node if specified — must already exist
                 node = None
                 if node_code:
                     try:
                         node = Node.objects.get(code=node_code)
                     except Node.DoesNotExist:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f'    ✗ Node not found: {node_code} (skipping role {role_name})'
-                            )
+                        raise CommandError(
+                            f'Row {row_num} ("{email}"): role qualifier '
+                            f'"{role_name}:{node_code}" references unknown node code. '
+                            f'Run `populate_redib_nodes` first, or fix the TSV.'
                         )
-                        continue
 
                 # Areas only apply to the evaluator role
                 role_areas = user_areas if role_name == 'evaluator' else ''

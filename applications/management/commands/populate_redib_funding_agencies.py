@@ -1,13 +1,14 @@
 """
 Management command to populate funding agencies from TSV file.
 
-Loads applications.FundingAgency records from a TSV file. By default, loads
-from data/funding_agencies.tsv. Uses `name` as the natural key for upserts
-(the FundingAgency.name field is unique=True at the model level).
+Loads applications.FundingAgency records from data/funding_agencies.tsv.
+Uses `name` as the natural key for upserts (FundingAgency.name is unique).
 
 TSV columns: name, origin_of_funds
-- `name` is required and must be unique
-- `origin_of_funds` is required and must be a valid PROJECT_TYPES key
+- `name` is required and must be unique within the TSV
+- `origin_of_funds` is required; the TSV uses the human-readable label
+  (e.g. "European Union") and the loader maps it to the short PROJECT_TYPES
+  code stored in the DB. Unknown labels abort the import.
 
 Provides seed data for the funding agency dropdown in application Step 2.
 Without seed data, applicants must use the "Other" flow to add agencies one
@@ -19,7 +20,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from applications.models import FundingAgency, PROJECT_TYPES
 
-VALID_ORIGIN_KEYS = {key for key, label in PROJECT_TYPES}
+# Human-readable label (as it appears in the TSV) → PROJECT_TYPES code
+ORIGIN_LABEL_MAP = {label: code for code, label in PROJECT_TYPES}
 
 
 class Command(BaseCommand):
@@ -66,12 +68,13 @@ class Command(BaseCommand):
                         errors.append(f'Row {row_num}: Missing required field "origin_of_funds" for "{name}"')
                         continue
 
-                    if origin_of_funds not in VALID_ORIGIN_KEYS:
+                    if origin_of_funds not in ORIGIN_LABEL_MAP:
                         errors.append(
-                            f'Row {row_num}: Invalid origin_of_funds "{origin_of_funds}" for "{name}". '
-                            f'Valid values: {", ".join(sorted(VALID_ORIGIN_KEYS))}'
+                            f'Row {row_num}: invalid origin_of_funds "{origin_of_funds}" for "{name}". '
+                            f'Valid labels: {sorted(ORIGIN_LABEL_MAP)}.'
                         )
                         continue
+                    origin_code = ORIGIN_LABEL_MAP[origin_of_funds]
 
                     if name in seen_names:
                         self.stdout.write(self.style.WARNING(
@@ -79,7 +82,7 @@ class Command(BaseCommand):
                         ))
                         continue
                     seen_names.add(name)
-                    agencies.append({'name': name, 'origin_of_funds': origin_of_funds})
+                    agencies.append({'name': name, 'origin_of_funds': origin_code})
 
         except csv.Error as e:
             raise CommandError(f'Error reading TSV file: {e}')

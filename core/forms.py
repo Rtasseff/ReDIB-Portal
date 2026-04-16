@@ -35,11 +35,24 @@ class ProfileForm(forms.ModelForm):
         empty_label='---------',
     )
 
-    # Extra fields for "Other" organization creation
+    # Extra fields for "Other (create new)" organization. Required only when
+    # the user picks the __other__ sentinel; clean() enforces that. ISO2 is
+    # intentionally NOT exposed here — leave it blank for self-service entries
+    # and a coordinator can fill it later via the admin.
     new_org_name = forms.CharField(
         max_length=255, required=False,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Organization name'}),
-        label='New Organization Name',
+        label='Organization Name',
+    )
+    new_org_short_name = forms.CharField(
+        max_length=100, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Acronym / short name'}),
+        label='Short Name',
+    )
+    new_org_vat = forms.CharField(
+        max_length=50, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VAT / NIF'}),
+        label='VAT / NIF',
     )
     new_org_type = forms.ChoiceField(
         choices=[('', '---------')] + Organization.ORG_TYPES,
@@ -52,6 +65,21 @@ class ProfileForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Country'}),
         label='Country',
         initial='Spain',
+    )
+    new_org_address = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Street address'}),
+        label='Address',
+    )
+    new_org_city = forms.CharField(
+        max_length=100, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
+        label='City',
+    )
+    new_org_zip = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Postal code'}),
+        label='Postal Code',
     )
 
     # Self-service field for evaluators to manage their specialization areas.
@@ -138,34 +166,51 @@ class ProfileForm(forms.ModelForm):
         self._evaluator_role.areas = ';'.join(selected)
         self._evaluator_role.save(update_fields=['areas'])
 
+    # Fields the user must fill when "Other (create new)" is selected.
+    # ISO2 is intentionally absent — see the form-level comment above.
+    NEW_ORG_REQUIRED = [
+        ('new_org_name', 'organization name'),
+        ('new_org_short_name', 'short name / acronym'),
+        ('new_org_vat', 'VAT / NIF'),
+        ('new_org_type', 'organization type'),
+        ('new_org_country', 'country'),
+        ('new_org_address', 'address'),
+        ('new_org_city', 'city'),
+        ('new_org_zip', 'postal code'),
+    ]
+
     def clean(self):
         cleaned_data = super().clean()
         org_val = cleaned_data.get('organization')
 
         if org_val == OrgWithOtherChoiceField.OTHER_SENTINEL:
-            new_name = cleaned_data.get('new_org_name', '').strip()
-            new_type = cleaned_data.get('new_org_type', '')
-            new_country = cleaned_data.get('new_org_country', '').strip()
+            values = {
+                key: (cleaned_data.get(key) or '').strip()
+                for key, _ in self.NEW_ORG_REQUIRED
+            }
+            for key, label in self.NEW_ORG_REQUIRED:
+                if not values[key]:
+                    self.add_error(key, f'Please enter the {label}.')
 
-            if not new_name:
-                self.add_error('new_org_name', 'Please enter the organization name.')
-            if not new_type:
-                self.add_error('new_org_type', 'Please select the organization type.')
-            if not new_country:
-                self.add_error('new_org_country', 'Please enter the country.')
-
-            if new_name and new_type and new_country:
+            if all(values.values()):
                 org, _ = Organization.objects.get_or_create(
-                    name=new_name,
+                    name=values['new_org_name'],
                     defaults={
-                        'organization_type': new_type,
-                        'country': new_country,
-                    }
+                        'short_name': values['new_org_short_name'],
+                        'vat': values['new_org_vat'],
+                        'organization_type': values['new_org_type'],
+                        'country': values['new_org_country'],
+                        'address': values['new_org_address'],
+                        'city': values['new_org_city'],
+                        'zip': values['new_org_zip'],
+                        # iso2 left blank by design — coordinator fills via admin
+                        'iso2': '',
+                    },
                 )
                 cleaned_data['organization'] = org
             else:
-                # Validation failed for new org fields - clear the sentinel so
-                # ModelForm doesn't try to save it as the FK value
+                # Validation failed - clear the sentinel so ModelForm doesn't
+                # try to save it as the FK value
                 cleaned_data['organization'] = None
 
         return cleaned_data

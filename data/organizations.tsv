@@ -1,1 +1,184 @@
-name	vat	country	organization_type	address	website
+name	short_name	vat	ISO2	country	organization_type	address	city	zip
+Asociación de Investigación Cooperativa en Biomateriales	CIC biomaGUNE	ESG20788840	ES	Spain	Technology Centre	Pº Miramón 194	San Sebastián	20014
+Bio Imagen Complutense	BioImaC	ESQ2818014I	ES	Spain	Public Research Organisation (PRO)	"Pº de Juan XXIII, 1"	Madrid	28040
+Imaging La Fe		ESG97067557	ES	Spain	Public Research Organisation (PRO)	Av. Fernando Abril Martorell 106. Planta -1	Valencia	46026
+Advanced Translational Imaging	TRIMA-CNIC	ESG82316753	ES	Spain	Public Research Organisation (PRO)	Melchor Fernández Almagro 3	Madrid	28029
+Universidad Complutense de Madrid	UCM	ESQ2818014I	ES	Spain	Higher Education Institution (HEI)	Av. Séneca 2	Madrid	28040
+Centro Nacional de Investigaciones Cardiovasculares Carlos III	CNIC	ESG82316753	ES	Spain	Public Research Organisation (PRO)	Melchor Fernández Almagro 3	Madrid	28029
+AIT Austrian Institute of Technology GmbH	AIT	ATU14703506	AT	Austria	Technology Centre	Giefinggasse 4	Vienna	01210
+Asociación de Investigación Cooperativa en Biología	CIC bioGUNE	ESG95229142	ES	Spain	Technology Centre	Parque Científico Tecnológico de Bizkaia building 801A	Derio	48160
+Centro de Biología Molecular Severo Ochoa CSIC-UAM	CBMSO-UAM	ESG28926475	ES	Spain	Public Research Organisation (PRO)	Nicolás Cabrera 1	Cantoblanco	28049
+Centro Nacional de Biotecnología-CSIC	CNB-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Darwin 3	Cantoblanco	28049
+Fundación de Investigación Médica Aplicada	FIMA	ESG82198524	ES	Spain	Public Research Organisation (PRO)	Av. Pio XII 55	Pamplona	31008
+Centro de Investigaciones Biológicas Margarita Salas - CSIC	CIB-CSIC	ESG28470268	ES	Spain	Public Research Organisation (PRO)	Ramiro de Maeztu 9	Madrid	28040
+Centro de Tecnología Biomédica-UPM	CTB-UPM	ESQ2818015F	ES	Spain	Technology Centre	Parque Científico y Tecnológico de la UPM	Pozuelo de Alarcón	28223
+Fundación Instituto de Investigación Sanitaria Santiago de Compostela	Fundación IDIS	ESG15796683	ES	Spain	Public Research Organisation (PRO)	Travesía da Choupana	Santiago de Compostela	15706
+Fundación Instituto Valenciano de Infertilidad	Fundación IVI	ESG96699566	ES	Spain	Public Research Organisation (PRO)	Av. Fernando Abril Martorell 106. Planta -1	Valencia	46026
+Fundación Investigación Biomédica del Hospital 12 de Octubre	FIBH12O	ESG83727016	ES	Spain	Public Research Organisation (PRO)	Av. de Córdoba s/n	Madrid	28041
+Germans Trias i Pujol Research Institute	IGTP	ESG60805462	ES	Spain	Public Research Organisation (PRO)	Camí de les Escoles s/n	Badalona	08916
+Hospital Clínico San Carlos	HCSC	ESQ2877008I	ES	Spain	Public Research Organisation (PRO)	Prof Martín Lagos s/n	Madrid	28040
+Hospital Universitario Vall d´Hebron	HUVdH	ESG60594009	ES	Spain	Public Research Organisation (PRO)	Pg. de la Vall d'Hebron 119	Barcelona	08935
+Hospital Universitario 12 de Octubre	H12O	ESQ2877010E	ES	Spain	Public Research Organisation (PRO)	Av. de Córdoba	Madrid	28041
+Hospital Universitario Fundación Jiménez Díaz	HUFJD	ESG28198240	ES	Spain	Public Research Organisation (PRO)	Av. de los Reyes Católicos 2	Madrid	28040
+Hospital Universitario Ruber Juan Bravo Madrid	HURJBM	ESA28049492	ES	Spain	Other	Juan Bravo 39	Madrid	28006
+Hospital Universitario y Politécnico La Fe	HUyPLaFe	ESG97067557	ES	Spain	Public Research Organisation (PRO)	Av. Fernando Abril Martorell 106. Planta -1	Valencia	46026
+Ikan Biotech SL		ESB71240246	ES	Spain	SME	Plaza Cein 5 - A 4	Noáin	31110
+Imperial College of London	ICL	GB649926678	GB	United Kingdom of Great Britain and Northern Ireland	Higher Education Institution (HEI)	Exhibition Road	London	SW7 2BX
+Institute for Research in Biomedicine	IRB	ESG63971451	ES	Spain	Public Research Organisation (PRO)	Carrer de Baldiri Reixac 10	Barcelona	08028
+Instituto de Ciencia de Materiales de Barcelona-CSIC	ICMAB-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Carrer dels Til·lers s/n	Cerdanyola Del Vallés	08193
+Instituto Aragonés de Ciencias de la Salud	IACS	ESQ5000654C	ES	Spain	Public Research Organisation (PRO)	Av. San Juan Bosco 13	Zaragoza	50009
+Instituto Cajal-CSIC	IC-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Av. Doctor Arce 37	Madrid	28002
+Instituto de Biomedicina y Biotecnología de Cantabria-CSIC	IBBTEC-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Albert Einstein 22	Santander	39011
+Instituto de Ciencia de Materiales de Madrid-CSIC	ICMM-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Sor Juana Inés de la Cruz	Cantoblanco	28049
+Instituto de Investigação e Inovação em Saúde	IISIeS	PT515769053	PT	Portugal	Public Research Organisation (PRO)	Alfredo Allen 208	Porto	4200-135
+Fundación de Gestión Sanitaria del Hospital de la Santa Creu i Sant Pau	FGSHSCSP	ESG59780494	ES	Spain	Public Research Organisation (PRO)	Sant Antoni Maria Claret 167	Barcelona	08025
+Instituto de Investigación Sanitaria Biodonostia	IIS Biodonostia	ESG75020313	ES	Spain	Public Research Organisation (PRO)	Dr. Begiristain s/n	San Sebastián	20114
+Instituto de Investigación Sanitaria Fundación Jiménez Díaz	IISFJD	ESG85874949	ES	Spain	Public Research Organisation (PRO)	Av. Reyes Católicos 2	Madrid	28049
+Instituto de Investigación Sanitaria Gregorio Marañón	IiSGM	ESG83195305	ES	Spain	Public Research Organisation (PRO)	Dr. Esquerdo 56	Madrid	28007
+Fundación para la Investigación Biomédica del Hospital Clínico San Carlos	IdISSC	ESG83727115	ES	Spain	Public Research Organisation (PRO)	Prof. Martín Lagos	Madrid	28040
+Instituto de Investigación Sanitaria La Fe	IIS La Fe	ESG97067557	ES	Spain	Public Research Organisation (PRO)	Av. Fernando Abril Martorell 106. Planta 7	Valencia	46026
+"Instituto de Investigaciones Biomédicas ""Alberto Sols""-CSIC-UAM"	IIBm	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Arturo Duperier 4	Madrid	28029
+Instituto de Investigaciones Biomédicas de Barcelona-CSIC	IIBB-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Rosselló 161 6ª y 7ª planta	Barcelona	08036
+Instituto de Química Médica-CSIC	IQM-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Juan de la Cierva 3	Madrid	28006
+Instituto de Química Orgánica General-CSIC	IQOG-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Juan de la Cierva 3	Madrid	28006
+Instituto Maimónides de Investigación Biomédica de Córdoba	IMIBIC	ESG14825277	ES	Spain	Public Research Organisation (PRO)	Av. Menéndez Pidal	Córdoba	14004
+La Rochelle University	LRU	FR21191700327	FR	France	Higher Education Institution (HEI)	Av. Albert Einstein	La Rochelle	17000
+Medical Research Council	MRC	GB287461957	GB	United Kingdom of Great Britain and Northern Ireland	Public Research Organisation (PRO)	Polaris House	Swindon	SN2 1FL
+Royal College of Surgeons in Ireland	RCSI	IE2199803V	IE	Ireland	Higher Education Institution (HEI)	123 St Stephens Green	Dublin	D02 YN77
+IRCCS Ospedale San Raffaele Scientific Institute	IRCCS	IT07636600962	IT	Italy	Public Research Organisation (PRO)	Via Olgettina 60	Milano	20132
+The Standard Fireworks Rajaratnam College for Women	SFR	04562 220389	IN	India	Higher Education Institution (HEI)	Thiruthangal Road	Sivakasi	626123
+SOMAProbes S.L.		ESB75121756	ES	Spain	SME	Pº Miramón 170	San Sebastián	20014
+Universidad Autónoma de Madrid	UAM	ESQ2818013A	ES	Spain	Higher Education Institution (HEI)	Ciudad Universitaria Cantoblanco	Cantoblanco	28049
+Universidad Autonoma Metropolitana Unidad Iztapalapa		DDF140124SX8	MX	Mexico	Higher Education Institution (HEI)	Av. San Rafael Atlixco 186	Iztapalapa	09340
+Universidad de Oviedo	UniOvi	ESQ3318001I	ES	Spain	Higher Education Institution (HEI)	San Francisco 3	Oviedo	33003
+Universidad de Valencia	UV	ESQ4618001D	ES	Spain	Higher Education Institution (HEI)	Av. de Blasco Ibáñez 13	Valencia	46010
+Universidad Francisco de Vitoria	UFV	ESG80480197	ES	Spain	Higher Education Institution (HEI)	Carretera M 515 KM 1.8	Pozuelo de Alarcón	28223
+Universidad del País Vasco	UPV/EHU	ESQ4818001B	ES	Spain	Higher Education Institution (HEI)	Barrio Sarriena s/n	Leioa	48940
+Fundación Achucarro Basque Center for Neuroscience		ESG95686051	ES	Spain	Public Research Organisation (PRO)	Barrio Sarriena s/n	Leioa	48940
+Universidad Politécnica de Valencia	UPV	ESQ4618002B	ES	Spain	Higher Education Institution (HEI)	Camí de Vera s/n	Valencia	46022
+Unidad de Cirugía Artroscópica S.L.	UCA	ESB01170208	ES	Spain	SME	Beato Tomás de Zumárraga 10	Vitoria	01008
+Avanqua Oceanografic S.L.	AOSL	ESB98725252	ES	Spain	SME	Gran Vía Marqués del Turia 19	Valencia	46005
+Centre National de la Recherche Scientifique	CNRS	FR40180089013	FR	France	Public Research Organisation (PRO)	Michel Ange 3	Paris	75794
+Instituto de Medicina Molecular	João Lobo Antunes · iMM	PT506134466	PT	Portugal	Public Research Organisation (PRO)	Av. Prof. Egas Moniz	Lisboa	1649-028
+Research Institute I3Bs-University of Minho	I3Bs	PT502011378	PT	Portugal	Public Research Organisation (PRO)	Avepark - Parque de Ciência e Tecnologia	Barco	4805-017
+Hospital Universitario Rey Juan Carlos	HURJC	ESQ2803011B	ES	Spain	Public Research Organisation (PRO)	Gladiolo s/n	Móstoles	28933
+La Sapienza University di Roma	LSUR	IT80209930587	IT	Italy	Higher Education Institution (HEI)	Piazzale Aldo Moro 5	Roma	00185
+Fondazione Policlinico Universitario “Agostino Gemelli”		IT13109681000	IT	Italy	Public Research Organisation (PRO)	Largo Francesco Vito 1	Roma	00168
+Hospital da Luz	HdL	PT507485637	PT	Portugal	Other	Av. Lusíada	Lisboa	1500-650
+Hospital Universitario La Paz		ESQ2877009G	ES	Spain	Public Research Organisation (PRO)	Pº de la Castellana 261	Madrid	28046
+Hospital General Universitario Gregorio Marañón	HGUGM	ESQ7855001I	ES	Spain	Public Research Organisation (PRO)	Dr. Esquerdo 46	Madrid	28007
+Universidad Politécnica de Madrid	UPM	ESQ2818015F	ES	Spain	Higher Education Institution (HEI)	Av. de Ramiro de Maeztu 7	Madrid	28040
+Universidad Carlos III	UC3m	ESQ2818029G	ES	Spain	Higher Education Institution (HEI)	Madrid 126	Getafe	28903
+Basque Center on Cognition Brain and Language	BCBL	ESG20988929	ES	Spain	Public Research Organisation (PRO)	Pº Mikeletegi 69	San Sebastián	20009
+Centro Nacional de Investigaciones Oncológicas	CNIO	ESG81972242	ES	Spain	Public Research Organisation (PRO)	Melchor Fernández Almagro 3	Madrid	28029
+King's College London	KCL	GB654948687	GB	United Kingdom of Great Britain and Northern Ireland	Higher Education Institution (HEI)	Strand	London	WC2R 2LS
+Centro de Investigaciones Energéticas Medioambientales y Tecnológicas	CIEMAT	ESG78373263	ES	Spain	Public Research Organisation (PRO)	Av. Complutense 40	Madrid	28049
+Universidad de Santiago de Compostela	USC	ESQ1518001A	ES	Spain	Higher Education Institution (HEI)	Pza. do Obradoiro	Santiago de Compostela	15782
+Pharma Mar S.A.		ESA78267176	ES	Spain	Large Enterprise	Av. De Los Reyes 1	Colmenar Viejo	28770
+Hospital Clinic de Barcelona	HCB	ESQ0802070C	ES	Spain	Public Research Organisation (PRO)	Villaroel 170	Barcelona	08036
+Instituto de Neurociencias de Alicante-UMH-CSIC	InC-UMH-CSIC	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Av. Ramón y Cajal s/n	Sant Joan	03550
+Hospital Ramón y Cajal	HRyC	ESQ2877004H	ES	Spain	Public Research Organisation (PRO)	Carretera M607	Madrid	28043
+Universidad Rey Juan Carlos	URJC	ESQ2803011B	ES	Spain	Higher Education Institution (HEI)	Av. del Alcalde de Móstoles	Móstoles	28933
+Universidad Miguel Hernandez		ESQ5350015C	ES	Spain	Higher Education Institution (HEI)	Av. de la Universidad	Elche	03202
+Linköping University Hospital		SE202100309601	SE	Sweden	Public Research Organisation (PRO)		Linköping	SE-k581 83
+Champalimaud Research Foundation		PT507131827	PT	Portugal	Public Research Organisation (PRO)	Av. Brasília	Lisboa	1400-038
+W.M. Keck Center for Cellular Imaging		US54-6001796	US	United States of America	Public Research Organisation (PRO)	Whitehead Road	Charlottesville	VA 22904
+Universidad de Navarra		ESR3168001J	ES	Spain	Higher Education Institution (HEI)	Irunlarrea 1	Pamplona	31009
+University of Virginia		US546001796	US	United States of America	Higher Education Institution (HEI)	Whitehead Road	Charlottesville	VA 22904
+Curium Pharma S.L. 		ESA84603133	ES	Spain	Large Enterprise	Mendez Álvaro 55	Madrid	28045
+Instituto de Biología Funcional y Genómica	IBFG	ESQ2818002D	ES	Spain	Public Research Organisation (PRO)	Zacarías González 2	Salamanca	37007
+Fundació Institut de Bioenginyeria de Catalunya	IBEC	ESG64045719	ES	Spain	Public Research Organisation (PRO)	Baldiri Reixac 10	Barcelona	08028
+Starget Pharma Ltd.		IS516057411	IL	Israel	SME	Snir 26	Ramat Hasharon	4704087
+Hospital Clínico Universitario de Valladolid	HCUdV	ESQ4777002I	ES	Spain	Public Research Organisation (PRO)	Av. Ramón y Cajal 3	Valladolid	47003
+Instituto de Biomedicina de Sevilla	IBiS	ESG41918830	ES	Spain	Public Research Organisation (PRO)	Avda. Manuel Siurot s/n	Sevilla	41013
+Nottingham University	NoU	GB690391225000	GB	United Kingdom of Great Britain and Northern Ireland	Higher Education Institution (HEI)	University Park	Nottingham	NG7 2RD
+Universidad San Pablo-CEU		ESG28423275	ES	Spain	Higher Education Institution (HEI)	Isaac Peral s/n	Madrid	28040
+Biogen Idec Research LTD		GB503101815	GB	United Kingdom of Great Britain and Northern Ireland	Large Enterprise	70 Norden Road	Maidenhead	SL6 4AY
+Mirati Therapeutics Inc.		46-2693615	US	United States of America	Large Enterprise	3545 Cray Court	San Diego	CA 92121
+Janssen Research & Development		BE0403834160	BE	Belgium	Large Enterprise	Turnhoutseweg 30	Beerse	B-2340
+UCB Biopharma SA		BE0543573053	BE	Belgium	Large Enterprise	"Allée de la Recherche, 60"	Brussels	B1070
+Alector Inc.		82-2933343	US	United States of America	SME	131 Oyster Point Blvd	South San Francisco	CA 94080
+Takeda Oncology Company Limited			US	United States of America	Large Enterprise	40 Landsdowne St	Cambridge	02139
+Eisai Ltd.			GB	United Kingdom of Great Britain and Northern Ireland	Large Enterprise	Mosquito Way	Hatfield	AL10 9SN
+Bristol-Myers Squibb Company		BE0403075184	BE	Belgium	Large Enterprise	Av. de Finlande 4	Braine-l'Alleud	1420
+Novartis Research and Development			CH	Switzerland	Large Enterprise	Forum 1	Basel	CH-4056 
+Novartis Pharma AG		CHE106052527	CH	Switzerland	Large Enterprise	Fabrikstrasse 2	Basel	CH-4056 
+AstraZeneca AB		SE556011748201	SE	Sweden	Large Enterprise	Storgatan 51	Södertälje	151 36 
+Daiichi Sankyo Inc.			US	United States of America	Large Enterprise	211 Mount Airy Road Basking Ridge	Basking Ridge	NJ 07920
+Genentech Inc.			US	United States of America	Large Enterprise	Mahwah	New Jersey	NJ 07430
+Gilead Sciences Inc.		94-3047598	US	United States of America	Large Enterprise	36 E Industrial Rd	Branford	CT 06405
+Incyte Corporation		94-3136539	US	United States of America	Large Enterprise	1709 Augustine Cut Off	Wilmington	DE 19803
+Brinker PharmaGmbH			DE	Germany	SME	Stölpchenweg 37 D	Berlin	14109
+AbbVie			DE	Germany	Large Enterprise	Unter den Linden 10	Berlin	10117
+Lipopharma Therapeutics			ES	Spain	SME	"Isaac Newton, Edificio Disset, 2º"	Palma	07121
+Hoffmann-La Roche Ltd.			CH	Switzerland	Large Enterprise	Grenzacherstrasse 124	Basel	4070
+Affiliates of Merck KGaA			DE	Germany	Large Enterprise	Frankfurter Str. 250	Darmstadt	 64293
+Inhibrx Inc.		82-4257312	US	United States of America	SME	11025 N Torrey Pines Rd STE 200	La Jolla	CA 92037
+Millennium Pharmaceuticals Inc.			US	United States of America	Large Enterprise	16981 Via Tazon	San Diego	CA 92127
+GlaxoSmithKline Research & Development Ltd.			US	United States of America	Large Enterprise	27 S Stephanie St STE 140	Henderson	NV 89012
+Amgen Inc.		95-3540776	US	United States of America	Large Enterprise	1 Amgen Center Dr	Thousand Oaks	CA 91320
+Sanofi-Aventis Recherche et Développement S.A.			FR	France	Large Enterprise	16 Rue d'Ankara	Strasbourg	67000
+Acticor Biotech			FR	France	SME	46 Rue Henri Huchard	Paris	75018
+AptaTargets S.L.		B87154118	ES	Spain	SME	Av del Cardenal Herrera Oria 298	Fuencarral-El Pardo	28035
+BeiGene USA Ltd.			US	United States of America	Large Enterprise	55 Cambridge Pkwy #700w	Cambridge	MA 02142
+BioNTech SE			DE	Germany	Large Enterprise	An d. Goldgrube 12	Mainz	55131
+Pfizer Inc.		13-5315170	US	United States of America	Large Enterprise	100 US-206	Gladstone	NJ 07934
+Celgene International II Sarl			CH	Switzerland	Large Enterprise	Rue du Pré-Jorat 2108	Couvet	2108
+FibroGen Inc.		77-0357827	US	United States of America	Large Enterprise	409 Illinois St	San Francisco	CA 94158
+ArriVent BioPharma Inc.		86-3336099	US	United States of America	SME	"Newton Square 18 Campus Boulevard, Suite 100"	Newtown Square	
+Galecto Biotech AB			SE	Sweden	SME	Smedsbovägen 10	Lund	225 94
+Fundación Grupo Español de Cancer de Pulmón		ESG06966246	ES	Spain	Other	"Avinguda Meridiana, 358"	Barcelona	08027
+Lilly S.A.			US	United States of America	Large Enterprise	893 Delaware St	Indianapolis	
+Incyte Biosciences International Sàrl			CH	Switzerland	Large Enterprise	Rue Dr Yersin 12	Morges	1110
+Novo Nordisk			CH	Switzerland	Large Enterprise	The Circle 32/38	Zürich	8058
+Campofrío Food Group		A09000928	ES	Spain	Large Enterprise	"Avda. Europa, 24"	La Moraleja	28108
+Instituto Ramón y Cajal de Investigación Sanitaria - IRYCIS		ESG83726984	ES	Spain	Public Research Organisation (PRO)	Ctra. Colmenar Viejo	Fuencarral-El Pardo	28034
+Genzyme Corporation			US	United States of America	Large Enterprise	500 Kendall Street	Cambridge	02142
+Oncodesign Services 		FR37399693811	FR	France	SME	25-27 Avenue du Québec	Villebon-sur-Yvette	91140
+Fundación de Investigación Biomédica del Hospital Universitario Puerta de Hierro de Majadaonda		ESG83726968	ES	Spain	Public Research Organisation (PRO)	Joaquín Rodrigo 2	Majadaonda	28222
+Fundación para la Investigación del Hospital Clínico de la Comunidad Valenciana	INCLIVA	ESG96886080	ES	Spain	Public Research Organisation (PRO)	Av. Menéndez y Pelayo 4	Valencia	46010
+Consejo Nacional de Investigaciones Científicas y Técnicas	CONICET	AR30546660385	AR	Argentina	Public Research Organisation (PRO)	Godoy Cruz 2290 (C1425FQB)	Buenos Aires	C1425FQB
+Instituto de Investigación Sanitaria Princesa 		ESG83727081	ES	Spain	Public Research Organisation (PRO)	"Diego de León, 62"	Madrid	28016
+iTeos Belgium		BE0838316659	BE	Belgium	SME	Rue des Frères Wright 29	Charleroi	6041
+AB Science S.A.		FR0010557264	FR	France	SME	3 avenue George V	Paris	75008
+AC Immune S.A.		CHE109878825	CH	Switzerland	SME	Building B	EPFL Innovation Pak	1015
+Aviadobio Ltd		GB227045134	GB	United Kingdom of Great Britain and Northern Ireland	SME	20 Water Sr	London	E14 9GC
+Bayer HealthCare Pharmaceuticals Inc.			US	United States of America	Large Enterprise	100 Bayer Boulevard	Whippany	07981
+Cullinan Therapeutics Inc. 			GB	United Kingdom of Great Britain and Northern Ireland	SME	One Main Street	Cambridge	MA 02142
+GemVax & KAEL Co. Ltd.			KR	"Korea, Republic of"	SME	58 Techno 11-Ro Yuseong-Gu	Daejeon	
+IO Biotech ApS		DK36474483	DK	Denmark	SME	Ole Maaløes Vej 3	Copenhagen	DK-2200
+Merus N.V.		NL812247413B01	NL	Netherlands	SME	Uppsalalaan 17	Utrecht	3584 CT
+Madrigal Pharmaceuticals Inc.		04-3508648	US	United States of America	SME	200 Barr Harbor Drive	West Conshohocken	PA 19428 
+Laminar Pharmaceuticals S.A.		A57451171	ES	Spain	SME	Isaac Newton s/n	Palma de Mallorca	
+Merck Healthcare KGaA		DE811850788	DE	Germany	Large Enterprise	Frankfurter Strasse 250	Darmstadt	64293
+Chimerix Inc.			IE	Ireland	SME	 2505 Meridian Parkway	Durham	NC 27713
+Exelixis Inc.		US88366040900011	US	United States of America	Large Enterprise	1851 Harbor Bay	Pkwy Alameda	CA 94502
+Universidad Internacional de Valencia	UIV	ESB98585797	ES	Spain	Higher Education Institution (HEI)	Pintor Sorolla 21	Ciutat Vella	46002
+Universidad Autónoma de Barcelona	UAB	ESQ0818002H	ES	Spain	Higher Education Institution (HEI)	Edif. A 	Cerdanyola Del Vallés	08193
+Universidad de Murcia		ESQ3018001B	ES	Spain	Higher Education Institution (HEI)	"Avda. Teniente Flomesta, n. 5"	Murcia	30003
+Nektar Therapeutics		 382 9788 31	US	United States of America	SME	455 Mission Bay Boulevard South	San Francisco	94158
+"Green Valley Pharmaceuticals Co., Ltd."		9131011563134626XN	CN	China	SME	421 Newton Road Zhangjiang Hi-Tech Park	Pudong New Area	
+Camurus AB		556667-9105	SE	Sweden	SME	Ideon Science Park	Lund	SE223 70
+ITM Solucin GmbH		DE308998903	DE	Germany	SME	Lichtenbergstrasse 1	Garching	85748
+Tesaro Bio Netherlands B V		NL856947830B01	NL	Netherlands	Large Enterprise	Joop Geesinkweg 901 901-999	Amsterdam	1114 AB 
+"Viridian Therapeutics, Inc."			US	United States of America	SME		Waltham	
+"Shanghai Henlius Biotech, Inc."			CN	China	Large Enterprise	"11/F, B8 Building, No.188"	"Yizhou Rd, Xuhui District"	200233
+Cullinan Oncology Inc.			US	United States of America	SME	1 Main Street Suite 520	Cambridge	MA 02142
+University of Minho		PT502011378	PT	Portugal	Higher Education Institution (HEI)	Largo do Paço	Gualtar	4704-553
+Instituto de Intrumentación para Imagen Molecular (i3M)		ESQ4618002B	ES	Spain	Public Research Organisation (PRO)	Camino de Vera s/n	Valencia	46022
+Asociación Instituto de Investigación Sanitaria Bioaraba (IIS Bioaraba)		ESG01573146	ES	Spain	Public Research Organisation (PRO)	"José Achotegui, s/n"	Vitoria	01009
+Chemo Holding S.L.		ESB86874617	ES	Spain	Large Enterprise	"Manuel Pombo Angulo, 28"	Madrid	28050
+Janssen-Cilag International N.V.		BE0461607459	BE	Belgium	Large Enterprise	Turnhoutseweg 30	Beerse	B-2340
+Acumen Pharmaceuticals		36-4108129	US	United States of America	SME	"1210-1220 Washington St., Suite 210"	Newton	02465
+Celgene Corp.		22-2711928	US	United States of America	Large Enterprise	86 Morris Avenue	Summit	07901
+Hexal AG		DE131170111	DE	Germany	Large Enterprise	Industriestraße 25	Holzkirchen	83607
+Celltrion Inc.			KR	"Korea, Republic of"	Large Enterprise	"23 Academy-ro, Yeonsu-gu"	Incheon	22014
+Fundación GECP		ESG67172833	ES	Spain	Other	"Av. Meridiana 358, 6ª planta"	Barcelona	08027
+Regeneron Pharmaceuticals		13-3444607	US	United States of America	Large Enterprise	777 Old Saw Mill River Road	Tarrytown	10591
+"Revolution Medicines, Inc."		47-2029180	US	United States of America	SME	700 Saginaw Drive	Redwood City	94063
+"Samsung Bioepis Co., Ltd"			KR	"Korea, Republic of"	Large Enterprise	"76 Songdogyoyuk-ro, Yeonsu-gu"	Incheon	21987
+Seagen Inc.		91-1874389	US	United States of America	Large Enterprise	"21717 30th Drive S.E., Building 3"	Bothell	98021
+Inmune Bio Inc.		47-5205835	US	United States of America	SME	"225 NE Mizner Blvd., Suite 640"	Boca Raton	33432
+Red Distribuida de Imagen Biomédica	ReDIB		ES	Spain	Other			
+Instituto de Investigación Sanitaria IdiPAZ		ESG83727057	ES	Spain	Public Research Organisation (PRO)	Paseo de la Castellana 261	Madrid	28046
+Laboratorios Leon Farma S.A.		ESA24490864	ES	Spain	Large Enterprise	Calle La Vallina	Villaquilambre	24193

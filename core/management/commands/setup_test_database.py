@@ -59,61 +59,69 @@ class Command(BaseCommand):
             self.reset_database()
             self.stdout.write(self.style.SUCCESS('  ✓ Database reset complete\n'))
 
-        # Step 1: Nodes
-        self.stdout.write('Step 1: Populating ReDIB nodes...')
+        # Step 1: Organizations (no deps; nodes + users link to orgs)
+        self.stdout.write('Step 1: Populating organizations...')
+        try:
+            call_command('populate_redib_organizations', verbosity=0)
+            self.stdout.write(self.style.SUCCESS('  ✓ Organizations created'))
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'  → Organizations may already exist: {e}'))
+
+        # Step 2: Nodes (depend on orgs via Node.organization FK)
+        self.stdout.write('Step 2: Populating ReDIB nodes...')
         try:
             call_command('populate_redib_nodes', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  ✓ Nodes created'))
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Nodes may already exist: {e}'))
 
-        # Step 2: Equipment
-        self.stdout.write('Step 2: Populating equipment...')
+        # Step 3: Equipment (depends on nodes)
+        self.stdout.write('Step 3: Populating equipment...')
         try:
             call_command('populate_redib_equipment', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  ✓ Equipment created'))
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Equipment may already exist: {e}'))
 
-        # Step 3: Users (coordinators, evaluators, node coordinators)
-        self.stdout.write('Step 3: Populating users...')
+        # Step 4: Users (coordinators, evaluators, node coordinators)
+        self.stdout.write('Step 4: Populating users...')
         try:
             call_command('populate_redib_users', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  ✓ Users created'))
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Users may already exist: {e}'))
 
-        # Step 4: Development data (organizations, calls, sample applications)
-        self.stdout.write('Step 4: Seeding development data...')
+        # Step 5: Development data (calls, sample applications)
+        self.stdout.write('Step 5: Seeding development data...')
         try:
             call_command('seed_dev_data', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  ✓ Development data created'))
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Dev data may already exist: {e}'))
 
-        # Step 5: Email templates
-        self.stdout.write('Step 5: Seeding email templates...')
+        # Step 6: Email templates
+        self.stdout.write('Step 6: Seeding email templates...')
         try:
             call_command('seed_email_templates', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  ✓ Email templates created'))
         except Exception as e:
             self.stdout.write(self.style.WARNING(f'  → Email templates may already exist: {e}'))
 
-        # Step 6: Configure site
-        self.stdout.write('Step 6: Configuring site...')
+        # Step 7: Configure site
+        self.stdout.write('Step 7: Configuring site...')
         self.configure_site()
         self.stdout.write(self.style.SUCCESS('  ✓ Site configured'))
 
-        # Step 7: Test applicants (optional)
+        # Step 8: Test applicants (optional)
         if not options['skip_applicants']:
-            self.stdout.write('Step 7: Seeding test applicants...')
+            self.stdout.write('Step 8: Seeding test applicants...')
             try:
                 call_command('seed_test_applicants', verbosity=0)
                 self.stdout.write(self.style.SUCCESS('  ✓ Test applicants created'))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'  ✗ Failed to create test applicants: {e}'))
         else:
-            self.stdout.write('Step 7: Skipping test applicants (--skip-applicants)')
+            self.stdout.write('Step 8: Skipping test applicants (--skip-applicants)')
 
         # Print summary
         self.print_summary()

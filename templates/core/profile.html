@@ -85,14 +85,30 @@
                             <h6 class="mb-0">New Organization Details</h6>
                         </div>
                         <div class="card-body">
-                            <div class="mb-3">
-                                <label for="{{ form.new_org_name.id_for_label }}" class="form-label">{{ form.new_org_name.label }} *</label>
-                                {{ form.new_org_name }}
-                                {% if form.new_org_name.errors %}
-                                <div class="text-danger small">{{ form.new_org_name.errors }}</div>
-                                {% endif %}
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="{{ form.new_org_name.id_for_label }}" class="form-label">{{ form.new_org_name.label }} *</label>
+                                    {{ form.new_org_name }}
+                                    {% if form.new_org_name.errors %}
+                                    <div class="text-danger small">{{ form.new_org_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.new_org_short_name.id_for_label }}" class="form-label">{{ form.new_org_short_name.label }} *</label>
+                                    {{ form.new_org_short_name }}
+                                    {% if form.new_org_short_name.errors %}
+                                    <div class="text-danger small">{{ form.new_org_short_name.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.new_org_vat.id_for_label }}" class="form-label">{{ form.new_org_vat.label }} *</label>
+                                    {{ form.new_org_vat }}
+                                    {% if form.new_org_vat.errors %}
+                                    <div class="text-danger small">{{ form.new_org_vat.errors }}</div>
+                                    {% endif %}
+                                </div>
                                 <div class="col-md-6">
                                     <label for="{{ form.new_org_type.id_for_label }}" class="form-label">{{ form.new_org_type.label }} *</label>
                                     {{ form.new_org_type }}
@@ -100,7 +116,30 @@
                                     <div class="text-danger small">{{ form.new_org_type.errors }}</div>
                                     {% endif %}
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.new_org_address.id_for_label }}" class="form-label">{{ form.new_org_address.label }} *</label>
+                                {{ form.new_org_address }}
+                                {% if form.new_org_address.errors %}
+                                <div class="text-danger small">{{ form.new_org_address.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-5">
+                                    <label for="{{ form.new_org_city.id_for_label }}" class="form-label">{{ form.new_org_city.label }} *</label>
+                                    {{ form.new_org_city }}
+                                    {% if form.new_org_city.errors %}
+                                    <div class="text-danger small">{{ form.new_org_city.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="{{ form.new_org_zip.id_for_label }}" class="form-label">{{ form.new_org_zip.label }} *</label>
+                                    {{ form.new_org_zip }}
+                                    {% if form.new_org_zip.errors %}
+                                    <div class="text-danger small">{{ form.new_org_zip.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
                                     <label for="{{ form.new_org_country.id_for_label }}" class="form-label">{{ form.new_org_country.label }} *</label>
                                     {{ form.new_org_country }}
                                     {% if form.new_org_country.errors %}

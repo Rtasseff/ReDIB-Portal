@@ -1,22 +1,31 @@
 """
 Management command to populate organizations from TSV file.
 
-Loads core.Organization records from a TSV file. By default, loads from
-data/organizations.tsv. Uses `name` as the natural key for upserts.
+Loads core.Organization records from data/organizations.tsv. Uses `name` as the
+natural key for upserts.
 
-TSV columns: name, vat, country, organization_type, address, website
-- `name` is required and must be unique
-- `organization_type` must be one of: company, university, other
-- `country` defaults to 'Spain' if blank
+TSV columns (must match `core.Organization` fields exactly):
+    name, short_name, vat, ISO2, country, organization_type, address, city, zip
 
-Run before populate_redib_users so users can link to fully-populated org records
-instead of relying on the loader's auto-create-with-defaults fallback.
+`organization_type` in the TSV uses human-readable labels (e.g. "Public Research
+Organisation (PRO)"). The loader maps each label to its short code from
+`Organization.ORG_TYPES`. Unknown labels abort the import.
+
+`name`, `ISO2`, `country`, and `organization_type` are required. All other
+columns may be blank.
+
+Run before populate_redib_users so users link to fully-populated org records
+instead of the loader's auto-create-with-defaults fallback.
 """
 import csv
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from core.models import Organization
+
+
+# Human-readable label (as it appears in the TSV) → ORG_TYPES code
+ORG_TYPE_LABEL_MAP = {label: code for code, label in Organization.ORG_TYPES}
 
 
 class Command(BaseCommand):
@@ -44,7 +53,6 @@ class Command(BaseCommand):
         if not csv_file.exists():
             raise CommandError(f'TSV file not found: {csv_file}')
 
-        valid_types = {choice[0] for choice in Organization.ORG_TYPES}
         orgs_data = []
 
         try:
@@ -58,25 +66,36 @@ class Command(BaseCommand):
                         ))
                         continue
 
-                    org_type = (row.get('organization_type') or '').strip()
-                    if org_type and org_type not in valid_types:
-                        self.stdout.write(self.style.WARNING(
-                            f'Row {row_num}: Invalid organization_type "{org_type}" for "{name}". '
-                            f'Must be one of: {", ".join(sorted(valid_types))}. Defaulting to "other".'
-                        ))
-                        org_type = 'other'
-                    elif not org_type:
-                        org_type = 'other'
+                    iso2 = (row.get('ISO2') or '').strip().upper()
+                    country = (row.get('country') or '').strip()
+                    if not iso2 or not country:
+                        raise CommandError(
+                            f'Row {row_num} ("{name}"): both ISO2 and country are required.'
+                        )
+                    if len(iso2) != 2:
+                        raise CommandError(
+                            f'Row {row_num} ("{name}"): ISO2 must be exactly 2 characters '
+                            f'(got "{iso2}").'
+                        )
 
-                    country = (row.get('country') or '').strip() or 'Spain'
+                    raw_type = (row.get('organization_type') or '').strip()
+                    if raw_type not in ORG_TYPE_LABEL_MAP:
+                        raise CommandError(
+                            f'Row {row_num} ("{name}"): unknown organization_type "{raw_type}". '
+                            f'Must be one of: {", ".join(sorted(ORG_TYPE_LABEL_MAP))}.'
+                        )
+                    org_type_code = ORG_TYPE_LABEL_MAP[raw_type]
 
                     orgs_data.append({
                         'name': name,
+                        'short_name': (row.get('short_name') or '').strip(),
                         'vat': (row.get('vat') or '').strip(),
+                        'iso2': iso2,
                         'country': country,
-                        'organization_type': org_type,
+                        'organization_type': org_type_code,
                         'address': (row.get('address') or '').strip(),
-                        'website': (row.get('website') or '').strip(),
+                        'city': (row.get('city') or '').strip(),
+                        'zip': (row.get('zip') or '').strip(),
                     })
 
         except csv.Error as e:
@@ -112,11 +131,14 @@ class Command(BaseCommand):
             org, created = Organization.objects.update_or_create(
                 name=name,
                 defaults={
+                    'short_name': data['short_name'],
                     'vat': data['vat'],
+                    'iso2': data['iso2'],
                     'country': data['country'],
                     'organization_type': data['organization_type'],
                     'address': data['address'],
-                    'website': data['website'],
+                    'city': data['city'],
+                    'zip': data['zip'],
                 },
             )
             processed_org_ids.add(org.id)

@@ -21,7 +21,16 @@ from applications.models import Application, RequestedAccess
 from applications.services import NodeResolutionService
 from calls.models import Call
 from communications.models import EmailLog, EmailTemplate
-from core.models import Equipment, Node, UserRole
+from core.models import Equipment, Node, Organization, UserRole
+
+
+def _make_node(code, location='Here'):
+    """Helper: create a node + minimal host org (Node.organization is required)."""
+    org, _ = Organization.objects.get_or_create(
+        name=f'{code} Host',
+        defaults={'organization_type': 'pro', 'iso2': 'ES', 'country': 'Spain'},
+    )
+    return Node.objects.create(code=code, organization=org, location=location)
 
 User = get_user_model()
 
@@ -49,7 +58,7 @@ class NodeRejectZerosHoursTest(TestCase):
         self.applicant = User.objects.create_user(
             username='a1', email='pi-account@test.com', password='x'
         )
-        self.node = Node.objects.create(code='N1', name='Node 1', location='Here')
+        self.node = _make_node('N1')
         self.equipment = Equipment.objects.create(
             node=self.node, name='Scanner', category='mri'
         )
@@ -101,7 +110,7 @@ class ResolutionEmailPrefersApplicantEmailTest(TestCase):
         self.submitter = User.objects.create_user(
             username='submitter', email='office@test.com', password='x'
         )
-        self.node = Node.objects.create(code='N2', name='Node 2', location='Here')
+        self.node = _make_node('N2')
         self.equipment = Equipment.objects.create(
             node=self.node, name='MRI', category='mri'
         )
@@ -177,7 +186,7 @@ class EvaluationsCompleteSkipsMainCoordinatorTest(TestCase):
         self.applicant = User.objects.create_user(
             username='a3', email='a3@test.com', password='x'
         )
-        self.node = Node.objects.create(code='N3', name='Node 3', location='Here')
+        self.node = _make_node('N3')
         self.equipment = Equipment.objects.create(
             node=self.node, name='PET', category='pet_ct'
         )

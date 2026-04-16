@@ -1,5 +1,7 @@
 # Plan: `setup_localtest3_database` — One-Shot Manual-Test Sandbox
 
+> **Historical note (2026-04-16):** This is the original design doc for `setup_localtest3_database`. It frequently references the older `setup_localtest2_database` command, which has since been **removed** from the codebase (`localtest3` superseded it). The references below are kept for design-rationale context only.
+
 ## Context
 
 `setup_localtest2_database` produces only **3 sample applications** (one draft, one in feasibility review, one evaluated). That covers a tiny slice of the workflow. To run the full manual-test pass — every phase, with options at each branch — the tester ends up creating data by hand or chaining several seed commands.

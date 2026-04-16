@@ -72,7 +72,9 @@ class Phase6Tester:
         # Create test organization
         self.org = Organization.objects.create(
             name='Phase 6 Test Organization',
-            organization_type='research_center'
+            iso2='ES',
+            country='Spain',
+            organization_type='pro'
         )
 
         # Create coordinator
@@ -106,7 +108,7 @@ class Phase6Tester:
         # Create test node and equipment
         self.node = Node.objects.create(
             code='PHASE6-TEST-NODE',
-            name='Phase 6 Test Node'
+            organization=self.org,
         )
         self.equipment = Equipment.objects.create(
             node=self.node,

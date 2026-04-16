@@ -125,7 +125,6 @@ Email templates are stored in the database. Seed with `python manage.py seed_ema
 | Command | Purpose |
 |---------|---------|
 | `setup_localtest3_database` | **Recommended for full manual-test pass.** Self-contained sandbox: 10 users, 2 calls, 16 apps spanning every live + terminal status, with tester cheat-sheet. See `docs/developer/localtest3-database-plan.md`. |
-| `setup_localtest2_database` | Smaller self-contained sandbox: same users/calls shape, 3 sample apps. Use when you only need a quick environment. |
 | `setup_base_database` | Populate real reference data from `data/*.tsv` (nodes, organizations, users, equipment, funding agencies, email templates) |
 | `setup_test_database` | Full test setup (base data + fake calls, applications, test applicants) |
 | `setup_localtest1_database` | Minimal test setup (legacy — use `setup_localtest3_database` instead) |

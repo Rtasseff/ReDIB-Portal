@@ -1,12 +1,376 @@
 name	origin_of_funds
-Agencia Estatal de Investigacion (AEI)	spanish_government
-Instituto de Salud Carlos III (ISCIII)	spanish_government
-Ministerio de Ciencia, Innovacion y Universidades (MICIU)	spanish_government
-Centro para el Desarrollo Tecnologico e Industrial (CDTI)	spanish_government
-Fundacion Espanola para la Ciencia y la Tecnologia (FECYT)	spanish_government
-European Research Council (ERC)	european_union
-European Commission - Horizon Europe	european_union
-European Innovation Council (EIC)	european_union
-National Institutes of Health (NIH)	international_non_eu
-Fundacion La Caixa	private
-Fundacion BBVA	private
+Joint Programming Initiative on Antimicrobial Resistance (JPIAMR)	International / Non-EU
+3rd Health Programme	European Union
+ACS Petroleum Research Fund	International / Non-EU
+Ajinomoto Group	International / Non-EU
+Alzheimer's Drug Discovery Foundation (ADDF)	Private / Philanthropic
+Alzheimer's Research UK	Private / Philanthropic
+American Association for the Advancement of Science (AAAS)	International / Non-EU
+ARSEP	International / Non-EU
+Asociación Española contra el Cáncer (AECC)	Private / Philanthropic
+ATTRACT	International / Non-EU
+Australian Academy of Science	International / Non-EU
+Banc de Sabadell	Private / Philanthropic
+Bayer Healthcare	International / Non-EU
+Basque Foundation for Health Innovation and Research (BIOEF)	Spanish Regional Government
+Boehringer Ingelheim	International / Non-EU
+Branco Weiss Fellowship	International / Non-EU
+Canon Foundation in Europe	Private / Philanthropic
+CDTI	Spanish Government
+COST	European Union
+DEUTSCHER AKADEMISCHER AUSTAUSCHDIENST (DAAD)	International / Non-EU
+Gipuzkoa Provincial Council	Spanish Regional Government
+Dr. Josef Steiner Cancer Foundation	Private / Philanthropic
+EMBO	European Union
+European Research Council (ERC) - H2020	European Union
+Joint Programme Neurodegenerative Disease Research (JPND)	European Union
+European Association for the Study of Diabetes	European Union
+European Commission	European Union
+EFIS (European Federation of Immunological Societies)	European Union
+EGTC Euroregion Nouvelle-Aquitaine Euskadi Navarra	European Union
+Fundación Everis	Private / Philanthropic
+ExxonMobil Chemical	International / Non-EU
+FEBS (Federation of European Biochemical Societies)	European Union
+Fomento San Sebastián	Spanish Regional Government
+Fundación Lilly	Private / Philanthropic
+Fullbright	Other
+La Caixa Foundation	Private / Philanthropic
+Fundació La Marató de TV3	Private / Philanthropic
+Fundación Alfonso Martín Escudero	Private / Philanthropic
+BBVA Foundation	Private / Philanthropic
+Fundación de Investigación Oncológica Fero	Private / Philanthropic
+Fundación Dexeus Salud de la Mujer	Private / Philanthropic
+Fundación Domingo Martínez	Private / Philanthropic
+Fundación Española para la Ciencia y la Tecnología (FECYT)	Spanish Government
+Fundación Eugenio Rodríguez Pascual	Private / Philanthropic
+Fundación Ferrer Investigación	Private / Philanthropic
+Fundación Francisco Cobos	Private / Philanthropic
+Fundación Jesús Serra	Private / Philanthropic
+Fundación Lair	Private / Philanthropic
+Fundación Mapfre	Private / Philanthropic
+Fundación Merck Salud	Private / Philanthropic
+Fundación Mutua Madrileña	Private / Philanthropic
+Fundación Olga Torres	Private / Philanthropic
+Fundación Pfizer	Private / Philanthropic
+Fundación Rafael del Pino	Private / Philanthropic
+Fundación Ramón Areces	Private / Philanthropic
+Fundación Renal Íñigo Álvarez de Toledo	Private / Philanthropic
+Fundación Repsol	Private / Philanthropic
+Fundación Tatiana Pérez de Guzmán el Bueno	Private / Philanthropic
+Basque Government	Spanish Regional Government
+Gruber Foundation	Private / Philanthropic
+GSK (GlaxoSmithKline)	Private / Philanthropic
+Human Frontier Science Program (HFSP)	Other
+Fundación Iberdrola	Private / Philanthropic
+Ikerbasque	Spanish Regional Government
+Innovative Medicines Initiative (IMI)	European Union
+Institut Mérieux	International / Non-EU
+Instituto Danone	Private / Philanthropic
+Carlos III Health Institute (ISCIII)	Spanish Government
+Interreg Sudoe	International / Non-EU
+La Sexta y Fundación Axa	Private / Philanthropic
+Laboratorios Gebro Pharma SA	Private / Philanthropic
+L'Oréal España	Private / Philanthropic
+Luxembourg National Research Fund	International / Non-EU
+Matsumae International Foundation	Private / Philanthropic
+Merck	Private / Philanthropic
+MINECO	Spanish Government
+Mizutani Foundation for Glycoscience	Private / Philanthropic
+NSF (US National Science Foundation)	International / Non-EU
+CYTED - Programa Iberoamericano de Ciencia y Tecnología para el Desarrollo	Other
+Real Academia de Doctores de España	Private / Philanthropic
+Simons Collaboration on the Origins of Life (SCOL)	Private / Philanthropic
+Sociedad Española de Neurociencia (SENC)	Private / Philanthropic
+The Chan Zuckerberg Initiative	Private / Philanthropic
+The Company of Biologists	Private / Philanthropic
+The European Association for Cancer Research (EACR)	European Union
+The Michael J. Fox Foundation for Parkinsons Research	Private / Philanthropic
+UPV-EHU	Spanish Regional Government
+Worldwide Cancer Research - AICR	International / Non-EU
+European Commission - FP6	International / Non-EU
+European Commission - FP7	International / Non-EU
+Agencia Estatal de Investigación (AEI)	Spanish Government
+Ajinomoto Innovation Alliance Program (AIAP)	International / Non-EU
+Alexander von Humboldt	International / Non-EU
+AXA Research Fundation	Private / Philanthropic
+CIBER	Spanish Government
+CoBioTech ERA-NET	International / Non-EU
+Elsevier Foundation	Private / Philanthropic
+ERA-NET FLAG ERA	European Union
+ERA-NET NANOMED	European Union
+ERA-NET Neuron	European Union
+ERA-NET SIINN	European Union
+Euronanomed	European Union
+European Commission - H2020	European Union
+FLAG-ERA - Graphene	European Union
+Fundación Botín	Private / Philanthropic
+Fundación Mérieux	Private / Philanthropic
+Kaust	International / Non-EU
+KSU	International / Non-EU
+M-ERA-NET	International / Non-EU
+MECD	Spanish Government
+MJFF	International / Non-EU
+PhosAgro/UNESCO/IUPAC	International / Non-EU
+ERA-NET SynBio	European Union
+ERA-NET TRANSCAN	European Union
+ERA-NET LAC	European Union
+ERA-NET SUSCROP	European Union
+EP PERMED	European Union
+Interreg Europe	European Union
+EIG Concert JAPAN	European Union
+AEMED JAPAN-SPAIN	International / Non-EU
+Interreg Atlantic Area	European Union
+Interreg EURO-MED - Interreg Mediterranean	European Union
+ERA-NET CAPITA	European Union
+INFECT ERA	European Union
+SOLAR-ERA.NET	European Union
+ERA-NET MED	European Union
+Interreg POCTEFA	European Union
+QuantERA	International / Non-EU
+Fundación Española de Cajas de Ahorros	Private / Philanthropic
+Graphene Flagship	International / Non-EU
+Junta de Andalucía	Spanish Regional Government
+ERACoSysMed	International / Non-EU
+Dementia Consortium	International / Non-EU
+ERA-NET CVD	International / Non-EU
+PRIMA-MED	International / Non-EU
+MIT Technology Review	International / Non-EU
+Sociedad Española de Arteriosclerosis (SEA)	Private / Philanthropic
+Ministerio de Sanidad, Consumo y Bienestar Social	Spanish Government
+Fundación Caja de Ingenieros	Private / Philanthropic
+FENS (Federation of European Neuroscience Societies)	European Union
+Lundbeck Foundation	Private / Philanthropic
+Fundación de la Real Academia de Ciencias de España	Private / Philanthropic
+ASPEGI, Asociación de Mujeres Empresarias, Profesionales y Directivas de Gipuzkoa	Private / Philanthropic
+BrightFocus Foundation	Private / Philanthropic
+National Institutes of Health - NIH	Other
+Eppendorf Ibérica S.L.U.	Private / Philanthropic
+American Association for Cancer Research (AACR)	International / Non-EU
+Gobierno de Aragón	Spanish Regional Government
+Cancer Research Institute (CRI)	International / Non-EU
+Fundación Caja Rural de Granada	Private / Philanthropic
+ERA-NET ICRAD	International / Non-EU
+International Brain Research Organization (IBRO)	International / Non-EU
+Rolex S.A.	Private / Philanthropic
+Fundación Valenciana de Estudios Avanzados (FVEA)	Spanish Regional Government
+Fundación Princesa de Asturias	Private / Philanthropic
+ERA-NET AquaticPollutants	International / Non-EU
+Asahi Kasei Pharma	International / Non-EU
+Swiss Bridge	International / Non-EU
+Taller Argal	Private / Philanthropic
+TRANSVAC2	International / Non-EU
+Biozientziak Gipuzkoa Fundazioa	Spanish Regional Government
+British Society for Antimicrobial Chemotherapy (BSAC)	Private / Philanthropic
+Springer Nature Limited	Private / Philanthropic
+EUREKA	International / Non-EU
+Banco Santander	Private / Philanthropic
+Lung Cancer Research Foundation (LCRF)	Private / Philanthropic
+Fundaçao para a Ciencia e a Tecnologia (FCT, Portugal)	Private / Philanthropic
+DFG German Research Foundation	International / Non-EU
+Merck Serono S.A.	Private / Philanthropic
+Pfizer	International / Non-EU
+Fundación San Rafael	Private / Philanthropic
+Duchenne Parent Project Spain Association (DPPE)	Private / Philanthropic
+IHOBE	Spanish Regional Government
+Ministerio de Industria, Comercio y Turismo (MINCOTUR)	Spanish Government
+Academia Joven de España (AJE)	Private / Philanthropic
+Leducq Foundation	Private / Philanthropic
+George Mason University	International / Non-EU
+Gilead Sciences Europe Ltd.	International / Non-EU
+Chinese Ministry for Science and Technology (MOST)	Other
+U.S. Department of Health & Human Services	Other
+Universidad de Deusto	Private / Philanthropic
+The Wiley Foundation	Private / Philanthropic
+US Defense Health Agency (DHA)	Other
+Fundación AstraZeneca	Private / Philanthropic
+Fundación Francisco Soria Melguizo	Private / Philanthropic
+ERA-NET BiodivRestore	International / Non-EU
+CaixaBank	Private / Philanthropic
+European Respiratory Society (ERS)	Private / Philanthropic
+EARTO (European Association of Research and Technology Organizations)	Private / Philanthropic
+Research Foundation of Flanders (FWO)	International / Non-EU
+European Commission - Horizon Europe	European Union
+ERA-NET ERA-MIN3	European Union
+French National Research Agency (ANR)	European Union
+ERA-HDHL	European Union
+Parkinson Foundation USA	Private / Philanthropic
+CRIS Cancer Foundation	Private / Philanthropic
+Fundación Romanillos	Private / Philanthropic
+TRANSVAC	International / Non-EU
+The Lung Ambition Alliance (IASLC)	International / Non-EU
+Cure Epilepsy Foundation	Private / Philanthropic
+European Union Observation for Nanomaterials (EUON)	International / Non-EU
+Suschem	Spanish Government
+Burdinola S.Coop.	European Union
+Falling Walls Foundation	Private / Philanthropic
+China Scholarship Council	International / Non-EU
+Ministry of Universities of Spain	Spanish Government
+EU4HEALTH (4th Health Programme)	European Union
+Fundación Princesa de Girona	Private / Philanthropic
+Health Research Board (HRB, Ireland)	International / Non-EU
+Fundación Carmen y Severo Ochoa	Private / Philanthropic
+European Commission - European Defence Fund (EDF)	European Union
+KU (Katholieke Universiteit) Leuven	International / Non-EU
+Cantabria Government	Spanish Regional Government
+Ministerio de Trabajo y Economía Social	Spanish Government
+Basque Employment Service (Lanbide)	Spanish Regional Government
+European Joint Programme on Rare Diseases (EJP RD)	European Union
+The New York Stem Cell Foundation (NYSCF)	Private / Philanthropic
+European Regional Development Fund (ERDF - FEDER)	European Union
+Ministerio de Asuntos Económicos y Transformación Digital	Spanish Government
+Breakthrough	International / Non-EU
+EU-LAC Interest Group	International / Non-EU
+Oficina Española de Patentes y Marcas - Invenciones (OEPM)	Spanish Government
+Junta de Castilla y León	Spanish Regional Government
+BRTA - Basque Research and Technology Alliance	Spanish Regional Government
+European Commission - Digital Europe Programme (DIGITAL)	European Union
+Ministerio de Ciencia e Innovación	Spanish Government
+EJP Soil	International / Non-EU
+Cátedra Cajal	Private / Philanthropic
+CZ Vaccines SAU (Grupo Zendal)	Spanish Government
+Universidad de Alcalá	Spanish Government
+Diario Médico	Private / Philanthropic
+Gobierno de España	Spanish Government
+Pasqual Maragall Foundation	Private / Philanthropic
+Grifols	Private / Philanthropic
+Fundación de Investigación del Cáncer de la Universidad de Salamanca (FICUS)	Private / Philanthropic
+WOP Foundation	Private / Philanthropic
+World Cancer Research Fund International - WCRF	International / Non-EU
+ERA4Health	International / Non-EU
+ANCES (Asociación Nacional de CEEIs) Red de Centros Europeos de Empresas e Innovación / Business Innovation Centers	Private / Philanthropic
+EMBL (European Molecular Biology Laboratory)	European Union
+THCS (Transforming Health and Care Systems)	International / Non-EU
+Key Digital Technologies Joint Undertaking (KDT-JU)	International / Non-EU
+Barcelona Mobile Ventures S.L.	Private / Philanthropic
+Royal Society of Chemistry (RSC) UK	International / Non-EU
+Partnership for Advanced Computing in Europe (PRACE)	International / Non-EU
+Japan Society for the Promotion of Science (JSPS)	International / Non-EU
+Human Immunome Project	International / Non-EU
+Alzheimer's Association	International / Non-EU
+Sociedad Española de Bioquímica y Biología Molecular (SEBBM)	Private / Philanthropic
+Circular Bio-Based Europe Joint Undertaking (CBE-JU)	International / Non-EU
+Crue Universidades Españolas	Private / Philanthropic
+Sanofi-Aventis	Private / Philanthropic
+Fondation Roger de Spoelberch	Private / Philanthropic
+Gilead Genèse	International / Non-EU
+Cystic Fibrosis Foundation	Private / Philanthropic
+Kutxa Fundazioa	Private / Philanthropic
+Ministerio de Derechos Sociales	Spanish Government
+Real Sociedad Española de Química (RSEQ)	Spanish Government
+European Society for Molecular Imaging (ESMI)	European Union
+European Materials Research Society (eMRS)	European Union
+European Society of Biomaterials (ESB)	European Union
+Tissue Engineering and Regenerative Medicine International Society European Chapter (TERMIS-EU)	International / Non-EU
+Tissue Engineering and Regenerative Medicine International Society, Inc. (TERMIS)	International / Non-EU
+ACS Publications	International / Non-EU
+Convention on Pharmaceutical Ingredients (CPhI)	International / Non-EU
+Swiss Chemical Society (SCS)	International / Non-EU
+Gesellschaft Deutscher Chemiker (GDCh)	International / Non-EU
+Achema	International / Non-EU
+Spanish Biophysical Society (SBE)	Private / Philanthropic
+European Biophysical Societies' Association (EBSA)	International / Non-EU
+Biophysical Society (BPS)	International / Non-EU
+The Wolf Foundation	Private / Philanthropic
+Research Institute of Molecular Pathology (IMP)	International / Non-EU
+Fundación BIAL	Private / Philanthropic
+Mondragon Unibersitatea	Private / Philanthropic
+Concern Foundation	Private / Philanthropic
+ERA-NET CHANSE	International / Non-EU
+The Brain Tumour Charity	International / Non-EU
+IBSA Foundation for scientific research	Private / Philanthropic
+NOB166	International / Non-EU
+Sociedad Española de Materiales (SOCIEMAT)	Spanish Government
+Diario ABC	Private / Philanthropic
+Global Young Academy (GYA)	International / Non-EU
+BASF	International / Non-EU
+Hospital for Sick Children (SickKids)	International / Non-EU
+Asociación Española de Investigación sobre el Cáncer (ASEICA)	Private / Philanthropic
+GETICA - Grupo Español de Terapias Inmuno-Biológicas en Cáncer	Spanish Government
+Fondation ARC pour la Recherche sur le Cancer	Private / Philanthropic
+Animal Research Tomorrow	International / Non-EU
+CEX - Centros de Excelencia	Spanish Government
+Asociación Cáncer de Mama Metastásico	Private / Philanthropic
+European Science Foundation	European Union
+American Parkinson Disease Association (APDA)	International / Non-EU
+Bill & Melinda Gates Foundation (BMGF)	Private / Philanthropic
+Water4ALL	International / Non-EU
+Fundación Enrique Fuentes Quintana (FUNCAS)	Private / Philanthropic
+Union for International Cancer Control (UICC)	International / Non-EU
+John Templeton Foundation	Private / Philanthropic
+Slovenian Research and Innovation Agency (ARIS)	International / Non-EU
+Royal Society (UK)	International / Non-EU
+Fundación Ramiro Carregal	Private / Philanthropic
+The Mark Foundation for Cancer Research	Private / Philanthropic
+Sustainable Blue Economy Partnership (SBEP)	International / Non-EU
+ECUSA (Españoles Científicos en USA)	International / Non-EU
+NTT DATA Foundation	Private / Philanthropic
+Vienna Biocenter	International / Non-EU
+Diario La Vanguardia	Private / Philanthropic
+Ministerio de Ciencia, Innovación y Universidades (MICIU)	Spanish Government
+Fondazione AIRC per la ricerca sul cancro ETS	International / Non-EU
+ISS Imaging La Fe	Spanish Regional Government
+Centro Nacional de Investigaciones Cardiovasculares (CNIC)	Spanish Regional Government
+Universidad Complutense de Madrid (UCM)	Spanish Regional Government
+Universidad de Valencia	Spanish Regional Government
+Universidad Nacional de Tucumán	International / Non-EU
+Generalitat Valenciana	Spanish Regional Government
+Hospital Universitario Fundación Jiménez Díaz	Private / Philanthropic
+The European Association for the Study of Obesity (EASO)	European Union
+Agencia Valenciana de la Innovación - AVI	Spanish Regional Government
+Comunidad de Madrid	Spanish Regional Government
+Gobierno de Navarra	Spanish Regional Government
+Instituto Nacional de Investigación y Tecnología Agraria y Alimentaria (INIA-CSIC)	Spanish Government
+Agencia Española de Medicamentos y Productos Sanitarios (AEMPS)	Spanish Government
+Fundación CaixaResearch (CaixaResearch Health)	Private / Philanthropic
+Fundación Banco Sabadell - Premio a la Investigación Biomédica	Private / Philanthropic
+Fundación Seve Ballesteros	Private / Philanthropic
+PERTE Salud de Vanguardia	Spanish Government
+Fundación Instituto Roche	Private / Philanthropic
+Sociedad Española de Oncología Médica (SEOM)	Private / Philanthropic
+Sociedad Española de Cardiología (SEC)	Private / Philanthropic
+Sociedad Española de Farmacología (SEF)	Private / Philanthropic
+Fundación Científica de la AECC	Private / Philanthropic
+Plan Estatal de Investigación Científica, Técnica y de Innovación (PEICTI)	Spanish Government
+Ministerio de Agricultura, Pesca y Alimentación (MAPA)	Spanish Government
+Sociedad Española de Medicina Interna (SEMI)	Private / Philanthropic
+Fundación Progreso y Salud (FPS) - Junta de Andalucía	Spanish Regional Government
+Asociación Española de Esclerosis Múltiple (AEDEM)	Private / Philanthropic
+Fundación AXA España - Research Fund	Private / Philanthropic
+Fundación Reina Sofía	Private / Philanthropic
+Agencia de Gestión de Ayudas Universitarias y de Investigación (AGAUR)	Spanish Regional Government
+Generalitat de Catalunya - PERIS	Spanish Regional Government
+Consejería de Educación, Ciencia y Universidades de la Comunidad de Madrid	Spanish Regional Government
+Consejería de Salud de la Junta de Andalucía	Spanish Regional Government
+Agencia Gallega de Innovación (GAIN)	Spanish Regional Government
+Conselleria d'Innovació, Universitats, Ciència i Societat Digital (GVA)	Spanish Regional Government
+Diputación Foral de Bizkaia	Spanish Regional Government
+Diputación Foral de Álava	Spanish Regional Government
+Fundación para la Investigación e Innovación Biosanitaria del Principado de Asturias (FINBA)	Spanish Regional Government
+Gobierno de Canarias - ACIISI	Spanish Regional Government
+Gobierno de Extremadura - FUNDESALUD	Spanish Regional Government
+Gobierno de Murcia - SENECA Foundation	Spanish Regional Government
+Gobierno de Castilla-La Mancha - UCLM Research	Spanish Regional Government
+Instituto de Investigación Sanitaria de Aragón (IIS Aragón)	Spanish Regional Government
+Agencia de I+D+i de la Junta de Extremadura	Spanish Regional Government
+European Innovation Council (EIC)	European Union
+Marie Sk?odowska-Curie Actions (MSCA)	European Union
+European Institute of Innovation and Technology (EIT)	European Union
+EIT Health	European Union
+Wellcome Trust	Private / Philanthropic
+Medical Research Council (MRC) - UKRI	Other
+Deutsche Forschungsgemeinschaft (DFG)	European Union
+Netherlands Organisation for Scientific Research (NWO)	European Union
+Swiss National Science Foundation (SNSF)	Other
+Austrian Science Fund (FWF)	European Union
+UK Research and Innovation (UKRI)	Other
+Novo Nordisk Foundation	Private / Philanthropic
+BBMRI-ERIC	European Union
+ELIXIR Europe	European Union
+InvestEU / European Fund for Strategic Investments (EFSI)	European Union
+Interreg Central Europe	European Union
+Horizon Europe - Missions	European Union
+European Partnership on Rare Diseases	European Union
+European Partnership on One Health AMR	European Union
+European Health Data Space (EHDS)	European Union
+Cancer Mission - Horizon Europe	European Union
+European Research Infrastructure Consortium (ERIC)	European Union

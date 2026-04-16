@@ -84,15 +84,15 @@ class Command(BaseCommand):
 
         orgs = {}
         org_data = [
-            ('redib', 'ReDIB ICTS', 'Spain', 'ministry'),
-            ('uni_test', 'Universidad de Pruebas', 'Spain', 'university'),
-            ('ext_inst', 'External Research Institute', 'Germany', 'research_center'),
+            ('redib', 'ReDIB ICTS', 'ES', 'Spain', 'other'),
+            ('uni_test', 'Universidad de Pruebas', 'ES', 'Spain', 'hei'),
+            ('ext_inst', 'External Research Institute', 'DE', 'Germany', 'pro'),
         ]
 
-        for key, name, country, org_type in org_data:
+        for key, name, iso2, country, org_type in org_data:
             orgs[key], created = Organization.objects.get_or_create(
                 name=name,
-                defaults={'country': country, 'organization_type': org_type}
+                defaults={'iso2': iso2, 'country': country, 'organization_type': org_type}
             )
             if created:
                 self.stdout.write(f'  → Created organization: {name}')
@@ -100,32 +100,43 @@ class Command(BaseCommand):
         return orgs
 
     def create_nodes_and_equipment(self):
-        """Create test nodes and equipment."""
-        from core.models import Node, Equipment
+        """Create test nodes and equipment. Each node needs a host Organization
+        (Node.organization is a required FK), so the host orgs are created
+        inline here when missing."""
+        from core.models import Node, Equipment, Organization
 
         nodes = {}
         equipment = {}
 
-        # Create nodes
+        # (code, host_org_name, location, acknowledgment_text)
         node_data = [
-            ('CICBIO', 'CIC biomaGUNE', 'San Sebastián, Spain',
+            ('CICBIO', 'CIC biomaGUNE (dev)', 'San Sebastián, Spain',
              'This research was supported by ReDIB ICTS at CIC biomaGUNE.'),
-            ('CNIC', 'Centro Nacional de Investigaciones Cardiovasculares', 'Madrid, Spain',
+            ('CNIC', 'Centro Nacional de Investigaciones Cardiovasculares (dev)', 'Madrid, Spain',
              'This research was supported by ReDIB ICTS at CNIC.'),
         ]
 
-        for code, name, location, ack in node_data:
+        for code, org_name, location, ack in node_data:
+            org, _ = Organization.objects.get_or_create(
+                name=org_name,
+                defaults={
+                    'short_name': code,
+                    'organization_type': 'pro',
+                    'iso2': 'ES',
+                    'country': 'Spain',
+                },
+            )
             nodes[code], created = Node.objects.get_or_create(
                 code=code,
                 defaults={
-                    'name': name,
+                    'organization': org,
                     'location': location,
                     'acknowledgment_text': ack,
                     'is_active': True,
                 }
             )
             if created:
-                self.stdout.write(f'  → Created node: {code} - {name}')
+                self.stdout.write(f'  → Created node: {code} - {org.name}')
 
         # Create equipment
         equip_data = [

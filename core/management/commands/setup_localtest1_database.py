@@ -162,27 +162,28 @@ class Command(BaseCommand):
         self.stdout.write(f'    Site: {site.name} ({site.domain})')
 
     def create_nodes(self):
-        """Create the 3 test nodes."""
-        from core.models import Node
+        """Create the 3 test nodes (and their host orgs since Node.organization
+        is now a required FK)."""
+        from core.models import Node, Organization
 
         nodes_data = [
             {
                 'code': 'CICBIO',
-                'name': 'CIC biomaGUNE',
+                'org_name': 'CIC biomaGUNE',
                 'location': 'San Sebastian, Spain',
                 'description': 'Center for Cooperative Research in Biomaterials',
                 'contact_email': 'cicbio@test.redib.net',
             },
             {
                 'code': 'BIOIMAC',
-                'name': 'BioImaC',
+                'org_name': 'BioImaC',
                 'location': 'Murcia, Spain',
                 'description': 'Biomedical Imaging Center of Murcia',
                 'contact_email': 'bioimac@test.redib.net',
             },
             {
                 'code': 'CNIC',
-                'name': 'CNIC',
+                'org_name': 'CNIC',
                 'location': 'Madrid, Spain',
                 'description': 'Centro Nacional de Investigaciones Cardiovasculares',
                 'contact_email': 'cnic@test.redib.net',
@@ -191,9 +192,23 @@ class Command(BaseCommand):
 
         nodes = []
         for data in nodes_data:
+            org, _ = Organization.objects.get_or_create(
+                name=data['org_name'],
+                defaults={
+                    'short_name': data['code'],
+                    'organization_type': 'pro',
+                    'iso2': 'ES',
+                    'country': 'Spain',
+                },
+            )
             node, created = Node.objects.get_or_create(
                 code=data['code'],
-                defaults=data
+                defaults={
+                    'organization': org,
+                    'location': data['location'],
+                    'description': data['description'],
+                    'contact_email': data['contact_email'],
+                },
             )
             nodes.append(node)
             status = 'Created' if created else 'Exists'

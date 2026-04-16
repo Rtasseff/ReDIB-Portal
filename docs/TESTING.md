@@ -100,9 +100,6 @@ Before starting, ensure:
    [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md)
    for the full spec.
 
-   For a smaller sandbox (3 sample apps), use
-   `setup_localtest2_database --reset --yes` instead.
-
    If you prefer to test against the real seed data from `data/*.tsv`,
    use `setup_base_database` instead (users get `changeme123`).
 

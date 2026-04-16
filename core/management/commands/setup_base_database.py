@@ -58,21 +58,20 @@ class Command(BaseCommand):
             self.reset_database()
             self.stdout.write(self.style.SUCCESS('  Done\n'))
 
-        # Step 1: Nodes (no dependencies; users and equipment depend on nodes)
-        self.stdout.write('Step 1: Populating ReDIB nodes from data/nodes.tsv...')
+        # Step 1: Organizations (no dependencies; nodes + users link to orgs).
+        self.stdout.write('Step 1: Populating organizations from data/organizations.tsv...')
         try:
-            call_command('populate_redib_nodes', verbosity=0)
+            call_command('populate_redib_organizations', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
             return
 
-        # Step 2: Organizations (no dependencies; users depend on organizations).
-        # Run before users so user.organization can link to fully-populated org records
-        # rather than relying on populate_redib_users' auto-create-stub fallback.
-        self.stdout.write('Step 2: Populating organizations from data/organizations.tsv...')
+        # Step 2: Nodes (depend on organizations via Node.organization FK;
+        # users and equipment depend on nodes).
+        self.stdout.write('Step 2: Populating ReDIB nodes from data/nodes.tsv...')
         try:
-            call_command('populate_redib_organizations', verbosity=0)
+            call_command('populate_redib_nodes', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'  Failed: {e}'))

@@ -92,7 +92,7 @@ class Phase5Tester:
         for i in range(2):
             org, _ = Organization.objects.get_or_create(
                 name=f'Phase 5 Test Org {i+1}',
-                defaults={'country': 'Spain', 'organization_type': 'university'}
+                defaults={'iso2': 'ES', 'country': 'Spain', 'organization_type': 'hei'}
             )
             self.organizations[i+1] = org
 
@@ -139,10 +139,14 @@ class Phase5Tester:
             is_active=True
         )
 
-        # Get or create node and equipment
+        # Get or create node and equipment (Node.organization is a required FK)
+        node_org, _ = Organization.objects.get_or_create(
+            name='CIC biomaGUNE',
+            defaults={'organization_type': 'technology_centre', 'iso2': 'ES', 'country': 'Spain'},
+        )
         node, _ = Node.objects.get_or_create(
             code='CICBIO',
-            defaults={'name': 'CIC biomaGUNE', 'location': 'San Sebastián'}
+            defaults={'organization': node_org, 'location': 'San Sebastián'}
         )
 
         equipment, _ = Equipment.objects.get_or_create(

@@ -66,8 +66,9 @@ class WorkflowTester:
         org, _ = Organization.objects.get_or_create(
             name='Test University E2E',
             defaults={
+                'iso2': 'ES',
                 'country': 'Spain',
-                'organization_type': 'university'
+                'organization_type': 'hei'
             }
         )
 

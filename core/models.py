@@ -28,20 +28,31 @@ PHONE_VALIDATOR = RegexValidator(
 
 
 class Organization(models.Model):
-    """Parent organizations (ministries, universities, companies)"""
+    """Host organizations of applicants and users.
+
+    Field set mirrors `data/organizations.tsv` 1:1 (the upstream reporting
+    source). The `organization_type` codes below correspond to the human
+    labels used in the TSV — the loader translates between the two.
+    """
 
     ORG_TYPES = [
-        ('company', 'Company / Empresa'),
-        ('university', 'University / Universidad'),
-        ('other', 'Other / Otro'),
+        ('technology_centre', 'Technology Centre'),
+        ('pro', 'Public Research Organisation (PRO)'),
+        ('hei', 'Higher Education Institution (HEI)'),
+        ('sme', 'SME'),
+        ('large_enterprise', 'Large Enterprise'),
+        ('other', 'Other'),
     ]
 
     name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=100, blank=True, help_text='Acronym / short display name')
     vat = models.CharField(max_length=50, blank=True, help_text='VAT/NIF number')
-    country = models.CharField(max_length=100, default='Spain')
+    iso2 = models.CharField(max_length=2, blank=True, help_text='ISO 3166-1 alpha-2 country code (e.g. ES, FR, US). Required for TSV-imported records; may be blank for self-service entries.')
+    country = models.CharField(max_length=100)
     organization_type = models.CharField(max_length=50, choices=ORG_TYPES)
     address = models.TextField(blank=True)
-    website = models.URLField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    zip = models.CharField(max_length=20, blank=True, help_text='Postal code')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -56,10 +67,20 @@ class Organization(models.Model):
 
 
 class Node(models.Model):
-    """ReDIB network nodes (4 nodes: CICbiomaGUNE, BioImaC, La Fe, CNIC)"""
+    """ReDIB network nodes (4 nodes: CICbiomaGUNE, BioImaC, La Fe, CNIC).
 
-    name = models.CharField(max_length=100)
+    The node's display name is the host organization's name — see
+    `Node.organization`. The TSV column is `organization_name`; the loader
+    resolves it to an `Organization` row and errors if no match exists.
+    """
+
     code = models.CharField(max_length=20, unique=True, help_text='Unique node identifier')
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name='nodes',
+        help_text='Host institution. The display name comes from organization.name.'
+    )
     location = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     acknowledgment_text = models.TextField(
@@ -94,6 +115,15 @@ class Node(models.Model):
     class Meta:
         ordering = ['code']
 
+    @property
+    def name(self):
+        """Display name = host organization's name. Kept as a shim so legacy
+        `node.name` references in templates and code keep working after the
+        FK promotion. For compact display, prefer
+        `node.organization.short_name|default:node.organization.name`.
+        """
+        return self.organization.name
+
     def __str__(self):
         return f"{self.name} ({self.code})"
 
@@ -116,11 +146,24 @@ class Equipment(models.Model):
         ('other', 'Other'),
     ]
 
+    # Specialization area — must match the values an evaluator can claim on
+    # their UserRole.areas (see populate_redib_users area validation). Used
+    # downstream for matching evaluators to assignments by domain.
+    AREAS = [
+        ('preclinical', 'Preclinical'),
+        ('clinical', 'Clinical'),
+        ('radiochemistry', 'Radiochemistry'),
+    ]
+
     node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='equipment')
     name = models.CharField(max_length=100, help_text='e.g., MRI 7T, PET-CT')
     category = models.CharField(max_length=50, choices=EQUIPMENT_CATEGORIES)
     description = models.TextField(blank=True)
     technical_specs = models.TextField(blank=True, help_text='Technical specifications')
+    area = models.CharField(
+        max_length=20, blank=True, choices=AREAS,
+        help_text='Specialization area for evaluator-matching'
+    )
 
     is_essential = models.BooleanField(
         default=True,

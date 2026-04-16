@@ -73,17 +73,17 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('  Database reset complete\n'))
 
         with transaction.atomic():
-            self.stdout.write('Step 1: Creating nodes...')
+            self.stdout.write('Step 1: Creating organizations (user orgs + node host orgs)...')
+            orgs = self.create_organizations()
+            self.stdout.write(self.style.SUCCESS(f'  Created {len(orgs)} organizations'))
+
+            self.stdout.write('Step 2: Creating nodes...')
             nodes = self.create_nodes()
             self.stdout.write(self.style.SUCCESS(f'  Created {len(nodes)} nodes'))
 
-            self.stdout.write('Step 2: Creating equipment...')
+            self.stdout.write('Step 3: Creating equipment...')
             equipment_count = self.create_equipment(nodes)
             self.stdout.write(self.style.SUCCESS(f'  Created {equipment_count} equipment items'))
-
-            self.stdout.write('Step 3: Creating organizations...')
-            orgs = self.create_organizations()
-            self.stdout.write(self.style.SUCCESS(f'  Created {len(orgs)} organizations'))
 
             self.stdout.write('Step 4: Creating users...')
             users = self.create_users(nodes, orgs)
@@ -187,26 +187,26 @@ class Command(BaseCommand):
     # Step 1: Nodes
     # -------------------------------------------------------------------------
     def create_nodes(self):
-        from core.models import Node
+        from core.models import Node, Organization
 
         nodes_data = [
             {
                 'code': 'CICBIO',
-                'name': 'CIC biomaGUNE',
+                'org_name': 'CIC biomaGUNE (sandbox)',
                 'location': 'San Sebastian, Spain',
                 'description': 'Center for Cooperative Research in Biomaterials (Node A)',
                 'contact_email': 'cicbio@test.redib.net',
             },
             {
                 'code': 'BIOIMAC',
-                'name': 'BioImaC',
+                'org_name': 'BioImaC (sandbox)',
                 'location': 'Murcia, Spain',
                 'description': 'Biomedical Imaging Center of Murcia (spare / unmanned in sandbox)',
                 'contact_email': 'bioimac@test.redib.net',
             },
             {
                 'code': 'CNIC',
-                'name': 'CNIC',
+                'org_name': 'CNIC (sandbox)',
                 'location': 'Madrid, Spain',
                 'description': 'Centro Nacional de Investigaciones Cardiovasculares (Node B)',
                 'contact_email': 'cnic@test.redib.net',
@@ -215,7 +215,16 @@ class Command(BaseCommand):
 
         nodes = []
         for data in nodes_data:
-            node, created = Node.objects.get_or_create(code=data['code'], defaults=data)
+            org = Organization.objects.get(name=data['org_name'])
+            node, created = Node.objects.get_or_create(
+                code=data['code'],
+                defaults={
+                    'organization': org,
+                    'location': data['location'],
+                    'description': data['description'],
+                    'contact_email': data['contact_email'],
+                },
+            )
             nodes.append(node)
             status = 'Created' if created else 'Exists'
             self.stdout.write(f'    {status}: {node.name} ({node.code})')
@@ -274,15 +283,42 @@ class Command(BaseCommand):
     def create_organizations(self):
         from core.models import Organization
 
+        # Two for users to belong to + three for nodes to host (Step 2 looks
+        # the latter up by name).
         orgs_data = [
             {
                 'name': 'Universidad de Barcelona',
-                'organization_type': 'university',
+                'short_name': 'UB',
+                'organization_type': 'hei',
+                'iso2': 'ES',
                 'country': 'Spain',
             },
             {
                 'name': 'Instituto de Investigacion Sanitaria',
-                'organization_type': 'other',
+                'short_name': 'IIS',
+                'organization_type': 'pro',
+                'iso2': 'ES',
+                'country': 'Spain',
+            },
+            {
+                'name': 'CIC biomaGUNE (sandbox)',
+                'short_name': 'CICBIO',
+                'organization_type': 'technology_centre',
+                'iso2': 'ES',
+                'country': 'Spain',
+            },
+            {
+                'name': 'BioImaC (sandbox)',
+                'short_name': 'BioImaC',
+                'organization_type': 'pro',
+                'iso2': 'ES',
+                'country': 'Spain',
+            },
+            {
+                'name': 'CNIC (sandbox)',
+                'short_name': 'CNIC',
+                'organization_type': 'pro',
+                'iso2': 'ES',
                 'country': 'Spain',
             },
         ]

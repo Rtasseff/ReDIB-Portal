@@ -14,9 +14,9 @@ in the file, which Python's `csv` module handles correctly via `delimiter='\t'`.
 
 FK dependencies require this order:
 
-1. `nodes.tsv` (no deps)
-2. `organizations.tsv` (no deps)
-3. `users.tsv` (depends on nodes + organizations)
+1. `organizations.tsv` (no deps)
+2. `nodes.tsv` (depends on organizations — `Node.organization` is a required FK)
+3. `users.tsv` (depends on organizations; node_coordinator role qualifiers depend on nodes)
 4. `equipment.tsv` (depends on nodes)
 5. `funding_agencies.tsv` (no deps)
 
@@ -29,13 +29,17 @@ FK dependencies require this order:
 | Column | Required | Notes |
 |---|---|---|
 | `code` | Yes | Unique identifier (used as natural key) |
-| `organization_name` | Yes | Name of the host organization. Currently mapped to the `Node.name` model field for display. A future change may add a `Node.organization` FK that uses this value to look up an `Organization` record from `organizations.tsv`, providing structured org metadata (VAT, address, country, etc.) |
+| `organization_name` | Yes | **FK lookup:** must match `name` of an existing `Organization`. The loader resolves it to `Node.organization` and aborts the import if no match exists. Run `populate_redib_organizations` first. |
 | `location` | No | Free text |
 | `description` | No | |
 | `acknowledgment_text` | No | Text for publication acknowledgments |
 | `contact_email` | No | |
 | `contact_phone` | No | |
 | `is_active` | No | TRUE/FALSE/1/0/YES (default TRUE) |
+
+**Display name.** `Node.name` is no longer a stored field — it is a property that returns `Node.organization.name`. Templates that use `{{ node.name }}` keep working unchanged. For compact display, prefer `{{ node.organization.short_name|default:node.organization.name }}`.
+
+**Encoding:** UTF-8, same Excel-export caveat as `organizations.tsv` above.
 
 **Not loadable from TSV:** `director` (FK to User). Set via Django admin after users are loaded.
 
@@ -45,19 +49,47 @@ FK dependencies require this order:
 **Loader:** `python manage.py populate_redib_organizations [--tsv data/organizations.tsv] [--sync]`
 **Model:** `core.Organization`
 
+The TSV columns map 1:1 to model fields (this is the upstream reporting source —
+keep them aligned).
+
 | Column | Required | Notes |
 |---|---|---|
 | `name` | Yes | Used as natural key for lookup |
+| `short_name` | No | Acronym / short display name (e.g. `CIC biomaGUNE`) |
 | `vat` | No | VAT/NIF number |
-| `country` | No | Default 'Spain' |
-| `organization_type` | Yes | One of: `company`, `university`, `other` |
-| `address` | No | |
-| `website` | No | URL |
+| `ISO2` | Yes | ISO 3166-1 alpha-2 country code (e.g. `ES`, `FR`, `US`). Loader uppercases. |
+| `country` | Yes | Country name in English |
+| `organization_type` | Yes | Human-readable label, see mapping below |
+| `address` | No | Street address |
+| `city` | No | |
+| `zip` | No | Postal code |
+
+**`organization_type` label → code mapping** (loader translates the TSV label to the
+short code stored in the DB):
+
+| TSV label (in file) | Stored code |
+|---|---|
+| `Technology Centre` | `technology_centre` |
+| `Public Research Organisation (PRO)` | `pro` |
+| `Higher Education Institution (HEI)` | `hei` |
+| `SME` | `sme` |
+| `Large Enterprise` | `large_enterprise` |
+| `Other` | `other` |
+
+Unknown labels abort the import (no partial loads).
+
+**Encoding:** the loader requires UTF-8. Excel-on-Windows exports default to
+Windows-1252 / CP1252 — convert before committing (`iconv -f cp1252 -t utf-8`),
+or use the planned xlsx→tsv tool (see `docs/developer/backlog.md` #6).
 
 **Why this exists:** `populate_redib_users` will auto-create organizations as a side
 effect when it encounters an unknown `organization_name`, defaulting to `type='other'`
 with no country or VAT. This TSV lets you load real organization data first so users can
 be linked to fully-populated org records.
+
+**Self-service entries:** When a user picks "Other (create new)" from the
+organization dropdown on `/profile/`, all model fields except `iso2` are required;
+`iso2` is left blank for a coordinator to fill via Django admin afterward.
 
 ---
 
@@ -70,15 +102,15 @@ be linked to fully-populated org records.
 | `email` | Yes | Used as natural key + login identifier |
 | `first_name` | Yes | |
 | `last_name` | Yes | |
-| `organization_name` | No | String lookup against `Organization.name`. If not found, auto-creates with `type='other'` (warning emitted) |
-| `orcid` | No | e.g. `0000-0002-1234-5678` |
-| `phone` | No | |
+| `organization_name` | No | **FK lookup:** must match `Organization.name` of an existing row. Loader aborts the import on miss. Run `populate_redib_organizations` first. |
+| `orcid` | No | e.g. `0000-0002-1234-5678`. Must satisfy `ORCID_VALIDATOR` (`XXXX-XXXX-XXXX-XXXX`, last char may be `X`). |
+| `phone` | No | Digits, spaces, and `+ - . ( )` only. **No underscores** (the loader does not accept extension suffixes like `+34 91 ... _5404` — strip them in the source data). |
 | `position` | No | Job title |
-| `is_staff` | No | TRUE/FALSE (default FALSE) |
-| `is_active` | No | TRUE/FALSE (default TRUE) |
+| `is_staff` | No | `TRUE` / `1` / `YES` enables; **anything else (including blank) is False**. |
+| `is_active` | No | Same rule as `is_staff`. **Default is False** — be explicit (`TRUE`) for accounts that should be able to log in. |
 | `roles` | No | Semicolon `;`-separated role names. See syntax below. |
-| `areas` | No | Semicolon `;`-separated specialization areas. Only meaningful for evaluators. See conventions below. |
-| `auto_data_consent` | No | TRUE/FALSE (default FALSE) — blanket data processing consent for applications |
+| `areas` | No | Semicolon `;`-separated specialization areas. Only meaningful for evaluators. **Invalid values abort the import** — see conventions below. |
+| `auto_data_consent` | No | Same rule as `is_staff`. Default False. |
 
 **Roles syntax** (semicolon `;`-separated):
 - Simple: `coordinator`, `applicant`, `evaluator`
@@ -97,8 +129,8 @@ be linked to fully-populated org records.
   evaluator role**; other role rows get an empty areas field.
 - If `areas` is set but the user has no evaluator role, the loader emits a warning and
   the value is ignored.
-- If `areas` contains an unknown value, the loader emits a warning and that value is
-  dropped (the rest are kept).
+- **If `areas` contains an unknown value, the loader aborts with `CommandError`.** Fix
+  the source TSV — typos like `prelcincal` slip through silently otherwise.
 - Areas are required at the **profile page** UI level (evaluators must provide at least
   one area when editing their profile in the portal). They are *not* required at the
   TSV/admin level — you can leave the cell blank if needed for testing or manual entry.
@@ -111,7 +143,11 @@ be linked to fully-populated org records.
 
 **Notes:**
 - All loaded users get the default password `changeme123` and a verified email address (allauth `EmailAddress`).
-- The `auto_data_consent` column is optional for backwards compatibility — missing values default to FALSE.
+- Encoding: UTF-8. Same Excel-export caveat applies (see `organizations.tsv`).
+- Hard-error conditions (loader aborts the entire import — no partial loads):
+  - `organization_name` not found in `Organization` table
+  - `roles` qualifier `node_coordinator:NODE_CODE` references a missing node
+  - `areas` contains a value outside `preclinical` / `clinical` / `radiochemistry`
 
 ---
 
@@ -121,13 +157,13 @@ be linked to fully-populated org records.
 
 | Column | Required | Notes |
 |---|---|---|
-| `node_code` | Yes | Must match an existing `Node.code` |
+| `node_code` | Yes | **FK lookup:** must match an existing `Node.code`. Loader aborts on miss (run `populate_redib_nodes` first). |
 | `name` | Yes | |
-| `category` | Yes | One of: `mri`, `pet`, `ct`, `pet_ct`, `pet_mri`, `spect_pet_ct`, `spect_pet_ct_oi`, `cyclotron`, `spect`, `ultrasound`, `optical`, `other` |
+| `category` | Yes | One of: `mri`, `pet`, `ct`, `pet_ct`, `pet_mri`, `spect_pet_ct`, `spect_pet_ct_oi`, `cyclotron`, `spect`, `ultrasound`, `optical`, `other`. Loader hard-errors on invalid value. |
 | `description` | No | Multi-line descriptions are supported (wrapped in quotes in the file) |
-| `area` | No | **Currently unused by the loader.** Reserved for future use to mark which `applications.SPECIALIZATION_AREAS` an equipment belongs to. Existing values use: `clinical`, `preclinical`, `radiochemistry` |
-| `is_essential` | No | TRUE/FALSE (default TRUE) |
-| `is_active` | No | TRUE/FALSE (default TRUE) |
+| `area` | No | Specialization area for evaluator-matching. One of: `preclinical`, `clinical`, `radiochemistry`. Blank allowed; **invalid values abort the import**. |
+| `is_essential` | No | `TRUE` / `1` / `YES` enables; **anything else (including blank) is False**. |
+| `is_active` | No | Same rule as `is_essential`. |
 
 **Not loadable from TSV:** `technical_specs` (rarely used; set via admin if needed).
 
@@ -140,11 +176,26 @@ be linked to fully-populated org records.
 | Column | Required | Notes |
 |---|---|---|
 | `name` | Yes | Used as natural key (model has `unique=True`) |
-| `origin_of_funds` | Yes | One of: `spanish_government`, `international_non_eu`, `spanish_regional`, `european_union`, `institutional`, `private`, `other` |
+| `origin_of_funds` | Yes | Human-readable label, see mapping below. Loader translates to short code. |
 
-The loader validates both fields: missing or invalid values cause an error and abort the
-import (no partial loads). On re-run, existing agencies are matched by `name`; if
-`origin_of_funds` has changed in the TSV, the DB record is updated to match.
+**`origin_of_funds` label → code mapping** (loader translates the TSV label to the short
+code stored in the DB):
+
+| TSV label (in file) | Stored code |
+|---|---|
+| `Spanish Government` | `spanish_government` |
+| `International / Non-EU` | `international_non_eu` |
+| `Spanish Regional Government` | `spanish_regional` |
+| `European Union` | `european_union` |
+| `Institutional / Internal` | `institutional` |
+| `Private / Philanthropic` | `private` |
+| `Other` | `other` |
+
+Unknown labels abort the import (no partial loads). On re-run, existing agencies are
+matched by `name`; if `origin_of_funds` has changed in the TSV, the DB record is updated
+to match.
+
+**Encoding:** UTF-8, same Excel-export caveat as `organizations.tsv`.
 
 **Why this exists:** The `FundingAgency` model backs the funding agency dropdown in
 application Step 2. Without seed data, applicants must create entries via the "Other"
@@ -171,8 +222,8 @@ but no longer in the TSV. Behavior depends on the model:
 The `setup_base_database` management command runs all six steps in the correct dependency
 order with sensible defaults:
 
-1. `populate_redib_nodes`
-2. `populate_redib_organizations`
+1. `populate_redib_organizations`
+2. `populate_redib_nodes`
 3. `populate_redib_users`
 4. `populate_redib_equipment`
 5. `populate_redib_funding_agencies`

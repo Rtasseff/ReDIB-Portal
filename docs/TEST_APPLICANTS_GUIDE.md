@@ -75,7 +75,7 @@ The script creates applications in the following stages:
 ## Testing Scenarios
 
 ### Test Feasibility Review (Phase 3)
-1. Login as `node.cic@redib.net` or `node.cnic@redib.net` (password: `changeme123` for users created via `populate_redib_users`, `testpass123` for users created via `setup_localtest2_database`).
+1. Login as `node.cic@redib.net` or `node.cnic@redib.net` (password: `changeme123` for users created via `populate_redib_users`, `testpass123` for users created via `setup_localtest3_database`).
 2. View applications under feasibility review
 3. Approve or reject based on technical feasibility
 4. Test multi-node applications (some applications request equipment from multiple nodes)

@@ -87,7 +87,7 @@ class Phase4Tester:
         for i in range(3):
             org, _ = Organization.objects.get_or_create(
                 name=f'Phase 4 Test Org {i+1}',
-                defaults={'country': 'Spain', 'organization_type': 'university'}
+                defaults={'iso2': 'ES', 'country': 'Spain', 'organization_type': 'hei'}
             )
             self.organizations[i+1] = org
 
@@ -140,10 +140,14 @@ class Phase4Tester:
 
             self.applicants.append(applicant)
 
-        # Get or create nodes and equipment
+        # Get or create nodes and equipment (Node.organization is a required FK)
+        node_org, _ = Organization.objects.get_or_create(
+            name='CIC biomaGUNE',
+            defaults={'organization_type': 'technology_centre', 'iso2': 'ES', 'country': 'Spain'},
+        )
         node, _ = Node.objects.get_or_create(
             code='CICBIO',
-            defaults={'name': 'CIC biomaGUNE', 'location': 'San Sebastián'}
+            defaults={'organization': node_org, 'location': 'San Sebastián'}
         )
 
         equipment, _ = Equipment.objects.get_or_create(

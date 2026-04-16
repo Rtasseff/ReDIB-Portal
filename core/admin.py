@@ -44,9 +44,9 @@ class UserRoleAdminForm(forms.ModelForm):
 
 @admin.register(Organization)
 class OrganizationAdmin(SimpleHistoryAdmin):
-    list_display = ['name', 'organization_type', 'country', 'created_at']
-    list_filter = ['organization_type', 'country']
-    search_fields = ['name', 'address']
+    list_display = ['name', 'short_name', 'organization_type', 'iso2', 'city', 'created_at']
+    list_filter = ['organization_type', 'iso2', 'country']
+    search_fields = ['name', 'short_name', 'vat', 'address', 'city']
     ordering = ['name']
 
 
@@ -61,8 +61,8 @@ class NodeAdmin(SimpleHistoryAdmin):
 
 @admin.register(Equipment)
 class EquipmentAdmin(SimpleHistoryAdmin):
-    list_display = ['name', 'node', 'category', 'is_essential', 'is_active']
-    list_filter = ['node', 'category', 'is_essential', 'is_active']
+    list_display = ['name', 'node', 'category', 'area', 'is_essential', 'is_active']
+    list_filter = ['node', 'category', 'area', 'is_essential', 'is_active']
     search_fields = ['name', 'description']
     ordering = ['node', 'name']
 

@@ -44,15 +44,15 @@ If you haven't done these steps yet, follow [QUICKSTART.md](QUICKSTART.md) for a
 
 Pick one of the three setup commands based on what you need. All support `--reset --yes` to wipe non-superuser data first.
 
-### Option A: `setup_localtest2_database` (recommended for manual testing)
+### Option A: `setup_localtest3_database` (recommended for manual testing)
 
 Self-contained test environment with everything pre-wired (nodes, equipment, orgs, funding agencies, users, calls, sample applications). **No TSV data files required.**
 
 ```bash
-python manage.py setup_localtest2_database --reset --yes
+python manage.py setup_localtest3_database --reset --yes
 ```
 
-Creates 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users (password `testpass123`), 2 calls, 3 sample applications. One applicant has an intentionally incomplete profile for Scenario 1 testing.
+Creates 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users (password `testpass123`), 2 calls, and 16 sample applications spanning every live + terminal state — covers the full manual-test surface. One applicant has an intentionally incomplete profile for Scenario 1 testing.
 
 ### Option B: `setup_base_database` (real reference data only)
 
@@ -88,7 +88,7 @@ python manage.py migrate
 python manage.py createsuperuser
 # For manual testing (self-contained — nodes, equipment, orgs, funding
 # agencies, users, calls, sample applications, all inline)
-python manage.py setup_localtest2_database --reset --yes
+python manage.py setup_localtest3_database --reset --yes
 # OR, to load real reference data from data/*.tsv
 python manage.py setup_base_database
 ```
@@ -242,7 +242,7 @@ python manage.py sqlmigrate core 0001
 
 ```bash
 # Self-contained dev test environment (no TSV needed) — recommended for manual testing
-python manage.py setup_localtest2_database --reset --yes
+python manage.py setup_localtest3_database --reset --yes
 
 # Real reference data only (loads from data/*.tsv)
 python manage.py setup_base_database --reset --yes

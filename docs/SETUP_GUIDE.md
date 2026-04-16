@@ -44,7 +44,7 @@ For rare cases where you want to run the full stack locally in Docker, start fro
 
 **Security auto-enables when `DEBUG=False`:** HSTS, secure session + CSRF cookies, `SECURE_PROXY_SSL_HEADER` for Caddy. See `redib/settings.py`.
 
-After changing `SITE_URL`/`SITE_DOMAIN`/`SITE_NAME`, re-run your setup command (`setup_localtest2_database`, `setup_base_database`, `setup_test_database`) so the Django Site record in the database picks up the new values. In production, the `docker/entrypoint.sh` reads these env vars on container start, so a `docker compose up` is enough.
+After changing `SITE_URL`/`SITE_DOMAIN`/`SITE_NAME`, re-run your setup command (`setup_localtest3_database`, `setup_base_database`, `setup_test_database`) so the Django Site record in the database picks up the new values. In production, the `docker/entrypoint.sh` reads these env vars on container start, so a `docker compose up` is enough.
 
 **Production deployment** is a one-way setup on a VPS -- see [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -76,15 +76,15 @@ You'll be prompted for:
 
 After migrating the database and creating a superuser, populate data using one of the setup commands below. Most users should just pick one.
 
-### Option A: `setup_localtest2_database` — Recommended for manual testing (dev)
+### Option A: `setup_localtest3_database` — Recommended for manual testing (dev)
 
 Self-contained test environment. **Does not require any TSV data files.**
 
 ```bash
-python manage.py setup_localtest2_database --reset --yes
+python manage.py setup_localtest3_database --reset --yes
 ```
 
-Creates: 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users, 2 calls (1 open + 1 resolved), 3 sample applications at different workflow stages, and all email templates. All users have password `testpass123`. See the test accounts table in [QUICKSTART.md](QUICKSTART.md#test-accounts-after-running-setup_localtest2_database).
+Creates: 3 nodes, 6 equipment, 2 organizations, 7 funding agencies, 10 users, 2 calls (1 open + 1 resolved), 16 sample applications spanning every live + terminal status, and all email templates. All users have password `testpass123`. See the test accounts table in [QUICKSTART.md](QUICKSTART.md#test-accounts-after-running-setup_localtest3_database).
 
 ### Option B: `setup_base_database` — Real reference data only
 
