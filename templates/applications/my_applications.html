@@ -72,6 +72,10 @@
                         <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-warning" title="Accept or decline the waitlist offer">
                             <i class="bi bi-check-circle"></i> Accept/Decline Waitlist
                         </a>
+                        {% elif app.status == 'completed' %}
+                        <a href="{% url 'access:publication_submit' %}?application={{ app.pk }}" class="btn btn-success" title="Add a publication arising from this access">
+                            <i class="bi bi-journal-plus"></i> Add Publication
+                        </a>
                         {% endif %}
                     </div>
                 </td>

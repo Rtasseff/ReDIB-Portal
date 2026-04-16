@@ -96,24 +96,32 @@ User(s): `nc.cicbio@test.redib.net`.
 
 Notes:
 
-### P9 Access tracking — _pending_
+### P9 Access tracking — PASS
 User(s): `nc.cicbio@test.redib.net` or `applicant1@test.redib.net`.
 - **PAST-001** → mark each equipment block complete with actual hours used.
 
 Notes:
+- Mark Complete + Log Hours form loaded cleanly; submitting actual hours flipped status `accepted` → `completed`, set `is_completed=True`, stamped `completed_at`, saved `actual_hours_used` ✅.
+- After completion the green button drops off and the gray "Completed M d, Y" badge appears in the Actions column.
+- UX nit fixed mid-phase: the Completed status badge previously used `bg-info text-dark` (light blue / dark text), inconsistent with the other terminal states (Expired, Declined, Rejected) which all use gray. Changed to `bg-secondary` in the shared `templates/includes/status_badge.html` so completed apps look like the other terminal states everywhere the badge is used. See bug #9.
 
-### P10 Publications — _pending_
+### P10 Publications — PASS
 User(s): `applicant2@test.redib.net`.
 - **PAST-002** → view existing publication → add new one with DOI + ReDIB acknowledgment ticked.
 
 Notes:
+- Found and fixed bug #10 (dropdown filtered to `accepted`, missing completed apps) and bug #11 (no Add Publication entry point on My Applications) before the test could complete cleanly.
+- After fixes: My Applications shows the green "Add Publication" button for PAST-002, deep-links to the submit form with PAST-002 pre-selected, dropdown shows only completed apps. New publication created and listed alongside the seed publication ✅.
+- Also tightened the form (bug #12): all fields except `acknowledgment_text` are now required.
 
-### P11 Reports — _pending_
+### P11 Reports — DEFERRED
 User(s): `coordinator@test.redib.net`.
 - Statistics dashboard → review counts per status / per call.
 - Export Excel for **COA-PAST-2025** → confirm download.
 
 Notes:
+- Deliberately deferred. The data layer captures everything needed; the reports/exports surface can be reshaped later with input from the people who actually submit audit reports and use the export. Since all state is in the DB and can be queried any time (even after a call closes), there's no urgency to lock the UI now.
+- When we revisit: pull the audit-side users into the conversation first, then iterate on the templates/exports (`reports/views.py`, `reports/exports.py`).
 
 ## Bugs found
 
@@ -127,6 +135,10 @@ Notes:
 | 6 | P6 (seed data inconsistency) | Seeded apps had a `funding_agency_obj` set on every application but `has_competitive_funding=False` on most — violating the real-world invariant that a funding agency is set IF AND ONLY IF the application is competitive. Surfaced when the user expected LIVE-005 (with ERC agency listed) to be reject-protected and it wasn't. | Moderate (test-fixture realism) | Enforced invariant inside `_base_application_fields` in `core/management/commands/setup_localtest3_database.py:535-554`: when `agency=None`, sets `has_competitive_funding=False`, `project_type='institutional'`, blank `project_code`; when `agency` is provided, sets `has_competitive_funding=True` and derives `project_type` from the agency. Removed the now-redundant `competitive=True` kwarg from LIVE-008's seed call. Flipped PAST-003, PAST-005, PAST-006 to non-competitive (pass `agency=None`) for variety. Patched the live DB to match (set flag=True on 11 apps with agencies; cleared agency + reset fields on the 3 non-competitive PAST apps). Final audit: 13 competitive, 3 non-competitive, 0 invariant violations. |
 | 7 | P7 (applicant My Applications + Dashboard) | Waitlist (`status='pending'`) applications had no Accept/Decline action button on either My Applications or the Dashboard, despite the backend (`application_acceptance` view) explicitly supporting both `accepted` and `pending` statuses. Applicants on a waitlist had no UI path to accept the offer. The `accepted` status was also missing an action button on My Applications (only View + Continue-for-drafts existed). | Major (blocked workflow) | Added Accept/Decline buttons in both templates, gated on `status in ('accepted','pending') and accepted_by_applicant is None`. Also added the missing "Pending (Waitlist)" status badge on the dashboard for visual consistency. Files: `templates/applications/my_applications.html:58-77`, `templates/core/dashboard.html:63-69, 76-84`. |
 | 8 | P7 (NC access tracking page) | The Actions column already contained the right buttons (Mark as Accepted for waitlist promotion, Mark Complete for active apps), but they were visually drowned out by an adjacent "Completed" column whose only content was "In Progress" / "—" for non-completed apps — pure noise. Users were missing the action buttons. | UX (visibility) | Dropped the standalone "Completed" column in `templates/access/access_tracking.html`. Folded the completion badge into the Actions column. Renamed buttons for clarity: "Mark as Accepted" → **"Promote to Accepted"** (waitlist), "Mark Complete" → **"Mark Complete + Log Hours"**. Verified server-render: LIVE-009/PAST-001 show Mark-Complete; LIVE-010 shows Promote. |
+| 9 | P9 (status badge styling) | Completed apps showed up with a light-blue background / dark-text badge, inconsistent with the other terminal states (Expired, Declined, Rejected — all gray). For node coordinators, completed apps are off the active mental load and should look the same as other terminal states. | UX (consistency) | `templates/includes/status_badge.html`: changed Completed from `bg-info text-dark` to `bg-secondary`, matching the rest of the terminal-state palette. Updated the palette comment block to reflect that grey now covers all terminal states (no more "blue = informational, complete"). |
+| 10 | P10 (publication submit form) | The "Which ReDIB application is this publication related to?" dropdown filtered to `status='accepted'` + `accepted_by_applicant=True`, so it showed in-progress accepted apps (e.g. LIVE-009) and excluded actually-completed apps (PAST-002). Publications can only meaningfully be reported against completed access. | Major (workflow) | Fixed `PublicationForm.__init__` in `access/forms.py:49-60`: queryset now filters to `status='completed'`, ordered by `-completed_at`. Verified server-side: applicant2 now sees only PAST-002 in the dropdown. |
+| 11 | P10 (My Applications discoverability) | A user with a completed application had no obvious entry point to add a publication from My Applications — the only path was Dashboard → My Publications → Submit Publication, which buried the action. | UX (discoverability) | Added a green **"Add Publication"** button in `templates/applications/my_applications.html` for `status == 'completed'` apps. The button deep-links to `/access/publications/submit/?application=<id>` so the application dropdown is pre-selected. New `publication_submit` view honors the `?application=<id>` query param to pre-populate `initial['application']`. The form's queryset still gates which apps the user can actually attach to, so the deep-link can't be abused. |
+| 12 | P10 (publication submit form completeness) | Most publication fields were optional at the form level (`authors`, `doi`, `journal`, `publication_date` all `blank=True` on the model), so users could submit a publication with virtually no metadata. | Minor (data quality) | `PublicationForm.__init__` now sets `required=True` on `application`, `title`, `authors`, `doi`, `journal`, `publication_date`, and `redib_acknowledged` (the last forces the checkbox to be ticked). Only `acknowledgment_text` remains optional. Added matching `*` indicators in `templates/access/publication_submit.html` for the four newly-required fields. |
 
 ## Future enhancements (nice-to-haves, not current-version bugs)
 

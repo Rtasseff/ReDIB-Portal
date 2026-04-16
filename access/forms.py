@@ -50,11 +50,18 @@ class PublicationForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Limit application choices to user's accepted applications
+        # All fields are required except the optional acknowledgment text.
+        # `redib_acknowledged` required=True forces the checkbox to be ticked
+        # (False fails Django's required-boolean validation).
+        for name in ('application', 'title', 'authors', 'doi', 'journal',
+                     'publication_date', 'redib_acknowledged'):
+            self.fields[name].required = True
+        self.fields['acknowledgment_text'].required = False
+
+        # Publications can only be reported against completed applications.
         if user:
             from applications.models import Application
             self.fields['application'].queryset = Application.objects.filter(
                 applicant=user,
-                status='accepted',
-                accepted_by_applicant=True
-            ).order_by('-handoff_email_sent_at')
+                status='completed',
+            ).order_by('-completed_at')

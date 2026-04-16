@@ -10,11 +10,11 @@ Palette rationale:
   green  = moving forward / action successful
   amber  = waiting on a ReDIB-external actor (applicant)
   red    = waiting on a ReDIB action (waitlist needs coordinator attention)
-  blue   = informational, complete
-  grey   = terminal, no action needed, or neutral queue state
+  blue   = informational
+  grey   = terminal (completed, expired, declined, rejected) — no action needed
 {% endcomment %}
 {% if app.is_completed %}
-    <span class="badge bg-info text-dark">Completed</span>
+    <span class="badge bg-secondary">Completed</span>
 {% elif app.status == 'accepted' and app.accepted_by_applicant and app.handoff_email_sent_at %}
     <span class="badge bg-success">Active</span>
 {% elif app.status == 'accepted' and app.accepted_by_applicant %}

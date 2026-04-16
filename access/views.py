@@ -27,7 +27,13 @@ def publication_list(request):
 
 @login_required
 def publication_submit(request):
-    """Submit a new publication."""
+    """Submit a new publication.
+
+    Accepts an optional `?application=<id>` query parameter to pre-select
+    the related application (used by deep-links from the My Applications
+    "Add Publication" action). The form's queryset still gates which apps
+    the user is allowed to attach a publication to.
+    """
     if request.method == 'POST':
         form = PublicationForm(request.POST, user=request.user)
         if form.is_valid():
@@ -38,7 +44,14 @@ def publication_submit(request):
             messages.success(request, f'Publication "{publication.title}" submitted successfully!')
             return redirect('access:publication_list')
     else:
-        form = PublicationForm(user=request.user)
+        initial = {}
+        prefill_id = request.GET.get('application')
+        if prefill_id:
+            try:
+                initial['application'] = int(prefill_id)
+            except (TypeError, ValueError):
+                pass
+        form = PublicationForm(user=request.user, initial=initial)
 
     context = {
         'form': form,
