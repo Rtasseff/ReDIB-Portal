@@ -208,19 +208,19 @@
             <div class="row mb-3">
                 <div class="col-md-3">
                     <small class="text-muted">Completed evaluations</small>
-                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.count }}</strong></p>
+                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.count }}/{{ evaluation_summary.assigned }}</strong></p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Average score</small>
-                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.average|default:"—" }}</strong> / 12</p>
+                    <p class="mb-0 fs-5"><strong>{{ evaluation_summary.average|default_if_none:"—" }}</strong> / 12</p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Min</small>
-                    <p class="mb-0">{{ evaluation_summary.min|default:"—" }}</p>
+                    <p class="mb-0">{{ evaluation_summary.min|default_if_none:"—" }}</p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Max</small>
-                    <p class="mb-0">{{ evaluation_summary.max|default:"—" }}</p>
+                    <p class="mb-0">{{ evaluation_summary.max|default_if_none:"—" }}</p>
                 </div>
             </div>
             <div class="table-responsive">
@@ -244,13 +244,13 @@
                         {% for ev in evaluation_summary.evaluations %}
                         <tr>
                             <td>{{ ev.evaluator.get_full_name|default:ev.evaluator.email }}</td>
-                            <td>{{ ev.score_quality_originality|default:"—" }}</td>
-                            <td>{{ ev.score_methodology_design|default:"—" }}</td>
-                            <td>{{ ev.score_expected_contributions|default:"—" }}</td>
-                            <td>{{ ev.score_knowledge_advancement|default:"—" }}</td>
-                            <td>{{ ev.score_social_economic_impact|default:"—" }}</td>
-                            <td>{{ ev.score_exploitation_dissemination|default:"—" }}</td>
-                            <td><strong>{{ ev.total_score|default:"—" }}</strong></td>
+                            <td>{{ ev.score_quality_originality|default_if_none:"—" }}</td>
+                            <td>{{ ev.score_methodology_design|default_if_none:"—" }}</td>
+                            <td>{{ ev.score_expected_contributions|default_if_none:"—" }}</td>
+                            <td>{{ ev.score_knowledge_advancement|default_if_none:"—" }}</td>
+                            <td>{{ ev.score_social_economic_impact|default_if_none:"—" }}</td>
+                            <td>{{ ev.score_exploitation_dissemination|default_if_none:"—" }}</td>
+                            <td><strong>{{ ev.total_score|default_if_none:"—" }}</strong></td>
                             <td>
                                 {% if ev.recommendation == 'approved' %}
                                     <span class="badge bg-success">Approved</span>

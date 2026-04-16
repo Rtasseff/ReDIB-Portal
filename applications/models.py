@@ -447,6 +447,21 @@ class Application(models.Model):
             total=models.Sum('hours_requested')
         )['total'] or 0
 
+    @property
+    def has_any_denied_evaluation(self):
+        """True if at least one completed evaluation recommended 'denied'.
+
+        Used to relax the competitive-funding reject protection: a node or
+        ReDIB coordinator may reject a competitively-funded application at the
+        resolution phase when at least one evaluator has independently
+        recommended denial (feasibility and evaluation phases retain their
+        own independent reject pathways).
+        """
+        return self.evaluations.filter(
+            completed_at__isnull=False,
+            recommendation='denied',
+        ).exists()
+
 
 class RequestedAccess(models.Model):
     """Equipment access requests within an application"""

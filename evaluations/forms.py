@@ -69,7 +69,7 @@ class EvaluationForm(forms.ModelForm):
             'score_social_economic_impact': 'Potential social, economic and/or industrial impact of the expected results',
             'score_exploitation_dissemination': 'Opportunity for exploitation, translation and/or dissemination of the expected results',
             'recommendation': 'Access Decision',
-            'comments': 'Comments (optional)'
+            'comments': 'Comments'
         }
 
         # Text help stubs for each score value for each criterion
@@ -81,7 +81,7 @@ class EvaluationForm(forms.ModelForm):
             'score_social_economic_impact': '',
             'score_exploitation_dissemination': '',
             'recommendation': '',
-            'comments': 'Provide detailed feedback on your evaluation (optional)'
+            'comments': 'Required when the recommendation is Denied.'
         }
 
     # Text help stubs for displaying in template
@@ -161,7 +161,15 @@ class EvaluationForm(forms.ModelForm):
                 raise forms.ValidationError('Scores must be between 0 and 2.')
 
         # Check recommendation is provided
-        if not cleaned_data.get('recommendation'):
+        recommendation = cleaned_data.get('recommendation')
+        if not recommendation:
             raise forms.ValidationError('A recommendation (Approved/Denied) is required.')
+
+        # Denied recommendation requires a comment explaining why
+        # (mirrors FeasibilityReviewForm behavior for rejected/edits_requested)
+        if recommendation == 'denied' and not (cleaned_data.get('comments') or '').strip():
+            raise forms.ValidationError(
+                'Please provide comments explaining why the application is denied.'
+            )
 
         return cleaned_data

@@ -94,10 +94,16 @@ class ResolutionService:
         Raises:
             ValidationError if validation fails
         """
-        # Validate: competitive funding cannot be rejected
-        if application.has_competitive_funding and resolution == 'rejected':
+        # Validate: competitive funding cannot be rejected unless at least one
+        # evaluator independently recommended denial.
+        if (
+            application.has_competitive_funding
+            and not application.has_any_denied_evaluation
+            and resolution == 'rejected'
+        ):
             raise ValidationError(
-                "Applications with competitive funding cannot be rejected. "
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial. "
                 "They must be either accepted or marked as pending."
             )
 

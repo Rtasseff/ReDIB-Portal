@@ -141,6 +141,7 @@ def application_detail(request, pk):
             context['evaluation_summary'] = {
                 'evaluations': completed_evals,
                 'count': len(completed_evals),
+                'assigned': application.evaluations.count(),
                 'average': round(sum(totals) / len(totals), 2) if totals else None,
                 'min': min(totals) if totals else None,
                 'max': max(totals) if totals else None,
@@ -1582,7 +1583,8 @@ def node_resolution_review(request, application_id, node_id):
     if request.method == 'POST':
         form = NodeResolutionForm(
             request.POST,
-            has_competitive_funding=application.has_competitive_funding
+            has_competitive_funding=application.has_competitive_funding,
+            has_evaluator_denial=application.has_any_denied_evaluation,
         )
 
         # Build approved hours dict from POST data
@@ -1640,7 +1642,8 @@ def node_resolution_review(request, application_id, node_id):
             }
         form = NodeResolutionForm(
             initial=initial,
-            has_competitive_funding=application.has_competitive_funding
+            has_competitive_funding=application.has_competitive_funding,
+            has_evaluator_denial=application.has_any_denied_evaluation,
         )
 
     # Prepare equipment data for template

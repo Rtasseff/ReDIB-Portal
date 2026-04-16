@@ -62,6 +62,8 @@
                             <span class="badge bg-primary">Evaluated</span>
                             {% elif app.status == 'accepted' %}
                             <span class="badge bg-success">Accepted</span>
+                            {% elif app.status == 'pending' %}
+                            <span class="badge bg-warning">Pending (Waitlist)</span>
                             {% elif app.status == 'rejected' %}
                             <span class="badge bg-danger">Rejected</span>
                             {% else %}
@@ -76,6 +78,10 @@
                             {% elif app.status == 'accepted' and app.accepted_by_applicant is None %}
                             <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-sm btn-success">
                                 <i class="bi bi-check-circle"></i> Accept/Decline
+                            </a>
+                            {% elif app.status == 'pending' and app.accepted_by_applicant is None %}
+                            <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-check-circle"></i> Accept/Decline Waitlist
                             </a>
                             {% endif %}
                         </td>

@@ -64,6 +64,14 @@
                         <a href="{% url 'applications:edit_step2' app.pk %}" class="btn btn-outline-secondary" title="Continue Editing">
                             <i class="bi bi-pencil"></i> Continue
                         </a>
+                        {% elif app.status == 'accepted' and app.accepted_by_applicant is None %}
+                        <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-success" title="Accept or decline this access grant">
+                            <i class="bi bi-check-circle"></i> Accept/Decline
+                        </a>
+                        {% elif app.status == 'pending' and app.accepted_by_applicant is None %}
+                        <a href="{% url 'applications:application_acceptance' app.pk %}" class="btn btn-warning" title="Accept or decline the waitlist offer">
+                            <i class="bi bi-check-circle"></i> Accept/Decline Waitlist
+                        </a>
                         {% endif %}
                     </div>
                 </td>

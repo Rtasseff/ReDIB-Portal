@@ -564,9 +564,13 @@ class ApplicationResolutionForm(forms.ModelForm):
         self.application = kwargs.pop('application', None)
         super().__init__(*args, **kwargs)
 
-        # Remove 'rejected' choice if has_competitive_funding
-        if self.application and self.application.has_competitive_funding:
-            # Filter out rejected option
+        # Reject protection: only remove the 'rejected' choice when competitive
+        # funding AND no evaluator has independently recommended denial.
+        if (
+            self.application
+            and self.application.has_competitive_funding
+            and not self.application.has_any_denied_evaluation
+        ):
             original_choices = self.fields['resolution'].choices
             filtered_choices = [
                 choice for choice in original_choices
@@ -574,9 +578,9 @@ class ApplicationResolutionForm(forms.ModelForm):
             ]
             self.fields['resolution'].choices = filtered_choices
 
-            # Add help text
             self.fields['resolution'].help_text = (
-                "This application has competitive funding and cannot be rejected. "
+                "This application has competitive funding and cannot be rejected "
+                "because all completed evaluations recommended approval. "
                 "It must be either accepted or marked as pending."
             )
 
@@ -587,13 +591,17 @@ class ApplicationResolutionForm(forms.ModelForm):
         cleaned_data = super().clean()
         resolution = cleaned_data.get('resolution')
 
-        # Validate: competitive funding cannot be rejected
-        if self.application and self.application.has_competitive_funding:
-            if resolution == 'rejected':
-                raise forms.ValidationError(
-                    "Applications with competitive funding cannot be rejected. "
-                    "They must be either accepted or marked as pending."
-                )
+        # Validate: competitive funding cannot be rejected unless an evaluator denied
+        if (
+            self.application
+            and self.application.has_competitive_funding
+            and not self.application.has_any_denied_evaluation
+            and resolution == 'rejected'
+        ):
+            raise forms.ValidationError(
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial."
+            )
 
         return cleaned_data
 
@@ -672,19 +680,24 @@ class NodeResolutionForm(forms.Form):
         """
         Customize form based on application properties.
 
-        If application has competitive funding, remove 'reject' option.
+        Reject protection for competitive funding is waived when at least one
+        evaluator has independently recommended denial; in that case the node
+        coordinator may use the evaluator's denial as grounds for rejection.
         """
         self.has_competitive_funding = kwargs.pop('has_competitive_funding', False)
+        self.has_evaluator_denial = kwargs.pop('has_evaluator_denial', False)
         super().__init__(*args, **kwargs)
 
-        # Remove 'reject' choice if has_competitive_funding
-        if self.has_competitive_funding:
+        # Remove 'reject' choice only when reject is actually forbidden:
+        # competitive funding AND no evaluator denial.
+        if self.has_competitive_funding and not self.has_evaluator_denial:
             self.fields['resolution'].choices = [
                 choice for choice in self.RESOLUTION_CHOICES
                 if choice[0] != 'reject'
             ]
             self.fields['resolution'].help_text = (
-                "This application has competitive funding and cannot be rejected. "
+                "This application has competitive funding and cannot be rejected "
+                "because all completed evaluations recommended approval. "
                 "You must either accept or waitlist."
             )
 
@@ -693,11 +706,16 @@ class NodeResolutionForm(forms.Form):
         cleaned_data = super().clean()
         resolution = cleaned_data.get('resolution')
 
-        # Validate: competitive funding cannot be rejected
-        if self.has_competitive_funding and resolution == 'reject':
+        # Validate: competitive funding cannot be rejected unless an evaluator denied
+        if (
+            self.has_competitive_funding
+            and not self.has_evaluator_denial
+            and resolution == 'reject'
+        ):
             self.add_error(
                 'resolution',
-                "Applications with competitive funding cannot be rejected."
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial."
             )
         # Require comments if rejecting (only if the reject itself was allowed,
         # otherwise we'd surface two errors for the same field).

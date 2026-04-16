@@ -118,7 +118,11 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
   - **All nodes accept →** application is **Accepted**
   - **Any node rejects →** application is **Rejected**
   - **No rejects but at least one waitlist →** application is **Pending** (waitlisted)
-- Applications with competitive funding cannot be rejected.
+- Applications with competitive funding normally cannot be rejected at the
+  resolution phase. The exception: if at least one evaluator recommended
+  **Denied**, the node coordinator may use that independent denial as grounds
+  to reject. (Feasibility rejection and evaluator denial remain available at
+  their own phases regardless of funding status.)
 - Approved hours are recorded per equipment; on reject the service layer
   forces approved hours to zero so Access Tracking doesn't show phantom
   approved time.

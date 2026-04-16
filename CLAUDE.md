@@ -55,6 +55,10 @@ tests/              # Integration tests by workflow phase
 
 Terminal states: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `expired`, `completed`.
 
+### Competitive funding & reject protection
+
+Applications with `has_competitive_funding=True` are protected from rejection at the **resolution** phase (`NodeResolutionService.apply_node_resolution`, `ApplicationResolutionService.apply_resolution`) — coordinators must accept or waitlist — **unless** at least one completed evaluation has `recommendation='denied'`. In that case the evaluator's independent denial provides grounds for rejection and the reject option is re-enabled. Use `Application.has_any_denied_evaluation` to check. Feasibility rejection (phase 3) and evaluator denial (phase 5) remain available regardless of funding status.
+
 ## Key Models
 
 - **User** (`core/models.py`): Extended with ORCID (regex-validated), phone (regex-validated), `organization`, `position`, `auto_data_consent`
@@ -119,10 +123,11 @@ Email templates are stored in the database. Seed with `python manage.py seed_ema
 
 | Command | Purpose |
 |---------|---------|
-| `setup_localtest2_database` | **Recommended for dev manual testing.** Self-contained: nodes/equipment/orgs/funding agencies/users/calls/sample apps. No TSV required. |
+| `setup_localtest3_database` | **Recommended for full manual-test pass.** Self-contained sandbox: 10 users, 2 calls, 16 apps spanning every live + terminal status, with tester cheat-sheet. See `docs/developer/localtest3-database-plan.md`. |
+| `setup_localtest2_database` | Smaller self-contained sandbox: same users/calls shape, 3 sample apps. Use when you only need a quick environment. |
 | `setup_base_database` | Populate real reference data from `data/*.tsv` (nodes, organizations, users, equipment, funding agencies, email templates) |
 | `setup_test_database` | Full test setup (base data + fake calls, applications, test applicants) |
-| `setup_localtest1_database` | Minimal test setup (legacy — use `setup_localtest2_database` instead) |
+| `setup_localtest1_database` | Minimal test setup (legacy — use `setup_localtest3_database` instead) |
 | `seed_email_templates` | Load/update email templates (run after DB reset) |
 | `populate_redib_nodes` | Load nodes from `data/nodes.tsv` (must run before users/equipment) |
 | `populate_redib_organizations` | Load organizations from `data/organizations.tsv` |

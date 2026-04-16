@@ -174,10 +174,17 @@ class NodeResolutionService:
                 f"User is not an active node coordinator for {self.node.code}"
             )
 
-        # Validate: competitive funding cannot be rejected
-        if application.has_competitive_funding and resolution == 'reject':
+        # Validate: competitive funding cannot be rejected unless at least one
+        # evaluator independently recommended denial (the evaluator's denial
+        # provides the grounds on which the node coordinator may reject).
+        if (
+            application.has_competitive_funding
+            and not application.has_any_denied_evaluation
+            and resolution == 'reject'
+        ):
             raise ValidationError(
-                "Applications with competitive funding cannot be rejected. "
+                "Applications with competitive funding cannot be rejected "
+                "unless at least one evaluator recommended denial. "
                 "They must be either accepted or marked as waitlist."
             )
 
