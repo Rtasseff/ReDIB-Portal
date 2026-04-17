@@ -51,7 +51,7 @@
                 <dt class="col-sm-3">Node</dt>
                 <dd class="col-sm-9">
                     <span class="badge bg-info">{{ requested_access.equipment.node.code }}</span>
-                    {{ requested_access.equipment.node.name }}
+                    {{ requested_access.equipment.node.organization.short_name|default:requested_access.equipment.node.name }}
                 </dd>
 
                 <dt class="col-sm-3">Hours Requested</dt>

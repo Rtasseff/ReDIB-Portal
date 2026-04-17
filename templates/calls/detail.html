@@ -133,7 +133,7 @@
                     <tr>
                         <td>
                             <strong>{{ alloc.equipment.node.code }}</strong><br>
-                            <small class="text-muted">{{ alloc.equipment.node.name }}</small>
+                            <small class="text-muted">{{ alloc.equipment.node.organization.short_name|default:alloc.equipment.node.name }}</small>
                         </td>
                         <td>{{ alloc.equipment.name }}</td>
                         <td><span class="badge bg-secondary">{{ alloc.equipment.get_category_display }}</span></td>

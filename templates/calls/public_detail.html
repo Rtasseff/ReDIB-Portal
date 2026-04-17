@@ -97,7 +97,7 @@
                                 {% for alloc in equipment_allocations %}
                                 <tr>
                                     <td>
-                                        <strong>{{ alloc.equipment.node.name }}</strong><br>
+                                        <strong>{{ alloc.equipment.node.organization.short_name|default:alloc.equipment.node.name }}</strong><br>
                                         <small class="text-muted">{{ alloc.equipment.node.code }}</small>
                                     </td>
                                     <td>{{ alloc.equipment.name }}</td>
