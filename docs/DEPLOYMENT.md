@@ -567,6 +567,98 @@ docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 
+### Full Database Reset and Reload
+
+Use this procedure to wipe the database and reload all reference data from
+the TSV files — for example, when refreshing a test environment with
+production data or recovering from a corrupted database.
+
+> **Warning:** This destroys all data (applications, calls, evaluations,
+> publications, user accounts) except what is re-created by the load
+> commands. Back up first if needed (`scripts/backup-db.sh`).
+
+**1. Bring down containers and remove the database volume:**
+
+```bash
+docker compose -f docker-compose.prod.yml down
+docker volume rm redib-portal_postgres_data
+```
+
+**2. Rebuild and start all containers:**
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The entrypoint auto-runs: migrations, collectstatic, email template seeding,
+and site configuration.
+
+**3. Handle the migration race condition:**
+
+All three application containers (web, celery, celery-beat) run the same
+entrypoint, which includes `migrate`. On a fresh database they all try to
+create tables simultaneously. Typically one succeeds and the other two crash
+with `DuplicateTable` or `UniqueViolation` errors. Check with:
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+```
+
+If web or celery-beat exited or restarted, restart them — this time
+migrations are already applied so the entrypoint passes cleanly:
+
+```bash
+docker compose -f docker-compose.prod.yml restart web celery-beat
+```
+
+Verify all 6 services show `Up` / `healthy` before continuing.
+
+**4. Create the superuser:**
+
+```bash
+docker compose -f docker-compose.prod.yml exec web \
+  python manage.py createsuperuser
+```
+
+Do this **before** loading data so `setup_base_database` preserves the
+superuser account.
+
+**5. Load all reference data:**
+
+```bash
+docker compose -f docker-compose.prod.yml exec web \
+  python manage.py setup_base_database
+```
+
+This loads in dependency order: organizations → nodes → users → equipment →
+funding agencies → email templates → site config. All from the TSV files in
+`data/`. The command aborts entirely on any validation error (missing FK,
+bad enum), so no partial loads are possible.
+
+All TSV-loaded users receive password `changeme123` with pre-verified
+emails. The `ProfileCompletionMiddleware` will redirect users to `/profile/`
+on first login if any required field (first name, last name, phone,
+organization, position) is missing from the TSV data.
+
+**6. Verify:**
+
+```bash
+docker compose -f docker-compose.prod.yml exec web python manage.py shell -c "
+from core.models import User, Node, Equipment, Organization, UserRole
+from applications.models import FundingAgency
+print('orgs:', Organization.objects.count())
+print('nodes:', Node.objects.count())
+print('users:', User.objects.count())
+print('equipment:', Equipment.objects.count())
+print('funding:', FundingAgency.objects.count())
+for role in ['coordinator', 'node_coordinator', 'evaluator']:
+    print(f'  {role}:', UserRole.objects.filter(role=role, is_active=True).count())
+"
+```
+
+Then visit `https://portal.redib.net/` and log in as the superuser to
+confirm the dashboard loads.
+
 ---
 
 ## Troubleshooting
@@ -601,6 +693,21 @@ docker stats --no-stream
 # If web is using too much, reduce workers in Dockerfile CMD
 # If celery is using too much, reduce --concurrency in docker-compose.prod.yml
 ```
+
+### Migration Race Condition on Fresh Database
+
+When starting all containers against a brand-new (empty) database volume,
+the web, celery, and celery-beat containers all run `migrate` via the shared
+entrypoint. One wins and applies the migrations; the others crash with
+`DuplicateTable` or `UniqueViolation` errors. This is harmless — restart the
+failed containers and migrations will be a no-op:
+
+```bash
+docker compose -f docker-compose.prod.yml restart web celery-beat
+```
+
+This only happens on a fresh database. Normal code-update deploys
+(`up -d --build`) do not trigger it because the schema already exists.
 
 ### Database Connection Errors
 
