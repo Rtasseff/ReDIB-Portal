@@ -2,6 +2,9 @@
    ReDIB Portal - Main Stylesheet
    ========================================================================== */
 
+/* Alpine.js: hide elements with x-cloak until Alpine initialises */
+[x-cloak] { display: none !important; }
+
 /* --------------------------------------------------------------------------
    Brand Variables
    Derived from the ReDIB logo: dark teal "Re", silver "DiB", crimson dot.

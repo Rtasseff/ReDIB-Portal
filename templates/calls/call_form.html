@@ -164,7 +164,14 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <small class="text-muted">{{ equipment.description|truncatewords:15 }}</small>
+                                    {% if equipment.description|wordcount > 15 %}
+                                    <small class="text-muted" x-data="{ expanded: false }">
+                                        <span x-show="!expanded">{{ equipment.description|truncatewords:15 }} <a href="#" class="text-decoration-none" @click.prevent="expanded = true">show&nbsp;more</a></span>
+                                        <span x-show="expanded" x-cloak>{{ equipment.description }} <a href="#" class="text-decoration-none" @click.prevent="expanded = false">show&nbsp;less</a></span>
+                                    </small>
+                                    {% else %}
+                                    <small class="text-muted">{{ equipment.description }}</small>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
