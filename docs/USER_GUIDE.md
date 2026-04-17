@@ -12,6 +12,7 @@
 4. [Getting Started](#getting-started-phase-0)
 5. [User Roles and Permissions](#user-roles-and-permissions)
 6. [Using the Portal](#using-the-portal)
+   - [Your Profile](#your-profile)
    - [For Applicants](#for-applicants-researchers)
    - [For Node Coordinators](#for-node-coordinators)
    - [For Evaluators](#for-evaluators)
@@ -571,10 +572,65 @@ A few things every role sees at all times:
 
 Pick the section below that matches your role:
 
+- [Your Profile](#your-profile)
 - [For Applicants](#for-applicants-researchers)
 - [For Node Coordinators](#for-node-coordinators)
 - [For Evaluators](#for-evaluators)
 - [For ReDIB Coordinators](#for-redib-coordinators)
+
+---
+
+### Your Profile
+
+Every user has a profile page where you manage your personal information and
+account settings. Completing your profile is the first thing you need to do
+after logging in for the first time.
+
+#### Navigating to your profile
+
+Click your **name** in the top-right corner of any page, then select
+**Profile** from the dropdown menu. You can also navigate directly to
+`/profile/`.
+
+#### Required fields
+
+The portal requires the following fields before you can access any other
+pages. If any are missing, the system will redirect you to your profile
+page automatically until you complete them:
+
+- **First name**
+- **Last name**
+- **Phone number** — the number node coordinators will use to reach you for
+  scheduling
+- **Organization** — select your institution from the dropdown
+- **Position** — your role at your institution (e.g. Researcher, Professor,
+  Technician)
+
+Once all required fields are filled in, click **Save Changes**. You will be
+redirected to your dashboard and the rest of the portal becomes available.
+
+#### Other profile fields
+
+Beyond the required fields, you can also fill in:
+
+- **ORCID** — your ORCID identifier (pre-fills into applications)
+- **Specialization areas** (evaluators only) — declare your expertise areas
+  (preclinical, clinical, radiochemistry) so the system can match you to
+  relevant applications
+- **Notification preferences** — control which email notifications you
+  receive (call announcements, reminders, etc.)
+
+#### Changing your password
+
+1. Click your **name** in the top-right corner and select **Profile**.
+2. At the bottom of the profile page, click the **Change Password** link.
+   This takes you to the password change form.
+3. Enter your **current password**, then your **new password** twice to
+   confirm.
+4. Click **Change Password**. You will be logged out and redirected to the
+   login page, where you can sign in with your new password.
+
+You can also navigate directly to `/accounts/password/change/`.
 
 ---
 
