@@ -1266,29 +1266,11 @@ def promote_waitlisted_application(request, pk):
     application.acceptance_deadline = None  # applicant has already accepted
     application.save()
 
-    # Fire resolution_accepted email + handoff email. Any send failure is
-    # logged but does not undo the promotion — the data change is the
-    # authoritative record.
+    # Fire the handoff email only — the applicant already received and
+    # accepted the original resolution_pending notification, so resending
+    # a resolution email on promotion is unnecessary and confusing.
     import logging
     log = logging.getLogger(__name__)
-    try:
-        from applications.tasks import send_single_resolution_notification_task
-        send_single_resolution_notification_task.delay(application.id)
-    except Exception:
-        log.exception(
-            "Celery dispatch failed for resolution_accepted notification "
-            "on promotion of %s; falling back to sync",
-            application.code,
-        )
-        try:
-            send_single_resolution_notification_task(application.id)
-        except Exception:
-            log.exception(
-                "Synchronous fallback also failed for resolution_accepted "
-                "notification on promotion of %s",
-                application.code,
-            )
-
     try:
         _send_handoff_email(application)
         application.handoff_email_sent_at = timezone.now()
