@@ -590,7 +590,7 @@ after logging in for the first time.
 
 Click your **name** in the top-right corner of any page, then select
 **Profile** from the dropdown menu. You can also navigate directly to
-`/profile/`.
+`portal.redib.net/profile/`.
 
 #### Required fields
 
@@ -630,7 +630,7 @@ Beyond the required fields, you can also fill in:
 4. Click **Change Password**. You will be logged out and redirected to the
    login page, where you can sign in with your new password.
 
-You can also navigate directly to `/accounts/password/change/`.
+You can also navigate directly to `portal.redib.net/accounts/password/change/`.
 
 ---
 
