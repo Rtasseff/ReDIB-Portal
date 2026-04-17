@@ -57,8 +57,7 @@
                         {% for access in requested_access %}
                         <tr>
                             <td>
-                                <strong>{{ access.equipment.node.code }}</strong><br>
-                                <small class="text-muted">{{ access.equipment.node.organization.short_name|default:access.equipment.node.name }}</small>
+                                {{ access.equipment.node.organization.short_name|default:access.equipment.node.name }}
                             </td>
                             <td>{{ access.equipment.name }}</td>
                             <td>{{ access.hours_requested }}</td>
