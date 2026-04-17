@@ -303,6 +303,11 @@ def manual_assign_evaluator(request, application_id):
         evaluator=evaluator
     )
 
+    # Transition to under_evaluation if this is the first assignment
+    if application.status == 'pending_evaluation':
+        application.status = 'under_evaluation'
+        application.save()
+
     # Send notification email
     from communications.tasks import send_email_from_template
     context = {
