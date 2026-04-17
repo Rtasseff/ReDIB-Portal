@@ -118,13 +118,18 @@
                             </button>
                         </div>
                     </form>
-                    <form method="post" action="{% url 'applications:cancel' application.pk %}" class="mt-2"
-                          onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-x-circle"></i> Cancel Application
-                        </button>
-                    </form>
+                    <div class="d-flex gap-2 mt-2">
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-save"></i> Save Draft Application
+                        </a>
+                        <form method="post" action="{% url 'applications:cancel' application.pk %}"
+                              onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-x-circle"></i> Cancel Application
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
