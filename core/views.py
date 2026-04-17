@@ -132,7 +132,7 @@ def profile(request):
             form.save()
             form.save_evaluator_areas()
             messages.success(request, 'Profile updated successfully.')
-            return redirect('core:profile')
+            return redirect('core:dashboard')
     else:
         form = ProfileForm(instance=user)
 
