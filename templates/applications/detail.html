@@ -183,7 +183,7 @@
                         <tr>
                             <th>Node</th>
                             <th>Equipment</th>
-                            <th>Hours Requested</th>
+                            <th>Hours Requested / Approved / Completed</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -191,7 +191,7 @@
                         <tr>
                             <td>{{ access.equipment.node.code }}</td>
                             <td>{{ access.equipment.name }}</td>
-                            <td>{{ access.hours_requested }}</td>
+                            <td>{{ access.hours_requested }} / {{ access.hours_approved|default:"NA" }} / {{ access.actual_hours_used|default:"NA" }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

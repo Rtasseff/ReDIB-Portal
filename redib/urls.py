@@ -6,9 +6,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from allauth.account.views import PasswordChangeView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Override password change to redirect to login after success
+    path('accounts/password/change/', PasswordChangeView.as_view(
+        success_url='/accounts/login/'
+    ), name='account_change_password'),
     path('accounts/', include('allauth.urls')),
 
     # Core app (dashboard, home)
