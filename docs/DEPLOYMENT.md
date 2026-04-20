@@ -373,7 +373,7 @@ The backup script (`scripts/backup-db.sh`) handles two things:
 1. **Database dump** — exports the PostgreSQL database to a gzipped SQL file.
 2. **Key files** — archives files not tracked in git (e.g., `.env`) into a tarball.
 
-Both are saved to `/home/deploy/backups/redib/` with matching timestamps and automatically cleaned up after 30 days.
+Both are saved to `/home/deploy/backups/redib/` with matching timestamps and automatically cleaned up after 7 days.
 
 ### 6.1 Set Up Automated Backups
 
@@ -403,9 +403,83 @@ Add this line:
 
 **Important:** The `cd /home/deploy/ReDIB-Portal &&` prefix is required — cron runs from the home directory, and the script needs to be in the project root to find `docker-compose.prod.yml`.
 
-This runs daily at 2 AM and keeps backups for 30 days.
+This runs daily at 2 AM and keeps backups for 7 days.
 
-### 6.3 Backing Up Additional Files
+### 6.3 Validation and Pruning Safety
+
+The backup script is designed so that **pruning only runs after a verifiably good backup**. If any validation gate fails, the script exits with a non-zero status **before** the retention prune — so older backups stay on disk even if today's run is broken.
+
+Validation gates, in order:
+
+1. **`set -euo pipefail`** — any command failure in the dump pipeline (e.g., container down, `pg_dump` errors, disk full) aborts immediately.
+2. **Non-empty** — the output file must be >0 bytes.
+3. **PostgreSQL dump header** — the first ~20 decompressed lines must contain the `PostgreSQL database dump` marker. Catches gzip-of-empty, wrong database name, and roles without `SELECT` permissions — cases where `pg_dump` exits 0 but the content is useless.
+4. **Size ratio** — the new dump must be at least **50%** of the most recent prior dump (configurable via `MIN_SIZE_RATIO_PERCENT`). Catches partial or truncated dumps where the header renders correctly but the body is silently missing. Skipped automatically on the very first run.
+
+**Consequence:** if the backup process silently degrades, you will see failed runs pile up in `backup.log` and extra `redib_db_*.sql.gz` files stick around past the 7-day window — **you will not lose the last known-good backup**. We deliberately err toward keeping too much rather than too little; a cluttered backup dir is recoverable, zero good backups is not.
+
+**After a failed run**, the bad dump is preserved (not deleted) so it can be inspected. Check `/home/deploy/backups/redib/backup.log` for the error message and the path of the preserved file.
+
+**Legitimate shrinkage** (e.g., after a large data cleanup) will trip gate 4. To allow it through once, rerun manually with a lower ratio:
+
+```bash
+cd ~/ReDIB-Portal
+MIN_SIZE_RATIO_PERCENT=10 ./scripts/backup-db.sh
+```
+
+After that run completes, subsequent automated runs will compare against the new smaller baseline and return to normal.
+
+### 6.4 Alerting
+
+Two independent channels watch the backup job. They catch different failure modes — keep both.
+
+#### In-script failure email
+
+On any non-zero exit the script sends a plain-text alert via the portal's SMTP setup (`noreply@redib.net` → `coordinator@redib.net`). This reuses the Django email stack, so no extra credentials live on the host.
+
+Mechanics:
+
+- The Django management command `send_ops_alert` (`communications/management/commands/send_ops_alert.py`) wraps `django.core.mail.send_mail` synchronously (no Celery), so SMTP failures surface as non-zero exit codes and alerts still go out if Redis is down.
+- The shell script installs an `EXIT` trap; any failed validation gate or shell error fires one email with the exit code, hostname, backup directory, and the tail of `backup.log`.
+- Recipient is controlled by `ALERT_RECIPIENT` (default `coordinator@redib.net`). To change it, set the var in `.env`:
+  ```
+  ALERT_RECIPIENT=ops@example.com
+  ```
+
+**What this channel cannot catch:** cron daemon stopped, host powered off, script deleted, `web` container down (the command can't run). For those you need the deadman ping below.
+
+#### Deadman-switch ping (optional but recommended)
+
+A "deadman switch" inverts the alerting model: instead of the script paging you when it fails, an external service pages you when it **stops hearing** from the script. This closes the gap where the script can't email — no cron, no host, no script.
+
+**Setup (using https://healthchecks.io, free tier):**
+
+1. Sign up with `coordinator@redib.net` (or whichever operator address).
+2. Create a check called `redib-backup`. Schedule: **every day**, grace period **2 hours**. Our cron runs at 02:00 UTC; the 26-hour total window handles clock skew and slow runs.
+3. Copy the check's ping URL — looks like `https://hc-ping.com/<uuid>`.
+4. Add it to `/home/deploy/ReDIB-Portal/.env`:
+   ```
+   HEALTHCHECK_URL=https://hc-ping.com/<uuid>
+   ```
+5. Done. The next successful run `curl`s the URL; the service emails you if a day passes with no ping.
+
+Until `HEALTHCHECK_URL` is set, the script simply skips the ping — no errors, no noise. Alternatives with the same integration shape: Dead Man's Snitch, BetterStack Uptime, a self-hosted cron monitor. Just paste a different URL.
+
+**Failure-mode coverage (both channels combined):**
+
+| Failure mode | Email alert | Deadman ping |
+|---|---|---|
+| `pg_dump` silently broken / truncated | ✓ | ✓ |
+| DB or web container down | ✓ (if web is up) | ✓ |
+| web container down | ✗ | ✓ |
+| Cron stopped / script deleted | ✗ | ✓ |
+| Host powered off | ✗ | ✓ |
+
+#### Off-site copy
+
+See §6.7. Local validation and alerting catch silent corruption; only an off-site copy survives a host-level disaster. The three layers (validation → alerting → off-site) are complementary, not redundant.
+
+### 6.5 Backing Up Additional Files
 
 The backup script archives key files that are not tracked in git (e.g., `.env`). To change which files are backed up, edit the `BACKUP_FILES` array near the top of `scripts/backup-db.sh`:
 
@@ -432,7 +506,7 @@ cd ~/ReDIB-Portal
 tar -xzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
 ```
 
-### 6.4 Restore Database from Backup
+### 6.6 Restore Database from Backup
 
 ```bash
 # Stop application services
@@ -447,7 +521,7 @@ gunzip < /home/deploy/backups/redib/redib_db_YYYYMMDD_HHMMSS.sql.gz | \
 docker compose -f docker-compose.prod.yml start web celery celery-beat
 ```
 
-### 6.5 Off-site Backup (Recommended)
+### 6.7 Off-site Backup (Recommended)
 
 Copy backups to another server or object storage periodically:
 
