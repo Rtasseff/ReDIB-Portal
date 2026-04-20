@@ -34,13 +34,26 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    {% if contact_email %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="mailto:{{ contact_email }}?subject=ReDIB%20COA%20Portal%20%E2%80%94%20help" title="Email us if you hit any issue">
-                                <i class="bi bi-life-preserver"></i> Need help?
-                            </a>
-                        </li>
-                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="helpDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-life-preserver"></i> Need help?
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% static 'documents/user_guide.pdf' %}" target="_blank" rel="noopener" download>
+                                    User guide
+                                </a>
+                            </li>
+                            {% if contact_email %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="mailto:{{ contact_email }}?subject=ReDIB%20COA%20Portal%20%E2%80%94%20help">
+                                        Contact us
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="/">Dashboard</a>

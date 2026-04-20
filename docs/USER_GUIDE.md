@@ -962,8 +962,7 @@ A: Update your notification preferences in your profile settings. Uncheck "Remin
 For technical issues, questions about the portal, or role assignment requests, contact:
 
 **ReDIB Portal Administrator**
-Email: [Your admin email here]
-Support hours: [Your support hours here]
+Email: info@redib.net
 
 ---
 
