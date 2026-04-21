@@ -54,34 +54,32 @@ class CallForm(forms.ModelForm):
         }
 
     def clean(self):
-        """Validate call dates and set time to 23:59 for all date fields."""
+        """Validate call dates and normalize times.
+
+        Start fields open at 00:00:00 of the chosen day; end/deadline fields
+        close at 23:59:59 of the chosen day. This matches how users think
+        about "opens on X, closes on Y".
+        """
         cleaned_data = super().clean()
 
-        # Set time to 23:59:59 for all date fields
-        date_fields = ['submission_start', 'submission_end', 'evaluation_deadline',
-                       'execution_start', 'execution_end']
+        start_of_day_fields = ['submission_start', 'execution_start']
+        end_of_day_fields = ['submission_end', 'evaluation_deadline', 'execution_end']
 
-        for field_name in date_fields:
+        from datetime import datetime
+
+        for field_name in start_of_day_fields + end_of_day_fields:
             field_value = cleaned_data.get(field_name)
-            if field_value:
-                # If it's already a datetime, keep the date but set time to 23:59:59
-                # If it's a date object, convert to datetime with time 23:59:59
-                if hasattr(field_value, 'date'):
-                    # It's a datetime
-                    date_only = field_value.date()
-                else:
-                    # It's a date
-                    date_only = field_value
+            if not field_value:
+                continue
 
-                # Create datetime with time set to 23:59:59
-                from datetime import datetime
-                dt = datetime.combine(date_only, time(23, 59, 59))
+            date_only = field_value.date() if hasattr(field_value, 'date') else field_value
+            target_time = time(0, 0, 0) if field_name in start_of_day_fields else time(23, 59, 59)
+            dt = datetime.combine(date_only, target_time)
 
-                # Make it timezone-aware
-                if timezone.is_naive(dt):
-                    dt = timezone.make_aware(dt)
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt)
 
-                cleaned_data[field_name] = dt
+            cleaned_data[field_name] = dt
 
         submission_start = cleaned_data.get('submission_start')
         submission_end = cleaned_data.get('submission_end')
