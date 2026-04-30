@@ -54,7 +54,16 @@ See [CLAUDE.md](CLAUDE.md) for the working-context conventions used by Claude Co
 
 ## License
 
-[To be determined]
+Copyright (C) 2026 Ryan Tasseff
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. See [LICENSE](LICENSE) for the full text.
+
+The AGPL specifically covers network use: anyone who runs a modified version
+of this software as a network service must make their modified source
+available to its users.
 
 ## Contact
 
