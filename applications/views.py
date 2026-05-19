@@ -17,8 +17,20 @@ from .models import Application, RequestedAccess, FeasibilityReview
 from .forms import (
     ApplicationStep1Form, ApplicationStep2Form, ApplicationStep3Form,
     ApplicationStep4Form, ApplicationStep5Form, RequestedAccessFormSet,
+    ApplicationStep1DraftForm, ApplicationStep2DraftForm,
+    ApplicationStep3DraftForm, ApplicationStep4DraftForm,
+    ApplicationStep5DraftForm,
     FeasibilityReviewForm
 )
+
+
+DRAFT_SAVED_MSG = (
+    "Draft saved. You can return any time from My Applications to continue."
+)
+
+
+def _is_draft_save(request):
+    return request.method == 'POST' and request.POST.get('action') == 'save_draft'
 
 
 @login_required
@@ -294,8 +306,11 @@ def application_edit_step1(request, pk):
         status='draft'
     )
 
+    draft_mode = _is_draft_save(request)
+
     if request.method == 'POST':
-        form = ApplicationStep1Form(request.POST, instance=application, user=request.user)
+        form_cls = ApplicationStep1DraftForm if draft_mode else ApplicationStep1Form
+        form = form_cls(request.POST, instance=application, user=request.user)
 
         if form.is_valid():
             app = form.save(commit=False)
@@ -310,6 +325,9 @@ def application_edit_step1(request, pk):
             if user.orcid:
                 app.applicant_orcid = user.orcid
             app.save()
+            if draft_mode:
+                messages.success(request, DRAFT_SAVED_MSG)
+                return redirect('applications:my_applications')
             messages.success(request, "Step 1 saved. Continue to step 2.")
             return redirect('applications:edit_step2', pk=application.pk)
     else:
@@ -336,11 +354,17 @@ def application_edit_step2(request, pk):
         status='draft'
     )
 
+    draft_mode = _is_draft_save(request)
+
     if request.method == 'POST':
-        form = ApplicationStep2Form(request.POST, instance=application)
+        form_cls = ApplicationStep2DraftForm if draft_mode else ApplicationStep2Form
+        form = form_cls(request.POST, instance=application)
 
         if form.is_valid():
             form.save()
+            if draft_mode:
+                messages.success(request, DRAFT_SAVED_MSG)
+                return redirect('applications:my_applications')
             messages.success(request, "Step 2 saved. Continue to step 3.")
             return redirect('applications:edit_step3', pk=application.pk)
     else:
@@ -366,6 +390,8 @@ def application_edit_step3(request, pk):
         status='draft'
     )
 
+    draft_mode = _is_draft_save(request)
+
     if request.method == 'POST':
         # Fix INITIAL_FORMS to match forms that actually have database IDs.
         # Browser-side JS may remove existing forms and add new ones, leaving
@@ -379,12 +405,33 @@ def application_edit_step3(request, pk):
                 actual_initial += 1
         post_data[f'{prefix}-INITIAL_FORMS'] = str(actual_initial)
 
-        service_form = ApplicationStep3Form(post_data, instance=application)
+        service_form_cls = ApplicationStep3DraftForm if draft_mode else ApplicationStep3Form
+        service_form = service_form_cls(post_data, instance=application)
         access_formset = RequestedAccessFormSet(
             post_data,
             instance=application,
             form_kwargs={'call': application.call}
         )
+
+        if draft_mode:
+            # Equipment rows still require both fields filled to persist, but
+            # we relax the formset's "at least one row" rule so a user with
+            # no equipment yet can still save their service-modality choice.
+            access_formset.validate_min = False
+            service_ok = service_form.is_valid()
+            formset_ok = access_formset.is_valid()
+            if service_ok:
+                service_form.save()
+            if formset_ok:
+                access_formset.save()
+            messages.success(request, DRAFT_SAVED_MSG)
+            if not formset_ok:
+                messages.warning(
+                    request,
+                    "Some equipment rows were incomplete and were not saved. "
+                    "Complete or remove them before clicking Next."
+                )
+            return redirect('applications:my_applications')
 
         if service_form.is_valid() and access_formset.is_valid():
             service_form.save()
@@ -420,11 +467,17 @@ def application_edit_step4(request, pk):
         status='draft'
     )
 
+    draft_mode = _is_draft_save(request)
+
     if request.method == 'POST':
-        form = ApplicationStep4Form(request.POST, instance=application)
+        form_cls = ApplicationStep4DraftForm if draft_mode else ApplicationStep4Form
+        form = form_cls(request.POST, instance=application)
 
         if form.is_valid():
             form.save()
+            if draft_mode:
+                messages.success(request, DRAFT_SAVED_MSG)
+                return redirect('applications:my_applications')
             messages.success(request, "Step 4 saved. Continue to step 5 (final step).")
             return redirect('applications:edit_step5', pk=application.pk)
     else:
@@ -450,8 +503,11 @@ def application_edit_step5(request, pk):
         status='draft'
     )
 
+    draft_mode = _is_draft_save(request)
+
     if request.method == 'POST':
-        form = ApplicationStep5Form(request.POST, instance=application, user=request.user)
+        form_cls = ApplicationStep5DraftForm if draft_mode else ApplicationStep5Form
+        form = form_cls(request.POST, instance=application, user=request.user)
 
         if form.is_valid():
             app = form.save(commit=False)
@@ -459,6 +515,9 @@ def application_edit_step5(request, pk):
             if request.user.auto_data_consent:
                 app.data_consent = True
             app.save()
+            if draft_mode:
+                messages.success(request, DRAFT_SAVED_MSG)
+                return redirect('applications:my_applications')
             messages.success(request, "All steps complete. Review and submit.")
             return redirect('applications:preview', pk=application.pk)
     else:
