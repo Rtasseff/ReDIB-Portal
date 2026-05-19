@@ -192,15 +192,17 @@
                             <a href="{% url 'applications:edit_step4' application.pk %}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Back
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                Next: Preview & Submit <i class="bi bi-arrow-right"></i>
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="submit" name="action" value="save_draft" class="btn btn-outline-secondary">
+                                    <i class="bi bi-save"></i> Save Draft
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    Next: Preview & Submit <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
                         </div>
                     </form>
                     <div class="d-flex gap-2 mt-2">
-                        <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-save"></i> Save Draft Application
-                        </a>
                         <form method="post" action="{% url 'applications:cancel' application.pk %}"
                               onsubmit="return confirm('Are you sure you want to cancel? All application data will be permanently deleted.');">
                             {% csrf_token %}

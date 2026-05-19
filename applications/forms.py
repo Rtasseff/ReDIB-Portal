@@ -480,6 +480,66 @@ class ApplicationStep5Form(forms.ModelForm):
         return cleaned_data
 
 
+# =============================================================================
+# Draft variants of the wizard step forms (partial-save mode)
+# =============================================================================
+#
+# The wizard's "Save Draft" button posts action=save_draft. The view picks
+# the matching *Draft form below, which loosens required-field validation
+# and skips strict cross-field business rules so an applicant can persist
+# whatever they have typed without first completing the step. The regular
+# Next button still uses the full forms and validates as before.
+
+
+class _DraftFormMixin:
+    """Mark every bound field optional so partial input can be saved."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False
+
+
+class ApplicationStep1DraftForm(_DraftFormMixin, ApplicationStep1Form):
+    pass
+
+
+class ApplicationStep2DraftForm(_DraftFormMixin, ApplicationStep2Form):
+    def clean(self):
+        # Bypass ApplicationStep2Form.clean() (which requires a name/origin
+        # when "Other" is selected). Run only the base ModelForm clean(),
+        # then drop the "Other" sentinel so the FK doesn't try to persist it.
+        cleaned_data = forms.ModelForm.clean(self)
+        agency = cleaned_data.get('funding_agency_obj')
+        if agency == FundingAgencyWithOtherChoiceField.OTHER_SENTINEL:
+            cleaned_data['funding_agency_obj'] = None
+        return cleaned_data
+
+    def save(self, commit=True):
+        # Bypass ApplicationStep2Form.save() which derives project_type from
+        # the funding agency; on a draft save we just persist what the form
+        # already has on the instance.
+        instance = forms.ModelForm.save(self, commit=False)
+        if commit:
+            instance.save()
+        return instance
+
+
+class ApplicationStep3DraftForm(_DraftFormMixin, ApplicationStep3Form):
+    pass
+
+
+class ApplicationStep4DraftForm(_DraftFormMixin, ApplicationStep4Form):
+    pass
+
+
+class ApplicationStep5DraftForm(_DraftFormMixin, ApplicationStep5Form):
+    def clean(self):
+        # Skip ApplicationStep5Form.clean() — drafts are not required to
+        # have data_consent ticked.
+        return forms.ModelForm.clean(self)
+
+
 class FeasibilityReviewForm(forms.ModelForm):
     """Feasibility review by node coordinator"""
 
