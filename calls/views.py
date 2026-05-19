@@ -187,9 +187,12 @@ def call_detail(request, pk):
         'equipment__node'
     ).order_by('equipment__node__code')
 
-    applications = call.applications.exclude(status='draft').select_related(
-        'applicant'
-    ).order_by('-submitted_at')
+    # Hide never-submitted drafts, but keep drafts that were bounced back for
+    # edits (which have feasibility reviews recorded) so coordinators can still
+    # see them in the status wall.
+    applications = call.applications.exclude(
+        Q(status='draft') & Q(feasibility_reviews__isnull=True)
+    ).select_related('applicant').distinct().order_by('-submitted_at')
 
     context = {
         'call': call,
