@@ -245,10 +245,12 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
         'applicant__organization'
     ).get(id=application_id)
 
-    # Get pool of active evaluators
+    # Get pool of active evaluators. Both the evaluator role AND the user account
+    # itself must be active — a deactivated user account cannot log in to evaluate.
     evaluator_roles = UserRole.objects.filter(
         role='evaluator',
-        is_active=True
+        is_active=True,
+        user__is_active=True,
     ).select_related('user', 'user__organization')
 
     # Get all user objects

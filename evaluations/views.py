@@ -204,10 +204,13 @@ def call_assignment_detail(request, call_id):
         app.evaluator_count = app.evaluations.count()
         app.completed_evaluations = app.evaluations.filter(completed_at__isnull=False).count()
 
-    # Get all active evaluators for manual assignment, with their combined areas
+    # Get all active evaluators for manual assignment, with their combined areas.
+    # Both the evaluator role AND the user account itself must be active —
+    # a deactivated account cannot log in to evaluate.
     active_evaluators = User.objects.filter(
+        is_active=True,
         roles__role='evaluator',
-        roles__is_active=True
+        roles__is_active=True,
     ).select_related('organization').prefetch_related('roles').distinct()
 
     # Pre-compute each evaluator's combined area list across all their evaluator roles
