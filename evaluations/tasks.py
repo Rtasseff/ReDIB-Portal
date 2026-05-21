@@ -369,68 +369,243 @@ def assign_evaluators_to_application(application_id, num_evaluators=2):
 @shared_task
 def assign_evaluators_to_call(call_id, num_evaluators=2):
     """
-    Automatically assign evaluators to all eligible applications in a call.
-    Triggered when call submission period closes.
+    Automatically assign evaluators across all eligible applications in a call,
+    balancing load with a hard per-evaluator cap and a COI-first ordering.
 
-    Only assigns to applications in PENDING_EVALUATION status.
+    Cap: floor(total_slots / pool_size) + 1, where total_slots = num_apps * num_evaluators.
+    With pool=9 and 23 apps x 2, this is floor(46/9)+1 = 6 assignments per evaluator max.
+
+    Hard rules (never violated):
+      - Conflict of interest: evaluator cannot share applicant's organization.
+      - Cap: no evaluator exceeds max_per_evaluator (counting pre-existing Evaluations).
+      - No duplicate (evaluator, application) pairs.
+
+    Soft rule:
+      - Specialty area match is preferred. If the area-matched pool is empty or fully
+        capped for an application, fall back to any eligible evaluator.
+
+    Algorithm: split apps into (has-any-COI) vs (no-COI) piles. Run num_evaluators passes;
+    each pass shuffles both piles and walks the COI pile first, then the no-COI pile,
+    attempting to add one evaluator per app per pass. Apps that cannot be filled surface
+    in results['unfilled'] for a warning banner in the view.
+
+    Only assigns to applications in PENDING_EVALUATION status. Apps that receive >= 1
+    evaluator transition to UNDER_EVALUATION; apps that get zero remain pending so the
+    coordinator can intervene.
 
     Args:
         call_id: ID of the call
         num_evaluators: Number of evaluators per application (default: 2)
 
     Returns:
-        dict with assignment summary
+        dict with keys: call_code, total_applications, assignments, errors,
+        max_per_evaluator, pool_size, unfilled.
     """
     from calls.models import Call
     from applications.models import Application
+    from core.models import UserRole
+    import random
 
     call = Call.objects.get(id=call_id)
 
-    # Get all applications in PENDING_EVALUATION status
-    eligible_applications = Application.objects.filter(
-        call=call,
-        status='pending_evaluation'
+    eligible_applications = list(
+        Application.objects.filter(call=call, status='pending_evaluation')
+        .select_related('applicant', 'applicant__organization')
     )
+
+    evaluator_roles = (
+        UserRole.objects
+        .filter(role='evaluator', is_active=True, user__is_active=True)
+        .select_related('user', 'user__organization')
+    )
+    role_by_user_id = {r.user_id: r for r in evaluator_roles}
+    pool = list(role_by_user_id.values())  # UserRole objects; use r.user for the User
+    pool_size = len(pool)
 
     results = {
         'call_code': call.code,
-        'total_applications': eligible_applications.count(),
+        'total_applications': len(eligible_applications),
+        'pool_size': pool_size,
+        'max_per_evaluator': 0,
         'assignments': [],
-        'errors': []
+        'errors': [],
+        'unfilled': [],
     }
 
-    for application in eligible_applications:
-        try:
-            result = assign_evaluators_to_application(
-                application_id=application.id,
-                num_evaluators=num_evaluators
-            )
-
+    if not eligible_applications or pool_size == 0:
+        # Nothing to do — but still record every app as unfilled when pool is empty so
+        # the coordinator sees the gap.
+        for application in eligible_applications:
+            results['unfilled'].append({
+                'application_code': application.code,
+                'application_id': application.id,
+                'assigned': 0,
+                'requested': num_evaluators,
+                'shortfall': num_evaluators,
+            })
             results['assignments'].append({
                 'application_code': application.code,
                 'application_id': application.id,
-                'assigned_count': len(result['assigned']),
-                'assigned_evaluators': result['assigned'],
-                'excluded_count': len(result['excluded']),
-                'warning': result.get('warning'),
-                'error': result.get('error')
+                'assigned_count': 0,
+                'assigned_evaluators': [],
+                'excluded_count': 0,
+                'warning': f'Assigned 0 of {num_evaluators} requested evaluators',
+                'error': 'No eligible evaluators available' if pool_size == 0 else None,
             })
+        if call.status == 'open':
+            call.status = 'closed'
+            call.save()
+        return results
 
-        except Exception as e:
-            results['errors'].append({
+    total_slots = len(eligible_applications) * num_evaluators
+    max_per_evaluator = (total_slots // pool_size) + 1
+    results['max_per_evaluator'] = max_per_evaluator
+
+    # Per-app static state: COI set + pre-existing assignments.
+    app_state = {}
+    coi_apps = []
+    clear_apps = []
+    for application in eligible_applications:
+        applicant_org = application.applicant_entity or (
+            application.applicant.organization.name
+            if application.applicant.organization else None
+        )
+        applicant_org_l = applicant_org.strip().lower() if applicant_org else None
+        coi_ids = set()
+        for role in pool:
+            ev_org = role.user.organization.name if role.user.organization else None
+            if applicant_org_l and ev_org and ev_org.strip().lower() == applicant_org_l:
+                coi_ids.add(role.user_id)
+        already_ids = set(
+            Evaluation.objects.filter(application=application)
+            .values_list('evaluator_id', flat=True)
+        )
+        app_state[application.id] = {
+            'application': application,
+            'coi_ids': coi_ids,
+            'already_ids': already_ids,
+            'batch_picks': [],  # list of User objects added by this run
+        }
+        (coi_apps if coi_ids else clear_apps).append(application)
+
+    # Cumulative load — pre-existing Evaluations consume capacity too.
+    load = {role.user_id: 0 for role in pool}
+    for state in app_state.values():
+        for ev_id in state['already_ids']:
+            if ev_id in load:
+                load[ev_id] += 1
+
+    def _eligible(application, *, require_area_match):
+        state = app_state[application.id]
+        taken_for_app = state['already_ids'] | {u.id for u in state['batch_picks']}
+        spec = getattr(application, 'specialization_area', None) or None
+        out = []
+        for role in pool:
+            uid = role.user_id
+            if uid in state['coi_ids']:
+                continue
+            if uid in taken_for_app:
+                continue
+            if load[uid] >= max_per_evaluator:
+                continue
+            if require_area_match:
+                if not spec or not role.has_area(spec):
+                    continue
+            out.append(role.user)
+        return out
+
+    # Multi-pass allocator. Shuffle each pass so retries explore the space.
+    for _pass in range(num_evaluators):
+        random.shuffle(coi_apps)
+        random.shuffle(clear_apps)
+        for application in coi_apps + clear_apps:
+            state = app_state[application.id]
+            total_for_app = len(state['already_ids']) + len(state['batch_picks'])
+            if total_for_app >= num_evaluators:
+                continue
+
+            candidates = _eligible(application, require_area_match=True)
+            if not candidates:
+                candidates = _eligible(application, require_area_match=False)
+            if not candidates:
+                continue
+
+            pick = random.choice(candidates)
+            state['batch_picks'].append(pick)
+            load[pick.id] += 1
+
+    # Materialize Evaluation rows, send notification emails, build the result rows.
+    for application in eligible_applications:
+        state = app_state[application.id]
+        picks = state['batch_picks']
+        for evaluator in picks:
+            evaluation = Evaluation.objects.create(
+                application=application,
+                evaluator=evaluator,
+            )
+            context = {
+                'evaluator_name': evaluator.get_full_name(),
+                'application_code': application.code,
+                'call_code': application.call.code,
+                'deadline': application.call.evaluation_deadline,
+                'evaluation_url': settings.SITE_URL + reverse(
+                    'evaluations:evaluation_detail', kwargs={'pk': evaluation.id}
+                ),
+            }
+            send_email_from_template(
+                template_type='evaluation_assigned',
+                recipient_email=evaluator.email,
+                context_data=context,
+                recipient_user_id=evaluator.id,
+                related_application_id=application.id,
+                related_evaluation_id=evaluation.id,
+            )
+
+        total_for_app = len(state['already_ids']) + len(picks)
+        # excluded_count = pool members blocked by COI, the cap, or already-assigned.
+        excluded_count = (
+            len(state['coi_ids'])
+            + sum(
+                1 for role in pool
+                if role.user_id not in state['coi_ids']
+                and (load[role.user_id] >= max_per_evaluator
+                     or role.user_id in state['already_ids'])
+            )
+        )
+        warning = (
+            f'Assigned {total_for_app} of {num_evaluators} requested evaluators'
+            if total_for_app < num_evaluators else None
+        )
+        error = 'No eligible evaluators available' if total_for_app == 0 else None
+        results['assignments'].append({
+            'application_code': application.code,
+            'application_id': application.id,
+            'assigned_count': len(picks),
+            'assigned_evaluators': [u.id for u in picks],
+            'excluded_count': excluded_count,
+            'warning': warning,
+            'error': error,
+        })
+        if total_for_app < num_evaluators:
+            results['unfilled'].append({
                 'application_code': application.code,
                 'application_id': application.id,
-                'error': str(e)
+                'assigned': total_for_app,
+                'requested': num_evaluators,
+                'shortfall': num_evaluators - total_for_app,
             })
 
-    # Transition call to 'closed' status if not already
+    # Transition call to 'closed' status if not already.
     if call.status == 'open':
         call.status = 'closed'
         call.save()
 
-    # Transition applications to 'under_evaluation' status (Phase 5)
+    # Apps that received at least one evaluator move to under_evaluation. Apps that got
+    # zero stay pending_evaluation so the coordinator can retry or assign manually.
     for application in eligible_applications:
-        if application.status == 'pending_evaluation':
+        state = app_state[application.id]
+        total_for_app = len(state['already_ids']) + len(state['batch_picks'])
+        if total_for_app >= 1 and application.status == 'pending_evaluation':
             application.status = 'under_evaluation'
             application.save()
 

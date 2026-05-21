@@ -262,7 +262,21 @@ def auto_assign_call(request, call_id):
     else:
         messages.success(
             request,
-            f"Successfully assigned evaluators to {result['total_applications']} applications."
+            f"Successfully assigned evaluators to {result['total_applications']} applications "
+            f"(cap: {result.get('max_per_evaluator', '?')} per evaluator, pool: {result.get('pool_size', '?')})."
+        )
+
+    # Surface partial-fill warnings so the coordinator knows which apps still need help.
+    unfilled = result.get('unfilled') or []
+    if unfilled:
+        details = ', '.join(
+            f"{u['application_code']} ({u['assigned']} of {u['requested']})"
+            for u in unfilled
+        )
+        messages.warning(
+            request,
+            f"{len(unfilled)} application(s) could not be fully filled — {details}. "
+            "Use manual assignment to add the missing evaluators."
         )
 
     return redirect('evaluations:call_assignment_detail', call_id=call_id)
