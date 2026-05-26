@@ -17,6 +17,7 @@ class EmailTemplate(models.Model):
         ('call_published', 'Call Published'),
         ('application_received', 'Application Received'),
         ('feasibility_request', 'Feasibility Review Request'),
+        ('feasibility_consult_request', 'Feasibility Consult Request'),
         ('feasibility_reminder', 'Feasibility Review Reminder'),
         ('feasibility_complete', 'Feasibility Review Complete'),
         ('feasibility_rejected', 'Feasibility Rejected'),

@@ -33,6 +33,82 @@ def _is_draft_save(request):
     return request.method == 'POST' and request.POST.get('action') == 'save_draft'
 
 
+def _is_consult_request(request):
+    return request.method == 'POST' and request.POST.get('action') == 'request_consult'
+
+
+def _send_consult_request_emails(request, application):
+    """Dispatch a pre-submission consult email to the node coordinator(s)
+    of every node whose equipment this draft requests.
+
+    Returns (sent_count, nodes_without_coordinator). Wraps each call in a
+    try/except per node so a single failure doesn't block the rest; the
+    caller wraps the whole thing again in try/except to survive Celery
+    being down (mirroring the application_submit pattern at lines ~668-705).
+    """
+    from core.models import UserRole
+    from communications.tasks import send_email_from_template
+    import logging
+    log = logging.getLogger(__name__)
+
+    requested_access = list(
+        application.requested_access.select_related('equipment__node')
+    )
+    # Group requested equipment by node so each NC sees only their items.
+    equipment_by_node = {}
+    for ra in requested_access:
+        equipment_by_node.setdefault(ra.equipment.node, []).append(ra.equipment.name)
+
+    sent = 0
+    nodes_without_coord = []
+    application_url = request.build_absolute_uri(
+        reverse('applications:detail', kwargs={'pk': application.pk})
+    )
+    applicant_name = (
+        application.applicant_name
+        or application.applicant.get_full_name()
+        or application.applicant.email
+    )
+    applicant_email = application.applicant_email or application.applicant.email
+
+    for node, equipment_names in equipment_by_node.items():
+        coord = (
+            UserRole.objects
+            .filter(node=node, role='node_coordinator', is_active=True)
+            .select_related('user')
+            .first()
+        )
+        if not coord:
+            nodes_without_coord.append(node)
+            continue
+        try:
+            send_email_from_template.delay(
+                template_type='feasibility_consult_request',
+                recipient_email=coord.user.email,
+                context_data={
+                    'coordinator_name': coord.user.get_full_name() or coord.user.email,
+                    'applicant_name': applicant_name,
+                    'applicant_email': applicant_email,
+                    'applicant_phone': application.applicant_phone or '',
+                    'application_code': application.code,
+                    'node_name': node.name,
+                    'equipment_list': ', '.join(equipment_names),
+                    'application_url': application_url,
+                    'call_code': application.call.code,
+                    'submission_end': application.call.submission_end.strftime('%Y-%m-%d %H:%M'),
+                },
+                recipient_user_id=coord.user.id,
+                related_application_id=application.id,
+            )
+            sent += 1
+        except Exception:
+            log.exception(
+                "Consult email failed for application %s node %s",
+                application.code, node.code,
+            )
+    return sent, nodes_without_coord
+
+
 @login_required
 def my_applications(request):
     """Applicant's dashboard - list of their applications"""
@@ -503,10 +579,12 @@ def application_edit_step5(request, pk):
         status='draft'
     )
 
+    consult_mode = _is_consult_request(request)
     draft_mode = _is_draft_save(request)
+    lenient = consult_mode or draft_mode
 
     if request.method == 'POST':
-        form_cls = ApplicationStep5DraftForm if draft_mode else ApplicationStep5Form
+        form_cls = ApplicationStep5DraftForm if lenient else ApplicationStep5Form
         form = form_cls(request.POST, instance=application, user=request.user)
 
         if form.is_valid():
@@ -514,7 +592,43 @@ def application_edit_step5(request, pk):
             # Ensure data_consent is set for auto-consent users
             if request.user.auto_data_consent:
                 app.data_consent = True
+            if consult_mode:
+                # Whatever the client posted, a consult request means the
+                # applicant has NOT confirmed feasibility. Force it off so
+                # we don't accidentally trust a racy/malicious POST.
+                app.technical_feasibility_confirmed = False
+                app.consult_requested_at = timezone.now()
             app.save()
+            if consult_mode:
+                try:
+                    sent, no_coord_nodes = _send_consult_request_emails(request, app)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "Consult email dispatch failed for application %s", app.code
+                    )
+                    sent, no_coord_nodes = 0, []
+                if sent:
+                    messages.success(
+                        request,
+                        "Your consult request has been sent to the node coordinator(s). "
+                        "They will contact you. Your draft has been saved."
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "Your draft has been saved and your consult request recorded. "
+                        "You have not yet selected any equipment, so we could not route "
+                        "this to a specific node coordinator. Please add equipment in "
+                        "step 3 and click Save Draft again, or contact ReDIB directly."
+                    )
+                if no_coord_nodes:
+                    messages.warning(
+                        request,
+                        "Some nodes have no active coordinator on file and were not "
+                        "notified: " + ", ".join(n.code for n in no_coord_nodes)
+                    )
+                return redirect('applications:my_applications')
             if draft_mode:
                 messages.success(request, DRAFT_SAVED_MSG)
                 return redirect('applications:my_applications')

@@ -259,6 +259,14 @@ class Application(models.Model):
         help_text='When handoff email was sent to applicant + coordinators'
     )
 
+    # Step-5 pre-submission feasibility consult request (latest only;
+    # overwritten if the applicant repeats the request).
+    consult_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the applicant requested a feasibility consult from step 5.'
+    )
+
     # Phase 8: Optional completion tracking
     is_completed = models.BooleanField(
         default=False,

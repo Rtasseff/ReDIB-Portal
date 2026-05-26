@@ -62,6 +62,15 @@
     </div>
     {% endif %}
 
+    {% if application.consult_requested_at %}
+    <div class="alert alert-info py-2">
+        <i class="bi bi-chat-left-dots"></i>
+        <strong>Pre-submission consult requested</strong>
+        on {{ application.consult_requested_at|date:"M d, Y H:i" }}.
+        The relevant node coordinator(s) were notified by email.
+    </div>
+    {% endif %}
+
     <!-- Phase Tracker -->
     {% if phase_tracker %}
         {% include "includes/phase_tracker.html" %}

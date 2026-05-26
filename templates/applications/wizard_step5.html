@@ -44,8 +44,12 @@
                     </div>
                     {% endif %}
 
-                    <form method="post">
+                    <form method="post" id="step5Form">
                         {% csrf_token %}
+
+                        <!-- Hidden submit for the consult-request flow; fired by JS. -->
+                        <button type="submit" name="action" value="request_consult"
+                                id="consultSubmit" formnovalidate hidden></button>
 
                         <div class="card mb-3">
                             <div class="card-header">
@@ -196,7 +200,7 @@
                                 <button type="submit" name="action" value="save_draft" formnovalidate class="btn btn-outline-secondary">
                                     <i class="bi bi-save"></i> Save Draft
                                 </button>
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" id="nextSubmit" class="btn btn-primary">
                                     Next: Preview & Submit <i class="bi bi-arrow-right"></i>
                                 </button>
                             </div>
@@ -285,4 +289,118 @@
         </div>
     </div>
 </div>
+
+<!-- Confirm-feasibility modal: shown when the checkbox IS checked. -->
+<div class="modal fade" id="confirmedModal" tabindex="-1" aria-labelledby="confirmedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmedModalLabel">Confirm feasibility consult</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    You have indicated that you discussed your COA proposal with the
+                    relevant node(s). Did you confirm the technical feasibility of your
+                    proposal with the relevant node coordinator(s)?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="confirmedNoBtn">
+                    No, not yet
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmedYesBtn">
+                    Yes, I confirmed feasibility
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Consult-request modal: shown when the checkbox is NOT checked
+     (directly, or after "No" on the confirmed modal). -->
+<div class="modal fade" id="unconfirmedModal" tabindex="-1" aria-labelledby="unconfirmedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unconfirmedModalLabel">Request a consult before submitting?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    You have indicated that you have not yet contacted the relevant
+                    node(s) regarding the equipment you are requesting access to.
+                </p>
+                <p>
+                    Would you like to request a consult with the relevant node
+                    coordinator(s)? They will be notified by email and will contact you
+                    to discuss feasibility.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="unconfirmedNoBtn">
+                    No, continue without a consult
+                </button>
+                <button type="button" class="btn btn-primary" id="unconfirmedYesBtn">
+                    Yes, request a consult
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('step5Form');
+    const nextBtn = document.getElementById('nextSubmit');
+    const consultBtn = document.getElementById('consultSubmit');
+    const checkbox = document.getElementById('{{ form.technical_feasibility_confirmed.id_for_label }}');
+    const confirmedEl = document.getElementById('confirmedModal');
+    const unconfirmedEl = document.getElementById('unconfirmedModal');
+    if (!form || !nextBtn || !consultBtn || !checkbox || !confirmedEl || !unconfirmedEl) {
+        return;
+    }
+    const confirmedModal = bootstrap.Modal.getOrCreateInstance(confirmedEl);
+    const unconfirmedModal = bootstrap.Modal.getOrCreateInstance(unconfirmedEl);
+
+    // Intercept the Next click — gate behind the appropriate modal.
+    nextBtn.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (checkbox.checked) {
+            confirmedModal.show();
+        } else {
+            unconfirmedModal.show();
+        }
+    });
+
+    // confirmedModal: "Yes" → submit normally to preview.
+    document.getElementById('confirmedYesBtn').addEventListener('click', function () {
+        confirmedModal.hide();
+        form.submit();
+    });
+
+    // confirmedModal: "No" → uncheck box, then chain into unconfirmedModal.
+    // The hidden.bs.modal listener uses { once: true } to avoid handler
+    // accumulation if the user opens/closes repeatedly.
+    document.getElementById('confirmedNoBtn').addEventListener('click', function () {
+        checkbox.checked = false;
+        confirmedEl.addEventListener('hidden.bs.modal', function onHidden() {
+            unconfirmedModal.show();
+        }, { once: true });
+        confirmedModal.hide();
+    });
+
+    // unconfirmedModal: "Yes" → fire the hidden consult submit button.
+    document.getElementById('unconfirmedYesBtn').addEventListener('click', function () {
+        unconfirmedModal.hide();
+        consultBtn.click();
+    });
+
+    // unconfirmedModal: "No" → submit normally to preview.
+    document.getElementById('unconfirmedNoBtn').addEventListener('click', function () {
+        unconfirmedModal.hide();
+        form.submit();
+    });
+})();
+</script>
 {% endblock %}

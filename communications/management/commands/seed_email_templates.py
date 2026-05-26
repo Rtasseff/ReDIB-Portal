@@ -1555,6 +1555,105 @@ The ReDIB COA Team
 This is an automated reminder from the ReDIB COA Portal.
 Please do not reply to this email.''',
                 'available_variables': '''Variables: applicant_name, application_code, deadline, days_remaining, acceptance_url'''
+            },
+            {
+                'template_type': 'feasibility_consult_request',
+                'subject': 'ReDIB COA: Pre-submission consult requested for {{ node_name }}',
+                'html_content': '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #fff7e0; border-left: 4px solid #e6a23c; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Pre-submission consult requested</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+
+            <p>An applicant is preparing a COA proposal for call <strong>{{ call_code }}</strong> and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.</p>
+
+            <div class="info-box">
+                <p><strong>Applicant:</strong> {{ applicant_name }}</p>
+                <p><strong>Contact:</strong> {{ applicant_email }}{% if applicant_phone %} &middot; {{ applicant_phone }}{% endif %}</p>
+                <p><strong>Application (draft):</strong> {{ application_code }}</p>
+                <p><strong>Your node:</strong> {{ node_name }}</p>
+                <p><strong>Equipment requested at your node:</strong> {{ equipment_list }}</p>
+                <p><strong>Call submission deadline:</strong> {{ submission_end }}</p>
+            </div>
+
+            <p>Please reach out to the applicant directly to discuss feasibility. You can review their draft application in the portal:</p>
+
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">View draft application</a>
+            </p>
+
+            <p>The applicant has been told that you will contact them. This is a pre-submission consult only &mdash; no formal feasibility review has been triggered.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
+                ''',
+                'text_content': '''
+Dear {{ coordinator_name }},
+
+An applicant is preparing a COA proposal for call {{ call_code }} and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.
+
+Applicant: {{ applicant_name }}
+Contact: {{ applicant_email }}{% if applicant_phone %} - {{ applicant_phone }}{% endif %}
+Application (draft): {{ application_code }}
+Your node: {{ node_name }}
+Equipment requested at your node: {{ equipment_list }}
+Call submission deadline: {{ submission_end }}
+
+Please reach out to the applicant directly to discuss feasibility. You can review their draft application in the portal:
+
+{{ application_url }}
+
+The applicant has been told that you will contact them. This is a pre-submission consult only - no formal feasibility review has been triggered.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.
+                ''',
+                'available_variables': '''
+{
+    "coordinator_name": "Full name of the node coordinator (recipient)",
+    "applicant_name": "Full name of the applicant",
+    "applicant_email": "Applicant contact email",
+    "applicant_phone": "Applicant contact phone (may be blank)",
+    "application_code": "Application code (draft)",
+    "node_name": "Name of the node receiving this consult",
+    "equipment_list": "Comma-separated list of equipment at this node requested by the applicant",
+    "application_url": "Absolute URL to the application detail page",
+    "call_code": "Code of the call (e.g., COA-2026-01)",
+    "submission_end": "Formatted submission deadline of the call"
+}
+                '''
             }
         ]
 
