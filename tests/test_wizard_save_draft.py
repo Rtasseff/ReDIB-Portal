@@ -196,3 +196,15 @@ class WizardSaveDraftTests(TestCase):
         self.app.refresh_from_db()
         # Status should still be draft (not advanced).
         self.assertEqual(self.app.status, 'draft')
+
+    def test_save_draft_button_skips_html5_validation(self):
+        """Save Draft must carry `formnovalidate` so the browser doesn't
+        block the submit on required-but-blank fields (the regular form
+        renders each input with the `required` attribute)."""
+        for step_url_name in ('edit_step2', 'edit_step3', 'edit_step4', 'edit_step5'):
+            url = reverse(f'applications:{step_url_name}', kwargs={'pk': self.app.pk})
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200, step_url_name)
+            html = resp.content.decode()
+            self.assertIn('name="action" value="save_draft"', html, step_url_name)
+            self.assertIn('formnovalidate', html, step_url_name)
