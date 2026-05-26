@@ -349,6 +349,10 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+{# Rendered after base.html's Bootstrap JS bundle, so bootstrap.Modal exists. #}
 <script>
 (function () {
     const form = document.getElementById('step5Form');

@@ -187,11 +187,13 @@ def call_detail(request, pk):
         'equipment__node'
     ).order_by('equipment__node__code')
 
-    # Hide never-submitted drafts, but keep drafts that were bounced back for
-    # edits (which have feasibility reviews recorded) so coordinators can still
-    # see them in the status wall.
+    # Hide never-submitted drafts, but keep drafts that have coordinator-
+    # visible state: either a feasibility review (bounced back for edits)
+    # or a pre-submission consult request.
     applications = call.applications.exclude(
-        Q(status='draft') & Q(feasibility_reviews__isnull=True)
+        Q(status='draft')
+        & Q(feasibility_reviews__isnull=True)
+        & Q(consult_requested_at__isnull=True)
     ).select_related('applicant').distinct().order_by('-submitted_at')
 
     context = {

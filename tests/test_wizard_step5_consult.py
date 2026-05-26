@@ -245,3 +245,27 @@ class Step5ConsultRequestTests(TestCase):
         self.assertTrue(app.technical_feasibility_confirmed)
         self.assertIsNone(app.consult_requested_at)
         mock_send.delay.assert_not_called()
+
+    def test_draft_with_consult_visible_on_call_detail(self):
+        """A draft is normally hidden from the coordinator's call detail
+        page, but if a consult has been requested the draft must surface
+        so the coordinator can act on it."""
+        app, _ = self._make_app(num_equipment_nodes=1)
+        # Promote the applicant to coordinator for the URL we're hitting.
+        UserRole.objects.create(
+            user=self.applicant, role='coordinator', is_active=True
+        )
+
+        # Plain draft — should NOT show on the call detail page.
+        url = reverse('calls:detail', kwargs={'pk': app.call.pk})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn(app.code.encode(), resp.content)
+
+        # Now mark a consult request — it MUST show, with the "Consult" badge.
+        app.consult_requested_at = timezone.now()
+        app.save()
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(app.code.encode(), resp.content)
+        self.assertIn(b'Consult', resp.content)

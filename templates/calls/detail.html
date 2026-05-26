@@ -177,8 +177,16 @@
                     <tr>
                         <td><strong>{{ app.code }}</strong></td>
                         <td>{{ app.applicant.get_full_name }}</td>
-                        <td>{% include "includes/status_badge.html" %}</td>
-                        <td>{{ app.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            {% include "includes/status_badge.html" %}
+                            {% if app.consult_requested_at %}
+                            <span class="badge bg-info text-dark ms-1"
+                                  title="Pre-submission consult requested on {{ app.consult_requested_at|date:'Y-m-d H:i' }}">
+                                <i class="bi bi-chat-left-dots"></i> Consult
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ app.submitted_at|date:"M d, Y H:i"|default:"—" }}</td>
                         <td>
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> View
