@@ -64,7 +64,7 @@
                             <p><strong>Project Summary:</strong> {{ application.brief_description|default:"—" }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Origin of Funds:</strong> {{ application.get_project_type_display|default:"NA" }}</p>
+                            <p><strong>Origin of Funds:</strong> {{ application.project_type|default:"NA" }}</p>
                             <p><strong>Subject Area:</strong> {{ application.subject_area }}</p>
                             <p><strong>Specialization:</strong> {{ application.specialization_area }}</p>
                         </div>
