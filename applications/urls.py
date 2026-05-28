@@ -13,6 +13,7 @@ urlpatterns = [
     path('create/<int:call_pk>/', views.application_create, name='create'),
     path('<int:pk>/step2/', views.application_edit_step2, name='edit_step2'),
     path('<int:pk>/step3/', views.application_edit_step3, name='edit_step3'),
+    path('<int:pk>/scientific-intro/', views.application_scientific_intro, name='scientific_intro'),
     path('<int:pk>/step4/', views.application_edit_step4, name='edit_step4'),
     path('<int:pk>/step5/', views.application_edit_step5, name='edit_step5'),
     path('<int:pk>/preview/', views.application_preview, name='preview'),

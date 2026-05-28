@@ -208,3 +208,49 @@ class WizardSaveDraftTests(TestCase):
             html = resp.content.decode()
             self.assertIn('name="action" value="save_draft"', html, step_url_name)
             self.assertIn('formnovalidate', html, step_url_name)
+
+    def test_step3_next_redirects_to_scientific_intro(self):
+        """Step 3's Next routes through the new interstitial, not direct to step 4."""
+        url = reverse('applications:edit_step3', kwargs={'pk': self.app.pk})
+        resp = self.client.post(url, {
+            'service_modality': 'full_assistance',
+            'specialization_area': 'preclinical',
+            'requested_access-TOTAL_FORMS': '1',
+            'requested_access-INITIAL_FORMS': '0',
+            'requested_access-MIN_NUM_FORMS': '0',
+            'requested_access-MAX_NUM_FORMS': '1000',
+            'requested_access-0-id': '',
+            'requested_access-0-equipment': str(self.equipment.pk),
+            'requested_access-0-hours_requested': '8',
+            'requested_access-0-DELETE': '',
+        })
+        self.assertRedirects(
+            resp, reverse('applications:scientific_intro', kwargs={'pk': self.app.pk}),
+            fetch_redirect_response=False,
+        )
+
+    def test_scientific_intro_renders_and_advances_to_step4(self):
+        """GET shows the page with the General Information text; POST
+        (Continue) redirects to step 4. No data is collected."""
+        url = reverse('applications:scientific_intro', kwargs={'pk': self.app.pk})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('General Information and Instructions', html)
+        self.assertIn('Competitive Open Access', html)
+        self.assertIn('Continue to Scientific Content', html)
+
+        resp = self.client.post(url, {})
+        self.assertRedirects(
+            resp, reverse('applications:edit_step4', kwargs={'pk': self.app.pk}),
+            fetch_redirect_response=False,
+        )
+
+    def test_step4_back_link_points_to_scientific_intro(self):
+        """Step 4's Back button must now go through the interstitial so
+        users can re-read the General Information block if they want."""
+        url = reverse('applications:edit_step4', kwargs={'pk': self.app.pk})
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        intro_url = reverse('applications:scientific_intro', kwargs={'pk': self.app.pk})
+        self.assertIn(f'href="{intro_url}"', resp.content.decode())

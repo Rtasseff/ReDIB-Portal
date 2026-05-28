@@ -1,0 +1,127 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}New Application - Before Scientific Content - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' application.call.pk %}">{{ application.call.code }}</a></li>
+            <li class="breadcrumb-item active">Application {{ application.code|default:"DRAFT" }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <h1 class="mb-4">Application for {{ application.call.code }}</h1>
+
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="progress progress-lg">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {% widthratio step total_steps 100 %}%;"
+                             aria-valuenow="{{ step }}" aria-valuemin="0" aria-valuemax="{{ total_steps }}">
+                            Step {{ step }} of {{ total_steps }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Card -->
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-circle"></i>
+                        Before you continue &mdash; please read
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary mb-3">General Information and Instructions for Completing this Form</h6>
+
+                    <p>
+                        ReDIB infrastructures and services are available to all members of the
+                        national and international scientific community, who can access them under
+                        the Competitive Open Access (COA) modality, or under the Access on Demand
+                        (AOD) modality. In the first case, COA, access to the essential ReDIB
+                        facilities is free or with minimal costs for the user (i.e., consumable
+                        costs), while in the AOD modality the rates published on the website of
+                        the nodes that make up this distributed ICTS apply. ReDIB declares its
+                        firm commitment to offer at least 20% of the capacity of its essential
+                        facilities in COA mode.
+                    </p>
+                    <p>
+                        The approval of the COA to the essential ReDIB facilities requires
+                        adequate justification that the access proposal complies with sufficient
+                        scientific-technical quality. In this sense, the proposals received that
+                        are part of R&amp;D&amp;I projects financed by a competitive call from an
+                        international or national funding agency will be deemed to meet the
+                        required quality, and will therefore be automatically approved, with their
+                        access to the ICTS being conditioned by the score obtained in the
+                        evaluation and their position on the priority list. Otherwise, if no data
+                        is provided on the existence of a competitively funded parent project, the
+                        applications will be approved or not based on the relevance and
+                        opportunity criteria applied in the evaluation and, once approved, their
+                        access is also conditioned by the score obtained.
+                    </p>
+                    <p class="mb-0">
+                        In all cases, to obtain the corresponding score, which will allow the
+                        prioritized list of approved applications with assigned access to be
+                        drawn up, all the sections of this access application must be properly
+                        completed, which are related to the different criteria that will be
+                        assessed by the ReDIB Access Committee, in order to establish the priority
+                        of each of the approved accesses in each COA call.
+                    </p>
+
+                    <hr class="my-4">
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'applications:edit_step3' application.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                I have read this &mdash; Continue to Scientific Content
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card sticky-top sticky-sidebar-card">
+                <div class="card-header">
+                    <h6 class="mb-0">Application Steps</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>1. Basic Info</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>2. Funding &amp; Project</strong>
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>3. Equipment Request</strong>
+                    </div>
+                    <div class="list-group-item active">
+                        <strong>Before Scientific Content</strong>
+                    </div>
+                    <div class="list-group-item">
+                        4. Scientific Content
+                    </div>
+                    <div class="list-group-item">
+                        5. Declarations
+                    </div>
+                    <div class="list-group-item">
+                        6. Preview &amp; Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

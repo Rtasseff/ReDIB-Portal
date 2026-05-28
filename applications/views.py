@@ -514,7 +514,7 @@ def application_edit_step3(request, pk):
             access_formset.save()
 
             messages.success(request, "Step 3 saved. Continue to step 4.")
-            return redirect('applications:edit_step4', pk=application.pk)
+            return redirect('applications:scientific_intro', pk=application.pk)
     else:
         service_form = ApplicationStep3Form(instance=application)
         access_formset = RequestedAccessFormSet(
@@ -530,6 +530,32 @@ def application_edit_step3(request, pk):
         'total_steps': 5,
     }
     return render(request, 'applications/wizard_step3.html', context)
+
+
+@login_required
+def application_scientific_intro(request, pk):
+    """Interstitial between step 3 and step 4.
+
+    Displays the "General Information and Instructions" preamble that
+    used to sit only in step 5's info modal. Applicants must click
+    Continue to advance to step 4. No data is collected; POST just
+    advances. GET shows the page.
+    """
+    application = get_object_or_404(
+        Application,
+        pk=pk,
+        applicant=request.user,
+        status='draft',
+    )
+    if request.method == 'POST':
+        return redirect('applications:edit_step4', pk=application.pk)
+
+    context = {
+        'application': application,
+        'step': 3,
+        'total_steps': 5,
+    }
+    return render(request, 'applications/wizard_scientific_intro.html', context)
 
 
 @login_required
