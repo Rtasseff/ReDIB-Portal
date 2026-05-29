@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Newsletters - ReDIB{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-1">ReDIB Newsletters</h1>
+            <p class="lead mb-0">News, updates, and announcements from the ReDIB network.</p>
+        </div>
+        <a href="{% url 'calls:public_list' %}" class="btn btn-outline-primary mt-2">
+            <i class="bi bi-megaphone"></i> Browse Open Calls
+        </a>
+    </div>
+
+    {% if newsletters %}
+    <div class="row">
+        {% for newsletter in newsletters %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">
+                        <i class="bi bi-calendar3"></i> {{ newsletter.publish_date|date:"F j, Y" }}
+                    </div>
+                    <h5 class="card-title">{{ newsletter.title }}</h5>
+                    <p class="card-text text-muted">{{ newsletter.summary }}</p>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{{ newsletter.get_absolute_url }}" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-newspaper"></i> Read Newsletter
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-4">
+        <h4 class="alert-heading"><i class="bi bi-info-circle"></i> No newsletters yet</h4>
+        <p class="mb-0">Check back soon for news and updates from the ReDIB network.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

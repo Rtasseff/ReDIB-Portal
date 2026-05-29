@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'access',
     'communications',
     'reports',
+    'newsletters',
 ]
 
 # Middleware

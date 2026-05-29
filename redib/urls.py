@@ -33,6 +33,9 @@ urlpatterns = [
 
     # Reports app (stub URLs for Phase 1 testing)
     path('reports/', include('reports.urls')),
+
+    # Newsletters (public, no auth)
+    path('newsletters/', include('newsletters.urls')),
 ]
 
 # Serve media files in development
