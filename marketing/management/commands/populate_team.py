@@ -15,15 +15,9 @@ For each person:
 
 Names and institution affiliations do NOT translate; roles do.
 """
-import mimetypes
-import os
 from pathlib import Path
-from urllib.parse import urlparse
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
 from django.conf import settings
-from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.text import slugify
@@ -31,6 +25,7 @@ from django.utils.text import slugify
 from wagtail.images import get_image_model
 from wagtail.models import Locale
 
+from marketing.management._image_utils import get_or_create_image
 from marketing.models import Person
 
 
@@ -191,12 +186,6 @@ ROSTER = [
 ]
 
 
-USER_AGENT = (
-    'Mozilla/5.0 (ReDIB-marketing-site-import; +https://redib.net) '
-    'python-urllib/3.12'
-)
-
-
 class Command(BaseCommand):
     help = (
         "Populate the Team / Equipo page with the 14 Person snippets "
@@ -252,7 +241,7 @@ class Command(BaseCommand):
         ))
 
     # ------------------------------------------------------------------
-    # Image ingest
+    # Image ingest — delegates to the shared helper in `_image_utils`.
     # ------------------------------------------------------------------
 
     def _get_or_create_image(self, image_model, download_dir, url, person_name):
@@ -261,55 +250,14 @@ class Command(BaseCommand):
         Idempotency strategy: title is `Team photo: <name>`. If an Image with
         that exact title already exists, reuse it.
         """
-        title = f"Team photo: {person_name}"
-        existing = image_model.objects.filter(title=title).first()
-        if existing is not None:
-            return existing
-
-        # Pick filename based on slugified person name + extension from URL.
-        parsed = urlparse(url)
-        ext = os.path.splitext(parsed.path)[1].lower() or '.jpg'
-        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp'):
-            ext = '.jpg'
-        slug = slugify(person_name) or 'person'
-        local_path = download_dir / f"{slug}{ext}"
-
-        # Download if not already cached on disk.
-        if not local_path.exists():
-            try:
-                req = Request(url, headers={'User-Agent': USER_AGENT})
-                with urlopen(req, timeout=20) as resp:
-                    data = resp.read()
-                    # Sanity check: reject obvious HTML error pages.
-                    ctype = resp.headers.get('Content-Type', '')
-                    if 'image' not in ctype.lower() and len(data) < 1024:
-                        self.stderr.write(
-                            f"  [WARN] {person_name}: unexpected "
-                            f"Content-Type {ctype!r}, skipping."
-                        )
-                        return None
-                local_path.write_bytes(data)
-            except (URLError, HTTPError, TimeoutError, OSError) as exc:
-                self.stderr.write(
-                    f"  [WARN] {person_name}: photo download failed "
-                    f"({type(exc).__name__}: {exc}). Continuing without photo."
-                )
-                return None
-
-        # Create the Wagtail Image record from the downloaded file.
-        try:
-            with local_path.open('rb') as fh:
-                image = image_model.objects.create(
-                    title=title,
-                    file=File(fh, name=local_path.name),
-                )
-            return image
-        except Exception as exc:  # noqa: BLE001 — log and continue
-            self.stderr.write(
-                f"  [WARN] {person_name}: Wagtail Image create failed "
-                f"({type(exc).__name__}: {exc}). Continuing without photo."
-            )
-            return None
+        return get_or_create_image(
+            image_model,
+            download_dir,
+            url,
+            title=f"Team photo: {person_name}",
+            slug_hint=slugify(person_name) or 'person',
+            stderr_write=self.stderr.write,
+        )
 
     # ------------------------------------------------------------------
     # Person snippet upsert

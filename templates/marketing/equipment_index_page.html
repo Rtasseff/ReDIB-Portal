@@ -5,18 +5,34 @@
 
 {% block content %}
     <section class="container py-5">
-        <h1>{{ page.title }}</h1>
+        <h1 class="mb-3">{{ page.title }}</h1>
         {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
+        {% if page.body %}<div class="mb-4">{{ page.body|richtext }}</div>{% endif %}
 
-        <div class="row g-3 mt-3">
+        <div class="row g-4 mt-2">
             {% for cat in category_pages %}
-                <div class="col-md-6">
-                    <h2 class="h5"><a href="{% pageurl cat %}">{{ cat.title }}</a></h2>
-                    {% if cat.specific.intro %}<p>{{ cat.specific.intro }}</p>{% endif %}
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="h5 mb-2">
+                                <a href="{% pageurl cat %}" class="text-decoration-none">{{ cat.title }}</a>
+                            </h2>
+                            {% if cat.specific.intro %}
+                                <p class="small mb-0">{{ cat.specific.intro }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             {% empty %}
-                <p class="text-muted">No categories yet.</p>
+                <div class="col-12">
+                    <p class="text-muted">
+                        {% if request.LANGUAGE_CODE == 'en' %}
+                            No categories published yet.
+                        {% else %}
+                            Todavía no hay categorías publicadas.
+                        {% endif %}
+                    </p>
+                </div>
             {% endfor %}
         </div>
     </section>
