@@ -4,13 +4,61 @@
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <article class="container py-5">
-        <h1>{{ page.title }}</h1>
-        <p class="small text-muted">{{ page.date|date:"Y-m-d" }}{% if page.outlet %} — {{ page.outlet }}{% endif %}</p>
-        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.external_url %}
-            <p><a href="{{ page.external_url }}" rel="noopener" target="_blank" class="btn btn-outline-primary">Leer en el medio original</a></p>
+    <article class="container py-5" style="max-width: 800px;">
+        <p class="text-uppercase small text-muted mb-2">
+            {% if request.LANGUAGE_CODE == 'en' %}
+                {{ page.date|date:"F j, Y" }}
+            {% else %}
+                {{ page.date|date:"j F Y" }}
+            {% endif %}
+            {% if page.outlet %} &middot; {{ page.outlet }}{% endif %}
+        </p>
+        <h1 class="mb-3">{{ page.title }}</h1>
+
+        {% if page.intro %}
+            <p class="lead text-muted">{{ page.intro }}</p>
         {% endif %}
-        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
+
+        {% if page.external_url %}
+            {# External press clipping — heavily promote the outbound link. #}
+            <div class="alert alert-light border d-flex align-items-start gap-3 my-4" role="status">
+                <i class="bi bi-box-arrow-up-right fs-3 text-secondary" aria-hidden="true"></i>
+                <div class="flex-grow-1">
+                    <p class="mb-2 small">
+                        {% if request.LANGUAGE_CODE == 'en' %}
+                            This is an external press clipping. The full article lives on
+                            {% if page.outlet %}<strong>{{ page.outlet }}</strong>{% else %}the original outlet{% endif %}.
+                        {% else %}
+                            Esta es una nota de prensa externa. El artículo completo está en
+                            {% if page.outlet %}<strong>{{ page.outlet }}</strong>{% else %}el medio original{% endif %}.
+                        {% endif %}
+                    </p>
+                    <a href="{{ page.external_url }}" rel="noopener" target="_blank" class="btn btn-primary btn-sm">
+                        {% if request.LANGUAGE_CODE == 'en' %}
+                            Read on {% if page.outlet %}{{ page.outlet }}{% else %}original site{% endif %}
+                        {% else %}
+                            Leer en {% if page.outlet %}{{ page.outlet }}{% else %}el medio original{% endif %}
+                        {% endif %}
+                        <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if page.body %}
+            <div class="press-body mt-4">{{ page.body|richtext }}</div>
+        {% endif %}
+
+        {% with parent=page.get_parent %}
+            <p class="mt-5 pt-4 border-top">
+                <a href="{% pageurl parent %}" class="text-decoration-none">
+                    {% if request.LANGUAGE_CODE == 'en' %}
+                        &larr; Back to press
+                    {% else %}
+                        &larr; Volver a prensa
+                    {% endif %}
+                </a>
+            </p>
+        {% endwith %}
     </article>
 {% endblock %}
