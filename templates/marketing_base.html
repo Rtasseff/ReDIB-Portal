@@ -1,0 +1,74 @@
+{% load static wagtailcore_tags %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'es' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ReDIB — Red Distribuida de Imagen Biomédica{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="{% static 'images/ReDiB_logo.png' %}">
+
+    <!-- Bootstrap 5 CSS (same CDN as portal) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    {# Marketing-specific styles will live separately from portal main.css. #}
+    {# For now there's no marketing.css yet — Phase 2 will add it. #}
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="marketing">
+    {# ============================================================
+       Marketing chrome. Deliberately distinct from the portal nav:
+       no Login/Register front-and-center, just a small "Portal" link.
+       Labels are in Spanish (the default locale).
+       Wire up real navigation + language switcher in Phase 2.
+       ============================================================ #}
+    <header class="marketing-header border-bottom">
+        <div class="container d-flex align-items-center justify-content-between py-3">
+            <a class="d-flex align-items-center text-decoration-none text-dark" href="/">
+                <img src="{% static 'images/ReDiB_logo.png' %}" alt="ReDIB" height="40" class="me-2">
+                <span class="fw-semibold fs-4">ReDIB</span>
+            </a>
+
+            <nav aria-label="Principal">
+                <ul class="nav">
+                    {# Phase 2: replace these with Wagtail menu items. #}
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Equipamiento</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Acceso</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Actualidad</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Equipo</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#">Contacto</a></li>
+                </ul>
+            </nav>
+
+            <div class="d-flex align-items-center gap-3">
+                {# Language switcher placeholder — wired up in Phase 2 with wagtail-localize. #}
+                <span class="small text-muted" aria-label="Idioma">
+                    <a href="#" class="text-muted text-decoration-none">ES</a>
+                    /
+                    <a href="#" class="text-muted text-decoration-none">EN</a>
+                </span>
+                {# Small portal link — the only auth entry point from marketing. #}
+                <a href="/portal/" class="btn btn-sm btn-outline-secondary">Portal</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-light mt-5 py-4 border-top">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 ReDIB — Red Distribuida de Imagen Biomédica</p>
+            <p class="small text-muted mb-0">ICTS reconocida por el Ministerio de Ciencia, Innovación y Universidades</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

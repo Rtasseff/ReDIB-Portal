@@ -39,6 +39,23 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Required for allauth
 
+    # Wagtail (marketing site CMS) + bilingual content
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail',
+    'modelcluster',
+    'taggit',
+    'wagtail_localize',
+    'wagtail_localize.locales',
+
     # Third-party apps
     'rest_framework',
     'django_htmx',
@@ -58,6 +75,9 @@ INSTALLED_APPS = [
     'communications',
     'reports',
     'newsletters',
+
+    # Marketing site (Wagtail page models)
+    'home',
 ]
 
 # Middleware
@@ -74,6 +94,7 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',  # HTMX support
     'simple_history.middleware.HistoryRequestMiddleware',  # Audit trail
     'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',  # Wagtail redirects (must be last)
 ]
 
 ROOT_URLCONF = 'redib.urls'
@@ -124,11 +145,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-LANGUAGE_CODE = 'en-us'
+# Internationalization — bilingual marketing site, Spanish default
+LANGUAGE_CODE = 'es'
 TIME_ZONE = 'Europe/Madrid'  # Spain timezone for ReDIB
 USE_I18N = True
 USE_TZ = True
+
+# Wagtail bilingual config (human translation only — no machine-translate backend).
+# Per-page slug aliases at the root, not /es/ /en/ URL prefixes — do NOT use i18n_patterns.
+WAGTAIL_I18N_ENABLED = True
+WAGTAIL_CONTENT_LANGUAGES = [
+    ('es', 'Español'),
+    ('en', 'English'),
+]
+LANGUAGES = WAGTAIL_CONTENT_LANGUAGES
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
@@ -208,6 +238,10 @@ CELERY_TASK_EAGER_PROPAGATES = DEBUG or _IS_TESTING
 
 # Site URL for building absolute links in emails (no trailing slash)
 SITE_URL = env('SITE_URL', default='https://portal.redib.net')
+
+# Wagtail (marketing site CMS)
+WAGTAIL_SITE_NAME = 'ReDIB'
+WAGTAILADMIN_BASE_URL = SITE_URL
 
 # Redis Configuration
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')

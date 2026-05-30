@@ -27,6 +27,14 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 - **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
 - **End-user walkthrough** (per role): [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
+## Branch note — `feature/marketing-site`
+
+On the `feature/marketing-site` branch, URL routing is reshuffled for the redib.net
+marketing-site rebuild: **Wagtail mounts at `/`** (with admin at `/cms/`) and the entire
+existing COA portal moves under **`/portal/`** (e.g. `/portal/calls/`, `/portal/applications/`).
+Django admin stays at `/admin/`, allauth at `/accounts/`. This is the cutover state — it is
+not yet in production. See `docs/marketing/` for the rebuild plan.
+
 ## Workflow states (cheat-sheet)
 
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` →

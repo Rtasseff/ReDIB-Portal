@@ -43,3 +43,7 @@ crispy-bootstrap5>=2.0
 
 # Email
 django-anymail[brevo]>=10.2
+
+# Marketing site (Wagtail CMS + human translation)
+wagtail>=6.3,<6.5
+wagtail-localize>=1.10,<1.13

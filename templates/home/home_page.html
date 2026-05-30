@@ -1,0 +1,21 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    {# Phase 2/3: real hero, news teaser, equipment grid, partner logos.
+       For now this is a stub to prove the Wagtail render pipeline works. #}
+    <section class="marketing-hero py-5 bg-light">
+        <div class="container text-center">
+            <h1 class="display-5">{{ page.title }}</h1>
+            <p class="lead text-muted">Marketing home — Phase 1 stub.</p>
+        </div>
+    </section>
+
+    {% if page.body %}
+        <section class="container py-5">
+            {{ page.body|richtext }}
+        </section>
+    {% endif %}
+{% endblock %}

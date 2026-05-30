@@ -1,41 +1,46 @@
 """
 URL configuration for redib project.
+
+Layout on `feature/marketing-site`:
+- `/`              -> Wagtail (marketing site, catchall LAST)
+- `/portal/`       -> existing COA portal apps (core, calls, applications, ...)
+- `/admin/`        -> Django admin
+- `/cms/`          -> Wagtail admin
+- `/documents/`    -> Wagtail documents
+- `/accounts/`     -> django-allauth
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
 from allauth.account.views import PasswordChangeView
 
+from wagtail.admin import urls as wagtailadmin_urls
+from wagtail import urls as wagtail_urls
+from wagtail.documents import urls as wagtaildocs_urls
+
 urlpatterns = [
+    # Django admin
     path('admin/', admin.site.urls),
+
+    # Wagtail admin + documents (marketing site CMS)
+    path('cms/', include(wagtailadmin_urls)),
+    path('documents/', include(wagtaildocs_urls)),
+
     # Override password change to redirect to login after success
     path('accounts/password/change/', PasswordChangeView.as_view(
         success_url='/accounts/login/'
     ), name='account_change_password'),
     path('accounts/', include('allauth.urls')),
 
-    # Core app (dashboard, home)
-    path('', include('core.urls')),
-
-    # Calls app
-    path('calls/', include('calls.urls')),
-
-    # Applications app (stub URLs for Phase 1 testing)
-    path('applications/', include('applications.urls')),
-
-    # Evaluations app (stub URLs for Phase 1 testing)
-    path('evaluations/', include('evaluations.urls')),
-
-    # Access app (stub URLs for Phase 1 testing)
-    path('access/', include('access.urls')),
-
-    # Reports app (stub URLs for Phase 1 testing)
-    path('reports/', include('reports.urls')),
-
-    # Newsletters (public, no auth)
-    path('newsletters/', include('newsletters.urls')),
+    # Existing COA portal — everything moves under /portal/
+    path('portal/', include('core.urls')),
+    path('portal/calls/', include('calls.urls')),
+    path('portal/applications/', include('applications.urls')),
+    path('portal/evaluations/', include('evaluations.urls')),
+    path('portal/access/', include('access.urls')),
+    path('portal/reports/', include('reports.urls')),
+    path('portal/newsletters/', include('newsletters.urls')),
 ]
 
 # Serve media files in development
@@ -49,6 +54,11 @@ if settings.DEBUG:
         urlpatterns = [
             path('__debug__/', include(debug_toolbar.urls)),
         ] + urlpatterns
+
+# Wagtail catchall — MUST be last so it doesn't shadow any of the above.
+urlpatterns += [
+    re_path(r'', include(wagtail_urls)),
+]
 
 # Customize admin site
 admin.site.site_header = 'ReDIB COA Administration'
