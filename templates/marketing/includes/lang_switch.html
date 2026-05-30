@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+<span class="small text-muted" aria-label="Idioma / Language">
+    {% for trans in translations %}
+        {% if trans.locale.language_code == current_code %}
+            <strong class="text-dark">{{ trans.locale.language_code|upper }}</strong>
+        {% else %}
+            <a href="{% pageurl trans %}" class="text-muted text-decoration-none">{{ trans.locale.language_code|upper }}</a>
+        {% endif %}
+        {% if not forloop.last %} / {% endif %}
+    {% endfor %}
+</span>

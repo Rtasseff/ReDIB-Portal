@@ -1,0 +1,13 @@
+{% load wagtailcore_tags %}
+<ul class="navbar-nav">
+    {% if home_page %}
+        <li class="nav-item">
+            <a class="nav-link text-dark" href="{% pageurl home_page %}">{{ home_page.title }}</a>
+        </li>
+    {% endif %}
+    {% for item in menu_items %}
+        <li class="nav-item">
+            <a class="nav-link text-dark" href="{% pageurl item %}">{{ item.title }}</a>
+        </li>
+    {% endfor %}
+</ul>

@@ -1,4 +1,4 @@
-{% load static wagtailcore_tags %}
+{% load static wagtailcore_tags marketing_tags %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE|default:'es' }}">
 <head>
@@ -32,24 +32,11 @@
             </a>
 
             <nav aria-label="Principal">
-                <ul class="nav">
-                    {# Phase 2: replace these with Wagtail menu items. #}
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Equipamiento</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Acceso</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Actualidad</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Equipo</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark" href="#">Contacto</a></li>
-                </ul>
+                {% main_nav %}
             </nav>
 
             <div class="d-flex align-items-center gap-3">
-                {# Language switcher placeholder — wired up in Phase 2 with wagtail-localize. #}
-                <span class="small text-muted" aria-label="Idioma">
-                    <a href="#" class="text-muted text-decoration-none">ES</a>
-                    /
-                    <a href="#" class="text-muted text-decoration-none">EN</a>
-                </span>
+                {% lang_switch %}
                 {# Small portal link — the only auth entry point from marketing. #}
                 <a href="/portal/" class="btn btn-sm btn-outline-secondary">Portal</a>
             </div>
