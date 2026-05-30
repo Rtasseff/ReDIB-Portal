@@ -1,0 +1,35 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <section class="container py-5">
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
+        <ul class="list-unstyled">
+            {% for item in press_items %}
+                <li class="mb-4">
+                    <h2 class="h5">
+                        {% if item.external_url %}
+                            <a href="{{ item.external_url }}" rel="noopener" target="_blank">{{ item.title }}</a>
+                        {% else %}
+                            <a href="{% pageurl item %}">{{ item.title }}</a>
+                        {% endif %}
+                    </h2>
+                    <p class="small text-muted">{{ item.date|date:"Y-m-d" }}{% if item.outlet %} — {{ item.outlet }}{% endif %}</p>
+                    {% if item.intro %}<p>{{ item.intro }}</p>{% endif %}
+                </li>
+            {% empty %}
+                <li class="text-muted">No press items yet.</li>
+            {% endfor %}
+        </ul>
+        {% if press_items.has_other_pages %}
+            <nav>
+                {% if press_items.has_previous %}<a href="?page={{ press_items.previous_page_number }}">Previous</a>{% endif %}
+                <span>{{ press_items.number }} / {{ press_items.paginator.num_pages }}</span>
+                {% if press_items.has_next %}<a href="?page={{ press_items.next_page_number }}">Next</a>{% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

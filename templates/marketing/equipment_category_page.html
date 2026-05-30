@@ -1,0 +1,25 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <section class="container py-5">
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
+        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
+
+        {% if equipment_items %}
+            <h2 class="h5 mt-4">Equipamiento disponible</h2>
+            <ul>
+                {% for eq in equipment_items %}
+                    <li>
+                        <strong>{{ eq.name }}</strong>
+                        <span class="small text-muted">({{ eq.get_category_display }})</span>
+                        — {{ eq.node.organization.short_name|default:eq.node.organization.name }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+{% endblock %}

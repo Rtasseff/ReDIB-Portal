@@ -1,0 +1,27 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <section class="container py-5">
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<div class="lead">{{ page.intro|richtext }}</div>{% endif %}
+
+        {% for group_key, members in people_by_group.items %}
+            <h2 class="h4 mt-4">{{ group_key }}</h2>
+            <div class="row g-3">
+                {% for person in members %}
+                    <div class="col-md-4">
+                        {% if person.photo %}{% image person.photo fill-200x200 class="rounded-circle mb-2" %}{% endif %}
+                        <div><strong>{{ person.name }}</strong></div>
+                        <div class="small text-muted">{{ person.role }}</div>
+                        {% if person.affiliation %}<div class="small">{{ person.affiliation }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% empty %}
+            <p class="text-muted">No team members yet.</p>
+        {% endfor %}
+    </section>
+{% endblock %}

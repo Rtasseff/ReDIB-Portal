@@ -78,6 +78,7 @@ INSTALLED_APPS = [
 
     # Marketing site (Wagtail page models)
     'home',
+    'marketing',
 ]
 
 # Middleware

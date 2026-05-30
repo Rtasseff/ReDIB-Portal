@@ -1,0 +1,29 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <section class="container py-5">
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
+        <ul class="list-unstyled">
+            {% for post in news_posts %}
+                <li class="mb-4">
+                    <h2 class="h5"><a href="{% pageurl post %}">{{ post.title }}</a></h2>
+                    <p class="small text-muted">{{ post.date|date:"Y-m-d" }}</p>
+                    {% if post.intro %}<p>{{ post.intro }}</p>{% endif %}
+                </li>
+            {% empty %}
+                <li class="text-muted">No news yet.</li>
+            {% endfor %}
+        </ul>
+        {% if news_posts.has_other_pages %}
+            <nav>
+                {% if news_posts.has_previous %}<a href="?page={{ news_posts.previous_page_number }}">Previous</a>{% endif %}
+                <span>{{ news_posts.number }} / {{ news_posts.paginator.num_pages }}</span>
+                {% if news_posts.has_next %}<a href="?page={{ news_posts.next_page_number }}">Next</a>{% endif %}
+            </nav>
+        {% endif %}
+    </section>
+{% endblock %}

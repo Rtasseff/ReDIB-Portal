@@ -1,0 +1,36 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <article class="container py-5">
+        {% if page.hero_image %}{% image page.hero_image fill-1200x400 class="img-fluid rounded mb-3" %}{% endif %}
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
+        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
+
+        {% if page.location_text %}
+            <h2 class="h5 mt-4">Ubicación</h2>
+            <p>{{ page.location_text|linebreaksbr }}</p>
+        {% endif %}
+
+        {% if page.contact_info %}
+            <h2 class="h5 mt-4">Contacto</h2>
+            <div>{{ page.contact_info|richtext }}</div>
+        {% endif %}
+
+        {% if page.related_core_node %}
+            <h2 class="h5 mt-4">Equipamiento</h2>
+            <ul>
+                {% for eq in page.related_core_node.equipment.all %}
+                    {% if eq.is_active %}
+                        <li>{{ eq.name }} <span class="small text-muted">({{ eq.get_category_display }})</span></li>
+                    {% endif %}
+                {% empty %}
+                    <li class="text-muted">No equipment listed.</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </article>
+{% endblock %}

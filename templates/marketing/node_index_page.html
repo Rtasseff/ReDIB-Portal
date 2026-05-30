@@ -1,0 +1,22 @@
+{% extends "marketing_base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — ReDIB{% endblock %}
+
+{% block content %}
+    <section class="container py-5">
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
+        <div class="row g-4">
+            {% for node in node_pages %}
+                <div class="col-md-6">
+                    {% if node.specific.hero_image %}{% image node.specific.hero_image fill-600x300 class="img-fluid rounded mb-2" %}{% endif %}
+                    <h2 class="h5"><a href="{% pageurl node %}">{{ node.title }}</a></h2>
+                    {% if node.specific.intro %}<p>{{ node.specific.intro }}</p>{% endif %}
+                </div>
+            {% empty %}
+                <p class="text-muted">No nodes yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

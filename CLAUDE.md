@@ -35,6 +35,18 @@ existing COA portal moves under **`/portal/`** (e.g. `/portal/calls/`, `/portal/
 Django admin stays at `/admin/`, allauth at `/accounts/`. This is the cutover state — it is
 not yet in production. See `docs/marketing/` for the rebuild plan.
 
+**Phase 2 page types** (in `home/` and `marketing/`): `HomePage` (extended with hero),
+`StandardPage`, `NewsIndexPage` + `NewsPage`, `PressIndexPage` + `PressItemPage`,
+`TeamPage`, `NodeIndexPage` + `NodePage`, `EquipmentIndexPage` + `EquipmentCategoryPage`,
+`AccessIndexPage`, `PricingPage`, `ContactPage`. Snippets: `Person`, `ExternalLink`
+(both `TranslatableMixin`). NodePage and EquipmentCategoryPage read live from
+`core.Node` / `core.Equipment` — no duplicated catalog data.
+
+**Bootstrap a fresh dev DB**: `python manage.py marketing_init` is idempotent — it creates
+ES + EN locales, the default Wagtail Site (`localhost:8000`), an initial bilingual HomePage
+pair (`/` ES + `/home/` EN), and removes the empty Wagtail welcome page. Run it after
+`migrate` on any new environment.
+
 ## Workflow states (cheat-sheet)
 
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` →
