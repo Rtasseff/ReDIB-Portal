@@ -157,11 +157,26 @@ class TeamPage(Page):
 
     def get_context(self, request, *args, **kwargs):
         ctx = super().get_context(request, *args, **kwargs)
-        people = Person.objects.filter(locale=self.locale)
-        grouped = {}
-        for p in people:
-            grouped.setdefault(p.group, []).append(p)
-        ctx['people_by_group'] = grouped
+        # Pull all Person snippets in the matching locale; the queryset is
+        # ordered by group / order / name (model Meta) so iteration is stable.
+        people = list(
+            Person.objects
+            .filter(locale=self.locale)
+            .select_related('photo')
+            .order_by('group', 'order', 'name')
+        )
+        # Render groups in a canonical Coordination → Committee → Advisory →
+        # Management order regardless of how they sort alphabetically.
+        groups_order = [
+            Person.COORDINATOR,
+            Person.COMMITTEE,
+            Person.ADVISORY,
+            Person.MANAGEMENT,
+        ]
+        people_by_group = {
+            g: [p for p in people if p.group == g] for g in groups_order
+        }
+        ctx['people_by_group'] = people_by_group
         ctx['group_choices'] = Person.GROUP_CHOICES
         return ctx
 

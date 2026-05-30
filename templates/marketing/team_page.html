@@ -5,21 +5,57 @@
 
 {% block content %}
     <section class="container py-5">
-        <h1>{{ page.title }}</h1>
-        {% if page.intro %}<div class="lead">{{ page.intro|richtext }}</div>{% endif %}
+        <h1 class="mb-3">{{ page.title }}</h1>
+        {% if page.intro %}<div class="lead mb-4">{{ page.intro|richtext }}</div>{% endif %}
 
         {% for group_key, members in people_by_group.items %}
-            <h2 class="h4 mt-4">{{ group_key }}</h2>
-            <div class="row g-3">
-                {% for person in members %}
-                    <div class="col-md-4">
-                        {% if person.photo %}{% image person.photo fill-200x200 class="rounded-circle mb-2" %}{% endif %}
-                        <div><strong>{{ person.name }}</strong></div>
-                        <div class="small text-muted">{{ person.role }}</div>
-                        {% if person.affiliation %}<div class="small">{{ person.affiliation }}</div>{% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+            {% if members %}
+                <h2 class="h4 mt-5 mb-3">
+                    {% if request.LANGUAGE_CODE == 'en' %}
+                        {% if group_key == 'COORDINATOR' %}Coordination
+                        {% elif group_key == 'COMMITTEE' %}Coordination Committee
+                        {% elif group_key == 'ADVISORY' %}Scientific-Technical Advisory Committee
+                        {% elif group_key == 'MANAGEMENT' %}Management
+                        {% else %}{{ group_key }}
+                        {% endif %}
+                    {% else %}
+                        {% if group_key == 'COORDINATOR' %}Coordinación
+                        {% elif group_key == 'COMMITTEE' %}Comité de Coordinación
+                        {% elif group_key == 'ADVISORY' %}Comité Asesor Científico-Técnico
+                        {% elif group_key == 'MANAGEMENT' %}Área de Gestión
+                        {% else %}{{ group_key }}
+                        {% endif %}
+                    {% endif %}
+                </h2>
+                <div class="row g-4 mb-2">
+                    {% for person in members %}
+                        <div class="col-sm-6 col-md-4 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="text-center pt-3">
+                                    {% if person.photo %}
+                                        {% image person.photo fill-200x200 class="rounded-circle" %}
+                                    {% else %}
+                                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center"
+                                             style="width: 200px; height: 200px;">
+                                            <span class="text-muted small">No photo</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="fw-semibold">{{ person.name }}</div>
+                                    <div class="small text-muted">{{ person.role }}</div>
+                                    {% if person.affiliation %}
+                                        <div class="small">{{ person.affiliation }}</div>
+                                    {% endif %}
+                                    {% if person.bio %}
+                                        <div class="small mt-2">{{ person.bio|richtext }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% empty %}
             <p class="text-muted">No team members yet.</p>
         {% endfor %}
