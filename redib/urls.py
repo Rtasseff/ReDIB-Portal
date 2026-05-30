@@ -12,6 +12,7 @@ Layout on `feature/marketing-site`:
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 from allauth.account.views import PasswordChangeView
 
@@ -56,9 +57,14 @@ if settings.DEBUG:
         ] + urlpatterns
 
 # Wagtail catchall — MUST be last so it doesn't shadow any of the above.
-urlpatterns += [
+# Wrapped in i18n_patterns so EN pages get a `/en/` prefix (Spanish, the
+# default locale, stays unprefixed). This is the standard wagtail-localize
+# routing pattern; a more faithful "per-page slug aliases at root" routing
+# would require custom URL resolution and is deferred.
+urlpatterns += i18n_patterns(
     re_path(r'', include(wagtail_urls)),
-]
+    prefix_default_language=False,
+)
 
 # Customize admin site
 admin.site.site_header = 'ReDIB COA Administration'

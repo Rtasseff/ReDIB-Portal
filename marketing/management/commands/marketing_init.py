@@ -90,13 +90,13 @@ class Command(BaseCommand):
 
         # 4. EN translation via Wagtail's built-in copy_for_translation.
         #
-        # copy_for_translation() places the new page at the same tree parent
-        # as the source by default — i.e. a SIBLING of the ES homepage, both
-        # under the tree root. The default Site only routes URLs under its
-        # `root_page` (the ES homepage), so a sibling EN page is unreachable.
-        # To make `/home/` resolve, we move the EN homepage to be a CHILD of
-        # the ES homepage. The site URL then becomes `<site_root>/home/`,
-        # which under the default `/` site root gives `/home/`.
+        # Routing is via i18n_patterns(prefix_default_language=False): the EN
+        # site lives at /en/ and is resolved by LocaleMiddleware swapping the
+        # active locale and Wagtail walking the EN tree from the EN homepage.
+        # EN homepage must therefore be a sibling of ES homepage under the
+        # tree root (NOT nested under ES) — that's the standard
+        # wagtail-localize layout.
+        root = Page.objects.get(depth=1)
         home_en = HomePage.objects.filter(
             locale=en, translation_key=home_es.translation_key
         ).first()
@@ -108,16 +108,19 @@ class Command(BaseCommand):
             home_en.hero_subheading = 'Welcome to ReDIB.'
             home_en.body = '<p>Site under construction.</p>'
             home_en.save_revision().publish()
-            # Make EN a child of ES so it's reachable via the default site.
             home_en.refresh_from_db()
-            if home_en.get_parent().id != home_es.id:
-                home_en.move(home_es, pos='last-child')
+            # copy_for_translation puts EN at the same parent as ES (root), so
+            # no move should be needed — but self-heal if a prior bootstrap
+            # left it nested under ES.
+            if home_en.get_parent().id != root.id:
+                home_en.move(root, pos='last-child')
                 home_en.refresh_from_db()
             self.stdout.write(f"Created HomePage EN (id={home_en.id}, url={home_en.url})")
         else:
-            # Ensure EN is parented under ES (idempotent self-heal).
-            if home_en.get_parent().id != home_es.id:
-                home_en.move(home_es, pos='last-child')
+            # Self-heal: if a previous bootstrap nested EN under ES, lift it
+            # back up to root sibling of ES.
+            if home_en.get_parent().id != root.id:
+                home_en.move(root, pos='last-child')
                 home_en.refresh_from_db()
-                self.stdout.write(f"Moved HomePage EN under HomePage ES")
+                self.stdout.write("Moved HomePage EN back to root (sibling of ES)")
             self.stdout.write(f"HomePage EN already exists (id={home_en.id}, url={home_en.url})")
