@@ -4,6 +4,7 @@ Views for the calls app.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
 from core.decorators import coordinator_required
@@ -240,7 +241,7 @@ def call_publish(request, pk):
                 'call_code': call.code,
                 'call_title': call.title,
                 'submission_end': call.submission_end,
-                'call_url': request.build_absolute_uri(f'/calls/{call.pk}/'),
+                'call_url': request.build_absolute_uri(reverse('calls:public_detail', args=[call.pk])),
             }
 
             send_email_from_template.delay(

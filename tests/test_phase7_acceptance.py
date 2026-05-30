@@ -8,6 +8,7 @@ Tests the simplified acceptance workflow:
 """
 
 from django.test import TestCase, Client
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -63,7 +64,7 @@ class AcceptanceWorkflowTest(TestCase):
         self.client.force_login(self.applicant)
 
         response = self.client.post(
-            f'/applications/{self.application.pk}/accept/',
+            reverse('applications:application_acceptance', args=[self.application.pk]),
             {'action': 'accept'}
         )
 
@@ -83,7 +84,7 @@ class AcceptanceWorkflowTest(TestCase):
         self.client.force_login(self.applicant)
 
         response = self.client.post(
-            f'/applications/{self.application.pk}/accept/',
+            reverse('applications:application_acceptance', args=[self.application.pk]),
             {
                 'action': 'decline',
                 'decline_reason': 'Not able to proceed at this time'
@@ -106,7 +107,7 @@ class AcceptanceWorkflowTest(TestCase):
         self.client.force_login(self.applicant)
 
         response = self.client.post(
-            f'/applications/{self.application.pk}/accept/',
+            reverse('applications:application_acceptance', args=[self.application.pk]),
             {'action': 'accept'}
         )
 
@@ -127,7 +128,7 @@ class AcceptanceWorkflowTest(TestCase):
 
         # Try to accept again
         response = self.client.post(
-            f'/applications/{self.application.pk}/accept/',
+            reverse('applications:application_acceptance', args=[self.application.pk]),
             {'action': 'accept'}
         )
 
@@ -250,7 +251,7 @@ class PhaseIntegrationTest(TestCase):
         client.force_login(applicant)
 
         response = client.post(
-            f'/applications/{application.pk}/accept/',
+            reverse('applications:application_acceptance', args=[application.pk]),
             {'action': 'accept'}
         )
 

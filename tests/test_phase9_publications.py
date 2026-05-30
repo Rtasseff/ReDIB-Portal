@@ -8,6 +8,7 @@ Tests the publication submission workflow:
 """
 
 from django.test import TestCase, Client
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -63,7 +64,7 @@ class PublicationSubmissionTest(TestCase):
         self.client.force_login(self.applicant)
 
         response = self.client.post(
-            '/access/publications/submit/',
+            reverse('access:publication_submit'),
             {
                 'application': self.application.pk,
                 'title': 'Novel Research Findings Using ReDIB',
@@ -435,7 +436,7 @@ class PhaseIntegrationTest(TestCase):
         client.force_login(applicant)
 
         response = client.post(
-            '/access/publications/submit/',
+            reverse('access:publication_submit'),
             {
                 'application': application.pk,
                 'title': 'Integration Test Publication',

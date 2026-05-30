@@ -292,7 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('evaluator_id', evaluatorId);
         formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-        fetch(`/evaluations/assign/application/${currentAppId}/manual/`, {
+        const assignUrl = "{% url 'evaluations:manual_assign_evaluator' application_id=0 %}".replace('/0/', '/' + currentAppId + '/');
+        fetch(assignUrl, {
             method: 'POST',
             body: formData,
             headers: {

@@ -5,6 +5,7 @@ Tests the reporting dashboard and Excel export functionality.
 """
 
 from django.test import TestCase, Client
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -63,7 +64,7 @@ class StatisticsDashboardTests(TestCase):
     def test_statistics_dashboard_loads_for_coordinator(self):
         """Test that statistics dashboard loads for coordinators."""
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/')
+        response = self.client.get(reverse('reports:statistics'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Statistics & Reports')
@@ -73,7 +74,7 @@ class StatisticsDashboardTests(TestCase):
     def test_non_coordinator_denied_access(self):
         """Test that non-coordinators cannot access statistics."""
         self.client.force_login(self.user)
-        response = self.client.get('/reports/')
+        response = self.client.get(reverse('reports:statistics'))
 
         # Should be redirected or denied (not 200)
         self.assertNotEqual(response.status_code, 200)
@@ -81,7 +82,7 @@ class StatisticsDashboardTests(TestCase):
     def test_dashboard_displays_correct_counts(self):
         """Test that dashboard shows correct statistics."""
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/')
+        response = self.client.get(reverse('reports:statistics'))
 
         self.assertEqual(response.status_code, 200)
         # Should show at least 1 call and 1 application
@@ -102,7 +103,7 @@ class StatisticsDashboardTests(TestCase):
         )
 
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/')
+        response = self.client.get(reverse('reports:statistics'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Publication Statistics')
@@ -138,7 +139,7 @@ class ExcelExportTests(TestCase):
     def test_export_call_report_generates_excel(self):
         """Test that Excel export generates valid file."""
         self.client.force_login(self.coordinator)
-        response = self.client.get(f'/reports/call/{self.call.id}/export/')
+        response = self.client.get(reverse('reports:export_call_report', args=[self.call.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -156,7 +157,7 @@ class ExcelExportTests(TestCase):
         self.assertEqual(ReportGeneration.objects.count(), 0)
 
         # Generate report
-        response = self.client.get(f'/reports/call/{self.call.id}/export/')
+        response = self.client.get(reverse('reports:export_call_report', args=[self.call.id]))
         self.assertEqual(response.status_code, 200)
 
         # Should now have 1 report tracked
@@ -177,7 +178,7 @@ class ExcelExportTests(TestCase):
         )
         self.client.force_login(user)
 
-        response = self.client.get(f'/reports/call/{self.call.id}/export/')
+        response = self.client.get(reverse('reports:export_call_report', args=[self.call.id]))
         self.assertNotEqual(response.status_code, 200)
 
 
@@ -210,7 +211,7 @@ class ReportHistoryTests(TestCase):
     def test_report_history_loads(self):
         """Test that report history page loads."""
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/history/')
+        response = self.client.get(reverse('reports:history'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Report History')
@@ -227,7 +228,7 @@ class ReportHistoryTests(TestCase):
         )
 
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/history/')
+        response = self.client.get(reverse('reports:history'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.call.code)
@@ -236,7 +237,7 @@ class ReportHistoryTests(TestCase):
     def test_empty_history_shows_message(self):
         """Test that empty history shows appropriate message."""
         self.client.force_login(self.coordinator)
-        response = self.client.get('/reports/history/')
+        response = self.client.get(reverse('reports:history'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'No Reports Yet')
@@ -286,12 +287,12 @@ class PhaseIntegrationTest(TestCase):
         client.force_login(coordinator)
 
         # 1. View dashboard
-        response = client.get('/reports/')
+        response = client.get(reverse('reports:statistics'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, call.code)
 
         # 2. Export report
-        response = client.get(f'/reports/call/{call.id}/export/')
+        response = client.get(reverse('reports:export_call_report', args=[call.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response['Content-Type'],
@@ -302,7 +303,7 @@ class PhaseIntegrationTest(TestCase):
         self.assertEqual(ReportGeneration.objects.count(), 1)
 
         # 4. View history
-        response = client.get('/reports/history/')
+        response = client.get(reverse('reports:history'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, call.code)
 

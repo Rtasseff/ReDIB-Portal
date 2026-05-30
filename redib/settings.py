@@ -187,8 +187,8 @@ ACCOUNT_SIGNUP_FIELDS = [
 ]
 # Note: Username not included in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_USERNAME_REQUIRED=False)
 # Note: Email required via email* in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_EMAIL_REQUIRED=True)
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/portal/'
+LOGOUT_REDIRECT_URL = '/portal/'
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [

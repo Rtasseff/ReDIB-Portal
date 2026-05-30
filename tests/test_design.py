@@ -10,6 +10,7 @@ Tests verify:
 """
 
 from django.test import TestCase, Client, override_settings
+from django.urls import reverse
 from django.contrib.staticfiles import finders
 from django.contrib.auth import get_user_model
 from django.template.loader import get_template
@@ -252,7 +253,7 @@ class DashboardPageRenderTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_calls_list_renders(self):
-        response = self.client.get('/calls/')
+        response = self.client.get(reverse('calls:public_list'))
         self.assertEqual(response.status_code, 200)
 
 

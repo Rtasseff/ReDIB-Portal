@@ -298,7 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resolutionModalLabel').textContent = `Resolution for ${appCode}`;
 
         // Fetch application details
-        fetch(`/applications/resolution/application/${currentAppId}/`)
+        const detailUrl = "{% url 'applications:application_resolution' application_id=0 %}".replace('/0/', '/' + currentAppId + '/');
+        fetch(detailUrl)
             .then(response => response.json())
             .then(data => {
                 renderResolutionForm(data);
@@ -366,7 +367,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-        fetch(`/applications/resolution/application/${currentAppId}/`, {
+        const submitUrl = "{% url 'applications:application_resolution' application_id=0 %}".replace('/0/', '/' + currentAppId + '/');
+        fetch(submitUrl, {
             method: 'POST',
             body: formData,
             headers: {
@@ -425,7 +427,7 @@ document.getElementById('bulkResolutionForm')?.addEventListener('submit', functi
         return;
     }
 
-    fetch(`/applications/resolution/call/{{ call.id }}/bulk/`, {
+    fetch("{% url 'applications:bulk_resolution' call_id=call.id %}", {
         method: 'POST',
         body: formData,
         headers: {
