@@ -71,28 +71,46 @@ def main_nav(context):
     }
 
 
+_LANG_CODES = ('es', 'en')
+
+
+def _homepage_for(code):
+    locale = Locale.objects.filter(language_code=code).first()
+    if locale is None:
+        return None
+    return HomePage.objects.filter(locale=locale).live().first()
+
+
 @register.inclusion_tag('marketing/includes/lang_switch.html', takes_context=True)
 def lang_switch(context):
-    page = context.get('page')
-    if page is None:
-        # No Wagtail page in context — link ES homepage / EN homepage.
-        es = Locale.objects.filter(language_code='es').first()
-        en = Locale.objects.filter(language_code='en').first()
-        es_home = HomePage.objects.filter(locale=es).first() if es else None
-        en_home = HomePage.objects.filter(locale=en).first() if en else None
-        translations = [p for p in (es_home, en_home) if p is not None]
-        current_code = translation.get_language() or 'es'
-        return {
-            'translations': translations,
-            'current_code': current_code,
-        }
+    """Render the ES/EN switcher.
 
-    translations = list(page.get_translations(inclusive=True).live().specific())
-    current_code = page.locale.language_code if page.locale else (
-        translation.get_language() or 'es'
-    )
+    For each supported language we surface either the page's own translation,
+    if one exists, or the opposite-locale HomePage as a fallback — so the
+    switcher is never a dead-end (e.g. on ES-only press items).
+    """
+    page = context.get('page')
+    current_code = translation.get_language() or 'es'
+    if page is not None and page.locale:
+        current_code = page.locale.language_code
+
+    translated_by_code = {}
+    if page is not None:
+        for trans in page.get_translations(inclusive=True).live().specific():
+            translated_by_code[trans.locale.language_code] = trans
+
+    entries = []
+    for code in _LANG_CODES:
+        if code in translated_by_code:
+            target = translated_by_code[code]
+            entries.append({'code': code, 'page': target, 'is_fallback': False})
+        else:
+            fallback = _homepage_for(code)
+            if fallback is not None:
+                entries.append({'code': code, 'page': fallback, 'is_fallback': True})
+
     return {
-        'translations': translations,
+        'entries': entries,
         'current_code': current_code,
     }
 

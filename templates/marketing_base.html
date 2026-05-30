@@ -18,12 +18,11 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="marketing">
-    {# ============================================================
-       Marketing chrome. Deliberately distinct from the portal nav:
-       no Login/Register front-and-center, just a small "Portal" link.
-       Labels are in Spanish (the default locale).
-       Wire up real navigation + language switcher in Phase 2.
-       ============================================================ #}
+    {% comment %}
+    Marketing chrome. Deliberately distinct from the portal nav:
+    no Login/Register front-and-center, just a small "Portal" link.
+    Labels are in Spanish (the default locale).
+    {% endcomment %}
     <header class="marketing-header border-bottom">
         <div class="container d-flex align-items-center justify-content-between py-3">
             <a class="d-flex align-items-center text-decoration-none text-dark" href="/">

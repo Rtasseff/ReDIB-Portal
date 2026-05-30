@@ -1,10 +1,12 @@
 {% load wagtailcore_tags %}
 <span class="small text-muted" aria-label="Idioma / Language">
-    {% for trans in translations %}
-        {% if trans.locale.language_code == current_code %}
-            <strong class="text-dark">{{ trans.locale.language_code|upper }}</strong>
+    {% for entry in entries %}
+        {% if entry.code == current_code %}
+            <strong class="text-dark">{{ entry.code|upper }}</strong>
         {% else %}
-            <a href="{% pageurl trans %}" class="text-muted text-decoration-none">{{ trans.locale.language_code|upper }}</a>
+            <a href="{% pageurl entry.page %}"
+               class="text-muted text-decoration-none"
+               {% if entry.is_fallback %}title="No translation available — link goes to the {{ entry.code|upper }} home"{% endif %}>{{ entry.code|upper }}</a>
         {% endif %}
         {% if not forloop.last %} / {% endif %}
     {% endfor %}

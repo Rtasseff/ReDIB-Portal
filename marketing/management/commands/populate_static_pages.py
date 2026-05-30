@@ -112,10 +112,9 @@ convocatorias o cuando el solicitante prefiere una vía directa.</p>
 <p>Las solicitudes se presentan a través del portal de gestión de
 convocatorias de ReDIB. Allí encontrará las convocatorias abiertas, los plazos
 de presentación y toda la documentación necesaria para iniciar una solicitud.</p>
-<p>Consulte también la <a href="/documentacion/">documentación reguladora</a>
-(reglamento del Comité de Acceso, protocolos de acceso, planificación de
-convocatorias) y el <a href="/costes-de-acceso/">detalle de los costes
-asociados</a>.</p>
+<p>La documentación reguladora del programa (reglamento del Comité de
+Acceso, protocolos de acceso, planificación de convocatorias) y el
+detalle de los costes asociados se publicarán próximamente.</p>
 """
 
 ACCESS_BODY_EN = """
@@ -138,9 +137,9 @@ a direct route is preferred.</p>
 <p>Applications are submitted through the ReDIB call-management portal. There
 you will find the open calls, submission deadlines and all the documentation
 required to start an application.</p>
-<p>See also the <a href="/en/documentation/">governing documentation</a> (rules
-of procedure for the Access Committee, access protocols, call planning) and
-the <a href="/en/access-cost/">access cost details</a>.</p>
+<p>The governing documentation (Access Committee rules of procedure,
+access protocols, call planning) and the access cost details will be
+published shortly.</p>
 """
 
 CONTACT_INTRO_ES = (
