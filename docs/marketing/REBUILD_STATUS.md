@@ -143,21 +143,51 @@ top-right language switcher, confirm you land on the matching EN translation.
 
 ## What's deferred but safe to scope later (no design input needed)
 
-- Build the 3 missing inventory pages (`/documentacion/`, `/costes-de-acceso/`,
-  `/politica-de-privacidad-y-cookies/`) with content from the live site.
-- Install `wagtail.contrib.sitemaps` + add `robots.txt`.
-- Hero images for the 4 equipment category pages.
-- Idempotency cleanups on `populate_static_pages` and `populate_equipment_nodes`.
+- ~~Build the 3 missing inventory pages (`/documentacion/`, `/costes-de-acceso/`,
+  `/politica-de-privacidad-y-cookies/`)~~ — **done in Phase 5b**. Mounted at
+  root (not under AccessIndex) to match the live URLs that the Acceso body
+  anchors target. EN bodies are Claude translations of the ES content
+  (no EN version exists on live redib.net) and **need human review** per
+  the human-only translation policy — see module-level comments above
+  each EN body constant in `populate_static_pages.py`.
+- ~~Install `wagtail.contrib.sitemaps` + add `robots.txt`~~ — **done in
+  Phase 5b**. `/sitemap.xml` returns Wagtail's sitemap covering both
+  locales; `/robots.txt` is a plain template. Both deliberately outside
+  `i18n_patterns` so the URLs are canonical.
+- ~~Hero images for the 4 equipment category pages~~ — **done in Phase 5b**
+  (required adding `hero_image` FK + migration 0002).
+- ~~Idempotency cleanups on `populate_static_pages` and
+  `populate_equipment_nodes`~~ — **done in Phase 5b**. All five bootstrap
+  commands now show zero rewrites on second invocation. Phase 5b also
+  fixed a tug-of-war where `populate_static_pages` was overwriting
+  NodeIndex/EquipmentIndex chrome owned by `populate_equipment_nodes`.
 - EN team role labels currently generic "Member" — could be more specific.
 - News archive beyond 12 posts (~60 more historical posts; pre-2025 are
   likely ES-only).
 - Press archive beyond 12 items.
+- The 7 governance PDFs linked from `/documentacion/` still point at
+  the live `redib.net` URLs. Migrating them into Wagtail Documents is a
+  small follow-up.
+
+## Phase 5b additions to the page list
+
+- `/documentacion/` + `/en/documentation/` — links to 7 governance PDFs
+- `/costes-de-acceso/` + `/en/access-cost/` — AAC/AaD subsidy explanation
+- `/politica-de-privacidad-y-cookies/` + `/en/privacy-policy-and-cookies/`
+
+All three have `show_in_menus=False` so they don't bloat the main nav —
+they're reachable via the in-content anchors on the Acceso page (and via
+direct URL).
 
 ## Branch shape
 
-13 commits on top of `main`. Each commit is one phase or sub-phase:
+17 commits on top of `main`. Each commit is one phase or sub-phase:
 
 ```
+0836929 Marketing Phase 5b:  equipment category hero images
+047e96e Marketing Phase 5b:  SEO foundation — sitemap.xml + robots.txt
+aedbfea Marketing Phase 5b:  build 3 deferred inventory pages + populate_static_pages idempotency
+7dc6f72 Marketing docs:      REBUILD_STATUS.md + refresh CLAUDE.md branch note
 d4fcb82 Marketing Phase 4.5: cheap P1/P2 fixes from verification report
 efa6020 Marketing Phase 4:   verification report
 55b83d2 Marketing Phase 3d:  News + Press sample migration (12 / 12)
@@ -177,9 +207,12 @@ a79b49e Marketing Phase 1.5: replace hardcoded URLs with reverse()/{% url %}
 ## Test suite status
 
 The portal test suite was running with 17 known failures + 5 errors on
-`main` at the start of the rebuild (per Phase 1.5 baseline). Phase 1.5
-verified no NEW failures were introduced by the URL refactor.
-Re-baselining after Phases 2–4 work is a Phase 5 item.
+`main` at the start of the rebuild (per Phase 1.5 baseline). Phase 5b
+re-baselined: `feature/marketing-site` is 17F + 5E, `main` is 16F + 6E,
+the difference is one test (`test_profile_renders`) that converted from
+ERROR → FAIL due to the Phase 1.5 URL refactor (different failure mode,
+not a new regression). **No new test failures introduced by the
+marketing-site rebuild.**
 
 ## Phase 5 work (post-merge, in priority order)
 
