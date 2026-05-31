@@ -15,6 +15,10 @@ from wagtail.contrib.redirects.models import Redirect
 from wagtail.models import Locale, Page, Site
 
 from home.models import HomePage
+from marketing.management.commands.populate_equipment_nodes import (
+    EQUIPMENT_INDEX_REFRESH,
+    NODE_INDEX_REFRESH,
+)
 from marketing.models import (
     AccessIndexPage,
     ContactPage,
@@ -112,9 +116,11 @@ convocatorias o cuando el solicitante prefiere una vía directa.</p>
 <p>Las solicitudes se presentan a través del portal de gestión de
 convocatorias de ReDIB. Allí encontrará las convocatorias abiertas, los plazos
 de presentación y toda la documentación necesaria para iniciar una solicitud.</p>
-<p>La documentación reguladora del programa (reglamento del Comité de
-Acceso, protocolos de acceso, planificación de convocatorias) y el
-detalle de los costes asociados se publicarán próximamente.</p>
+<p>Consulte también la
+<a href="/documentacion/">documentación reguladora</a> del programa
+(reglamento del Comité de Acceso, protocolos de acceso, planificación de
+convocatorias) y el
+<a href="/costes-de-acceso/">detalle de los costes asociados</a>.</p>
 """
 
 ACCESS_BODY_EN = """
@@ -137,9 +143,10 @@ a direct route is preferred.</p>
 <p>Applications are submitted through the ReDIB call-management portal. There
 you will find the open calls, submission deadlines and all the documentation
 required to start an application.</p>
-<p>The governing documentation (Access Committee rules of procedure,
-access protocols, call planning) and the access cost details will be
-published shortly.</p>
+<p>See also the
+<a href="/en/documentation/">governing documentation</a> (Access Committee
+rules of procedure, access protocols, call planning) and the
+<a href="/en/access-cost/">detailed access costs</a>.</p>
 """
 
 CONTACT_INTRO_ES = (
@@ -340,6 +347,332 @@ of Guipúzcoa for any dispute arising from access to the website.</p>
 
 
 # ---------------------------------------------------------------------------
+# /documentacion/ + /en/documentation/ — governance PDF index
+# ---------------------------------------------------------------------------
+#
+# These pages list the 7 governance PDFs whose canonical filenames are
+# documented in `docs/marketing/assets-manifest.md`. Until the PDFs are
+# migrated into Wagtail Documents, the links here point at the live
+# redib.net file URLs. Migrating the binaries themselves is a separate
+# follow-up; the per-file URLs are based on the live filenames so the
+# links resolve.
+#
+# (EN body translated from ES by Claude — no authoritative EN version
+# exists on live redib.net.)
+
+GOVERNANCE_DOCS = [
+    {
+        'es_title': 'REDIB-01-PDA. Reglamento del Comité de Acceso',
+        'en_title': 'REDIB-01-PDA. Access Committee Rules of Procedure',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'REDIB-01-PDA.%20Reglamento%20del%20Comit%C3%A9%20de%20Acceso.pdf',
+    },
+    {
+        'es_title': 'REDIB-02-PDA. Protocolos de acceso',
+        'en_title': 'REDIB-02-PDA. Access Protocols',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'REDIB-02-pda%20Protocolos%20de%20acceso.pdf',
+    },
+    {
+        'es_title': 'REDIB-03-PDC. Planificación de convocatorias',
+        'en_title': 'REDIB-03-PDC. Call Planning',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'REDIB-03-PDC.%20Planificaci%C3%B3n%20de%20convocatorias.pdf',
+    },
+    {
+        'es_title': 'REDIB-04-SYR. Gestión de reclamaciones e incidencias',
+        'en_title': 'REDIB-04-SYR. Complaint and Incident Management',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'REDIB-04-SYR%20Gesti%C3%B3n%20de%20reclamaciones%20e%20incidencias.pdf',
+    },
+    {
+        'es_title': 'REDIB-05-DDP. Ejercicio de derechos de datos personales',
+        'en_title': 'REDIB-05-DDP. Exercise of Personal Data Rights',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'REDIB-05-DDP%20Ejercicio%20de%20derechos%20de%20datos%20personales.pdf',
+    },
+    {
+        'es_title': 'Acuerdo ReDIB de corresponsabilidad para la Gestión de Datos',
+        'en_title': 'ReDIB Co-responsibility Agreement for Data Management',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'Acuerdo%20ReDIB%20de%20corresponsabilidad%20para%20la%20Gesti%C3%B3n'
+               '%20de%20Datos.pdf',
+    },
+    {
+        'es_title': 'Guía de uso del portal de convocatorias',
+        'en_title': 'Call portal user guide (Spanish)',
+        'url': 'https://www.redib.net/upload/secciones-publicas/'
+               'gu%C3%ADa%20de%20uso%20del%20portal%20de%20convocatorias.pdf',
+    },
+]
+
+
+def _governance_docs_html(lang):
+    """Build a <ul> of governance-doc links for the given language ('es' or 'en')."""
+    title_key = 'es_title' if lang == 'es' else 'en_title'
+    items = '\n'.join(
+        f'<li><a href="{d["url"]}" target="_blank" rel="noopener">'
+        f'{d[title_key]}</a></li>'
+        for d in GOVERNANCE_DOCS
+    )
+    return f'<ul>\n{items}\n</ul>'
+
+
+DOCUMENTACION_BODY_ES = f"""
+<p>La gobernanza de la ICTS ReDIB y la operación del programa de acceso
+abierto competitivo están reguladas por un conjunto de documentos públicos.
+A continuación se enumeran los documentos vigentes; haga clic en cada
+título para descargar el PDF correspondiente.</p>
+<h2>Documentos reguladores</h2>
+{_governance_docs_html('es')}
+<p><em>Los PDFs se sirven actualmente desde el sitio anterior
+(redib.net) y se migrarán a la biblioteca de documentos de este portal
+en una fase posterior.</em></p>
+"""
+
+DOCUMENTACION_BODY_EN = f"""
+<p>The governance of the ReDIB ICTS and the operation of the competitive
+open-access programme are regulated by a set of public documents. The
+current documents are listed below; click each title to download the
+corresponding PDF.</p>
+<h2>Governing documents</h2>
+{_governance_docs_html('en')}
+<p><em>The PDFs are currently served from the previous site
+(redib.net) and will be migrated into this portal's document library in
+a follow-up phase.</em></p>
+"""
+
+# ---------------------------------------------------------------------------
+# /costes-de-acceso/ + /en/access-cost/ — access cost explainer
+# ---------------------------------------------------------------------------
+#
+# Content faithful to the live ES page. EN translated from ES by Claude
+# (no authoritative EN version exists on live redib.net).
+
+COSTES_ACCESO_BODY_ES = """
+<h2>Acceso a las instalaciones singulares de ReDIB</h2>
+<p>ReDIB ofrece a la comunidad científica dos mecanismos de acceso a sus
+instalaciones singulares:</p>
+<h3>Acceso Abierto Competitivo (AAC)</h3>
+<p>Es un mecanismo subvencionado, en el que se aplican tarifas ventajosas
+que van desde la gratuidad del servicio (aplicando solo los costes de los
+radiotrazadores y consumibles necesarios) hasta tarifas reducidas. El
+detalle se publica en la sección <a href="/tarifas/">Tarifas</a>.</p>
+<h3>Acceso a Demanda (AaD)</h3>
+<p>Es un mecanismo no subvencionado, en el que se aplican las tarifas
+aprobadas por cada nodo de ReDIB para sus diferentes servicios.</p>
+<h2>Acceso a otras instalaciones de los nodos de ReDIB</h2>
+<p>Los nodos que integran ReDIB disponen de otras infraestructuras que
+permiten ofrecer servicios avanzados de imagen biológica. Estos servicios
+se rigen por las tarifas aprobadas por cada uno de los nodos y se publican
+en sus respectivas páginas web.</p>
+<p>Para información detallada sobre tarifas específicas puede consultar la
+sección <a href="/tarifas/">Tarifas</a> o contactar directamente con cada
+nodo a través de la <a href="/contacto/">página de contacto</a>.</p>
+"""
+
+COSTES_ACCESO_BODY_EN = """
+<h2>Access to ReDIB's essential facilities</h2>
+<p>ReDIB offers the scientific community two mechanisms for accessing its
+essential facilities:</p>
+<h3>Competitive Open Access (AAC)</h3>
+<p>A subsidized mechanism with advantageous rates ranging from free service
+(applicants only cover the cost of radiotracers and consumables) to
+reduced rates. Details are published in the
+<a href="/en/rates/">Rates</a> section.</p>
+<h3>On-Demand Access (AaD)</h3>
+<p>A non-subsidized mechanism, in which the rates approved by each ReDIB
+node for its different services apply.</p>
+<h2>Access to other facilities of the ReDIB nodes</h2>
+<p>The nodes that make up ReDIB host additional infrastructures that enable
+advanced biological imaging services. These services are governed by the
+rates approved by each node and are published on their respective
+websites.</p>
+<p>For detailed information on specific rates, see the
+<a href="/en/rates/">Rates</a> section or contact each node directly via
+the <a href="/en/contact/">contact page</a>.</p>
+"""
+
+# ---------------------------------------------------------------------------
+# /politica-de-privacidad-y-cookies/ + /en/privacy-policy-and-cookies/
+# ---------------------------------------------------------------------------
+#
+# Faithful Spanish content from the live page. EN translated from ES by
+# Claude (no authoritative EN version exists on live redib.net) — review
+# before public launch.
+
+PRIVACY_BODY_ES = """
+<h2>Política de Privacidad de ReDIB</h2>
+<p>ReDIB ha adoptado las medidas necesarias para garantizar la seguridad,
+integridad y confidencialidad de los datos de carácter personal recogidos
+a través del sitio web <a href="https://www.redib.net/">https://www.redib.net/</a>,
+conforme al artículo 13 del Reglamento General de Protección de Datos (RGPD).</p>
+<h3>Corresponsables del tratamiento</h3>
+<p>Los nodos de investigación que conforman la ICTS actúan como
+corresponsables del tratamiento y han firmado un acuerdo de
+corresponsabilidad que establece sus obligaciones respectivas en materia
+de protección de datos.</p>
+<h3>Finalidad del tratamiento</h3>
+<p>Los datos se tratan para la evaluación de las solicitudes de acceso a
+las instalaciones de la ICTS, la gestión de los servicios administrativos
+y económicos asociados, y la comunicación con usuarios y potenciales
+usuarios.</p>
+<h3>Categorías de datos recabados</h3>
+<ul>
+<li>Datos identificativos: nombre, DNI/NIE, teléfono, dirección postal y
+electrónica, firma.</li>
+<li>Información académico-profesional: formación, titulación, experiencia.</li>
+<li>Datos de empleo: empleador y puesto de trabajo.</li>
+<li>Datos financieros: información bancaria para facturación.</li>
+<li>Proyectos de investigación: título, código y fuente de financiación.</li>
+</ul>
+<h3>Base legal</h3>
+<p>El tratamiento se basa en el consentimiento del usuario, prestado a
+través del formulario de solicitud de acceso, conforme al artículo 6.1.a
+del RGPD.</p>
+<h3>Decisiones automatizadas</h3>
+<p>No se realizan decisiones automatizadas con los datos personales
+tratados.</p>
+<h3>Cesiones de datos</h3>
+<p>No se prevén cesiones de datos salvo aquellas exigidas expresamente por
+los organismos públicos competentes en la evaluación de la actividad de
+los nodos de la ICTS.</p>
+<h3>Conservación de los datos</h3>
+<p>Los datos personales incorporados al fichero automatizado USUARIOS ICTS
+ReDIB se conservarán durante el tiempo necesario para cumplir con la
+finalidad para la que fueron recabados, salvo que el usuario solicite su
+supresión o que la normativa aplicable obligue a su bloqueo.</p>
+<h3>Derechos del usuario</h3>
+<p>Los usuarios pueden ejercer los derechos de acceso, rectificación,
+supresión, portabilidad, limitación y oposición al tratamiento dirigiendo
+su solicitud a <a href="mailto:gdpr@redib.net">gdpr@redib.net</a>, con
+acreditación de identidad. El ejercicio es gratuito, salvo que las
+solicitudes sean manifiestamente infundadas o repetitivas. El plazo
+ordinario de respuesta es de un mes, prorrogable dos meses adicionales.
+Los usuarios pueden además presentar reclamación ante la Agencia Española
+de Protección de Datos.</p>
+
+<h2>Política de Cookies</h2>
+<p>ReDIB utiliza cookies para almacenar, acceder y tratar datos personales
+derivados de las visitas al sitio web.</p>
+<h3>¿Qué son las cookies?</h3>
+<p>Las cookies son pequeños archivos de texto que se guardan en el
+navegador del usuario y que facilitan la navegación por el sitio web y
+permiten mejorar los servicios prestados mediante la gestión de sesiones
+y la personalización del contenido.</p>
+<h3>Cookies utilizadas en este sitio web</h3>
+<ul>
+<li><strong>Cookies técnicas propias:</strong> permiten la navegación y el
+uso de los servicios del sitio web.</li>
+<li><strong>Cookies analíticas de terceros:</strong> analizan el
+comportamiento de los usuarios para mejorar los servicios.</li>
+</ul>
+<h3>Gestión de cookies</h3>
+<table>
+<thead>
+<tr><th>Tipo</th><th>Información</th><th>Finalidad</th><th>Duración</th><th>Desactivación</th></tr>
+</thead>
+<tbody>
+<tr><td>Propia</td><td>Estado de sesión</td><td>Gestión de sesión</td><td>Sesión</td><td>No es posible</td></tr>
+<tr><td>Propia</td><td>Aceptación binaria</td><td>Registro del consentimiento de cookies</td><td>1 año</td><td>No es posible</td></tr>
+<tr><td>Google Analytics</td><td>Analítica de visitas</td><td>Análisis del comportamiento del usuario</td><td>Sesión / 2 años</td><td>Configuración del navegador</td></tr>
+</tbody>
+</table>
+<h3>Retirada del consentimiento</h3>
+<p>Los usuarios pueden retirar el consentimiento al uso de cookies en
+cualquier momento y eliminar las cookies almacenadas a través de la
+configuración del navegador. La desactivación no impide la navegación,
+pero puede limitar la funcionalidad de algunos servicios.</p>
+<h3>Modificaciones</h3>
+<p>Esta política puede modificarse en función de los requisitos legales o
+de los cambios en los tipos de cookies utilizadas. Se recomienda revisarla
+periódicamente.</p>
+"""
+
+PRIVACY_BODY_EN = """
+<h2>ReDIB Privacy Policy</h2>
+<p>ReDIB has adopted the measures required to guarantee the security,
+integrity and confidentiality of personal data collected through the
+website <a href="https://www.redib.net/">https://www.redib.net/</a>, in
+accordance with Article 13 of the General Data Protection Regulation
+(GDPR).</p>
+<h3>Joint controllers</h3>
+<p>The research nodes that make up the ICTS act as joint controllers of
+the processing and have signed a co-responsibility agreement setting out
+their respective data-protection obligations.</p>
+<h3>Purpose of processing</h3>
+<p>Data are processed for the evaluation of access requests to the ICTS
+facilities, the management of the associated administrative and financial
+services, and communication with users and potential users.</p>
+<h3>Categories of data collected</h3>
+<ul>
+<li>Identification data: name, ID number, phone, postal and email
+addresses, signature.</li>
+<li>Academic and professional information: training, qualifications,
+experience.</li>
+<li>Employment data: employer and position.</li>
+<li>Financial data: banking details for invoicing.</li>
+<li>Research projects: title, code and funding source.</li>
+</ul>
+<h3>Legal basis</h3>
+<p>Processing is based on the user's consent, given through the access
+application form, in accordance with Article 6.1.a of the GDPR.</p>
+<h3>Automated decision-making</h3>
+<p>No automated decisions are taken with the personal data processed.</p>
+<h3>Data transfers</h3>
+<p>No transfers of data are foreseen except those expressly required by
+the competent public bodies evaluating the activity of the ICTS nodes.</p>
+<h3>Data retention</h3>
+<p>Personal data added to the USUARIOS ICTS ReDIB automated file are kept
+for as long as necessary to fulfil the purpose for which they were
+collected, unless the user requests their deletion or applicable
+regulations require them to be blocked.</p>
+<h3>User rights</h3>
+<p>Users may exercise their rights of access, rectification, deletion,
+portability, limitation and opposition by sending their request to
+<a href="mailto:gdpr@redib.net">gdpr@redib.net</a>, with proof of
+identity. Exercising these rights is free of charge unless requests are
+manifestly unfounded or repetitive. The standard response time is one
+month, extendable by a further two months. Users may also lodge a
+complaint with the Spanish Data Protection Authority.</p>
+
+<h2>Cookies Policy</h2>
+<p>ReDIB uses cookies to store, access and process personal data derived
+from visits to the website.</p>
+<h3>What are cookies?</h3>
+<p>Cookies are small text files saved in the user's browser that
+facilitate navigation through the website and allow services to be
+improved by managing sessions and personalising content.</p>
+<h3>Cookies used on this website</h3>
+<ul>
+<li><strong>Own technical cookies:</strong> enable navigation and use of
+the website's services.</li>
+<li><strong>Third-party analytical cookies:</strong> analyse user
+behaviour to improve services.</li>
+</ul>
+<h3>Cookie management</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Information</th><th>Purpose</th><th>Duration</th><th>Deactivation</th></tr>
+</thead>
+<tbody>
+<tr><td>Own</td><td>Session state</td><td>Session management</td><td>Session</td><td>Not possible</td></tr>
+<tr><td>Own</td><td>Binary acceptance</td><td>Cookie-consent tracking</td><td>1 year</td><td>Not possible</td></tr>
+<tr><td>Google Analytics</td><td>Visit analytics</td><td>User-behaviour analysis</td><td>Session / 2 years</td><td>Browser settings</td></tr>
+</tbody>
+</table>
+<h3>Withdrawing consent</h3>
+<p>Users may withdraw consent to the use of cookies at any time and delete
+stored cookies through their browser settings. Disabling cookies does not
+prevent navigation but may limit the functionality of some services.</p>
+<h3>Changes</h3>
+<p>This policy may be amended in line with legal requirements or changes
+in the types of cookies used. Users are encouraged to review it
+periodically.</p>
+"""
+
+
+# ---------------------------------------------------------------------------
 # Section spec
 # ---------------------------------------------------------------------------
 
@@ -382,25 +715,18 @@ SECTIONS = [
         },
     },
     {
+        # NodeIndexPage and EquipmentIndexPage intro/body are owned by
+        # populate_equipment_nodes — we reuse those constants here so both
+        # commands write identical content (avoids a tug-of-war that breaks
+        # idempotency). See populate_equipment_nodes.NODE_INDEX_REFRESH /
+        # EQUIPMENT_INDEX_REFRESH.
         'es_title': 'Equipamiento',
         'es_slug': 'equipamiento',
         'en_title': 'Equipment',
         'en_slug': 'equipment',
         'page_class': EquipmentIndexPage,
-        'es_fields': {
-            'intro': 'Equipamiento de imagen biomédica disponible en los '
-                     'cuatro nodos de ReDIB.',
-            'body': '<p>Contenido detallado de las categorías de equipamiento '
-                    '(Imagen Clínica, Imagen Preclínica, Análisis y Radioquímica) '
-                    'se publicará en una fase posterior.</p>',
-        },
-        'en_fields': {
-            'intro': 'Biomedical imaging equipment available across ReDIB\'s '
-                     'four nodes.',
-            'body': '<p>Detailed content for the equipment categories '
-                    '(Clinical Imaging, Preclinical Imaging, Image Analytics and '
-                    'Radiochemistry) will be published in a follow-up phase.</p>',
-        },
+        'es_fields': EQUIPMENT_INDEX_REFRESH['es'],
+        'en_fields': EQUIPMENT_INDEX_REFRESH['en'],
     },
     {
         'es_title': 'Equipo',
@@ -420,21 +746,16 @@ SECTIONS = [
         },
     },
     {
+        # NodeIndexPage intro/body owned by populate_equipment_nodes —
+        # see NODE_INDEX_REFRESH. NodeIndexPage has no `body` field, so
+        # _upsert_section skips any 'body' key for unknown fields below.
         'es_title': 'Nodos',
         'es_slug': 'nodos',
         'en_title': 'Nodes',
         'en_slug': 'nodes',
         'page_class': NodeIndexPage,
-        'es_fields': {
-            'intro': 'Los cuatro nodos de ReDIB: BioImaC (Madrid), TRIMA @ CNIC '
-                     '(Madrid), Imaging La Fe (Valencia) y CIC biomaGUNE '
-                     '(San Sebastián).',
-        },
-        'en_fields': {
-            'intro': 'ReDIB\'s four nodes: BioImaC (Madrid), TRIMA @ CNIC '
-                     '(Madrid), Imaging La Fe (Valencia) and CIC biomaGUNE '
-                     '(San Sebastián).',
-        },
+        'es_fields': {'intro': NODE_INDEX_REFRESH['es']['intro']},
+        'en_fields': {'intro': NODE_INDEX_REFRESH['en']['intro']},
     },
     {
         'es_title': 'Noticias',
@@ -520,6 +841,93 @@ SECTIONS = [
         'en_fields': {
             'intro': '',
             'body': LEGAL_BODY_EN,
+        },
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Extra pages — sub-pages that live under a section parent (not under
+# HomePage directly) or otherwise need show_in_menus=False. These are
+# inventory-deferred pages restored in Phase 5b.
+#
+# Each spec adds an `es_parent_slug` (slug of the ES parent page under
+# home_es; None means "directly under home_es") and `en_parent_slug`
+# (same for EN). All extra pages are created with show_in_menus=False so
+# they don't bloat the main nav — they're linked from body copy and the
+# footer.
+# ---------------------------------------------------------------------------
+
+EXTRA_PAGES = [
+    {
+        # /documentacion/ + /en/documentation/  (top-level under HomePage)
+        # Logically belongs to the Access section, but kept at root to match
+        # the live redib.net URL and the anchor in the Acceso body. Linked
+        # from there + the Documentación footer block.
+        'es_title': 'Documentación',
+        'es_slug': 'documentacion',
+        'en_title': 'Documentation',
+        'en_slug': 'documentation',
+        'page_class': StandardPage,
+        'es_parent_slug': None,    # under home_es
+        'en_parent_slug': None,    # under home_en
+        'es_fields': {
+            'intro': 'Documentación reguladora de la ICTS ReDIB: reglamento '
+                     'del Comité de Acceso, protocolos de acceso, planificación '
+                     'de convocatorias y otros documentos públicos.',
+            'body': DOCUMENTACION_BODY_ES,
+        },
+        'en_fields': {
+            'intro': 'Governing documentation of the ReDIB ICTS: Access '
+                     'Committee rules of procedure, access protocols, call '
+                     'planning and other public documents.',
+            'body': DOCUMENTACION_BODY_EN,
+        },
+    },
+    {
+        # /costes-de-acceso/ + /en/access-cost/  (top-level under HomePage)
+        # Same rationale as /documentacion/ above: belongs to Access logically
+        # but lives at root to match the live URL and the Acceso anchor.
+        'es_title': 'Costes de acceso',
+        'es_slug': 'costes-de-acceso',
+        'en_title': 'Access cost',
+        'en_slug': 'access-cost',
+        'page_class': StandardPage,
+        'es_parent_slug': None,    # under home_es
+        'en_parent_slug': None,    # under home_en
+        'es_fields': {
+            'intro': 'Mecanismos de acceso a las instalaciones esenciales de '
+                     'ReDIB y a otras infraestructuras de los nodos: AAC '
+                     'subvencionado y AaD no subvencionado.',
+            'body': COSTES_ACCESO_BODY_ES,
+        },
+        'en_fields': {
+            'intro': 'Access mechanisms for ReDIB\'s essential facilities and '
+                     'for other infrastructures at the nodes: subsidized AAC '
+                     'and non-subsidized AaD.',
+            'body': COSTES_ACCESO_BODY_EN,
+        },
+    },
+    {
+        # /politica-de-privacidad-y-cookies/  (top-level under home_es)
+        # /en/privacy-policy-and-cookies/     (top-level under home_en)
+        'es_title': 'Política de privacidad y cookies',
+        'es_slug': 'politica-de-privacidad-y-cookies',
+        'en_title': 'Privacy policy and cookies',
+        'en_slug': 'privacy-policy-and-cookies',
+        'page_class': StandardPage,
+        'es_parent_slug': None,    # under home_es
+        'en_parent_slug': None,    # under home_en
+        'es_fields': {
+            'intro': 'Información sobre el tratamiento de datos personales y '
+                     'el uso de cookies en el sitio web de ReDIB conforme al '
+                     'RGPD.',
+            'body': PRIVACY_BODY_ES,
+        },
+        'en_fields': {
+            'intro': 'Information on the processing of personal data and the '
+                     'use of cookies on the ReDIB website under the GDPR.',
+            'body': PRIVACY_BODY_EN,
         },
     },
 ]
@@ -659,13 +1067,25 @@ class Command(BaseCommand):
             )
             return
 
-        self._refresh_homepage(home_es, HOMEPAGE_ES)
-        self._refresh_homepage(home_en, HOMEPAGE_EN)
-        self.stdout.write("Homepage hero/body refreshed (ES + EN).")
+        es_changed = self._refresh_homepage(home_es, HOMEPAGE_ES)
+        en_changed = self._refresh_homepage(home_en, HOMEPAGE_EN)
+        if es_changed or en_changed:
+            self.stdout.write(
+                f"Homepage hero/body updated ("
+                f"ES: {'changed' if es_changed else 'unchanged'}, "
+                f"EN: {'changed' if en_changed else 'unchanged'})."
+            )
+        else:
+            self.stdout.write("Homepage already current (ES + EN).")
 
         # Section pages
         for spec in SECTIONS:
             self._upsert_section(home_es, home_en, en, spec)
+
+        # Extra pages (sub-pages of section parents, or top-level pages with
+        # show_in_menus=False — restored in Phase 5b)
+        for spec in EXTRA_PAGES:
+            self._upsert_extra_page(home_es, home_en, en, spec)
 
         # ExternalLink snippets
         self._upsert_external_links(es, en)
@@ -783,10 +1203,160 @@ class Command(BaseCommand):
                 )
 
     # ------------------------------------------------------------------
+    # Extra page upsert (arbitrary parent + show_in_menus=False)
+    # ------------------------------------------------------------------
+
+    def _upsert_extra_page(self, home_es, home_en, en_locale, spec):
+        """Upsert a non-section page (child of another section, or top-level
+        with show_in_menus=False).
+
+        Mirrors `_upsert_section` but resolves the parent dynamically via
+        `es_parent_slug` / `en_parent_slug` (None = HomePage).
+        """
+        cls = spec['page_class']
+        es_slug = spec['es_slug']
+        en_slug = spec['en_slug']
+
+        # Resolve ES parent
+        es_parent_slug = spec.get('es_parent_slug')
+        if es_parent_slug is None:
+            es_parent = home_es
+        else:
+            es_parent = (
+                Page.objects.child_of(home_es)
+                .filter(slug=es_parent_slug, locale=home_es.locale)
+                .specific()
+                .first()
+            )
+            if es_parent is None:
+                self.stderr.write(
+                    f"  ERROR: ES parent /{es_parent_slug}/ not found for "
+                    f"/{es_slug}/ — skipping"
+                )
+                return
+
+        # ES side: look up by slug under es_parent.
+        es_page = (
+            cls.objects.child_of(es_parent).filter(slug=es_slug).first()
+        )
+        if es_page is None:
+            es_page = cls(
+                title=spec['es_title'],
+                slug=es_slug,
+                locale=home_es.locale,
+                show_in_menus=False,
+                **spec['es_fields'],
+            )
+            es_parent.add_child(instance=es_page)
+            es_page.save_revision().publish()
+            es_page.refresh_from_db()
+            self.stdout.write(
+                f"  Created ES extra page: {es_page.url} (id={es_page.id})"
+            )
+        else:
+            changed = False
+            if es_page.title != spec['es_title']:
+                es_page.title = spec['es_title']
+                changed = True
+            if es_page.show_in_menus:
+                es_page.show_in_menus = False
+                changed = True
+            for field, value in spec['es_fields'].items():
+                if getattr(es_page, field) != value:
+                    setattr(es_page, field, value)
+                    changed = True
+            if changed:
+                es_page.save_revision().publish()
+                es_page.refresh_from_db()
+                self.stdout.write(
+                    f"  Updated ES extra page: {es_page.url} (id={es_page.id})"
+                )
+            else:
+                self.stdout.write(
+                    f"  ES extra page already current: {es_page.url} "
+                    f"(id={es_page.id})"
+                )
+
+        # Resolve EN parent
+        en_parent_slug = spec.get('en_parent_slug')
+        if en_parent_slug is None:
+            en_parent = home_en
+        else:
+            en_parent = (
+                Page.objects.child_of(home_en)
+                .filter(slug=en_parent_slug, locale=en_locale)
+                .specific()
+                .first()
+            )
+            if en_parent is None:
+                self.stderr.write(
+                    f"  ERROR: EN parent /en/{en_parent_slug}/ not found for "
+                    f"/en/{en_slug}/ — skipping"
+                )
+                return
+
+        # EN side: look up by translation_key + locale=en.
+        en_page = (
+            cls.objects
+            .filter(translation_key=es_page.translation_key, locale=en_locale)
+            .first()
+        )
+        if en_page is None:
+            en_page = es_page.copy_for_translation(en_locale)
+            en_page.title = spec['en_title']
+            en_page.slug = en_slug
+            en_page.show_in_menus = False
+            for field, value in spec['en_fields'].items():
+                setattr(en_page, field, value)
+            en_page.save_revision().publish()
+            en_page.refresh_from_db()
+            # Re-parent under en_parent if copy_for_translation placed it elsewhere
+            if en_page.get_parent().id != en_parent.id:
+                en_page.move(en_parent, pos='last-child')
+                en_page.refresh_from_db()
+            self.stdout.write(
+                f"  Created EN extra page: {en_page.url} (id={en_page.id})"
+            )
+        else:
+            changed = False
+            if en_page.title != spec['en_title']:
+                en_page.title = spec['en_title']
+                changed = True
+            if en_page.slug != en_slug:
+                en_page.slug = en_slug
+                changed = True
+            if en_page.show_in_menus:
+                en_page.show_in_menus = False
+                changed = True
+            for field, value in spec['en_fields'].items():
+                if getattr(en_page, field) != value:
+                    setattr(en_page, field, value)
+                    changed = True
+            if changed:
+                en_page.save_revision().publish()
+                en_page.refresh_from_db()
+                self.stdout.write(
+                    f"  Updated EN extra page: {en_page.url} (id={en_page.id})"
+                )
+            else:
+                self.stdout.write(
+                    f"  EN extra page already current: {en_page.url} "
+                    f"(id={en_page.id})"
+                )
+            # Self-heal parent
+            if en_page.get_parent().id != en_parent.id:
+                en_page.move(en_parent, pos='last-child')
+                en_page.refresh_from_db()
+                self.stdout.write(
+                    f"  Re-parented EN extra page: {en_page.url}"
+                )
+
+    # ------------------------------------------------------------------
     # Homepage refresh
     # ------------------------------------------------------------------
 
     def _refresh_homepage(self, page, fields):
+        """Compare-and-skip write to HomePage. Returns True iff anything changed."""
         changed = False
         for field, value in fields.items():
             if getattr(page, field) != value:
@@ -794,6 +1364,7 @@ class Command(BaseCommand):
                 changed = True
         if changed:
             page.save_revision().publish()
+        return changed
 
     # ------------------------------------------------------------------
     # ExternalLink snippets
