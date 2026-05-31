@@ -330,6 +330,11 @@ CATEGORY_SPECS = [
         'en_title': 'Clinical Imaging',
         'en_slug': 'clinical-imaging',
         'area_key': 'clinical',
+        'hero_url': (
+            'https://www.redib.net/upload/secciones-publicas/'
+            'clinical-image_6c.jpg'
+        ),
+        'hero_slug': 'clinical-imaging-hero',
         'es_intro': (
             'Equipamiento de imagen clínica disponible en la red ReDIB: '
             'resonancia magnética 3T, PET-RM híbrida, PET-CT digital y '
@@ -371,6 +376,11 @@ CATEGORY_SPECS = [
         'en_title': 'Preclinical Imaging',
         'en_slug': 'preclinical-imaging',
         'area_key': 'preclinical',
+        'hero_url': (
+            'https://www.redib.net/upload/secciones-publicas/'
+            'preclinical-imaging-001_6c.jpg'
+        ),
+        'hero_slug': 'preclinical-imaging-hero',
         'es_intro': (
             'Imagen de pequeño animal con resonancia magnética de alto '
             'campo (7 T, 9.4 T, 11.7 T), sistemas PET-SPECT-CT y métodos '
@@ -411,6 +421,11 @@ CATEGORY_SPECS = [
         'en_title': 'Image Analytics',
         'en_slug': 'clinical-and-preclinical-image-analytics',
         'area_key': '',
+        'hero_url': (
+            'https://www.redib.net/upload/secciones-publicas/'
+            'imagen-web_6c.jpg'
+        ),
+        'hero_slug': 'image-analytics-hero',
         'es_intro': (
             'Servicios de análisis de imagen clínica y preclínica: '
             'software avanzado, estaciones de procesamiento y soporte '
@@ -458,6 +473,11 @@ CATEGORY_SPECS = [
         'en_title': 'Radiochemistry',
         'en_slug': 'radiochemistry',
         'area_key': 'radiochemistry',
+        'hero_url': (
+            'https://www.redib.net/upload/secciones-publicas/'
+            'radioquimica01_cr_portada.jpg'
+        ),
+        'hero_slug': 'radiochemistry-hero',
         'es_intro': (
             'Laboratorio de radioquímica con ciclotrón IBA 9/18, '
             'producción de radiotrazadores PET e isótopos autorizados '
@@ -646,9 +666,24 @@ class Command(BaseCommand):
             )
 
         # 3.2 — EquipmentCategoryPages
+        category_download_dir = (
+            Path(settings.MEDIA_ROOT) / 'marketing' / 'equipment'
+        )
+        category_download_dir.mkdir(parents=True, exist_ok=True)
+
         for spec in CATEGORY_SPECS:
+            hero = None
+            if spec.get('hero_url'):
+                hero = get_or_create_image(
+                    image_model,
+                    category_download_dir,
+                    spec['hero_url'],
+                    title=f"Equipment category hero: {spec['es_title']}",
+                    slug_hint=spec['hero_slug'],
+                    stderr_write=self.stderr.write,
+                )
             es_page, en_page = self._upsert_category_pair(
-                eq_index_es, eq_index_en, en, spec
+                eq_index_es, eq_index_en, en, spec, hero
             )
             area_status = (
                 f"area_key={spec['area_key']!r}"
@@ -838,7 +873,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
 
     def _upsert_category_pair(
-        self, eq_index_es, eq_index_en, en_locale, spec
+        self, eq_index_es, eq_index_en, en_locale, spec, hero
     ):
         es_page = (
             EquipmentCategoryPage.objects.child_of(eq_index_es)
@@ -848,6 +883,7 @@ class Command(BaseCommand):
             'intro': spec['es_intro'],
             'body': spec['es_body'],
             'area_key': spec['area_key'],
+            'hero_image': hero,
         }
         if es_page is None:
             es_page = EquipmentCategoryPage(
@@ -870,6 +906,10 @@ class Command(BaseCommand):
                 es_page.title = spec['es_title']
                 changed = True
             for field, value in es_fields.items():
+                # Don't clobber a cached hero with None if download failed
+                # on a re-run.
+                if field == 'hero_image' and value is None and es_page.hero_image_id:
+                    continue
                 if getattr(es_page, field) != value:
                     setattr(es_page, field, value)
                     changed = True
@@ -896,6 +936,7 @@ class Command(BaseCommand):
             'intro': spec['en_intro'],
             'body': spec['en_body'],
             'area_key': spec['area_key'],
+            'hero_image': hero,
         }
         if en_page is None:
             en_page = es_page.copy_for_translation(en_locale)
@@ -921,6 +962,8 @@ class Command(BaseCommand):
                 en_page.slug = spec['en_slug']
                 changed = True
             for field, value in en_fields.items():
+                if field == 'hero_image' and value is None and en_page.hero_image_id:
+                    continue
                 if getattr(en_page, field) != value:
                     setattr(en_page, field, value)
                     changed = True

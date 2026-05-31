@@ -297,6 +297,13 @@ class EquipmentCategoryPage(Page):
         ('', 'No live equipment query'),
     ]
 
+    hero_image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
     intro = models.CharField(max_length=500, blank=True)
     body = RichTextField(blank=True)
     area_key = models.CharField(
@@ -307,6 +314,7 @@ class EquipmentCategoryPage(Page):
     )
 
     content_panels = Page.content_panels + [
+        FieldPanel('hero_image'),
         FieldPanel('intro'),
         FieldPanel('area_key'),
         FieldPanel('body'),
