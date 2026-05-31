@@ -29,23 +29,32 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 
 ## Branch note — `feature/marketing-site`
 
-On the `feature/marketing-site` branch, URL routing is reshuffled for the redib.net
-marketing-site rebuild: **Wagtail mounts at `/`** (with admin at `/cms/`) and the entire
-existing COA portal moves under **`/portal/`** (e.g. `/portal/calls/`, `/portal/applications/`).
-Django admin stays at `/admin/`, allauth at `/accounts/`. This is the cutover state — it is
-not yet in production. See `docs/marketing/` for the rebuild plan.
+The redib.net marketing-site rebuild lives on this branch. Production at
+`portal.redib.net` is untouched until cutover.
 
-**Phase 2 page types** (in `home/` and `marketing/`): `HomePage` (extended with hero),
-`StandardPage`, `NewsIndexPage` + `NewsPage`, `PressIndexPage` + `PressItemPage`,
-`TeamPage`, `NodeIndexPage` + `NodePage`, `EquipmentIndexPage` + `EquipmentCategoryPage`,
-`AccessIndexPage`, `PricingPage`, `ContactPage`. Snippets: `Person`, `ExternalLink`
-(both `TranslatableMixin`). NodePage and EquipmentCategoryPage read live from
-`core.Node` / `core.Equipment` — no duplicated catalog data.
+**URL layout on this branch:** Wagtail at `/` (ES) + `/en/` (EN), portal under
+`/portal/`, Wagtail admin at `/cms/`, Django admin at `/admin/`, allauth at
+`/accounts/`. Routing uses `i18n_patterns(prefix_default_language=False)` —
+Spanish unprefixed, English at `/en/`.
 
-**Bootstrap a fresh dev DB**: `python manage.py marketing_init` is idempotent — it creates
-ES + EN locales, the default Wagtail Site (`localhost:8000`), an initial bilingual HomePage
-pair (`/` ES + `/home/` EN), and removes the empty Wagtail welcome page. Run it after
-`migrate` on any new environment.
+**Apps** (in addition to the portal apps): `home` (`HomePage` only),
+`marketing` (all other page types + snippets + populate commands). Page types
+and snippets are documented in `docs/marketing/REBUILD_STATUS.md`. NodePage
+and EquipmentCategoryPage read live from `core.Node` / `core.Equipment` —
+no duplicated catalog data.
+
+**Bootstrap a fresh dev DB** (idempotent — safe to re-run):
+```bash
+python manage.py migrate
+python manage.py marketing_init           # Wagtail Site + ES/EN Locales + bilingual HomePage
+python manage.py populate_static_pages    # 11 section pages × 2 locales + ExternalLinks + redirects
+python manage.py populate_team            # 14 Person snippets with headshots
+python manage.py populate_equipment_nodes # 4 NodePages + 4 EquipmentCategoryPages
+python manage.py populate_news_press      # 12 news + 12 press (sample)
+```
+
+**Full status, decisions, and open items:** see
+[docs/marketing/REBUILD_STATUS.md](docs/marketing/REBUILD_STATUS.md).
 
 ## Workflow states (cheat-sheet)
 
