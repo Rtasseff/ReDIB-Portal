@@ -14,10 +14,12 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 from allauth.account.views import PasswordChangeView
 
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail import urls as wagtail_urls
+from wagtail.contrib.sitemaps.views import sitemap
 from wagtail.documents import urls as wagtaildocs_urls
 
 urlpatterns = [
@@ -42,6 +44,18 @@ urlpatterns = [
     path('portal/access/', include('access.urls')),
     path('portal/reports/', include('reports.urls')),
     path('portal/newsletters/', include('newsletters.urls')),
+
+    # SEO foundations — sitemap + robots.txt (single sitemap covering both
+    # locales; deliberately OUTSIDE i18n_patterns so the URL is canonical).
+    path('sitemap.xml', sitemap, name='sitemap'),
+    path(
+        'robots.txt',
+        TemplateView.as_view(
+            template_name='robots.txt',
+            content_type='text/plain',
+        ),
+        name='robots',
+    ),
 ]
 
 # Serve media files in development

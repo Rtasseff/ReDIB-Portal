@@ -38,10 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Required for allauth
+    'django.contrib.sitemaps',  # Provides sitemap.xml template (wagtail.contrib.sitemaps wraps it)
 
     # Wagtail (marketing site CMS) + bilingual content
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
+    'wagtail.contrib.sitemaps',
     'wagtail.embeds',
     'wagtail.sites',
     'wagtail.users',
