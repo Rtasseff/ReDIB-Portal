@@ -23,6 +23,45 @@ made* (with a "what to do next when ready" section). This file records
 
 ---
 
+## In-flight branches (not on `main`)
+
+### `feature/marketing-site` — Wagtail rebuild of redib.net
+
+Active long-running branch as of 2026-06-01, ~20 commits beyond `main`,
+not yet merged or deployed. Replaces the third-party-hosted public
+website (`redib.net`) with a Wagtail-based marketing site inside this
+same Django project, alongside the existing COA portal.
+
+**End-state URL layout** (takes effect at cutover):
+- `/` and `/en/` — Wagtail marketing site (Spanish default, English at `/en/`)
+- `/portal/` — current COA portal (moved from root)
+- `/admin/`, `/cms/`, `/accounts/`, `/documents/` — unchanged
+
+**Heads-up for work on `main`:** these files are heavily modified on the
+branch and will conflict at merge if you also change them here —
+- `redib/urls.py` (full URL refactor)
+- `redib/settings.py` (Wagtail apps + LocaleMiddleware + i18n config)
+- `templates/base.html` (links now use `{% url %}` reverses)
+- `applications/tasks.py`, `calls/views.py` (a few hardcoded portal paths
+  converted to `reverse()`)
+- Most portal-app tests under `tests/` and `reports/tests.py`
+
+If you touch any of the above on `main`, consider whether the marketing
+branch needs a follow-up rebase later.
+
+**Full status, architecture decisions, and pickup instructions:** on the
+branch at `docs/marketing/REBUILD_STATUS.md`. Read without checking out:
+
+```bash
+git show feature/marketing-site:docs/marketing/REBUILD_STATUS.md | less
+```
+
+**Cutover plan (DNS, Caddy, `redib.net` vs `portal.redib.net` URL
+strategy, third-party CMS handoff)** is the next conversation when the
+rebuild is ready to ship. Not yet scoped.
+
+---
+
 ## UX polish
 
 | # | Priority | Item |

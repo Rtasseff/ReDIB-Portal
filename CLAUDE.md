@@ -27,6 +27,19 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 - **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
 - **End-user walkthrough** (per role): [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
+## In-flight long-running branches
+
+- **`feature/marketing-site`** — Wagtail-based rebuild of the public `redib.net`
+  marketing website inside this same Django project. ~20 commits beyond `main`.
+  Not yet merged or deployed. At cutover the portal moves from root to `/portal/`
+  and Wagtail takes over `/`. Heads-up: changes on `main` to `redib/urls.py`,
+  `redib/settings.py`, `templates/base.html`, or any portal app's `urls.py` are
+  likely to conflict at merge. Full status, architecture decisions, and pickup
+  instructions live on that branch at `docs/marketing/REBUILD_STATUS.md` — read
+  it without switching branches via
+  `git show feature/marketing-site:docs/marketing/REBUILD_STATUS.md`. See also
+  the [in-flight branches entry in the developer backlog](docs/developer/backlog.md#in-flight-branches-not-on-main).
+
 ## Workflow states (cheat-sheet)
 
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` →
