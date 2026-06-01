@@ -26,6 +26,7 @@ For each PRESS item:
 Pre-2025 news posts are ES-only per the Phase 0 bilingual audit.
 """
 from datetime import date
+from html import escape
 from pathlib import Path
 
 from django.conf import settings
@@ -1003,15 +1004,109 @@ PRESS_ITEMS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Historical news archive — pages 2-6 of the live /noticias listing
+# (2017-2025), the posts beyond the 12 rich page-1 items above. ES-only: the
+# live EN /news index does not carry these older posts, so we do not fabricate
+# EN translations (human-only translation policy). Each is migrated with its
+# real date / title / listing teaser and a link to the full article on
+# redib.net. Full bilingual bodies for these remain a documented follow-up.
+#
+# Tuple shape: (date, slug, title, teaser). Empty teaser = the live listing
+# showed no teaser for that item.
+# ---------------------------------------------------------------------------
+
+ARCHIVE_NEWS = [
+    (date(2025, 3, 11), 'v-workshop-de-introduccion-a-la-imagen-molecular-preclinica-y-sus-aplicaciones-en-investigacion-biomedica', 'V Workshop de Introducción a la Imagen Molecular Preclínica y sus Aplicaciones en Investigación Biomédica', 'Taller dirigido a jóvenes investigadores, médicos, veterinarios, técnicos y científicos interesados en la aplicación de la imagen molecular preclínica.'),
+    (date(2025, 3, 11), 'primera-convocatoria-de-acceso-abierto-competitivo-ano-2025-redib-2501', 'Primera Convocatoria de Acceso Abierto Competitivo Año 2025: REDIB 2501', 'La convocatoria de acceso abierto competitivo es una oportunidad para impulsar su ciencia.'),
+    (date(2025, 3, 6), 'evento-transfiere-2025-malaga-12-14-marzo-2025', 'Evento Transfiere 2025, Málaga, 12-14 marzo 2025', 'Transfiere es el evento líder en investigación, desarrollo e innovación en el Sur de Europa.'),
+    (date(2025, 3, 6), 'jornada-de-trabajo-sobre-oportunidades-de-colaboracion-nacional-entre-infraestructuras-europeas-de-investigacion-de-los-ambitos-de-la-alimentacion-el-medioambiente-y-la-salud', 'Jornada de trabajo sobre oportunidades de colaboración nacional entre Infraestructuras Europeas de Investigación de los ámbitos de la Alimentación, el Medioambiente y la Salud', 'El objetivo de esta jornada es generar un foro de intercambio de opiniones y experiencias a nivel nacional.'),
+    (date(2025, 2, 18), 'boletin-de-febrero-de-2025-breve-resumen-del-crecimiento-y-exito-de-redib-en-2024', 'Boletín de febrero de 2025. Breve resumen del crecimiento y éxito de ReDIB en 2024', ''),
+    (date(2025, 2, 17), 'expo-pct-iis-la-fe-jornada-de-las-plataformas-cientifico-tecnologicas-del-iis-la-fe', 'EXPO-PCT IIS LA FE | Jornada de las plataformas científico-tecnológicas del IIS La Fe', 'El próximo martes 25 de febrero celebramos una nueva edición de EXPO-PCT IIS LA FE.'),
+    (date(2025, 2, 11), 'prof-luis-marti-bonmati-en-el-evento-european-cancer-imaging-initiative', 'Prof. Luis Marti-Bonmati en el evento European Cancer Imaging Initiative', 'El profesor Luis Marti-Bonmati en el evento European Cancer Imaging Initiative, organizado por la Comisión Europea.'),
+    (date(2025, 2, 11), 'nodo-imagen-la-fe-representara-a-la-icts-redib-en-el-cvi-health-day', 'Nodo Imagen La Fe representará a la ICTS ReDIB en el CV+i Health Day', 'Un encuentro que concentrará a los principales agentes del sector.'),
+    (date(2025, 1, 30), 'actualizacion-y-mejora-de-las-icts-mediante-las-convocatorias-feder', 'Actualización y Mejora de las ICTS mediante las convocatorias FEDER', ''),
+    (date(2025, 1, 22), 'entrega-del-plan-estrategico-2025-2028-fecha-10022025', 'Entrega del Plan Estratégico 2025-2028. Fecha: 10/02/2025', 'La Red Distribuida de Imagen Biomédica (ReDIB) es un servicio de imagen biológica y biomédica de clase mundial.'),
+    (date(2024, 12, 21), 'feliz-navidad', 'Feliz Navidad', 'ReDIB les desea una feliz Navidad y un próspero año nuevo 2025.'),
+    (date(2024, 12, 18), 'boletin-informativo-mes-de-noviembre-2024', 'Boletín informativo mes de Noviembre 2024', ''),
+    (date(2024, 12, 18), 'boletin-informativo-mes-de-diciembre-2024', 'Boletín informativo mes de diciembre 2024', ''),
+    (date(2024, 10, 1), 'boletin-informativo-mes-de-octubre-2024', 'Boletín informativo mes de octubre 2024', 'Acceso a nuestro boletín de noticias del mes de octubre 2024 con los últimos datos y servicios.'),
+    (date(2024, 9, 26), 'acceso-a-estudios-de-imagen-clinica-y-preclinica-con-ventajas-logisticas', 'Acceso a estudios de imagen clínica y preclínica con ventajas logísticas', ''),
+    (date(2024, 9, 23), 'convocatoria-de-acceso-abierto-competitivo-redib-2024-02', 'Convocatoria de Acceso Abierto Competitivo ReDIB 2024-02', ''),
+    (date(2024, 9, 19), 'una-nueva-convocatoria-de-acceso-abierto-competitivo-llegara-pronto', '¡Una nueva Convocatoria de Acceso Abierto Competitivo llegará pronto!', ''),
+    (date(2024, 9, 19), 'redib-el-futuro-en-imagenes', 'ReDIB El Futuro en Imágenes', ''),
+    (date(2024, 4, 1), 'redib2401-2', 'ReDIB2401', 'Cerrada la convocatoria REDIB2401. Se han recibido un total de 28 propuestas que se encuentran en fase de evaluación.'),
+    (date(2023, 3, 2), 'abierta-la-segunda-convocatoria-de-acceso-abierto-competitivo-de-2023', 'Abierta la segunda convocatoria de Acceso Abierto Competitivo de 2023', 'En este momento y hasta el 15 de abril tenemos abierta la 2ª CONVOCATORIA 2023.'),
+    (date(2023, 1, 1), 'abierta-la-primera-convocatoria-de-acceso-abierto-competitivo-de-2023', 'Abierta la primera convocatoria de Acceso Abierto Competitivo de 2023', 'En este momento y hasta el 15 de febrero tenemos abierta la 1ª CONVOCATORIA 2023.'),
+    (date(2022, 12, 21), 'participacion-de-bioimac-en-la-semana-de-la-ciencia-y-la-innovacion-2022-de-la-comunidad-de-madrid', 'Participación de BioImaC en la Semana de la Ciencia y la Innovación 2022 de la Comunidad de Madrid', 'Un año más BioImaC ha participado en la Semana de la Ciencia.'),
+    (date(2022, 11, 2), 'la-jornada-abierta-de-imagen-medica-avanzada-jaima-hospital-politecnico-y-universitario-la-fe', 'La Jornada Abierta de Imagen Médica Avanzada (JAIMA) Hospital Politécnico y Universitario La Fe', 'Hemos elegido el 8 de Noviembre por ser el Día Internacional de la Radiología.'),
+    (date(2022, 10, 16), 'actualizacion-de-la-plataforma-de-acceso-redib', 'Actualización de la plataforma de acceso ReDIB', 'Estimados usuarios, en ReDIB estamos realizando un laborioso trabajo.'),
+    (date(2022, 10, 10), 'visita-al-nodo-de-cic-biomagune', 'Visita al Nodo de CIC biomaGUNE', 'Hoy hemos podido disfrutar de la visita de 24 estudiantes.'),
+    (date(2022, 6, 29), 'jornada-deep-dive-de-dispositivos-medicos-y-saliud', 'Jornada Deep Dive de dispositivos Médicos y Salud', ''),
+    (date(2022, 6, 20), 'tres-investigadores-del-cnic-participan-en-la-semana-de-la-administracion-abierta-2022', 'Tres investigadores del CNIC participan en la Semana de la Administración Abierta 2022', ''),
+    (date(2022, 6, 20), 'las-icts-disrupcion-en-imagen-medica-al-alcance-de-todos', 'Las ICTS: Disrupción en Imagen Médica al alcance de todos', ''),
+    (date(2021, 11, 22), 'el-nodo-de-redib-cic-biomagune-participa-en-el-congreso-imaginenano-2021', 'El nodo de ReDIB CIC biomaGUNE participa en el congreso ImagineNano 2021', ''),
+    (date(2021, 10, 13), 'jaima-2021', 'JAIMA 2021', 'El instituto de Investigación Sanitaria La Fe celebrará el 8 de Noviembre.'),
+    (date(2021, 6, 14), 'luis-liz-marzan-recibe-hoy-el-premio-fundacion-lilly-de-investigacion-biomedica-preclinica-2021', 'Luis Liz Marzán recibe hoy el Premio Fundación Lilly de Investigación Biomédica Preclínica 2021', ''),
+    (date(2021, 3, 26), 'trima-amplia-sus-capacidades-en-nanoscopia-con-cofinanciacion-de-fondos-feder', 'TRIMA amplía sus capacidades en nanoscopía con cofinanciación de fondos FEDER', 'El 23 de abril de 2019 se firmó un convenio entre el entonces Ministerio de Ciencia, Innovación y Universidades.'),
+    (date(2020, 2, 5), 'redib-estara-presente-en-el-proximo-congreso-del-esmi-2020-en-tesalonica-grecia', 'ReDIB estará presente en el próximo congreso del ESMI 2020 en Tesalónica, Grecia', 'Entre los días 24 a 27 de marzo se celebrará en Tesalónica, Grecia, el decimoquinto Congreso Europeo de Imagen Molecular.'),
+    (date(2020, 1, 8), 'redib-exhibe-su-oferta-cientifica-en-el-nanobiomed-2019-celebrado-en-noviembre-en-barcelona', 'ReDIB exhibe su oferta científica en el NanoBio&Med 2019 celebrado en noviembre en Barcelona', 'El pasado mes de noviembre se celebró en Barcelona el congreso NanoBio&Med.'),
+    (date(2019, 11, 1), 'trima-ampliara-sus-capacidades-en-nanoscopia-con-cofinanciacion-de-fondos-feder', 'TRIMA ampliará sus capacidades en nanoscopía con cofinanciación de fondos FEDER', 'El pasado 31 de octubre se constituyó la Comisión de Seguimiento del convenio firmado el 23 de abril.'),
+    (date(2019, 5, 27), 'nanospain-2019-conference', 'Nanospain 2019 Conference', 'El próximo 28 de mayo se celebrará en Barcelona el evento de referencia en España en nanociencia y nanotecnología.'),
+    (date(2019, 5, 10), 'ysmin-meeting-2019', 'ySMIN Meeting 2019', 'Como en cada edición, el próximo lunes 13 de Mayo, ReDIB - ICTS formará parte del evento young Spanish molecular imaging.'),
+    (date(2019, 5, 9), 'v-congreso-nacional-de-cientificos-emprendedores', 'V Congreso Nacional de Científicos Emprendedores', ''),
+    (date(2019, 4, 1), 'farmaforum-2019', 'FARMAFORUM 2019', 'Durante los días 28 y 29 de marzo, se celebró en Madrid la sexta edición del foro de Industria Farmacéutica y Cosmética.'),
+    (date(2019, 2, 18), 'noticias-nueva-convocatoria-abierta', 'Nueva convocatoria abierta', 'Hoy, día 18 de febrero, se abre la undécima convocatoria para acceder a la Infraestructura Científico Técnica Singular.'),
+    (date(2019, 2, 18), 'redib-participa-en-foro-transfiere-punto-de-encuentro-nacional-de-la-innovacion', 'ReDIB participa en Foro Transfiere, punto de encuentro nacional de la innovación', 'Durante los días 12 y 13 de febrero, ReDIB estuvo presente en la nueva edición del Foro Transfiere en Málaga.'),
+    (date(2019, 2, 4), 'reunion-de-los-nodos-de-nuestra-infraestructura-redib-icts', 'Reunión de los Nodos de nuestra infraestructura ReDIB-ICTS', 'El pasado 31 de enero tuvo lugar en CNIC la reunión informativa para la incorporación de los nuevos nodos.'),
+    (date(2018, 12, 3), 'la-unidad-de-bioimagen-complutense-bioimac-e-imaging-la-fe-aprobados-por-el-ministerio-para-su-incorporacion-como-dos-nuevos-nodos-de-redib', 'La Unidad de BioImagen Complutense (BIOIMAC) e Imaging La Fe aprobados por el Ministerio para su incorporación como dos nuevos nodos de ReDIB', 'El pasado 6 de noviembre, el Consejo de Política Científica, Tecnológica y de Innovación aprobó la incorporación.'),
+    (date(2018, 11, 28), 'reunion-informativa-sobre-la-actualizacion-del-mapa-de-icts', 'Reunión informativa sobre la actualización del Mapa de ICTS', 'El pasado 06 de noviembre de 2018, el Consejo de Política Científica, Tecnológica y de Innovación aprobó la actualización.'),
+    (date(2018, 8, 31), 'biospain-2018', 'BIOSPAIN 2018', 'ReDIB formará parte de BIOSPAIN 2018 como expositor.'),
+    (date(2018, 8, 13), 'novena-convocatoria-acceso-redib', 'Novena Convocatoria Acceso ReDIB', ''),
+    (date(2018, 5, 10), 'octava-convocatoria-para-el-acceso-a-redib', 'Octava Convocatoria para el Acceso a ReDIB', 'A día 10 de mayo, se abre la octava convocatoria para acceder a la Red Distribuida de Imagen Biomédica.'),
+    (date(2018, 3, 5), 'farmaforum-2018', 'FARMAFORUM 2018', 'ReDIB estará presente en la quinta edición del Foro de la Industria Farmacéutica, Biofarmacéutica, Cosmética y Tecnológica.'),
+    (date(2018, 2, 22), 'redib-formara-parte-una-vez-mas-del-young-spanish-molecular-imaging-meeting-ysmin', 'ReDIB formará parte una vez más del "Young Spanish Molecular Imaging Meeting (ySMIN)"', 'El próximo 26 de febrero tendrá lugar la segunda edición del evento.'),
+    (date(2018, 2, 8), 'abierta-la-septima-convocatoria', 'Abierta la séptima convocatoria', 'Desde el día de hoy, 8 de febrero, queda abierta la séptima convocatoria.'),
+    (date(2017, 7, 3), 'molecular-imaging-workshop-november-20th-23rd-2017', 'Molecular Imaging Workshop - November 20th-23rd 2017', 'Tras el éxito de la primera edición del Molecular Imaging Workshop (MIW) del pasado 2015.'),
+    (date(2017, 5, 9), 'el-comisario-de-salud-y-seguridad-alimentaria-de-la-comision-europea-visita-el-nodo-cnic', 'El Comisario de Salud y Seguridad Alimentaria de la Comisión Europea visita el nodo CNIC', ''),
+    (date(2017, 4, 3), 'nueva-convocatoria-abierta', 'Nueva convocatoria abierta', 'Hoy, día 3 de abril, se abre la cuarta convocatoria para acceder a la Infraestructura Científico Técnica Singular.'),
+    (date(2017, 3, 16), 'decimo-aniversario-para-el-centro-de-investigacion-cooperativa-en-biomateriales-cic-biomagune', 'Décimo aniversario para el Centro de Investigación Cooperativa en Biomateriales-CIC biomaGUNE', ''),
+    (date(2017, 2, 20), 'redib-muestra-su-potencial-en-el-foro-transfiere-punto-de-encuentro-nacional-de-la-innovacion', 'ReDIB muestra su potencial en el Foro Transfiere, punto de encuentro nacional de la innovación', 'Durante los días 15 y 16 de febrero, ReDIB estuvo presente en la sexta edición del Foro Transfiere en Málaga.'),
+]
+
+
+def _archive_news_spec(entry):
+    """Turn an ARCHIVE_NEWS tuple into an ES-only NewsPage spec for
+    _upsert_news_es. The body is the teaser (if any) plus a link to the full
+    article on the live site."""
+    post_date, slug, title, teaser = entry
+    source_url = f'https://www.redib.net/{slug}'
+    teaser_p = f'<p>{escape(teaser)}</p>' if teaser else ''
+    body = (
+        f'{teaser_p}'
+        f'<p><a href="{source_url}" target="_blank" rel="noopener">'
+        f'Leer la noticia completa en redib.net &rarr;</a></p>'
+    )
+    return {
+        'date': post_date,
+        'slug_es': slug,
+        'title_es': title,
+        'intro_es': teaser,
+        'body_es': body,
+        'hero_url': '',
+        'hero_slug': '',
+    }
+
+
 # ===========================================================================
 # Command
 # ===========================================================================
 
 class Command(BaseCommand):
     help = (
-        'Populate a representative sample of News (12 paired ES/EN) and '
-        'Press (12 items: 6 internal ES-only, 6 external clippings) '
-        'content. Idempotent.'
+        'Populate News (12 paired ES/EN page-1 posts + 55 ES-only archive '
+        'posts from /noticias pages 2-6) and Press (12 items: 6 internal '
+        'ES-only, 6 external clippings). Idempotent.'
     )
 
     @transaction.atomic
@@ -1059,6 +1154,17 @@ class Command(BaseCommand):
                 + (f"  EN /en/{en_page.slug}/" if en_page else "  (ES-only)")
                 + ("  +hero" if hero is not None else "")
             )
+
+        # Historical archive (ES-only, pages 2-6 of the live listing).
+        archive_count = 0
+        for entry in ARCHIVE_NEWS:
+            spec = _archive_news_spec(entry)
+            es_page = self._upsert_news_es(news_index_es, spec, None)
+            news_rows.append((spec['date'], es_page, None, False))
+            archive_count += 1
+        self.stdout.write(
+            f"  News archive: {archive_count} ES-only posts (2017-2025)."
+        )
 
         press_rows = []
         for spec in PRESS_ITEMS:
