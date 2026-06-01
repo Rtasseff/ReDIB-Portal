@@ -27,13 +27,35 @@ This document is the "current state" entry-point. The other files in
 
 ## TL;DR
 
-The marketing site is functionally complete in dev. All 57 URLs from the
-inventory return the expected HTTP status; bilingual switching works; the
-COA portal still works at `/portal/...`. Verification flagged four P1 issues
-of which three (template-comment leak, dead lang-switcher on ES-only pages,
-broken in-content links on Acceso) are fixed. The remaining P1 (homepage
-layout) and one P1 stub (Tarifas pricing matrix) are intentional deferrals
-that need human design input.
+The marketing site is a faithful recreation of the live redib.net in dev,
+intended as a base state to start editing from. All inventory URLs return
+the expected HTTP status; bilingual switching works; the COA portal still
+works at `/portal/...`.
+
+**2026-06-01 session — base-state push (all autonomous, branch still dev-only):**
+- **Real reference data loaded.** Dev DB rebuilt from `data/*.tsv` (4 real
+  nodes, 14 equipment with clinical/preclinical/radiochemistry areas, 183
+  orgs) + a superuser, so the equipment/node pages live-query real data
+  instead of empty sandbox rows. Resolved the two data-load deferrals.
+- **Homepage** now matches the live layout (3-slide imaging carousel +
+  equipment teaser cards + node grid + 2 recent news).
+- **Tarifas** reproduces the full live preclinical (13 rows) + clinical
+  (8 rows) rate tables.
+- **Governance PDFs** (7) downloaded into Wagtail Documents; /documentacion
+  links repointed to local `/documents/` URLs.
+- **News archive** completed to the full live breadth (67 ES posts: 12 rich
+  page-1 + 55 ES-only historical). **Press** expanded to 24 items.
+- **Top nav** collapsed Noticias+Prensa into an "Actualidad" dropdown (8
+  items, matching live).
+- EN team role labels reviewed: "Member" faithfully translates "Vocal";
+  left unchanged (making them more specific would diverge from the ES
+  source). 
+
+Remaining human-input items: bilingual URL routing strategy, cutover plan,
+admin CMS UX. Smaller follow-ups: full bilingual bodies for the 55 archive
+news posts, 3 oldest press clippings (2014-2016), CMS-editable pricing
+(structured model), and decimal-separator/translation spot-checks on the
+pricing tables.
 
 ## URL layout (on this branch)
 
@@ -149,10 +171,12 @@ Then visit:
 | `/equipo/` | Team page (14 people) |
 | `/nodos/bioimac/` | Node detail with live equipment list from `core.Node` |
 | `/equipamiento/imagen-clinica/` | Equipment category with live `core.Equipment` query |
-| `/noticias/` | News index (12 posts, both locales) |
+| `/noticias/` | News index (67 ES / 12 EN posts, paginated) |
+| `/tarifas/` | Pricing page with the full preclinical + clinical rate tables |
+| `/documentacion/` | Governance docs served from local Wagtail Documents |
 | `/prensa/clip-lavanguardia-la-fe-primera-icts-hospitalaria/` | External press clipping with "Read on outlet" CTA |
 | `/portal/calls/` | The existing COA portal (unchanged) |
-| `/cms/` | Wagtail admin (log in with the project's superuser) |
+| `/cms/` | Wagtail admin (dev superuser: `admin@redib.net` / `redibadmin` — change before any real use) |
 
 To verify the bilingual flow: visit any ES page, click the **EN** link in the
 top-right language switcher, confirm you land on the matching EN translation.
@@ -161,11 +185,14 @@ top-right language switcher, confirm you land on the matching EN translation.
 
 | Topic | Status | Decision needed |
 |---|---|---|
-| Homepage layout | Text-only hero | Inventory described a carousel + 6 teaser cards + 4-node grid + 2-news teaser. Build it or ship minimalist? |
-| Tarifas pricing matrix | Stub body | Structured model vs StreamField? Pricing is `(node × modality × unit) × (AAC / AaD-OPIS / AaD-Other)`. |
 | Bilingual URL routing | `i18n_patterns` with `/en/` prefix | Faithfully match redib.net (per-page-slug aliases at root) would need custom URL resolution. Worth doing? |
 | Cutover plan | Not started | DNS, Caddy, `redib.net` vs `portal.redib.net` URL question, third-party handoff. |
 | Admin CMS UX for non-technical editors | Not started | You mentioned having specific ideas — separate conversation when you're ready. |
+| CMS-editable pricing | Pricing tables are HTML in the RichText body | A structured PricingPage model would let editors maintain rates in the CMS (the rich-text editor strips tables). Build it, or keep editing via the populate command? |
+
+(Homepage layout and the Tarifas pricing matrix — previously in this table —
+were resolved in the 2026-06-01 base-state push: both now reproduce the live
+content faithfully. See TL;DR.)
 
 ## What's deferred but safe to scope later (no design input needed)
 
@@ -187,13 +214,23 @@ top-right language switcher, confirm you land on the matching EN translation.
   commands now show zero rewrites on second invocation. Phase 5b also
   fixed a tug-of-war where `populate_static_pages` was overwriting
   NodeIndex/EquipmentIndex chrome owned by `populate_equipment_nodes`.
-- EN team role labels currently generic "Member" — could be more specific.
-- News archive beyond 12 posts (~60 more historical posts; pre-2025 are
-  likely ES-only).
-- Press archive beyond 12 items.
-- The 7 governance PDFs linked from `/documentacion/` still point at
-  the live `redib.net` URLs. Migrating them into Wagtail Documents is a
-  small follow-up.
+- ~~EN team role labels currently generic "Member"~~ — **reviewed, left as-is
+  (2026-06-01).** "Member" faithfully translates the ES "Vocal"; making EN
+  more specific (Committee/Advisory member) would diverge from the ES source
+  and the live site, reducing faithfulness.
+- ~~News archive beyond 12 posts~~ — **done (2026-06-01).** All 55 historical
+  posts from `/noticias` pages 2-6 (2017-2025) added as ES-only `NewsPage`s
+  (`ARCHIVE_NEWS` in `populate_news_press.py`) — 67 ES posts total. Each
+  carries title/date/teaser + a link to the full article on redib.net; full
+  bilingual bodies remain a follow-up.
+- ~~Press archive beyond 12 items~~ — **mostly done (2026-06-01).** Added the
+  12 page-2 external clippings (`ARCHIVE_PRESS`) → 24 items. The 3 oldest
+  page-3 clippings (2014-2016) didn't crawl cleanly — small remaining gap.
+- ~~The 7 governance PDFs linked from `/documentacion/` point at live
+  `redib.net` URLs~~ — **done (2026-06-01).** `populate_static_pages` now
+  downloads them into Wagtail Documents (`get_or_create_document`) and
+  repoints the links to local `/documents/` URLs. `--skip-document-download`
+  keeps tests offline.
 - ~~**Top-nav has 9 items, original had 8.**~~ — **done.** Noticias +
   Prensa now render inside a single "Actualidad" (EN: "News & Press")
   top-nav dropdown, matching the live menu (8 top-level items per locale).
