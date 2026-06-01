@@ -98,3 +98,68 @@ def get_or_create_image(
             f"({type(exc).__name__}: {exc}). Continuing without image."
         )
         return None
+
+
+def get_or_create_document(
+    document_model,
+    download_dir: Path,
+    url: str,
+    title: str,
+    *,
+    slug_hint: str = '',
+    stderr_write=None,
+):
+    """Find-or-create a Wagtail Document (PDF), downloading on first call.
+
+    Same idempotency contract as ``get_or_create_image`` but for the Wagtail
+    document model: keyed by ``title``, cached on disk, placed in the root
+    collection. Returns the Document instance, or None on failure.
+    """
+    if stderr_write is None:
+        def stderr_write(_msg):
+            return None
+
+    existing = document_model.objects.filter(title=title).first()
+    if existing is not None:
+        return existing
+
+    slug = slug_hint or slugify(title) or 'document'
+    local_path = download_dir / f"{slug}.pdf"
+
+    if not local_path.exists():
+        try:
+            req = Request(url, headers={'User-Agent': USER_AGENT})
+            with urlopen(req, timeout=30) as resp:
+                data = resp.read()
+                ctype = resp.headers.get('Content-Type', '').lower()
+            if 'pdf' not in ctype and not data[:5].startswith(b'%PDF'):
+                stderr_write(
+                    f"  [WARN] {title}: not a PDF (Content-Type {ctype!r}), "
+                    f"skipping."
+                )
+                return None
+            local_path.write_bytes(data)
+        except (URLError, HTTPError, TimeoutError, OSError) as exc:
+            stderr_write(
+                f"  [WARN] {title}: download failed "
+                f"({type(exc).__name__}: {exc}). Continuing without document."
+            )
+            return None
+
+    try:
+        # Documents require a collection; default to the tree root.
+        from wagtail.models import Collection
+        root_collection = Collection.get_first_root_node()
+        with local_path.open('rb') as fh:
+            document = document_model.objects.create(
+                title=title,
+                file=File(fh, name=local_path.name),
+                collection=root_collection,
+            )
+        return document
+    except Exception as exc:  # noqa: BLE001 — log and continue
+        stderr_write(
+            f"  [WARN] {title}: Wagtail Document create failed "
+            f"({type(exc).__name__}: {exc}). Continuing without document."
+        )
+        return None

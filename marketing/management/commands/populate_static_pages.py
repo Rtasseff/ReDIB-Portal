@@ -8,13 +8,18 @@ re-crawled from the live redib.net, creates ExternalLink snippets for
 Phases 3b/c/d will populate: Team people, Equipment items, Node details,
 News posts, Press items. This command leaves those pages as stubs.
 """
+from pathlib import Path
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from wagtail.contrib.redirects.models import Redirect
+from wagtail.documents import get_document_model
 from wagtail.models import Locale, Page, Site
 
 from home.models import HomePage
+from marketing.management._image_utils import get_or_create_document
 from marketing.management.commands.populate_equipment_nodes import (
     EQUIPMENT_INDEX_REFRESH,
     NODE_INDEX_REFRESH,
@@ -441,11 +446,11 @@ of Guipúzcoa for any dispute arising from access to the website.</p>
 # ---------------------------------------------------------------------------
 #
 # These pages list the 7 governance PDFs whose canonical filenames are
-# documented in `docs/marketing/assets-manifest.md`. Until the PDFs are
-# migrated into Wagtail Documents, the links here point at the live
-# redib.net file URLs. Migrating the binaries themselves is a separate
-# follow-up; the per-file URLs are based on the live filenames so the
-# links resolve.
+# documented in `docs/marketing/assets-manifest.md`. On run, the PDFs are
+# downloaded from the live redib.net file URLs into Wagtail Documents
+# (_relink_governance_docs) and the page links are repointed to the local
+# document-serve URLs. The live URLs remain here as the download source and
+# as a fallback if a download fails.
 #
 # (EN body translated from ES by Claude — no authoritative EN version
 # exists on live redib.net.)
@@ -455,82 +460,90 @@ GOVERNANCE_DOCS = [
         'es_title': 'REDIB-01-PDA. Reglamento del Comité de Acceso',
         'en_title': 'REDIB-01-PDA. Access Committee Rules of Procedure',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'REDIB-01-PDA.%20Reglamento%20del%20Comit%C3%A9%20de%20Acceso.pdf',
+               'redib-01-rca-reglamento-comite-acceso_original.pdf',
     },
     {
         'es_title': 'REDIB-02-PDA. Protocolos de acceso',
         'en_title': 'REDIB-02-PDA. Access Protocols',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'REDIB-02-pda%20Protocolos%20de%20acceso.pdf',
+               'redib-02-pda-protocolo-acceso_1_original.pdf',
     },
     {
         'es_title': 'REDIB-03-PDC. Planificación de convocatorias',
         'en_title': 'REDIB-03-PDC. Call Planning',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'REDIB-03-PDC.%20Planificaci%C3%B3n%20de%20convocatorias.pdf',
+               'redib-03-pdc-planificacion-de-convocatorias-aac_original.pdf',
     },
     {
         'es_title': 'REDIB-04-SYR. Gestión de reclamaciones e incidencias',
         'en_title': 'REDIB-04-SYR. Complaint and Incident Management',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'REDIB-04-SYR%20Gesti%C3%B3n%20de%20reclamaciones%20e%20incidencias.pdf',
+               'redib-04-syr-gestion-sugerencias-y-reclamaciones-vs-web_original.pdf',
     },
     {
         'es_title': 'REDIB-05-DDP. Ejercicio de derechos de datos personales',
         'en_title': 'REDIB-05-DDP. Exercise of Personal Data Rights',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'REDIB-05-DDP%20Ejercicio%20de%20derechos%20de%20datos%20personales.pdf',
+               'redib-05-ddp-procedimiento-ejercicio-derechos-datos-personales-vs-web_original.pdf',
     },
     {
         'es_title': 'Acuerdo ReDIB de corresponsabilidad para la Gestión de Datos',
         'en_title': 'ReDIB Co-responsibility Agreement for Data Management',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'Acuerdo%20ReDIB%20de%20corresponsabilidad%20para%20la%20Gesti%C3%B3n'
-               '%20de%20Datos.pdf',
+               'acuerdo-corresponsabilidad-redib-gestion-de-datos_original.pdf',
     },
     {
         'es_title': 'Guía de uso del portal de convocatorias',
         'en_title': 'Call portal user guide (Spanish)',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
-               'gu%C3%ADa%20de%20uso%20del%20portal%20de%20convocatorias.pdf',
+               'redib-coa-portal-user-guide-20260429_original.pdf',
     },
 ]
 
 
-def _governance_docs_html(lang):
-    """Build a <ul> of governance-doc links for the given language ('es' or 'en')."""
+def _governance_docs_html(lang, doc_map=None):
+    """Build a <ul> of governance-doc links for the given language.
+
+    If ``doc_map`` (es_title -> Wagtail Document) is given, each link points
+    at the local document-serve URL; otherwise it falls back to the live
+    redib.net file URL. The module-level body constants below are built with
+    no doc_map (so the page renders before migration runs); the runtime
+    relink step rebuilds them once the Documents exist.
+    """
     title_key = 'es_title' if lang == 'es' else 'en_title'
+    doc_map = doc_map or {}
     items = '\n'.join(
-        f'<li><a href="{d["url"]}" target="_blank" rel="noopener">'
-        f'{d[title_key]}</a></li>'
+        '<li><a href="{href}" target="_blank" rel="noopener">{title}</a></li>'.format(
+            href=(doc.url if (doc := doc_map.get(d['es_title'])) is not None else d['url']),
+            title=d[title_key],
+        )
         for d in GOVERNANCE_DOCS
     )
     return f'<ul>\n{items}\n</ul>'
 
 
-DOCUMENTACION_BODY_ES = f"""
-<p>La gobernanza de la ICTS ReDIB y la operación del programa de acceso
-abierto competitivo están reguladas por un conjunto de documentos públicos.
-A continuación se enumeran los documentos vigentes; haga clic en cada
-título para descargar el PDF correspondiente.</p>
-<h2>Documentos reguladores</h2>
-{_governance_docs_html('es')}
-<p><em>Los PDFs se sirven actualmente desde el sitio anterior
-(redib.net) y se migrarán a la biblioteca de documentos de este portal
-en una fase posterior.</em></p>
-"""
+def _documentacion_body(lang, doc_map=None):
+    """Full governance-index page body for the given language."""
+    if lang == 'es':
+        return (
+            "\n<p>La gobernanza de la ICTS ReDIB y la operación del programa de "
+            "acceso\nabierto competitivo están reguladas por un conjunto de "
+            "documentos públicos.\nA continuación se enumeran los documentos "
+            "vigentes; haga clic en cada\ntítulo para descargar el PDF "
+            "correspondiente.</p>\n<h2>Documentos reguladores</h2>\n"
+            f"{_governance_docs_html('es', doc_map)}\n"
+        )
+    return (
+        "\n<p>The governance of the ReDIB ICTS and the operation of the "
+        "competitive\nopen-access programme are regulated by a set of public "
+        "documents. The\ncurrent documents are listed below; click each title "
+        "to download the\ncorresponding PDF.</p>\n<h2>Governing documents</h2>\n"
+        f"{_governance_docs_html('en', doc_map)}\n"
+    )
 
-DOCUMENTACION_BODY_EN = f"""
-<p>The governance of the ReDIB ICTS and the operation of the competitive
-open-access programme are regulated by a set of public documents. The
-current documents are listed below; click each title to download the
-corresponding PDF.</p>
-<h2>Governing documents</h2>
-{_governance_docs_html('en')}
-<p><em>The PDFs are currently served from the previous site
-(redib.net) and will be migrated into this portal's document library in
-a follow-up phase.</em></p>
-"""
+
+DOCUMENTACION_BODY_ES = _documentacion_body('es')
+DOCUMENTACION_BODY_EN = _documentacion_body('en')
 
 # ---------------------------------------------------------------------------
 # /costes-de-acceso/ + /en/access-cost/ — access cost explainer
@@ -1146,6 +1159,17 @@ class Command(BaseCommand):
         "ExternalLink snippets, and /actualidad redirect. Idempotent."
     )
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--skip-document-download',
+            action='store_true',
+            help=(
+                'Skip downloading the governance PDFs into Wagtail Documents '
+                '(the /documentacion links then fall back to the live '
+                'redib.net file URLs). Used by tests to stay offline.'
+            ),
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
         es = Locale.objects.get(language_code='es')
@@ -1182,10 +1206,59 @@ class Command(BaseCommand):
         # ExternalLink snippets
         self._upsert_external_links(es, en)
 
+        # Download the governance PDFs into Wagtail Documents and repoint the
+        # /documentacion pages at the local copies.
+        if not options.get('skip_document_download'):
+            self._relink_governance_docs(home_es, home_en, en)
+
         # Redirects for /actualidad -> /noticias (and EN equivalent)
         self._upsert_redirects()
 
         self.stdout.write(self.style.SUCCESS("populate_static_pages: done."))
+
+    # ------------------------------------------------------------------
+    # Governance PDFs -> Wagtail Documents
+    # ------------------------------------------------------------------
+
+    def _relink_governance_docs(self, home_es, home_en, en_locale):
+        """Download the 7 governance PDFs into Wagtail Documents (idempotent)
+        and update the /documentacion ES/EN page bodies to link to the local
+        document URLs instead of the live redib.net files."""
+        document_model = get_document_model()
+        download_dir = Path(settings.MEDIA_ROOT) / 'marketing' / 'documents'
+        download_dir.mkdir(parents=True, exist_ok=True)
+
+        doc_map = {}
+        for d in GOVERNANCE_DOCS:
+            document = get_or_create_document(
+                document_model,
+                download_dir,
+                d['url'],
+                d['es_title'],
+                stderr_write=self.stderr.write,
+            )
+            if document is not None:
+                doc_map[d['es_title']] = document
+        self.stdout.write(
+            f"  Governance docs: {len(doc_map)}/{len(GOVERNANCE_DOCS)} "
+            f"available as Wagtail Documents."
+        )
+
+        # Repoint the page bodies (StandardPage at /documentacion + /documentation).
+        targets = [
+            (home_es.locale, 'documentacion', _documentacion_body('es', doc_map)),
+            (en_locale, 'documentation', _documentacion_body('en', doc_map)),
+        ]
+        for locale, slug, body in targets:
+            page = (
+                StandardPage.objects.filter(slug=slug, locale=locale).first()
+            )
+            if page is None:
+                continue
+            if page.body != body:
+                page.body = body
+                page.save_revision().publish()
+                self.stdout.write(f"  Relinked governance docs on /{slug}/.")
 
     # ------------------------------------------------------------------
     # Section page upsert

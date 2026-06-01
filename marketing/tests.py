@@ -31,7 +31,9 @@ class MarketingTemplateLeakTests(TestCase):
         # Wagtail Site + Locales + bilingual HomePage + section pages so
         # the URLs we test resolve to real pages.
         call_command('marketing_init', verbosity=0)
-        call_command('populate_static_pages', verbosity=0)
+        call_command(
+            'populate_static_pages', verbosity=0, skip_document_download=True
+        )
 
     def _assert_no_leaks(self, url):
         response = self.client.get(url)
@@ -97,7 +99,9 @@ class MainNavActualidadDropdownTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('marketing_init', verbosity=0)
-        call_command('populate_static_pages', verbosity=0)
+        call_command(
+            'populate_static_pages', verbosity=0, skip_document_download=True
+        )
 
     def test_es_actualidad_dropdown(self):
         body = self.client.get('/').content.decode('utf-8')
