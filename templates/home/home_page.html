@@ -1,24 +1,171 @@
 {% extends "marketing_base.html" %}
 {% load wagtailcore_tags wagtailimages_tags %}
 
-{% block title %}{{ page.title }} — ReDIB{% endblock %}
+{% block title %}{{ page.hero_heading|default:page.title }} — ReDIB{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Homepage carousel — crop slides to a consistent banner height and keep
+       the caption legible over photography. */
+    #homeCarousel .carousel-item img { height: 460px; object-fit: cover; }
+    #homeCarousel .carousel-caption {
+        background: rgba(0, 0, 0, .45);
+        border-radius: .5rem;
+        padding: 1rem 1.5rem;
+        left: 10%; right: 10%; bottom: 2.5rem;
+    }
+    @media (max-width: 768px) {
+        #homeCarousel .carousel-item img { height: 300px; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <section class="marketing-hero py-5 bg-light">
-        <div class="container text-center">
-            {% if page.hero_image %}
-                {% image page.hero_image fill-1200x400 class="img-fluid mb-3 rounded" %}
-            {% endif %}
-            <h1 class="display-5">{{ page.hero_heading|default:page.title }}</h1>
-            {% if page.hero_subheading %}
-                <p class="lead text-muted">{{ page.hero_subheading }}</p>
-            {% endif %}
+    {% comment %}
+    Landing page in the live redib.net layout: imaging carousel → equipment
+    teaser cards → node grid → recent news. All data comes from
+    HomePage.get_context (live reads against the marketing tree).
+    {% endcomment %}
+    <h1 class="visually-hidden">{{ page.hero_heading|default:page.title }}</h1>
+
+    {% if carousel_categories %}
+        <div id="homeCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                {% for cat in carousel_categories %}
+                    <button type="button" data-bs-target="#homeCarousel"
+                            data-bs-slide-to="{{ forloop.counter0 }}"
+                            {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="{{ cat.title }}"></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for cat in carousel_categories %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% image cat.hero_image fill-1600x460 class="d-block w-100" alt=cat.title %}
+                        <div class="carousel-caption d-none d-sm-block text-start">
+                            <h2 class="h3">{{ cat.title }}</h2>
+                            {% if cat.intro %}<p class="d-none d-lg-block mb-2">{{ cat.intro }}</p>{% endif %}
+                            <a href="{% pageurl cat %}" class="btn btn-light btn-sm">
+                                {% if request.LANGUAGE_CODE == 'en' %}Learn more{% else %}Saber más{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}</span>
+            </button>
         </div>
-    </section>
+    {% elif page.hero_image %}
+        <section class="marketing-hero py-5 bg-light">
+            <div class="container text-center">
+                {% image page.hero_image fill-1200x400 class="img-fluid mb-3 rounded" %}
+                <h2 class="display-5">{{ page.hero_heading|default:page.title }}</h2>
+                {% if page.hero_subheading %}<p class="lead text-muted">{{ page.hero_subheading }}</p>{% endif %}
+            </div>
+        </section>
+    {% endif %}
+
+    {% if page.hero_subheading %}
+        <section class="container text-center py-4">
+            <p class="lead text-muted mb-0">{{ page.hero_subheading }}</p>
+        </section>
+    {% endif %}
+
+    {# Equipment teaser cards #}
+    {% if equipment_categories %}
+        <section class="container py-4">
+            <div class="d-flex justify-content-between align-items-baseline mb-3">
+                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Equipment{% else %}Equipamiento{% endif %}</h2>
+                {% if equipment_index %}
+                    <a href="{% pageurl equipment_index %}" class="small text-decoration-none">
+                        {% if request.LANGUAGE_CODE == 'en' %}See all{% else %}Ver todo{% endif %} →
+                    </a>
+                {% endif %}
+            </div>
+            <div class="row g-4">
+                {% for cat in equipment_categories %}
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            {% if cat.hero_image %}{% image cat.hero_image fill-600x300 class="card-img-top" alt=cat.title %}{% endif %}
+                            <div class="card-body">
+                                <h3 class="h6 mb-2">
+                                    <a href="{% pageurl cat %}" class="text-decoration-none">{{ cat.title }}</a>
+                                </h3>
+                                {% if cat.intro %}<p class="small text-muted mb-0">{{ cat.intro }}</p>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {# Node grid #}
+    {% if home_nodes %}
+        <section class="container py-4">
+            <div class="d-flex justify-content-between align-items-baseline mb-3">
+                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Nodes{% else %}Nodos{% endif %}</h2>
+                {% if node_index %}
+                    <a href="{% pageurl node_index %}" class="small text-decoration-none">
+                        {% if request.LANGUAGE_CODE == 'en' %}See all{% else %}Ver todo{% endif %} →
+                    </a>
+                {% endif %}
+            </div>
+            <div class="row g-4">
+                {% for node in home_nodes %}
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            {% if node.hero_image %}{% image node.hero_image fill-600x300 class="card-img-top" alt=node.title %}{% endif %}
+                            <div class="card-body">
+                                <h3 class="h6 mb-2">
+                                    <a href="{% pageurl node %}" class="text-decoration-none">{{ node.title }}</a>
+                                </h3>
+                                {% if node.location_text %}<p class="small text-muted mb-0">{{ node.location_text }}</p>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {# Recent news #}
+    {% if recent_news %}
+        <section class="container py-4 mb-4">
+            <div class="d-flex justify-content-between align-items-baseline mb-3">
+                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Latest news{% else %}Actualidad{% endif %}</h2>
+                {% if news_index %}
+                    <a href="{% pageurl news_index %}" class="small text-decoration-none">
+                        {% if request.LANGUAGE_CODE == 'en' %}All news{% else %}Todas las noticias{% endif %} →
+                    </a>
+                {% endif %}
+            </div>
+            <div class="row g-4">
+                {% for post in recent_news %}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            {% if post.hero_image %}{% image post.hero_image fill-800x360 class="card-img-top" alt=post.title %}{% endif %}
+                            <div class="card-body">
+                                <p class="small text-muted mb-1">{{ post.date }}</p>
+                                <h3 class="h6 mb-2">
+                                    <a href="{% pageurl post %}" class="text-decoration-none">{{ post.title }}</a>
+                                </h3>
+                                {% if post.intro %}<p class="small text-muted mb-0">{{ post.intro }}</p>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 
     {% if page.body %}
-        <section class="container py-5">
-            {{ page.body|richtext }}
-        </section>
+        <section class="container py-4">{{ page.body|richtext }}</section>
     {% endif %}
 {% endblock %}

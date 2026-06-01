@@ -43,3 +43,41 @@ class HomePage(Page):
         ),
         FieldPanel('body'),
     ]
+
+    def get_context(self, request, *args, **kwargs):
+        """Aggregator data for the landing page, matching the live redib.net
+        layout: a 3-slide imaging carousel, equipment teaser cards, a node
+        grid, and the two most recent news posts. All read live from the
+        marketing tree in the page's own locale — no duplicated content.
+        """
+        ctx = super().get_context(request, *args, **kwargs)
+        from marketing.models import (
+            EquipmentCategoryPage, EquipmentIndexPage,
+            NodePage, NodeIndexPage, NewsPage, NewsIndexPage,
+        )
+        locale = self.locale
+        cats = list(
+            EquipmentCategoryPage.objects.live()
+            .filter(locale=locale).order_by('path')
+        )
+        ctx['equipment_categories'] = cats
+        # Carousel = the area-keyed imaging categories that have a hero image
+        # (Clinical / Preclinical / Radiochemistry); the analytics category
+        # has no area_key and no hero, so it stays a teaser card only.
+        ctx['carousel_categories'] = [c for c in cats if c.area_key and c.hero_image_id]
+        ctx['home_nodes'] = list(
+            NodePage.objects.live().filter(locale=locale).order_by('path')
+        )
+        ctx['recent_news'] = list(
+            NewsPage.objects.live().filter(locale=locale).order_by('-date')[:2]
+        )
+        ctx['equipment_index'] = (
+            EquipmentIndexPage.objects.live().filter(locale=locale).first()
+        )
+        ctx['node_index'] = (
+            NodeIndexPage.objects.live().filter(locale=locale).first()
+        )
+        ctx['news_index'] = (
+            NewsIndexPage.objects.live().filter(locale=locale).first()
+        )
+        return ctx
