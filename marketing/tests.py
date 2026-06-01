@@ -87,14 +87,13 @@ class MarketingTemplateLeakTests(TestCase):
                 self._assert_no_leaks(url)
 
 
-class MainNavActualidadDropdownTests(TestCase):
-    """Noticias + Prensa render inside one "Actualidad" top-nav dropdown,
-    not as two separate top-level links — matching the live redib.net menu.
+import re
 
-    The grouping is presentation-only (marketing_tags.main_nav): the pages
-    keep their root URLs, so this guards the menu IA without touching the
-    page tree.
-    """
+
+class MainNavTests(TestCase):
+    """Top nav IA: News+Press are one 'Actualidad' item (→ /noticias/),
+    and Prensa + Tarifas are dropped from the menu (folded into the
+    Actualidad feed and the Equipment section respectively)."""
 
     @classmethod
     def setUpTestData(cls):
@@ -103,22 +102,21 @@ class MainNavActualidadDropdownTests(TestCase):
             'populate_static_pages', verbosity=0, skip_document_download=True
         )
 
-    def test_es_actualidad_dropdown(self):
-        body = self.client.get('/').content.decode('utf-8')
-        # Dropdown toggle present with the ES label.
-        self.assertIn('dropdown-toggle', body)
-        self.assertIn('>Actualidad</a>', body)
-        # Noticias + Prensa are dropdown items, not top-level nav links.
-        self.assertIn('<a class="dropdown-item" href="/noticias/">', body)
-        self.assertIn('<a class="dropdown-item" href="/prensa/">', body)
-        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/noticias/">', body)
-        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/prensa/">', body)
+    def _nav(self, url):
+        body = self.client.get(url).content.decode('utf-8')
+        m = re.search(r'<ul class="navbar-nav">(.*?)</ul>', body, re.S)
+        self.assertIsNotNone(m, f"navbar-nav not found on {url}")
+        return m.group(1)
 
-    def test_en_actualidad_dropdown(self):
-        body = self.client.get('/en/').content.decode('utf-8')
-        self.assertIn('dropdown-toggle', body)
-        self.assertIn('>News &amp; Press</a>', body)
-        self.assertIn('<a class="dropdown-item" href="/en/news/">', body)
-        self.assertIn('<a class="dropdown-item" href="/en/press/">', body)
-        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/en/news/">', body)
-        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/en/press/">', body)
+    def test_es_nav(self):
+        nav = self._nav('/')
+        self.assertIn('href="/noticias/"', nav)
+        self.assertIn('Actualidad', nav)
+        self.assertNotIn('href="/prensa/"', nav)   # folded into Actualidad
+        self.assertNotIn('href="/tarifas/"', nav)  # moved under Equipamiento
+
+    def test_en_nav(self):
+        nav = self._nav('/en/')
+        self.assertIn('href="/en/news/"', nav)
+        self.assertNotIn('href="/en/press/"', nav)
+        self.assertNotIn('href="/en/rates/"', nav)

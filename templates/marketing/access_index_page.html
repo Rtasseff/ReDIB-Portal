@@ -4,12 +4,29 @@
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <section class="container py-5">
-        <h1>{{ page.title }}</h1>
-        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
-        <p class="mt-4">
-            <a href="/portal/calls/" class="btn btn-primary">Convocatorias activas</a>
-        </p>
+    <div class="mk-pagehead">
+        <div class="mk-container">
+            <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Open access{% else %}Acceso abierto{% endif %}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.intro %}<p class="mk-lead">{{ page.intro }}</p>{% endif %}
+        </div>
+    </div>
+
+    <section class="mk-section">
+        <div class="mk-container">
+            {# Open calls — the primary action of this section. #}
+            <div class="mk-callband mb-5">
+                <div>
+                    <h2>{% if request.LANGUAGE_CODE == 'en' %}Competitive Open Access calls{% else %}Convocatorias de Acceso Abierto Competitivo{% endif %}</h2>
+                    <p>{% if request.LANGUAGE_CODE == 'en' %}Check the open calls and submit your access proposal through the portal.{% else %}Consulta las convocatorias abiertas y presenta tu solicitud de acceso a través del portal.{% endif %}</p>
+                </div>
+                <a href="/portal/calls/" class="mk-btn mk-btn--light">
+                    {% if request.LANGUAGE_CODE == 'en' %}View calls{% else %}Ver convocatorias{% endif %}
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            {% if page.body %}<div class="mk-prose">{{ page.body|richtext }}</div>{% endif %}
+        </div>
     </section>
 {% endblock %}

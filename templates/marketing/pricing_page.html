@@ -4,9 +4,17 @@
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <section class="container py-5">
-        <h1>{{ page.title }}</h1>
-        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.body %}<div>{{ page.body|richtext }}</div>{% endif %}
+    <div class="mk-pagehead">
+        <div class="mk-container">
+            <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Equipment · Access{% else %}Equipamiento · Acceso{% endif %}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.intro %}<p class="mk-lead">{{ page.intro }}</p>{% endif %}
+        </div>
+    </div>
+
+    <section class="mk-section">
+        <div class="mk-container">
+            {% if page.body %}<div class="mk-prose">{{ page.body|richtext }}</div>{% endif %}
+        </div>
     </section>
 {% endblock %}

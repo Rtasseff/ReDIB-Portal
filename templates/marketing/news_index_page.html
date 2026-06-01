@@ -4,85 +4,73 @@
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <section class="container py-5">
-        <h1 class="mb-3">{{ page.title }}</h1>
-        {% if page.intro %}<p class="lead text-muted mb-4">{{ page.intro }}</p>{% endif %}
+    <div class="mk-pagehead">
+        <div class="mk-container">
+            <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Newsroom{% else %}Actualidad{% endif %}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.intro %}<p class="mk-lead">{{ page.intro }}</p>{% endif %}
+        </div>
+    </div>
 
-        {% if news_posts %}
-            <div class="row g-4">
-                {% for post in news_posts %}
-                    <div class="col-md-6 col-lg-4 d-flex">
-                        <article class="card h-100 w-100 shadow-sm border-0">
-                            {% if post.hero_image %}
-                                <a href="{% pageurl post %}" class="text-decoration-none">
-                                    {% image post.hero_image fill-400x250 class="card-img-top" %}
-                                </a>
-                            {% else %}
-                                <a href="{% pageurl post %}" class="text-decoration-none">
-                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                                        <i class="bi bi-newspaper text-secondary" style="font-size: 3rem;"></i>
-                                    </div>
-                                </a>
-                            {% endif %}
-                            <div class="card-body d-flex flex-column">
-                                <p class="small text-muted mb-1">
-                                    {% if request.LANGUAGE_CODE == 'en' %}
-                                        {{ post.date|date:"F j, Y" }}
+    <section class="mk-section">
+        <div class="mk-container">
+            {% if feed_items %}
+                <div class="row g-4">
+                    {% for item in feed_items %}
+                        <div class="col-md-6 col-lg-4 d-flex">
+                            <article class="mk-card w-100">
+                                <a href="{{ item.url }}" class="mk-card__media-wrap"
+                                   {% if item.external %}target="_blank" rel="noopener"{% endif %}>
+                                    {% if item.hero_image %}
+                                        {% image item.hero_image fill-480x300 class="mk-card__media" %}
                                     {% else %}
-                                        {{ post.date|date:"j F Y" }}
+                                        <span class="mk-card__media d-flex align-items-center justify-content-center mk-card__media--ph">
+                                            <i class="bi {% if item.kind == 'press' %}bi-megaphone{% elif item.kind == 'newsletter' %}bi-envelope-paper{% else %}bi-newspaper{% endif %}" aria-hidden="true"></i>
+                                        </span>
                                     {% endif %}
-                                </p>
-                                <h2 class="h5 card-title">
-                                    <a href="{% pageurl post %}" class="text-decoration-none text-dark stretched-link">
-                                        {{ post.title }}
-                                    </a>
-                                </h2>
-                                {% if post.intro %}
-                                    <p class="card-text small text-muted mt-2">{{ post.intro|truncatechars:160 }}</p>
-                                {% endif %}
-                            </div>
-                        </article>
-                    </div>
-                {% endfor %}
-            </div>
+                                </a>
+                                <div class="mk-card__body">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="mk-tag mk-tag--{{ item.kind }}">
+                                            {% if item.kind == 'press' %}{% if request.LANGUAGE_CODE == 'en' %}Press{% else %}Prensa{% endif %}
+                                            {% elif item.kind == 'newsletter' %}{% if request.LANGUAGE_CODE == 'en' %}Newsletter{% else %}Boletín{% endif %}
+                                            {% else %}{% if request.LANGUAGE_CODE == 'en' %}News{% else %}Noticia{% endif %}{% endif %}
+                                        </span>
+                                        <span class="mk-card__meta">
+                                            {% if request.LANGUAGE_CODE == 'en' %}{{ item.date|date:"M j, Y" }}{% else %}{{ item.date|date:"j M Y" }}{% endif %}
+                                        </span>
+                                    </div>
+                                    <h2 class="mk-card__title">
+                                        <a href="{{ item.url }}" {% if item.external %}target="_blank" rel="noopener"{% endif %}>{{ item.title }}</a>
+                                    </h2>
+                                    {% if item.outlet %}<p class="mk-card__meta">{{ item.outlet }}</p>{% endif %}
+                                    {% if item.intro %}<p class="mk-card__text">{{ item.intro|truncatechars:150 }}</p>{% endif %}
+                                </div>
+                            </article>
+                        </div>
+                    {% endfor %}
+                </div>
 
-            {% if news_posts.has_other_pages %}
-                <nav aria-label="News pagination" class="mt-5">
-                    <ul class="pagination justify-content-center">
-                        {% if news_posts.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ news_posts.previous_page_number }}" rel="prev">
-                                    {% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-link">
-                                {% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}
-                            </span></li>
-                        {% endif %}
-                        <li class="page-item disabled">
-                            <span class="page-link">
-                                {{ news_posts.number }} / {{ news_posts.paginator.num_pages }}
-                            </span>
-                        </li>
-                        {% if news_posts.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ news_posts.next_page_number }}" rel="next">
-                                    {% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-link">
-                                {% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}
-                            </span></li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                {% if feed_items.has_other_pages %}
+                    <nav aria-label="Pagination" class="mt-5">
+                        <ul class="pagination justify-content-center">
+                            {% if feed_items.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page={{ feed_items.previous_page_number }}" rel="prev">{% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}</a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">{% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}</span></li>
+                            {% endif %}
+                            <li class="page-item disabled"><span class="page-link">{{ feed_items.number }} / {{ feed_items.paginator.num_pages }}</span></li>
+                            {% if feed_items.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ feed_items.next_page_number }}" rel="next">{% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}</a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">{% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Nothing here yet.{% else %}Aún no hay contenido.{% endif %}</p>
             {% endif %}
-        {% else %}
-            <p class="text-muted">
-                {% if request.LANGUAGE_CODE == 'en' %}No news yet.{% else %}Aún no hay noticias.{% endif %}
-            </p>
-        {% endif %}
+        </div>
     </section>
 {% endblock %}

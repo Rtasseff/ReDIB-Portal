@@ -8,76 +8,154 @@
 
     <link rel="icon" type="image/png" href="{% static 'images/ReDiB_logo.png' %}">
 
-    <!-- Bootstrap 5 CSS (same CDN as portal) -->
+    <!-- Bootstrap 5 (grid + utilities + JS) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    {# Marketing-specific styles will live separately from portal main.css. #}
-    {# For now there's no marketing.css yet — Phase 2 will add it. #}
+    <!-- Inter (brand typeface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Marketing design system (single source of truth) -->
+    <link rel="stylesheet" href="{% static 'css/marketing.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
 <body class="marketing">
-    {% comment %}
-    Marketing chrome. Deliberately distinct from the portal nav:
-    no Login/Register front-and-center, just a small "Portal" link.
-    Labels are in Spanish (the default locale).
-    {% endcomment %}
-    <header class="marketing-header border-bottom">
-        <div class="container d-flex align-items-center justify-content-between py-3">
-            <a class="d-flex align-items-center text-decoration-none text-dark" href="/">
-                <img src="{% static 'images/ReDiB_logo.png' %}" alt="ReDIB" height="40">
-            </a>
-
-            <nav aria-label="Principal">
-                {% main_nav %}
-            </nav>
-
-            <div class="d-flex align-items-center gap-3">
-                {% lang_switch %}
-                {# Small portal link — the only auth entry point from marketing. #}
-                <a href="/portal/" class="btn btn-sm btn-outline-secondary">Portal</a>
+    <header class="mk-header">
+        <nav class="navbar navbar-expand-lg p-0" aria-label="Principal">
+            <div class="mk-container w-100 d-flex align-items-center">
+                <a class="navbar-brand me-3 py-0" href="/">
+                    <img src="{% static 'images/ReDiB_logo.png' %}" alt="ReDIB">
+                </a>
+                <button class="navbar-toggler ms-auto border-0" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#mkNav"
+                        aria-controls="mkNav" aria-expanded="false"
+                        aria-label="{% if request.LANGUAGE_CODE == 'en' %}Toggle menu{% else %}Mostrar menú{% endif %}">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mkNav">
+                    {% main_nav %}
+                    <div class="mk-actions ms-lg-auto">
+                        {% lang_switch %}
+                        <a href="/portal/calls/" class="mk-btn mk-btn--primary mk-btn--sm">
+                            {% if request.LANGUAGE_CODE == 'en' %}Calls{% else %}Convocatorias{% endif %}
+                        </a>
+                        <a href="/portal/" class="mk-btn mk-btn--ghost mk-btn--sm">
+                            {% if request.LANGUAGE_CODE == 'en' %}Portal login{% else %}Acceso al portal{% endif %}
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
+        </nav>
     </header>
 
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-light mt-5 py-4 border-top">
-        <div class="container text-center">
-            <p class="mb-2 small">
+    <footer class="mk-footer">
+        <div class="mk-container">
+            <div class="mk-footer__grid">
+                <div class="mk-footer__brand">
+                    <img class="mk-footer__logo" src="{% static 'images/ReDIB_logo_text.png' %}" alt="ReDIB — Distributed Biomedical Imaging Network">
+                    <p class="mt-3">
+                        {% if request.LANGUAGE_CODE == 'en' %}
+                            Distributed Biomedical Imaging Network — a Spanish Unique Scientific and
+                            Technical Infrastructure (ICTS) offering open access to advanced clinical
+                            and preclinical imaging.
+                        {% else %}
+                            Red Distribuida de Imagen Biomédica — Infraestructura Científica y Técnica
+                            Singular (ICTS) de acceso abierto a imagen clínica y preclínica avanzada.
+                        {% endif %}
+                    </p>
+                    <a class="mk-footer__icts"
+                       href="https://www.ciencia.gob.es/en/Organismos-y-Centros/ICTS.html"
+                       target="_blank" rel="noopener"
+                       aria-label="ICTS — Infraestructuras Científicas y Técnicas Singulares">
+                        <img src="{% static 'images/Logo-ICTS-def-low.jpg' %}"
+                             alt="ICTS — Infraestructuras Científicas y Técnicas Singulares">
+                    </a>
+                </div>
+
                 {% if request.LANGUAGE_CODE == 'en' %}
-                    <a href="/en/links-of-interest/" class="text-muted text-decoration-none">Links of interest</a>
-                    <span class="text-muted mx-2">·</span>
-                    <a href="/en/legal-notice/" class="text-muted text-decoration-none">Legal notice</a>
-                    <span class="text-muted mx-2">·</span>
-                    <a href="/en/privacy-policy-and-cookies/" class="text-muted text-decoration-none">Privacy &amp; cookies</a>
+                    <div>
+                        <h4>Explore</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="/en/about-us/">About us</a></li>
+                            <li><a href="/en/equipment/">Equipment</a></li>
+                            <li><a href="/en/nodes/">Nodes</a></li>
+                            <li><a href="/en/team/">Team</a></li>
+                            <li><a href="/en/news/">News</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Access</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="/portal/calls/">Calls</a></li>
+                            <li><a href="/en/en-access/">How to access</a></li>
+                            <li><a href="/en/documentation/">Documentation</a></li>
+                            <li><a href="/en/rates/">Rates</a></li>
+                            <li><a href="/portal/">Portal login</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Contact</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="mailto:info@redib.net">info@redib.net</a></li>
+                            <li><a href="/en/contact/">Contact page</a></li>
+                            <li><a href="/en/links-of-interest/">Links of interest</a></li>
+                        </ul>
+                    </div>
                 {% else %}
-                    <a href="/enlaces-de-interes/" class="text-muted text-decoration-none">Enlaces de interés</a>
-                    <span class="text-muted mx-2">·</span>
-                    <a href="/aviso-legal/" class="text-muted text-decoration-none">Aviso legal</a>
-                    <span class="text-muted mx-2">·</span>
-                    <a href="/politica-de-privacidad-y-cookies/" class="text-muted text-decoration-none">Privacidad y cookies</a>
+                    <div>
+                        <h4>Explorar</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="/quienes-somos/">Quiénes somos</a></li>
+                            <li><a href="/equipamiento/">Equipamiento</a></li>
+                            <li><a href="/nodos/">Nodos</a></li>
+                            <li><a href="/equipo/">Equipo</a></li>
+                            <li><a href="/noticias/">Actualidad</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Acceso</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="/portal/calls/">Convocatorias</a></li>
+                            <li><a href="/es-acceso/">Cómo acceder</a></li>
+                            <li><a href="/documentacion/">Documentación</a></li>
+                            <li><a href="/tarifas/">Tarifas</a></li>
+                            <li><a href="/portal/">Acceso al portal</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Contacto</h4>
+                        <ul class="mk-footer__links">
+                            <li><a href="mailto:info@redib.net">info@redib.net</a></li>
+                            <li><a href="/contacto/">Página de contacto</a></li>
+                            <li><a href="/enlaces-de-interes/">Enlaces de interés</a></li>
+                        </ul>
+                    </div>
                 {% endif %}
-            </p>
-            <p class="mb-0">&copy; 2025 ReDIB — Red Distribuida de Imagen Biomédica</p>
-            <p class="mt-3 mb-2">
-                <a href="https://www.ciencia.gob.es/en/Organismos-y-Centros/ICTS.html"
-                   target="_blank" rel="noopener"
-                   aria-label="ICTS — Infraestructuras Científicas y Técnicas Singulares">
-                    <img src="{% static 'images/Logo-ICTS-def-low.jpg' %}"
-                         alt="ICTS — Infraestructuras Científicas y Técnicas Singulares"
-                         height="60">
-                </a>
-            </p>
-            <p class="small text-muted mb-0">ICTS reconocida por el Ministerio de Ciencia, Innovación y Universidades</p>
+            </div>
+
+            <div class="mk-footer__bottom">
+                <span>&copy; 2025 ReDIB — Red Distribuida de Imagen Biomédica</span>
+                <span>
+                    {% if request.LANGUAGE_CODE == 'en' %}
+                        <a href="/en/legal-notice/">Legal notice</a> ·
+                        <a href="/en/privacy-policy-and-cookies/">Privacy &amp; cookies</a>
+                    {% else %}
+                        <a href="/aviso-legal/">Aviso legal</a> ·
+                        <a href="/politica-de-privacidad-y-cookies/">Privacidad y cookies</a>
+                    {% endif %}
+                </span>
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     {% block extra_js %}{% endblock %}
 </body>
 </html>

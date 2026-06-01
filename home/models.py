@@ -69,7 +69,7 @@ class HomePage(Page):
             NodePage.objects.live().filter(locale=locale).order_by('path')
         )
         ctx['recent_news'] = list(
-            NewsPage.objects.live().filter(locale=locale).order_by('-date')[:2]
+            NewsPage.objects.live().filter(locale=locale).order_by('-date')[:3]
         )
         ctx['equipment_index'] = (
             EquipmentIndexPage.objects.live().filter(locale=locale).first()

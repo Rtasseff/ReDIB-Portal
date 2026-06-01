@@ -4,81 +4,58 @@
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <article class="container py-5">
-        {% if page.hero_image %}
-            {% image page.hero_image fill-1200x400 class="img-fluid rounded mb-4" %}
-        {% endif %}
-        <h1 class="mb-3">{{ page.title }}</h1>
-        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.body %}<div class="mb-4">{{ page.body|richtext }}</div>{% endif %}
+    <div class="mk-pagehead">
+        <div class="mk-container">
+            <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Node{% else %}Nodo{% endif %}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.intro %}<p class="mk-lead">{{ page.intro }}</p>{% endif %}
+        </div>
+    </div>
 
-        <div class="row g-4 mt-2">
-            {% if page.location_text %}
-                <div class="col-md-6">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <h2 class="h5 mb-2">
-                                {% if request.LANGUAGE_CODE == 'en' %}Location{% else %}Ubicación{% endif %}
-                            </h2>
-                            <p class="mb-0">{{ page.location_text|linebreaksbr }}</p>
-                        </div>
-                    </div>
-                </div>
+    <section class="mk-section">
+        <div class="mk-container">
+            {% if page.hero_image %}
+                <figure class="mb-4">{% image page.hero_image fill-1200x460 class="img-fluid rounded" %}</figure>
             {% endif %}
+            {% if page.body %}<div class="mk-prose">{{ page.body|richtext }}</div>{% endif %}
 
-            {% if page.contact_info %}
-                <div class="col-md-6">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <h2 class="h5 mb-2">
-                                {% if request.LANGUAGE_CODE == 'en' %}Contact{% else %}Contacto{% endif %}
-                            </h2>
-                            <div>{{ page.contact_info|richtext }}</div>
-                        </div>
-                    </div>
+            <div class="row g-4 mt-2">
+                {% if page.location_text %}
+                    <div class="col-md-6"><div class="mk-panel d-block">
+                        <h2>{% if request.LANGUAGE_CODE == 'en' %}Location{% else %}Ubicación{% endif %}</h2>
+                        <p>{{ page.location_text|linebreaksbr }}</p>
+                    </div></div>
+                {% endif %}
+                {% if page.contact_info %}
+                    <div class="col-md-6"><div class="mk-panel d-block">
+                        <h2>{% if request.LANGUAGE_CODE == 'en' %}Contact{% else %}Contacto{% endif %}</h2>
+                        <div class="mk-prose">{{ page.contact_info|richtext }}</div>
+                    </div></div>
+                {% endif %}
+            </div>
+
+            <h2 class="mk-grouphead">{% if request.LANGUAGE_CODE == 'en' %}Available equipment{% else %}Equipamiento disponible{% endif %}</h2>
+            {% if page.related_core_node %}
+                <div class="row g-3">
+                    {% for eq in page.related_core_node.equipment.all %}
+                        {% if eq.is_active %}
+                            <div class="col-sm-6 col-md-4 d-flex">
+                                <div class="mk-card w-100"><div class="mk-card__body">
+                                    <div class="fw-semibold">{{ eq.name }}</div>
+                                    <div class="mk-card__meta">{{ eq.get_category_display }}{% if eq.area %} · {{ eq.get_area_display }}{% endif %}</div>
+                                    {% if eq.description %}<p class="mk-card__text">{{ eq.description|truncatechars:200 }}</p>{% endif %}
+                                </div></div>
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <div class="col-12"><p class="text-muted">
+                            {% if request.LANGUAGE_CODE == 'en' %}No equipment listed for this node yet.{% else %}Aún no hay equipamiento registrado para este nodo.{% endif %}
+                        </p></div>
+                    {% endfor %}
                 </div>
+            {% else %}
+                <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Equipment list coming soon.{% else %}Lista de equipamiento próximamente.{% endif %}</p>
             {% endif %}
         </div>
-
-        <h2 class="h4 mt-5 mb-3">
-            {% if request.LANGUAGE_CODE == 'en' %}Available equipment{% else %}Equipamiento disponible{% endif %}
-        </h2>
-        {% if page.related_core_node %}
-            <div class="row g-3">
-                {% for eq in page.related_core_node.equipment.all %}
-                    {% if eq.is_active %}
-                        <div class="col-sm-6 col-md-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <div class="fw-semibold">{{ eq.name }}</div>
-                                    <div class="small text-muted">{{ eq.get_category_display }}{% if eq.area %} · {{ eq.get_area_display }}{% endif %}</div>
-                                    {% if eq.description %}
-                                        <p class="small mt-2 mb-0">{{ eq.description|truncatechars:200 }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                {% empty %}
-                    <div class="col-12">
-                        <p class="text-muted mb-0">
-                            {% if request.LANGUAGE_CODE == 'en' %}
-                                No equipment listed for this node yet.
-                            {% else %}
-                                Aún no hay equipamiento registrado para este nodo.
-                            {% endif %}
-                        </p>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-muted">
-                {% if request.LANGUAGE_CODE == 'en' %}
-                    Equipment list coming soon.
-                {% else %}
-                    Lista de equipamiento próximamente.
-                {% endif %}
-            </p>
-        {% endif %}
-    </article>
+    </section>
 {% endblock %}

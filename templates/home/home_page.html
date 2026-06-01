@@ -3,169 +3,153 @@
 
 {% block title %}{{ page.hero_heading|default:page.title }} — ReDIB{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Homepage carousel — crop slides to a consistent banner height and keep
-       the caption legible over photography. */
-    #homeCarousel .carousel-item img { height: 460px; object-fit: cover; }
-    #homeCarousel .carousel-caption {
-        background: rgba(0, 0, 0, .45);
-        border-radius: .5rem;
-        padding: 1rem 1.5rem;
-        left: 10%; right: 10%; bottom: 2.5rem;
-    }
-    @media (max-width: 768px) {
-        #homeCarousel .carousel-item img { height: 300px; }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-    {% comment %}
-    Landing page in the live redib.net layout: imaging carousel → equipment
-    teaser cards → node grid → recent news. All data comes from
-    HomePage.get_context (live reads against the marketing tree).
-    {% endcomment %}
-    <h1 class="visually-hidden">{{ page.hero_heading|default:page.title }}</h1>
-
-    {% if carousel_categories %}
-        <div id="homeCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                {% for cat in carousel_categories %}
-                    <button type="button" data-bs-target="#homeCarousel"
-                            data-bs-slide-to="{{ forloop.counter0 }}"
-                            {% if forloop.first %}class="active" aria-current="true"{% endif %}
-                            aria-label="{{ cat.title }}"></button>
-                {% endfor %}
-            </div>
-            <div class="carousel-inner">
-                {% for cat in carousel_categories %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        {% image cat.hero_image fill-1600x460 class="d-block w-100" alt=cat.title %}
-                        <div class="carousel-caption d-none d-sm-block text-start">
-                            <h2 class="h3">{{ cat.title }}</h2>
-                            {% if cat.intro %}<p class="d-none d-lg-block mb-2">{{ cat.intro }}</p>{% endif %}
-                            <a href="{% pageurl cat %}" class="btn btn-light btn-sm">
-                                {% if request.LANGUAGE_CODE == 'en' %}Learn more{% else %}Saber más{% endif %}
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}</span>
-            </button>
-        </div>
-    {% elif page.hero_image %}
-        <section class="marketing-hero py-5 bg-light">
-            <div class="container text-center">
-                {% image page.hero_image fill-1200x400 class="img-fluid mb-3 rounded" %}
-                <h2 class="display-5">{{ page.hero_heading|default:page.title }}</h2>
-                {% if page.hero_subheading %}<p class="lead text-muted">{{ page.hero_subheading }}</p>{% endif %}
-            </div>
-        </section>
-    {% endif %}
-
-    {% if page.hero_subheading %}
-        <section class="container text-center py-4">
-            <p class="lead text-muted mb-0">{{ page.hero_subheading }}</p>
-        </section>
-    {% endif %}
-
-    {# Equipment teaser cards #}
-    {% if equipment_categories %}
-        <section class="container py-4">
-            <div class="d-flex justify-content-between align-items-baseline mb-3">
-                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Equipment{% else %}Equipamiento{% endif %}</h2>
-                {% if equipment_index %}
-                    <a href="{% pageurl equipment_index %}" class="small text-decoration-none">
-                        {% if request.LANGUAGE_CODE == 'en' %}See all{% else %}Ver todo{% endif %} →
+    {# ---- Hero ---- #}
+    <section class="mk-hero">
+        {% with hero_cat=carousel_categories.0 %}
+            {% if page.hero_image %}
+                {% image page.hero_image fill-1920x760 class="mk-hero__bg" %}
+            {% elif hero_cat.hero_image %}
+                {% image hero_cat.hero_image fill-1920x760 class="mk-hero__bg" %}
+            {% endif %}
+        {% endwith %}
+        <div class="mk-hero__scrim"></div>
+        <div class="mk-container">
+            <div class="mk-hero__inner">
+                <p class="mk-eyebrow">
+                    {% if request.LANGUAGE_CODE == 'en' %}Unique Scientific &amp; Technical Infrastructure (ICTS){% else %}Infraestructura Científica y Técnica Singular (ICTS){% endif %}
+                </p>
+                <h1>
+                    {% if page.hero_heading %}{{ page.hero_heading }}
+                    {% elif request.LANGUAGE_CODE == 'en' %}Distributed Biomedical Imaging Network
+                    {% else %}Red Distribuida de Imagen Biomédica{% endif %}
+                </h1>
+                <p>
+                    {% if page.hero_subheading %}{{ page.hero_subheading }}
+                    {% elif request.LANGUAGE_CODE == 'en' %}Open access to advanced clinical and preclinical imaging across four leading Spanish nodes — for academic and industry researchers.
+                    {% else %}Acceso abierto a imagen clínica y preclínica avanzada en cuatro nodos españoles de referencia — para investigadores académicos y de la industria.{% endif %}
+                </p>
+                <div class="mk-hero__cta">
+                    <a href="/portal/calls/" class="mk-btn mk-btn--light">
+                        <i class="bi bi-megaphone" aria-hidden="true"></i>
+                        {% if request.LANGUAGE_CODE == 'en' %}Open calls{% else %}Convocatorias abiertas{% endif %}
                     </a>
-                {% endif %}
+                    {% if equipment_index %}
+                        <a href="{% pageurl equipment_index %}" class="mk-btn mk-btn--outline-light">
+                            {% if request.LANGUAGE_CODE == 'en' %}Explore equipment{% else %}Ver equipamiento{% endif %}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---- Equipment ---- #}
+    {% if equipment_categories %}
+    <section class="mk-section">
+        <div class="mk-container">
+            <div class="mk-section__head">
+                <div>
+                    <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}What we offer{% else %}Qué ofrecemos{% endif %}</p>
+                    <h2 class="mk-section__title">{% if request.LANGUAGE_CODE == 'en' %}Imaging equipment{% else %}Equipamiento de imagen{% endif %}</h2>
+                </div>
+                {% if equipment_index %}<a class="mk-seeall" href="{% pageurl equipment_index %}">{% if request.LANGUAGE_CODE == 'en' %}All equipment{% else %}Todo el equipamiento{% endif %}</a>{% endif %}
             </div>
             <div class="row g-4">
                 {% for cat in equipment_categories %}
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            {% if cat.hero_image %}{% image cat.hero_image fill-600x300 class="card-img-top" alt=cat.title %}{% endif %}
-                            <div class="card-body">
-                                <h3 class="h6 mb-2">
-                                    <a href="{% pageurl cat %}" class="text-decoration-none">{{ cat.title }}</a>
-                                </h3>
-                                {% if cat.intro %}<p class="small text-muted mb-0">{{ cat.intro }}</p>{% endif %}
+                    <div class="col-sm-6 col-lg-3 d-flex">
+                        <a href="{% pageurl cat %}" class="mk-card w-100 text-decoration-none">
+                            {% if cat.hero_image %}{% image cat.hero_image fill-480x300 class="mk-card__media" %}{% endif %}
+                            <div class="mk-card__body">
+                                <h3 class="mk-card__title">{{ cat.title }}</h3>
+                                {% if cat.intro %}<p class="mk-card__text">{{ cat.intro|truncatechars:110 }}</p>{% endif %}
                             </div>
-                        </div>
+                        </a>
                     </div>
                 {% endfor %}
             </div>
-        </section>
+        </div>
+    </section>
     {% endif %}
 
-    {# Node grid #}
+    {# ---- Nodes ---- #}
     {% if home_nodes %}
-        <section class="container py-4">
-            <div class="d-flex justify-content-between align-items-baseline mb-3">
-                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Nodes{% else %}Nodos{% endif %}</h2>
-                {% if node_index %}
-                    <a href="{% pageurl node_index %}" class="small text-decoration-none">
-                        {% if request.LANGUAGE_CODE == 'en' %}See all{% else %}Ver todo{% endif %} →
-                    </a>
-                {% endif %}
+    <section class="mk-section mk-section--soft">
+        <div class="mk-container">
+            <div class="mk-section__head">
+                <div>
+                    <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Where we are{% else %}Dónde estamos{% endif %}</p>
+                    <h2 class="mk-section__title">{% if request.LANGUAGE_CODE == 'en' %}Our nodes{% else %}Nuestros nodos{% endif %}</h2>
+                </div>
+                {% if node_index %}<a class="mk-seeall" href="{% pageurl node_index %}">{% if request.LANGUAGE_CODE == 'en' %}All nodes{% else %}Todos los nodos{% endif %}</a>{% endif %}
             </div>
             <div class="row g-4">
                 {% for node in home_nodes %}
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            {% if node.hero_image %}{% image node.hero_image fill-600x300 class="card-img-top" alt=node.title %}{% endif %}
-                            <div class="card-body">
-                                <h3 class="h6 mb-2">
-                                    <a href="{% pageurl node %}" class="text-decoration-none">{{ node.title }}</a>
-                                </h3>
-                                {% if node.location_text %}<p class="small text-muted mb-0">{{ node.location_text }}</p>{% endif %}
+                    <div class="col-sm-6 col-lg-3 d-flex">
+                        <a href="{% pageurl node %}" class="mk-card w-100 text-decoration-none">
+                            {% if node.hero_image %}{% image node.hero_image fill-480x300 class="mk-card__media" %}{% endif %}
+                            <div class="mk-card__body">
+                                <h3 class="mk-card__title">{{ node.title }}</h3>
+                                {% if node.location_text %}<p class="mk-card__text">{{ node.location_text }}</p>{% endif %}
                             </div>
-                        </div>
+                        </a>
                     </div>
                 {% endfor %}
             </div>
-        </section>
+        </div>
+    </section>
     {% endif %}
 
-    {# Recent news #}
+    {# ---- Calls CTA band ---- #}
+    <section class="mk-section mk-section--tight">
+        <div class="mk-container">
+            <div class="mk-callband">
+                <div>
+                    <h2>{% if request.LANGUAGE_CODE == 'en' %}Want to use our infrastructure?{% else %}¿Quieres acceder a nuestra infraestructura?{% endif %}</h2>
+                    <p>{% if request.LANGUAGE_CODE == 'en' %}Browse the open Competitive Open Access (AAC) calls and apply for access to ReDIB's clinical and preclinical imaging facilities.{% else %}Consulta las convocatorias de Acceso Abierto Competitivo (AAC) y solicita acceso a las instalaciones de imagen clínica y preclínica de ReDIB.{% endif %}</p>
+                </div>
+                <a href="/portal/calls/" class="mk-btn mk-btn--light">
+                    {% if request.LANGUAGE_CODE == 'en' %}View calls{% else %}Ver convocatorias{% endif %}
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {# ---- Latest news ---- #}
     {% if recent_news %}
-        <section class="container py-4 mb-4">
-            <div class="d-flex justify-content-between align-items-baseline mb-3">
-                <h2 class="h4 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Latest news{% else %}Actualidad{% endif %}</h2>
-                {% if news_index %}
-                    <a href="{% pageurl news_index %}" class="small text-decoration-none">
-                        {% if request.LANGUAGE_CODE == 'en' %}All news{% else %}Todas las noticias{% endif %} →
-                    </a>
-                {% endif %}
+    <section class="mk-section">
+        <div class="mk-container">
+            <div class="mk-section__head">
+                <div>
+                    <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Newsroom{% else %}Actualidad{% endif %}</p>
+                    <h2 class="mk-section__title">{% if request.LANGUAGE_CODE == 'en' %}Latest news{% else %}Últimas noticias{% endif %}</h2>
+                </div>
+                {% if news_index %}<a class="mk-seeall" href="{% pageurl news_index %}">{% if request.LANGUAGE_CODE == 'en' %}All updates{% else %}Toda la actualidad{% endif %}</a>{% endif %}
             </div>
             <div class="row g-4">
                 {% for post in recent_news %}
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            {% if post.hero_image %}{% image post.hero_image fill-800x360 class="card-img-top" alt=post.title %}{% endif %}
-                            <div class="card-body">
-                                <p class="small text-muted mb-1">{{ post.date }}</p>
-                                <h3 class="h6 mb-2">
-                                    <a href="{% pageurl post %}" class="text-decoration-none">{{ post.title }}</a>
-                                </h3>
-                                {% if post.intro %}<p class="small text-muted mb-0">{{ post.intro }}</p>{% endif %}
+                    <div class="col-md-4 d-flex">
+                        <article class="mk-card w-100">
+                            <a href="{% pageurl post %}" class="mk-card__media-wrap">
+                                {% if post.hero_image %}
+                                    {% image post.hero_image fill-480x300 class="mk-card__media" %}
+                                {% else %}
+                                    <span class="mk-card__media d-flex align-items-center justify-content-center mk-card__media--ph">
+                                        <i class="bi bi-newspaper" aria-hidden="true"></i>
+                                    </span>
+                                {% endif %}
+                            </a>
+                            <div class="mk-card__body">
+                                <span class="mk-card__meta">{% if request.LANGUAGE_CODE == 'en' %}{{ post.date|date:"M j, Y" }}{% else %}{{ post.date|date:"j M Y" }}{% endif %}</span>
+                                <h3 class="mk-card__title"><a href="{% pageurl post %}">{{ post.title }}</a></h3>
+                                {% if post.intro %}<p class="mk-card__text">{{ post.intro|truncatechars:130 }}</p>{% endif %}
                             </div>
-                        </div>
+                        </article>
                     </div>
                 {% endfor %}
             </div>
-        </section>
-    {% endif %}
-
-    {% if page.body %}
-        <section class="container py-4">{{ page.body|richtext }}</section>
+        </div>
+    </section>
     {% endif %}
 {% endblock %}

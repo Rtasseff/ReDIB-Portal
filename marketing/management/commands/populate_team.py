@@ -51,8 +51,8 @@ ROSTER = [
     # --- Coordination Committee (4) ---
     {
         'name': 'José Luis Izquierdo',
-        'role_es': 'Vocal',
-        'role_en': 'Member',
+        'role_es': 'Director',
+        'role_en': 'Director',
         'group': Person.COMMITTEE,
         'affiliation': 'BioImaC',
         'photo_url': 'https://www.redib.net/upload/secciones-publicas/'
@@ -61,8 +61,8 @@ ROSTER = [
     },
     {
         'name': 'Borja Ibáñez Cabeza',
-        'role_es': 'Vocal',
-        'role_en': 'Member',
+        'role_es': 'Director',
+        'role_en': 'Director',
         'group': Person.COMMITTEE,
         'affiliation': 'TRIMA @ CNIC',
         'photo_url': 'https://www.redib.net/upload/secciones-publicas/'
@@ -81,8 +81,8 @@ ROSTER = [
     },
     {
         'name': 'Luis Martí-Bonmatí',
-        'role_es': 'Vocal',
-        'role_en': 'Member',
+        'role_es': 'Director',
+        'role_en': 'Director',
         'group': Person.COMMITTEE,
         'affiliation': 'Imaging La Fe',
         'photo_url': 'https://www.redib.net/upload/secciones-publicas/'

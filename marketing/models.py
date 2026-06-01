@@ -58,13 +58,36 @@ class NewsIndexPage(Page):
     subpage_types = ['marketing.NewsPage']
 
     def get_context(self, request, *args, **kwargs):
+        """One 'Actualidad' feed: news + newsletters (NewsPage) + press
+        clippings (PressItemPage), merged and sorted by date, each tagged
+        with its kind so the template can badge it. Press items link to the
+        outlet when external."""
         ctx = super().get_context(request, *args, **kwargs)
-        news_qs = (
-            NewsPage.objects.child_of(self).live().order_by('-date')
-        )
-        paginator = Paginator(news_qs, 12)
-        page_number = request.GET.get('page')
-        ctx['news_posts'] = paginator.get_page(page_number)
+
+        def kind_of(title):
+            t = title.lower()
+            if 'bolet' in t or 'newsletter' in t:
+                return 'newsletter'
+            return 'news'
+
+        items = []
+        for p in NewsPage.objects.child_of(self).live():
+            items.append({
+                'date': p.date, 'title': p.title, 'url': p.url,
+                'intro': p.intro, 'hero_image': p.hero_image,
+                'kind': kind_of(p.title), 'external': False, 'outlet': '',
+            })
+        for p in PressItemPage.objects.live().filter(locale=self.locale):
+            items.append({
+                'date': p.date, 'title': p.title,
+                'url': p.external_url or p.url, 'intro': p.intro,
+                'hero_image': None, 'kind': 'press',
+                'external': bool(p.external_url), 'outlet': p.outlet,
+            })
+        items.sort(key=lambda d: d['date'], reverse=True)
+
+        paginator = Paginator(items, 12)
+        ctx['feed_items'] = paginator.get_page(request.GET.get('page'))
         return ctx
 
 

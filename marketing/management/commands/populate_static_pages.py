@@ -493,8 +493,8 @@ GOVERNANCE_DOCS = [
                'acuerdo-corresponsabilidad-redib-gestion-de-datos_original.pdf',
     },
     {
-        'es_title': 'Guía de uso del portal de convocatorias',
-        'en_title': 'Call portal user guide (Spanish)',
+        'es_title': 'Guía de uso del portal de convocatorias (en inglés)',
+        'en_title': 'Call portal user guide',
         'url': 'https://www.redib.net/upload/secciones-publicas/'
                'redib-coa-portal-user-guide-20260429_original.pdf',
     },
@@ -861,24 +861,30 @@ SECTIONS = [
         'en_fields': {'intro': NODE_INDEX_REFRESH['en']['intro']},
     },
     {
-        'es_title': 'Noticias',
+        # "Actualidad" — single announcements feed; merges news + press +
+        # newsletters (see NewsIndexPage.get_context). Slug stays /noticias
+        # so existing URLs/redirects hold.
+        'es_title': 'Actualidad',
         'es_slug': 'noticias',
         'en_title': 'News',
         'en_slug': 'news',
         'page_class': NewsIndexPage,
         'es_fields': {
-            'intro': 'Últimas noticias de la red ReDIB.',
+            'intro': 'Noticias, notas de prensa y boletines de la red ReDIB.',
         },
         'en_fields': {
-            'intro': 'Latest news from the ReDIB network.',
+            'intro': 'News, press coverage and newsletters from the ReDIB network.',
         },
     },
     {
+        # Press is folded into the Actualidad feed, so it's hidden from the
+        # top nav. The index page + items still exist at /prensa, /press.
         'es_title': 'Prensa',
         'es_slug': 'prensa',
         'en_title': 'Press',
         'en_slug': 'press',
         'page_class': PressIndexPage,
+        'show_in_menus': False,
         'es_fields': {
             'intro': 'ReDIB en los medios.',
         },
@@ -887,11 +893,14 @@ SECTIONS = [
         },
     },
     {
+        # Rates belong with Equipment, not the top nav — hidden from the menu
+        # and linked from the Equipment section. Page stays at /tarifas.
         'es_title': 'Tarifas',
         'es_slug': 'tarifas',
         'en_title': 'Rates',
         'en_slug': 'rates',
         'page_class': PricingPage,
+        'show_in_menus': False,
         'es_fields': {
             'intro': PRICING_INTRO_ES,
             'body': PRICING_BODY_ES,

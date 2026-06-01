@@ -1,29 +1,13 @@
 {% load wagtailcore_tags %}
 {% comment %}
-Bootstrap .nav (not .navbar-nav) so the row lays out horizontally without
-needing a .navbar-expand-lg wrapper. The logo to the left already serves
-as the "home" link, so we don't render an explicit Inicio item here.
-
-menu_items is built by marketing_tags.main_nav: each entry is either a plain
-link ({is_dropdown: False, page}) or the "Actualidad" dropdown
-({is_dropdown: True, label, children}) that groups Noticias + Prensa.
+Top navigation items rendered inside the Bootstrap navbar in marketing_base.html.
+menu_items is the list of in-menu HomePage children (see marketing_tags.main_nav);
+the logo serves as the home link, so there's no explicit "Inicio" item.
 {% endcomment %}
-<ul class="nav flex-wrap align-items-center">
+<ul class="navbar-nav">
     {% for item in menu_items %}
-        {% if item.is_dropdown %}
-            <li class="nav-item dropdown">
-                <a class="nav-link px-2 text-dark dropdown-toggle" href="#" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">{{ item.label }}</a>
-                <ul class="dropdown-menu">
-                    {% for child in item.children %}
-                        <li><a class="dropdown-item" href="{% pageurl child %}">{{ child.title }}</a></li>
-                    {% endfor %}
-                </ul>
-            </li>
-        {% else %}
-            <li class="nav-item">
-                <a class="nav-link px-2 text-dark" href="{% pageurl item.page %}">{{ item.page.title }}</a>
-            </li>
-        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% pageurl item %}">{{ item.title }}</a>
+        </li>
     {% endfor %}
 </ul>

@@ -1,39 +1,49 @@
 {% extends "marketing_base.html" %}
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
 
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    <section class="container py-5">
-        <h1 class="mb-3">{{ page.title }}</h1>
-        {% if page.intro %}<p class="lead">{{ page.intro }}</p>{% endif %}
-        {% if page.body %}<div class="mb-4">{{ page.body|richtext }}</div>{% endif %}
+    <div class="mk-pagehead">
+        <div class="mk-container">
+            <p class="mk-eyebrow">{% if request.LANGUAGE_CODE == 'en' %}Infrastructure{% else %}Infraestructura{% endif %}</p>
+            <h1>{{ page.title }}</h1>
+            {% if page.intro %}<p class="mk-lead">{{ page.intro }}</p>{% endif %}
+        </div>
+    </div>
 
-        <div class="row g-4 mt-2">
-            {% for cat in category_pages %}
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <h2 class="h5 mb-2">
-                                <a href="{% pageurl cat %}" class="text-decoration-none">{{ cat.title }}</a>
-                            </h2>
-                            {% if cat.specific.intro %}
-                                <p class="small mb-0">{{ cat.specific.intro }}</p>
-                            {% endif %}
-                        </div>
+    <section class="mk-section">
+        <div class="mk-container">
+            {% if page.body %}<div class="mk-prose mb-5">{{ page.body|richtext }}</div>{% endif %}
+
+            <div class="row g-4">
+                {% for cat in category_pages %}
+                    <div class="col-sm-6 col-lg-3 d-flex">
+                        <a href="{% pageurl cat %}" class="mk-card w-100 text-decoration-none">
+                            {% if cat.specific.hero_image %}{% image cat.specific.hero_image fill-480x300 class="mk-card__media" %}{% endif %}
+                            <div class="mk-card__body">
+                                <h2 class="mk-card__title">{{ cat.title }}</h2>
+                                {% if cat.specific.intro %}<p class="mk-card__text">{{ cat.specific.intro|truncatechars:120 }}</p>{% endif %}
+                            </div>
+                        </a>
                     </div>
+                {% empty %}
+                    <div class="col-12"><p class="text-muted">
+                        {% if request.LANGUAGE_CODE == 'en' %}No categories published yet.{% else %}Todavía no hay categorías publicadas.{% endif %}
+                    </p></div>
+                {% endfor %}
+            </div>
+
+            {# Access rates live with equipment, not in the top nav. #}
+            <div class="mk-panel mt-5">
+                <div>
+                    <h2>{% if request.LANGUAGE_CODE == 'en' %}Access rates{% else %}Tarifas de acceso{% endif %}</h2>
+                    <p>{% if request.LANGUAGE_CODE == 'en' %}Per-node and per-modality rates for the two access mechanisms (AAC / AaD).{% else %}Tarifas por nodo y modalidad para los dos mecanismos de acceso (AAC / AaD).{% endif %}</p>
                 </div>
-            {% empty %}
-                <div class="col-12">
-                    <p class="text-muted">
-                        {% if request.LANGUAGE_CODE == 'en' %}
-                            No categories published yet.
-                        {% else %}
-                            Todavía no hay categorías publicadas.
-                        {% endif %}
-                    </p>
-                </div>
-            {% endfor %}
+                <a href="{% if request.LANGUAGE_CODE == 'en' %}/en/rates/{% else %}/tarifas/{% endif %}" class="mk-btn mk-btn--ghost">
+                    {% if request.LANGUAGE_CODE == 'en' %}View rates{% else %}Ver tarifas{% endif %}
+                </a>
+            </div>
         </div>
     </section>
 {% endblock %}
