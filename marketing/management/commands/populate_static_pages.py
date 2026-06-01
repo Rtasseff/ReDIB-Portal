@@ -217,6 +217,13 @@ PRICING_INTRO_EN = (
     "mechanisms: Competitive Open Access (AAC) and On-Demand Access (AaD)."
 )
 
+# Pricing tables reproduced from the live redib.net /tarifas page. The numeric
+# rates are faithful to the source; descriptive labels are rendered per locale
+# and the ES decimal separator (dot vs comma) is left as published — both are
+# cosmetic follow-ups flagged in REBUILD_STATUS. Stored as HTML in the
+# RichText body so they display via |richtext; note that editing these in the
+# CMS rich-text editor is not supported (no 'table' feature) — a structured
+# PricingPage model is the documented follow-up.
 PRICING_BODY_ES = """
 <h2>Mecanismos de acceso</h2>
 <p><strong>Acceso Abierto Competitivo (AAC):</strong> mecanismo de acceso a las
@@ -224,10 +231,52 @@ instalaciones esenciales de ReDIB que está subvencionado, por lo que se aplican
 tarifas reducidas.</p>
 <p><strong>Acceso a Demanda (AaD):</strong> mecanismo de acceso a las
 instalaciones esenciales de ReDIB no subvencionado, en el que se aplican las
-tarifas aprobadas por cada nodo de ReDIB para sus diferentes servicios.</p>
-<p><em>La tabla de precios detallada (nodo &times; modalidad &times; unidad de
-servicio) se publicará en una fase posterior. Para consultar tarifas concretas,
-póngase en contacto con <a href="mailto:info@redib.net">info@redib.net</a>.</em></p>
+tarifas aprobadas por cada nodo de ReDIB para sus diferentes servicios. Se
+distingue entre entidades OPIS (Organismos Públicos de Investigación) y otras.</p>
+
+<h2>Tarifas de imagen preclínica</h2>
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+<thead><tr><th>Nodo</th><th>Modalidad</th><th>Descripción</th><th>Unidad</th>
+<th>AAC €/ud</th><th>AaD (OPIS) €/ud</th><th>AaD (Otros) €/ud</th></tr></thead>
+<tbody>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Adquisición diurna</td><td>30 min</td><td>7.50–22.50</td><td>22.50</td><td>45.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Autoservicio</td><td>30 min</td><td>4.50–15.00</td><td>15.00</td><td>30.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Adquisición nocturna</td><td>Noche (12 h)</td><td>35.00–105.00</td><td>105.00</td><td>210.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 9.4T/30cm</td><td>Adquisición diurna</td><td>30 min</td><td>15.00–45.00</td><td>45.00</td><td>90.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 9.4T/30cm</td><td>Adquisición nocturna</td><td>Noche (12 h)</td><td>100.00–300.00</td><td>300.00</td><td>600.00</td></tr>
+<tr><td>BioImaC</td><td>IRM/PET 9.4T</td><td>Adquisición diurna</td><td>30 min</td><td>27.50–82.50</td><td>82.50</td><td>165.00</td></tr>
+<tr><td>CIC biomaGUNE</td><td>SPECT-TC</td><td>Adquisición</td><td>30 min</td><td>0</td><td>69.05</td><td>82.86</td></tr>
+<tr><td>CIC biomaGUNE</td><td>PET-TC</td><td>Adquisición</td><td>30 min</td><td>0</td><td>69.05</td><td>82.86</td></tr>
+<tr><td>CIC biomaGUNE</td><td>IRM 7T/30cm</td><td>Adquisición</td><td>30 min</td><td>0</td><td>124.32</td><td>149.19</td></tr>
+<tr><td>CIC biomaGUNE</td><td>IRM 11.7T/16cm</td><td>Adquisición</td><td>30 min</td><td>0</td><td>325.84</td><td>391.01</td></tr>
+<tr><td>Imaging La Fe</td><td>IRM 3T/60cm</td><td>Preclínico</td><td>30 min</td><td>0–99.51</td><td>123.14</td><td>140.74</td></tr>
+<tr><td>TRIMA@CNIC</td><td>Nano PET-TC</td><td>Adquisición</td><td>30 min</td><td>0–25.31</td><td>25.31</td><td>30.37</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 7T/30cm</td><td>Adquisición</td><td>30 min</td><td>0–28.13</td><td>28.13</td><td>33.75</td></tr>
+</tbody></table>
+</div>
+
+<h2>Tarifas de imagen clínica</h2>
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+<thead><tr><th>Nodo</th><th>Modalidad</th><th>Descripción</th><th>Unidad</th>
+<th>AAC €/ud</th><th>AaD (OPIS) €/ud</th><th>AaD (Otros) €/ud</th></tr></thead>
+<tbody>
+<tr><td>Imaging La Fe</td><td>IRM 3T/60cm</td><td>Estudio</td><td>Estudio</td><td>0–194.47</td><td>202.65–278.40</td><td>240.65–330.60</td></tr>
+<tr><td>Imaging La Fe</td><td>PET-IRM</td><td>Estudio</td><td>Estudio</td><td>0–370.72</td><td>458.76–567.97</td><td>524.30–649.11</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 3T/60cm</td><td>Adquisición</td><td>30 min</td><td>0–131.20</td><td>131.20</td><td>170.56</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 3T/60cm</td><td>Con gadolinio</td><td>30 min</td><td>0–203.77</td><td>203.77</td><td>264.90</td></tr>
+<tr><td>TRIMA@CNIC</td><td>PET-TC</td><td>Estudio</td><td>Estudio</td><td>0–268.38</td><td>268.38</td><td>348.89</td></tr>
+<tr><td>TRIMA@CNIC</td><td>TC</td><td>Sin contraste</td><td>Estudio</td><td>0–75.32</td><td>75.32</td><td>97.92</td></tr>
+<tr><td>TRIMA@CNIC</td><td>TC</td><td>Con contraste (angiografía aorto-coronaria)</td><td>Estudio</td><td>0–176.67</td><td>176.67</td><td>229.67</td></tr>
+<tr><td>TRIMA@CNIC</td><td>TC</td><td>Con contraste (fase de equilibrio)</td><td>Estudio</td><td>0–265.38</td><td>265.38</td><td>345.00</td></tr>
+</tbody></table>
+</div>
+
+<p><em>Los precios no incluyen consumibles (agentes de contraste, anestesia,
+radiotrazadores y otros), que se facturan aparte. Para consultar tarifas
+concretas, contacte con cada nodo o escriba a
+<a href="mailto:info@redib.net">info@redib.net</a>.</em></p>
 """
 
 PRICING_BODY_EN = """
@@ -236,10 +285,51 @@ PRICING_BODY_EN = """
 accessing ReDIB's essential facilities, meaning reduced rates apply.</p>
 <p><strong>On-Demand Access (AaD):</strong> a non-subsidized mechanism for
 accessing ReDIB's essential facilities, in which the rates approved by each
-ReDIB node for its different services apply.</p>
-<p><em>The detailed pricing table (node &times; modality &times; service unit)
-will be published in a follow-up phase. For specific rate information, please
-contact <a href="mailto:info@redib.net">info@redib.net</a>.</em></p>
+ReDIB node for its different services apply. A distinction is made between OPIS
+(public research bodies) and other entities.</p>
+
+<h2>Preclinical imaging rates</h2>
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+<thead><tr><th>Node</th><th>Modality</th><th>Description</th><th>Unit</th>
+<th>AAC €/unit</th><th>AaD (OPIS) €/unit</th><th>AaD (Others) €/unit</th></tr></thead>
+<tbody>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Daytime acquisition</td><td>30 min</td><td>7.50–22.50</td><td>22.50</td><td>45.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Self-service</td><td>30 min</td><td>4.50–15.00</td><td>15.00</td><td>30.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 1T/10cm</td><td>Nighttime acquisition</td><td>Night (12 h)</td><td>35.00–105.00</td><td>105.00</td><td>210.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 9.4T/30cm</td><td>Daytime acquisition</td><td>30 min</td><td>15.00–45.00</td><td>45.00</td><td>90.00</td></tr>
+<tr><td>BioImaC</td><td>IRM 9.4T/30cm</td><td>Nighttime acquisition</td><td>Night (12 h)</td><td>100.00–300.00</td><td>300.00</td><td>600.00</td></tr>
+<tr><td>BioImaC</td><td>IRM/PET 9.4T</td><td>Daytime acquisition</td><td>30 min</td><td>27.50–82.50</td><td>82.50</td><td>165.00</td></tr>
+<tr><td>CIC biomaGUNE</td><td>SPECT-CT</td><td>Scan</td><td>30 min</td><td>0</td><td>69.05</td><td>82.86</td></tr>
+<tr><td>CIC biomaGUNE</td><td>PET-CT</td><td>Scan</td><td>30 min</td><td>0</td><td>69.05</td><td>82.86</td></tr>
+<tr><td>CIC biomaGUNE</td><td>IRM 7T/30cm</td><td>Scan</td><td>30 min</td><td>0</td><td>124.32</td><td>149.19</td></tr>
+<tr><td>CIC biomaGUNE</td><td>IRM 11.7T/16cm</td><td>Scan</td><td>30 min</td><td>0</td><td>325.84</td><td>391.01</td></tr>
+<tr><td>Imaging La Fe</td><td>IRM 3T/60cm</td><td>Preclinical</td><td>30 min</td><td>0–99.51</td><td>123.14</td><td>140.74</td></tr>
+<tr><td>TRIMA@CNIC</td><td>Nano PET-CT</td><td>Scan</td><td>30 min</td><td>0–25.31</td><td>25.31</td><td>30.37</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 7T/30cm</td><td>Scan</td><td>30 min</td><td>0–28.13</td><td>28.13</td><td>33.75</td></tr>
+</tbody></table>
+</div>
+
+<h2>Clinical imaging rates</h2>
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+<thead><tr><th>Node</th><th>Modality</th><th>Description</th><th>Unit</th>
+<th>AAC €/unit</th><th>AaD (OPIS) €/unit</th><th>AaD (Others) €/unit</th></tr></thead>
+<tbody>
+<tr><td>Imaging La Fe</td><td>IRM 3T/60cm</td><td>Study</td><td>Study</td><td>0–194.47</td><td>202.65–278.40</td><td>240.65–330.60</td></tr>
+<tr><td>Imaging La Fe</td><td>PET-IRM</td><td>Study</td><td>Study</td><td>0–370.72</td><td>458.76–567.97</td><td>524.30–649.11</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 3T/60cm</td><td>Scan</td><td>30 min</td><td>0–131.20</td><td>131.20</td><td>170.56</td></tr>
+<tr><td>TRIMA@CNIC</td><td>IRM 3T/60cm</td><td>With gadolinium</td><td>30 min</td><td>0–203.77</td><td>203.77</td><td>264.90</td></tr>
+<tr><td>TRIMA@CNIC</td><td>PET-CT</td><td>Study</td><td>Study</td><td>0–268.38</td><td>268.38</td><td>348.89</td></tr>
+<tr><td>TRIMA@CNIC</td><td>CT</td><td>Non-contrast</td><td>Study</td><td>0–75.32</td><td>75.32</td><td>97.92</td></tr>
+<tr><td>TRIMA@CNIC</td><td>CT</td><td>Contrast (aorta-coronary angiography)</td><td>Study</td><td>0–176.67</td><td>176.67</td><td>229.67</td></tr>
+<tr><td>TRIMA@CNIC</td><td>CT</td><td>Contrast (equilibrium phase)</td><td>Study</td><td>0–265.38</td><td>265.38</td><td>345.00</td></tr>
+</tbody></table>
+</div>
+
+<p><em>Prices exclude consumables (contrast agents, anesthesia, radiotracers
+and others), which are billed separately. For specific rates, contact each node
+or write to <a href="mailto:info@redib.net">info@redib.net</a>.</em></p>
 """
 
 LEGAL_BODY_ES = """
