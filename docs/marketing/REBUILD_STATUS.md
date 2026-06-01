@@ -98,17 +98,34 @@ Snippets, both with `TranslatableMixin`:
 
 ## Bootstrap & content commands (all idempotent)
 
-Run in order on a fresh dev DB:
+Run in order on a fresh dev DB. **Load the real portal reference data first**
+— the NodePage / EquipmentCategoryPage live-queries return nothing without
+real `core.Node` / `core.Equipment` rows (the old sandbox fixture had blank
+`Equipment.area` and no Imaging La Fe node, so equipment pages rendered empty):
 
 ```bash
 source venv/bin/activate
 python manage.py migrate
+
+# Real reference data (data/*.tsv) — order matters (FK deps).
+python manage.py populate_redib_organizations   # 183 orgs
+python manage.py populate_redib_nodes            # 4 real nodes: BioImaC, CIC-biomaGUNE, IIS-LaFe, TRIMA@CNIC
+python manage.py populate_redib_users            # 21 users (default pw changeme123)
+python manage.py populate_redib_equipment        # 14 equipment, area = clinical/preclinical/radiochemistry
+python manage.py populate_redib_funding_agencies # 375 funding agencies
+# Superuser for /cms/ + /admin/ (dev): create one if none exists.
+
+# Marketing content
 python manage.py marketing_init          # Wagtail Site + ES/EN Locales + HomePage pair
 python manage.py populate_static_pages   # 11 ES + 11 EN section pages + ExternalLinks + redirects
 python manage.py populate_team           # 14 people, ES + EN + photos
 python manage.py populate_equipment_nodes # 4 NodePages + 4 EquipmentCategoryPages, ES + EN
 python manage.py populate_news_press     # 12 news + 12 press, sample migration
 ```
+
+`populate_equipment_nodes` maps each NodePage to its `core.Node` by code
+(`core_node_codes` now includes the real codes `BioImaC`, `TRIMA@CNIC`,
+`IIS-LaFe`, `CIC-biomaGUNE`) with an org-name fallback.
 
 Verification report noted minor non-idempotency: `populate_static_pages`
 re-writes the HomePage hero/body unconditionally; `populate_equipment_nodes`
@@ -147,8 +164,6 @@ top-right language switcher, confirm you land on the matching EN translation.
 | Homepage layout | Text-only hero | Inventory described a carousel + 6 teaser cards + 4-node grid + 2-news teaser. Build it or ship minimalist? |
 | Tarifas pricing matrix | Stub body | Structured model vs StreamField? Pricing is `(node × modality × unit) × (AAC / AaD-OPIS / AaD-Other)`. |
 | Bilingual URL routing | `i18n_patterns` with `/en/` prefix | Faithfully match redib.net (per-page-slug aliases at root) would need custom URL resolution. Worth doing? |
-| Imaging La Fe `core.Node` row | Missing in dev fixture | Load real data or extend fixture before merge. |
-| `Equipment.area` blank in dev fixture | Category-page lists empty | Same as above — data load. |
 | Cutover plan | Not started | DNS, Caddy, `redib.net` vs `portal.redib.net` URL question, third-party handoff. |
 | Admin CMS UX for non-technical editors | Not started | You mentioned having specific ideas — separate conversation when you're ready. |
 

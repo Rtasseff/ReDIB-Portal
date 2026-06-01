@@ -43,9 +43,16 @@ and snippets are documented in `docs/marketing/REBUILD_STATUS.md`. NodePage
 and EquipmentCategoryPage read live from `core.Node` / `core.Equipment` —
 no duplicated catalog data.
 
-**Bootstrap a fresh dev DB** (idempotent — safe to re-run):
+**Bootstrap a fresh dev DB** (idempotent — safe to re-run). Load the real
+reference data (`data/*.tsv`) first — the equipment/node pages live-query
+`core.*` and render empty without it:
 ```bash
 python manage.py migrate
+python manage.py populate_redib_organizations   # FK order: orgs → nodes → users → equipment
+python manage.py populate_redib_nodes           # 4 real nodes (BioImaC, CIC-biomaGUNE, IIS-LaFe, TRIMA@CNIC)
+python manage.py populate_redib_users
+python manage.py populate_redib_equipment       # 14 items, area=clinical/preclinical/radiochemistry
+python manage.py populate_redib_funding_agencies
 python manage.py marketing_init           # Wagtail Site + ES/EN Locales + bilingual HomePage
 python manage.py populate_static_pages    # 11 section pages × 2 locales + ExternalLinks + redirects
 python manage.py populate_team            # 14 Person snippets with headshots

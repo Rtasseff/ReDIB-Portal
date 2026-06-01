@@ -52,7 +52,7 @@ NODE_SPECS = [
         'es_slug': 'bioimac',
         'en_title': 'BioImaC',
         'en_slug': 'bioimac',
-        'core_node_codes': ['BIOIMAC', 'bioimac', 'BIOI'],
+        'core_node_codes': ['BioImaC', 'BIOIMAC', 'bioimac', 'BIOI'],
         'core_node_name_contains': 'BioImaC',
         'hero_url': (
             'https://www.redib.net/upload/secciones-publicas/'
@@ -117,7 +117,7 @@ NODE_SPECS = [
         'es_slug': 'cnic',
         'en_title': 'TRIMA @ CNIC',
         'en_slug': 'cnic',
-        'core_node_codes': ['CNIC', 'cnic', 'TRIMA'],
+        'core_node_codes': ['TRIMA@CNIC', 'CNIC', 'cnic', 'TRIMA'],
         'core_node_name_contains': 'CNIC',
         'hero_url': (
             'https://www.redib.net/upload/secciones-publicas/'
@@ -181,7 +181,7 @@ NODE_SPECS = [
         'es_slug': 'imaging-la-fe',
         'en_title': 'Imaging La Fe',
         'en_slug': 'imaging-la-fe',
-        'core_node_codes': ['LAFE', 'lafe', 'IMG_LAFE', 'IMAGING_LAFE'],
+        'core_node_codes': ['IIS-LaFe', 'LAFE', 'lafe', 'IMG_LAFE', 'IMAGING_LAFE'],
         'core_node_name_contains': 'La Fe',
         'hero_url': (
             'https://www.redib.net/upload/secciones-publicas/'
@@ -252,7 +252,7 @@ NODE_SPECS = [
         'es_slug': 'cic-biomagune',
         'en_title': 'CIC biomaGUNE',
         'en_slug': 'cic-biomagune',
-        'core_node_codes': ['CICBIO', 'cicbio', 'CICBIOMAGUNE', 'BIOMAGUNE'],
+        'core_node_codes': ['CIC-biomaGUNE', 'CICBIO', 'cicbio', 'CICBIOMAGUNE', 'BIOMAGUNE'],
         'core_node_name_contains': 'biomaGUNE',
         'hero_url': (
             'https://www.redib.net/upload/secciones-publicas/'
