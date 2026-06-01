@@ -1075,6 +1075,50 @@ ARCHIVE_NEWS = [
 ]
 
 
+# Historical press archive — pages 2-3 of the live /prensa listing. All are
+# external clippings (outbound links to ministries, nodes, and media outlets);
+# ES-only, no body, like the page-1 external clippings above. The long
+# MICINN/MINECO portal URLs are truncated to the canonical vgnextoid param so
+# they fit URLField(max_length=200), matching the existing clippings.
+#
+# Tuple shape: (date, slug, outlet, title, external_url).
+# NOTE: the 3 oldest items on live /prensa page 3 (2014-2016) did not render
+# cleanly to the crawler and are not yet included — a small remaining gap.
+
+ARCHIVE_PRESS = [
+    (date(2018, 7, 16), 'clip-micinn-rd-estructura-ministerio-2018', 'Ministerio de Ciencia, Innovación y Universidades', 'El Gobierno aprueba el Real Decreto por el que se desarrolla la estructura del Ministerio de Ciencia, Innovación y Universidades', 'http://www.idi.mineco.gob.es/portal/site/MICINN/menuitem.edc7f2029a2be27d7010721001432ea0/?vgnextoid=1888daa6362a4610VgnVCM1000001d04140aRCRD'),
+    (date(2018, 5, 4), 'clip-mineco-187-millones-equipamiento-2018', 'MINECO', 'El Consejo de Ministros aprueba 187 millones de euros para equipamiento científico-técnico', 'http://www.idi.mineco.gob.es/portal/site/MICINN/menuitem.edc7f2029a2be27d7010721001432ea0/?vgnextoid=fec2bf5839a23610VgnVCM1000001d04140aRCRD'),
+    (date(2018, 4, 4), 'clip-cnic-septima-convocatoria-2018', 'CNIC', 'Séptima Convocatoria ReDIB - ICTS', 'https://www.cnic.es/es/noticias/septima-convocatoria-para-acceder-infraestructura-cientifico-tecnica-singular-icts-redib'),
+    (date(2018, 4, 3), 'clip-sebbm-septima-convocatoria-2018', "SE'BBM", 'Séptima Convocatoria ReDIB - ICTS', 'http://www.sebbm.es/web/es/noticias-en-portada/sala-prensa/2611-septima-convocatoria-icts-redib'),
+    (date(2018, 3, 22), 'clip-cicbiomagune-emim-san-sebastian-2018', 'CIC biomaGUNE', 'El Congreso Europeo de Imagen Molecular (EMIM) tendrá lugar en San Sebastián', 'http://www.cicbiomagune.es/news/over-600-researchers-field-molecular-imaging-will-come-together-donostia-san-sebasti%C3%A1n-european'),
+    (date(2018, 3, 22), 'clip-mineco-bei-1200-millones-2018', 'MINECO', 'El BEI financiará 1.200 millones de euros para proyectos de I+D+i', 'http://www.mineco.gob.es/portal/site/mineco/menuitem.ac30f9268750bd56a0b0240e026041a0/?vgnextoid=21520bb115d42610VgnVCM1000001d04140aRCRD'),
+    (date(2018, 2, 19), 'clip-mineco-icts-transfiere-2018', 'MINECO', 'Las Infraestructuras Científicas y Técnicas Singulares también estuvieron en Transfiere 2018', 'http://www.idi.mineco.gob.es/portal/site/MICINN/menuitem.edc7f2029a2be27d7010721001432ea0/?vgnextoid=989d3f77c8ea1610VgnVCM1000001d04140aRCRD'),
+    (date(2017, 9, 29), 'clip-cardioquiron-pizarro-saber-vivir-2017', 'Cardio Quirón', 'El Dr. Gonzalo Pizarro, Coordinador de ReDIB - ICTS, en Saber Vivir', 'http://cardioquiron.com/noticias/saber-vivir-rtve-290917/'),
+    (date(2017, 9, 15), 'clip-cnic-quinta-convocatoria-2017', 'CNIC', 'Quinta Convocatoria para el acceso a ReDIB - ICTS', 'https://www.cnic.es/es/noticias/quinta-convocatoria-para-acceder-infraestructura-cientifico-tecnica-singular-icts-redib'),
+    (date(2017, 6, 27), 'clip-mineco-actualizacion-mapa-icts-2017', 'MINECO', 'Se inicia la actualización del Mapa de Infraestructuras Científicas y Técnicas Singulares', 'http://www.idi.mineco.gob.es/portal/site/MICINN/menuitem.edc7f2029a2be27d7010721001432ea0/?vgnextoid=1d244ccad48ec510VgnVCM1000001d04140aRCRD'),
+    (date(2017, 4, 1), 'clip-eurekalert-cuarta-convocatoria-2017', 'EurekAlert', 'Cuarta Convocatoria para el acceso a ReDIB - ICTS', 'https://www.eurekalert.org/pub_releases_ml/2017-03/cndi-q033117.php'),
+    (date(2017, 3, 15), 'clip-mineco-cicbiomagune-decimo-aniversario-2017', 'MINECO', 'CIC biomaGUNE celebra su décimo aniversario', 'http://www.idi.mineco.gob.es/portal/site/MICINN/menuitem.edc7f2029a2be27d7010721001432ea0/?vgnextoid=f86d3d339e1da510VgnVCM1000001d04140aRCRD'),
+]
+
+
+def _archive_press_spec(entry):
+    """Turn an ARCHIVE_PRESS tuple into an ES-only external-clipping spec."""
+    post_date, slug, outlet, title, url = entry
+    return {
+        'date': post_date,
+        'slug_es': slug,
+        'slug_en': None,
+        'title_es': title,
+        'title_en': '',
+        'outlet': outlet,
+        'external_url': url,
+        'intro_es': '',
+        'intro_en': '',
+        'body_es': '',
+        'body_en': '',
+    }
+
+
 def _archive_news_spec(entry):
     """Turn an ARCHIVE_NEWS tuple into an ES-only NewsPage spec for
     _upsert_news_es. The body is the teaser (if any) plus a link to the full
@@ -1181,6 +1225,17 @@ class Command(BaseCommand):
                 f"ES /{es_page.slug}/"
                 + (f"  EN /en/{en_page.slug}/" if en_page else "")
             )
+
+        # Historical press archive (ES-only external clippings, /prensa pg 2-3).
+        press_archive_count = 0
+        for entry in ARCHIVE_PRESS:
+            spec = _archive_press_spec(entry)
+            es_page = self._upsert_press_es(press_index_es, spec)
+            press_rows.append((spec['date'], es_page, None, 'external'))
+            press_archive_count += 1
+        self.stdout.write(
+            f"  Press archive: {press_archive_count} external clippings."
+        )
 
         # ---- summary -------------------------------------------------
         self.stdout.write('')
