@@ -1,7 +1,9 @@
 {% load wagtailcore_tags %}
-{# Bootstrap .nav (not .navbar-nav) so the row lays out horizontally without
-   needing a .navbar-expand-lg wrapper. The logo to the left already serves as
-   the "home" link, so we don't render an explicit Inicio item here. #}
+{% comment %}
+Bootstrap .nav (not .navbar-nav) so the row lays out horizontally without
+needing a .navbar-expand-lg wrapper. The logo to the left already serves
+as the "home" link, so we don't render an explicit Inicio item here.
+{% endcomment %}
 <ul class="nav flex-wrap">
     {% for item in menu_items %}
         <li class="nav-item">
