@@ -48,6 +48,21 @@
 
     <footer class="bg-light mt-5 py-4 border-top">
         <div class="container text-center">
+            <p class="mb-2 small">
+                {% if request.LANGUAGE_CODE == 'en' %}
+                    <a href="/en/links-of-interest/" class="text-muted text-decoration-none">Links of interest</a>
+                    <span class="text-muted mx-2">·</span>
+                    <a href="/en/legal-notice/" class="text-muted text-decoration-none">Legal notice</a>
+                    <span class="text-muted mx-2">·</span>
+                    <a href="/en/privacy-policy-and-cookies/" class="text-muted text-decoration-none">Privacy &amp; cookies</a>
+                {% else %}
+                    <a href="/enlaces-de-interes/" class="text-muted text-decoration-none">Enlaces de interés</a>
+                    <span class="text-muted mx-2">·</span>
+                    <a href="/aviso-legal/" class="text-muted text-decoration-none">Aviso legal</a>
+                    <span class="text-muted mx-2">·</span>
+                    <a href="/politica-de-privacidad-y-cookies/" class="text-muted text-decoration-none">Privacidad y cookies</a>
+                {% endif %}
+            </p>
             <p class="mb-0">&copy; 2025 ReDIB — Red Distribuida de Imagen Biomédica</p>
             <p class="small text-muted mb-0">ICTS reconocida por el Ministerio de Ciencia, Innovación y Universidades</p>
         </div>

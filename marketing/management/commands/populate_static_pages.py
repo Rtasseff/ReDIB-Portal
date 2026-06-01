@@ -819,6 +819,7 @@ SECTIONS = [
         'en_title': 'Links of interest',
         'en_slug': 'links-of-interest',
         'page_class': StandardPage,
+        'show_in_menus': False,  # footer-only, like the live redib.net
         'es_fields': {
             'intro': 'Recursos externos de interés relacionados con ReDIB.',
             'body': LINKS_BODY_ES,
@@ -834,6 +835,7 @@ SECTIONS = [
         'en_title': 'Legal notice',
         'en_slug': 'legal-notice',
         'page_class': StandardPage,
+        'show_in_menus': False,  # footer-only
         'es_fields': {
             'intro': '',
             'body': LEGAL_BODY_ES,
@@ -1113,7 +1115,7 @@ class Command(BaseCommand):
                 title=spec['es_title'],
                 slug=es_slug,
                 locale=home_es.locale,
-                show_in_menus=True,
+                show_in_menus=spec.get('show_in_menus', True),
                 **spec['es_fields'],
             )
             home_es.add_child(instance=es_page)
@@ -1127,8 +1129,9 @@ class Command(BaseCommand):
             if es_page.title != spec['es_title']:
                 es_page.title = spec['es_title']
                 changed = True
-            if not es_page.show_in_menus:
-                es_page.show_in_menus = True
+            want_in_menus = spec.get('show_in_menus', True)
+            if es_page.show_in_menus != want_in_menus:
+                es_page.show_in_menus = want_in_menus
                 changed = True
             for field, value in spec['es_fields'].items():
                 if getattr(es_page, field) != value:
@@ -1156,7 +1159,7 @@ class Command(BaseCommand):
             en_page = es_page.copy_for_translation(en_locale)
             en_page.title = spec['en_title']
             en_page.slug = en_slug
-            en_page.show_in_menus = True
+            en_page.show_in_menus = spec.get('show_in_menus', True)
             for field, value in spec['en_fields'].items():
                 setattr(en_page, field, value)
             en_page.save_revision().publish()
@@ -1176,8 +1179,9 @@ class Command(BaseCommand):
             if en_page.slug != en_slug:
                 en_page.slug = en_slug
                 changed = True
-            if not en_page.show_in_menus:
-                en_page.show_in_menus = True
+            want_in_menus = spec.get('show_in_menus', True)
+            if en_page.show_in_menus != want_in_menus:
+                en_page.show_in_menus = want_in_menus
                 changed = True
             for field, value in spec['en_fields'].items():
                 if getattr(en_page, field) != value:
