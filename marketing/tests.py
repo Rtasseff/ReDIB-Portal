@@ -83,3 +83,38 @@ class MarketingTemplateLeakTests(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 self._assert_no_leaks(url)
+
+
+class MainNavActualidadDropdownTests(TestCase):
+    """Noticias + Prensa render inside one "Actualidad" top-nav dropdown,
+    not as two separate top-level links — matching the live redib.net menu.
+
+    The grouping is presentation-only (marketing_tags.main_nav): the pages
+    keep their root URLs, so this guards the menu IA without touching the
+    page tree.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command('marketing_init', verbosity=0)
+        call_command('populate_static_pages', verbosity=0)
+
+    def test_es_actualidad_dropdown(self):
+        body = self.client.get('/').content.decode('utf-8')
+        # Dropdown toggle present with the ES label.
+        self.assertIn('dropdown-toggle', body)
+        self.assertIn('>Actualidad</a>', body)
+        # Noticias + Prensa are dropdown items, not top-level nav links.
+        self.assertIn('<a class="dropdown-item" href="/noticias/">', body)
+        self.assertIn('<a class="dropdown-item" href="/prensa/">', body)
+        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/noticias/">', body)
+        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/prensa/">', body)
+
+    def test_en_actualidad_dropdown(self):
+        body = self.client.get('/en/').content.decode('utf-8')
+        self.assertIn('dropdown-toggle', body)
+        self.assertIn('>News &amp; Press</a>', body)
+        self.assertIn('<a class="dropdown-item" href="/en/news/">', body)
+        self.assertIn('<a class="dropdown-item" href="/en/press/">', body)
+        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/en/news/">', body)
+        self.assertNotIn('<a class="nav-link px-2 text-dark" href="/en/press/">', body)

@@ -179,12 +179,20 @@ top-right language switcher, confirm you land on the matching EN translation.
 - The 7 governance PDFs linked from `/documentacion/` still point at
   the live `redib.net` URLs. Migrating them into Wagtail Documents is a
   small follow-up.
-- **Top-nav has 9 items, original had 8.** The remaining delta is
-  Noticias + Prensa as separate items; the live site combined them
-  under an "Actualidad" dropdown. To match: introduce an Actualidad
-  parent `StandardPage`, move NewsIndex + PressIndex underneath it,
-  add dropdown rendering to `templates/marketing/includes/main_nav.html`
-  (the menu_items already supports nested children).
+- ~~**Top-nav has 9 items, original had 8.**~~ — **done.** Noticias +
+  Prensa now render inside a single "Actualidad" (EN: "News & Press")
+  top-nav dropdown, matching the live menu (8 top-level items per locale).
+  **Deviation from the suggestion below:** rather than moving NewsIndex +
+  PressIndex under a new parent page, the grouping is **presentation-only**
+  — `marketing_tags.main_nav` collapses the two index pages into one
+  dropdown node and `main_nav.html` renders a Bootstrap dropdown. The pages
+  keep their root URLs (`/noticias`, `/prensa`, `/news`, `/press`), so the
+  ~30 existing redirects, the sitemap, and in-content links all stay valid.
+  Moving them in the tree would have repathed those URLs to
+  `/actualidad/noticias` etc. — which neither the live site nor our redirects
+  use. Dropdown membership is keyed by page type (`ACTUALIDAD_TYPES`); the
+  label is a one-line edit (`ACTUALIDAD_LABELS`). Guarded by
+  `MainNavActualidadDropdownTests` in `marketing/tests.py`.
 
 ## Post-Phase-5b polish (also done)
 

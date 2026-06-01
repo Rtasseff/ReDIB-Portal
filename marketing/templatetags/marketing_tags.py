@@ -20,10 +20,18 @@ from django.utils import translation
 from wagtail.models import Locale
 
 from home.models import HomePage
-from marketing.models import ExternalLink
+from marketing.models import ExternalLink, NewsIndexPage, PressIndexPage
 
 
 register = template.Library()
+
+
+# Noticias + Prensa are collapsed into a single "Actualidad" top-nav dropdown
+# to match the live redib.net menu (which combined them under one parent).
+# The page types that belong inside that dropdown, and the per-locale label
+# for the dropdown itself. Edit ACTUALIDAD_LABELS to rename the menu entry.
+ACTUALIDAD_TYPES = (NewsIndexPage, PressIndexPage)
+ACTUALIDAD_LABELS = {'es': 'Actualidad', 'en': 'News & Press'}
 
 
 def _resolve_homepage(context):
@@ -58,14 +66,38 @@ def main_nav(context):
     home_page = _resolve_homepage(context)
     if home_page is None:
         return {'menu_items': [], 'home_page': None}
-    children = (
+    children = list(
         home_page.get_children()
         .live()
         .in_menu()
         .specific()
     )
+    # Collapse the News + Press index pages into one "Actualidad" dropdown,
+    # matching the live site's nav. This is presentation-only: the pages keep
+    # their root URLs (/noticias, /prensa, /news, /press), so existing
+    # redirects, the sitemap, and in-content links stay valid — we never move
+    # them in the page tree. Other items render as plain links.
+    lang = home_page.locale.language_code if home_page.locale_id else (
+        translation.get_language() or 'es'
+    )
+    actualidad_children = [c for c in children if isinstance(c, ACTUALIDAD_TYPES)]
+    menu_items = []
+    dropdown_inserted = False
+    for child in children:
+        if isinstance(child, ACTUALIDAD_TYPES):
+            # Insert the dropdown once, at the position of the first member;
+            # skip the rest since they live inside it.
+            if not dropdown_inserted:
+                menu_items.append({
+                    'is_dropdown': True,
+                    'label': ACTUALIDAD_LABELS.get(lang, ACTUALIDAD_LABELS['es']),
+                    'children': actualidad_children,
+                })
+                dropdown_inserted = True
+            continue
+        menu_items.append({'is_dropdown': False, 'page': child})
     return {
-        'menu_items': children,
+        'menu_items': menu_items,
         'home_page': home_page,
         'request': context.get('request'),
     }
