@@ -4,6 +4,17 @@ Working summary of the rebuild of the public redib.net website inside this
 Django/Wagtail portal. Lives on branch `feature/marketing-site`. Production
 is untouched until cutover.
 
+## Where to pick up (fresh session checklist)
+
+If you're (re)starting a session on this branch and need to orient quickly:
+
+1. **Read this doc top to bottom** — it's the canonical current state.
+2. **Skim `git log --oneline main..feature/marketing-site`** — each commit message describes one phase or sub-phase.
+3. **Check the open items below in "What's deferred and needs your input"** before suggesting next work. Several items are explicitly waiting on human design decisions; don't decide them in an autonomous session.
+4. **The branch is dev-only.** Nothing has been merged or deployed; `main` and prod are untouched. Cutover plan (DNS, Caddy, URL strategy) is a separate conversation.
+5. **The regression test in `marketing/tests.py`** asserts no `{# #}` template comment leaks slip into rendered pages — run it after any template edit (`python manage.py test marketing`).
+6. **Five idempotent bootstrap commands** populate the entire site from a fresh DB. See "Bootstrap & content commands" below.
+
 This document is the "current state" entry-point. The other files in
 `docs/marketing/` are point-in-time artifacts:
 
@@ -168,6 +179,24 @@ top-right language switcher, confirm you land on the matching EN translation.
 - The 7 governance PDFs linked from `/documentacion/` still point at
   the live `redib.net` URLs. Migrating them into Wagtail Documents is a
   small follow-up.
+- **Top-nav has 9 items, original had 8.** The remaining delta is
+  Noticias + Prensa as separate items; the live site combined them
+  under an "Actualidad" dropdown. To match: introduce an Actualidad
+  parent `StandardPage`, move NewsIndex + PressIndex underneath it,
+  add dropdown rendering to `templates/marketing/includes/main_nav.html`
+  (the menu_items already supports nested children).
+
+## Post-Phase-5b polish (also done)
+
+- **Navbar declutter** (`f52013e`) — switched `ul.navbar-nav` → `ul.nav`
+  so the menu lays out horizontally without a `navbar-expand-lg`
+  wrapper; dropped redundant "Inicio" item (logo already links home);
+  hid Enlaces de interés + Aviso legal from the main nav and surfaced
+  them in a small footer-link row alongside Política de privacidad.
+- **Template-leak regression test** (`0bc20db`) — `marketing/tests.py`
+  walks 30 URLs and asserts no `{#` / `#}` tokens appear in responses.
+  Catches the multi-line `{# #}` comment-leak class that shipped twice.
+  Run with `python manage.py test marketing` (~1s).
 
 ## Phase 5b additions to the page list
 
@@ -181,9 +210,13 @@ direct URL).
 
 ## Branch shape
 
-17 commits on top of `main`. Each commit is one phase or sub-phase:
+20 commits on top of `main`. Each commit is one phase or sub-phase:
 
 ```
+0bc20db Marketing:           regression test for stray template-syntax leaks
+6f76f32 Marketing:           wrap multi-line {# #} in {% comment %} (regression)
+f52013e Marketing:           declutter top nav (12 vertical → 9 horizontal)
+730ef4b Marketing docs:      update REBUILD_STATUS for Phase 5b
 0836929 Marketing Phase 5b:  equipment category hero images
 047e96e Marketing Phase 5b:  SEO foundation — sitemap.xml + robots.txt
 aedbfea Marketing Phase 5b:  build 3 deferred inventory pages + populate_static_pages idempotency
