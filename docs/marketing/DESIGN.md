@@ -21,26 +21,31 @@ and information architecture.
 
 ## Visual language
 
-### Colour — traced to the logos
-Sampled from the actual logo files:
-- ICTS logo azure **`#137abc`** → `--brand` (primary).
-- ReDiB logo deep teal **`#214f5f`** → `--ink-brand` (dark sections, headings accent, footer).
+### Colour — traced to the **ReDIB** wordmark
+The palette comes from the ReDIB logo (there are many ICTS centres but only
+one ReDIB, so the brand is ReDIB's, not the ICTS mark's). Sampled from
+`ReDIB_logo_text.png`: teal **`#214f5f`**, the crimson dot **`#bb1f44`**, gray
+`#9c9da2`.
 
 Palette (defined once as CSS custom properties in `static/css/marketing.css`):
 
 | Token | Value | Use |
 |---|---|---|
-| `--brand` | `#137abc` | primary actions, links, accents |
-| `--brand-dark` | `#0e5d92` | hover/active |
-| `--brand-soft` | `#e8f2fa` | tinted section backgrounds, badges |
-| `--ink-brand` | `#214f5f` | dark hero/footer band, deep headings |
+| `--brand` | `#214f5f` | ReDIB teal — links, dark bands, headings accent, footer |
+| `--brand-dark` | `#173a47` | hover/active |
+| `--brand-soft` | `#e9eff1` | tinted section backgrounds, badges |
+| `--accent` | `#bb1f44` | ReDIB crimson — primary CTAs / highlights |
+| `--accent-dark` | `#9a1739` | CTA hover |
+| `--ink-brand` | `#214f5f` | dark hero/footer band |
 | `--ink` | `#1d2a30` | body text |
 | `--muted` | `#5b6b73` | secondary text |
 | `--line` | `#e3e8eb` | borders/dividers |
 | `--bg` / `--bg-soft` | `#ffffff` / `#f5f8fa` | page / alternating sections |
 
-Keep the spirit of the logo (azure + teal on white). No new hues without a
-reason; tints/shades of the two brand colours only.
+Teal carries the brand; the crimson dot is the action colour (CTA buttons,
+the "open call" prompt). The ICTS azure was dropped as a primary — the ICTS
+logo still appears in the footer as the recognition mark, but the *site*
+palette is ReDIB's. No new hues without reason; tints/shades only.
 
 ### Type
 **Inter** (Google Fonts) for a clean, modern, neutral feel — same family used
@@ -50,11 +55,18 @@ leading. A modular type scale lives in the tokens.
 
 ### Components
 A small, reusable set, all styled in `marketing.css`: slim sticky header,
-full-bleed hero, section rhythm (alternating white / `--bg-soft`), content
-cards (soft shadow, hover lift), buttons (filled primary / outline / ghost),
-badges/pills (for content type + "open call"), multi-column footer with the
-ICTS logo. Bootstrap 5 stays as the **grid + utilities** layer; `marketing.css`
+**rotating hero slideshow** (auto-crossfading; a left-anchored gradient keeps
+the text legible while the photo stays visible, and a bottom gradient fades
+the image into the page — à la CERN / SOCIB), section rhythm (alternating
+white / `--bg-soft`), content cards (soft shadow, hover lift), buttons (crimson
+accent CTA / teal primary / ghost / light), badges/pills (content type +
+"open call"), multi-column footer with the ICTS logo. Bootstrap 5 stays as the
+**grid + utilities** layer (its carousel JS drives the hero); `marketing.css`
 layers the brand theme on top. We do not fork Bootstrap.
+
+Hero images are placeholders (the imaging-category photos) until better
+photography is supplied — they live in Wagtail media, so swapping them is a
+content edit, not a code change.
 
 ## CSS & asset architecture (the maintainability rules)
 
@@ -79,8 +91,8 @@ layers the brand theme on top. We do not fork Bootstrap.
 
 Final public top nav (ES shown; EN mirrors):
 
-> **Quiénes somos · Equipamiento · Nodos · Equipo · Acceso · Actualidad · Contacto**
-> &nbsp;&nbsp; + header CTAs: **Convocatorias** (primary) · **Acceso al portal** (login)
+> **Quiénes somos · Equipamiento · Nodos · Equipo · Actualidad · Contacto**
+> &nbsp;&nbsp; + header CTAs: **Acceso** (crimson, → `/portal/calls/`) · **Iniciar sesión** (ghost, → login)
 
 Changes from the faithful rebuild and **why**:
 
@@ -92,21 +104,19 @@ Changes from the faithful rebuild and **why**:
 - **Rates removed from the top nav.** Pricing is a property of equipment, not a
   top-level destination. The `/tarifas/` page stays (URL preserved) but is
   surfaced *inside* the Equipment section, not the main menu.
-- **Acceso stays public.** Access information and the governing documentation
-  are the core of an ICTS's open-access mission and are public on every peer
-  site (socib, eurobioimaging, cells, rediris). They live in the public
-  **Acceso** section — *not* behind login — and that section foregrounds the
-  open **Convocatorias** and links the governing PDFs. This is how we "move
-  access into the portal experience without hiding it": Acceso is the public
-  bridge from the marketing site into the portal.
+- **Access removed from the top nav.** The access info is minimally important
+  as a standalone marketing page; it belongs with the calls. The `/es-acceso`
+  page stays (reachable from the footer + the "Acceso" CTA) but is dropped from
+  the menu. *Follow-up (portal-owned):* fold the access body into the
+  `/portal/calls/` page so access + calls live together.
 - **Portal integration / Calls.** `/portal/calls/` is **public** (verified),
   while the rest of `/portal/` is behind login. So:
-  - **Convocatorias / Calls** is a prominent public CTA (header + homepage
-    hero + Acceso section) → `/portal/calls/`. *Future:* surface the upcoming
-    calls live on the marketing site (see future tasks).
-  - The login entry point is renamed from **"Portal"** to **"Acceso al
-    portal" / "Portal login"** (alternatives considered: "Área privada",
-    "Iniciar sesión" — easy one-line change; open to the owner's preference).
+  - The prominent header CTA is **"Acceso" / "Access"** (crimson) →
+    `/portal/calls/` — this is the main thing a researcher wants (browse calls
+    + how to access). Also reinforced in the homepage hero and a calls band.
+  - The login entry is a quieter ghost button **"Iniciar sesión" / "Log in"**
+    → `/portal/` (distinct wording so it doesn't clash with the "Acceso" CTA).
+  - *Future:* surface the upcoming calls live on the marketing site.
 
 ## Content corrections (this pass)
 

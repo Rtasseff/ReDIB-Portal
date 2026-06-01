@@ -39,11 +39,11 @@
                     {% main_nav %}
                     <div class="mk-actions ms-lg-auto">
                         {% lang_switch %}
-                        <a href="/portal/calls/" class="mk-btn mk-btn--primary mk-btn--sm">
-                            {% if request.LANGUAGE_CODE == 'en' %}Calls{% else %}Convocatorias{% endif %}
+                        <a href="/portal/calls/" class="mk-btn mk-btn--accent mk-btn--sm">
+                            {% if request.LANGUAGE_CODE == 'en' %}Access{% else %}Acceso{% endif %}
                         </a>
                         <a href="/portal/" class="mk-btn mk-btn--ghost mk-btn--sm">
-                            {% if request.LANGUAGE_CODE == 'en' %}Portal login{% else %}Acceso al portal{% endif %}
+                            {% if request.LANGUAGE_CODE == 'en' %}Log in{% else %}Iniciar sesión{% endif %}
                         </a>
                     </div>
                 </div>
@@ -97,7 +97,7 @@
                             <li><a href="/en/en-access/">How to access</a></li>
                             <li><a href="/en/documentation/">Documentation</a></li>
                             <li><a href="/en/rates/">Rates</a></li>
-                            <li><a href="/portal/">Portal login</a></li>
+                            <li><a href="/portal/">Log in</a></li>
                         </ul>
                     </div>
                     <div>
@@ -126,7 +126,7 @@
                             <li><a href="/es-acceso/">Cómo acceder</a></li>
                             <li><a href="/documentacion/">Documentación</a></li>
                             <li><a href="/tarifas/">Tarifas</a></li>
-                            <li><a href="/portal/">Acceso al portal</a></li>
+                            <li><a href="/portal/">Iniciar sesión</a></li>
                         </ul>
                     </div>
                     <div>

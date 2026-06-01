@@ -7,12 +7,14 @@
    ========================================================================= */
 
 :root {
-    /* Brand */
-    --brand:        #137abc;
-    --brand-dark:   #0e5d92;
-    --brand-soft:   #e8f2fa;
-    --ink-brand:    #214f5f;   /* ReDiB logo teal — dark bands, deep headings */
-    --ink-brand-2:  #18404e;
+    /* Brand — traced to the ReDIB wordmark: teal + the crimson dot. */
+    --brand:        #214f5f;   /* ReDIB teal — primary */
+    --brand-dark:   #173a47;
+    --brand-soft:   #e9eff1;
+    --accent:       #bb1f44;   /* ReDIB crimson dot — CTAs / highlights */
+    --accent-dark:  #9a1739;
+    --ink-brand:    #214f5f;   /* dark bands, footer, deep headings */
+    --ink-brand-2:  #173a47;
 
     /* Neutrals */
     --ink:    #1d2a30;
@@ -62,25 +64,30 @@ body.marketing main { overflow-x: clip; }
     margin-bottom: .5rem;
 }
 
-/* ---- Buttons ---------------------------------------------------------- */
-.mk-btn {
+/* ---- Buttons ----------------------------------------------------------
+   Scoped under body.marketing so the colour rules out-specify the generic
+   `body.marketing a { color: var(--brand) }` link rule (otherwise a filled
+   <a> button shows brand-coloured text on a brand fill — invisible). */
+body.marketing .mk-btn {
     display: inline-flex; align-items: center; gap: .5rem;
     font-weight: 600; font-size: .98rem;
     padding: .7rem 1.4rem; border-radius: 999px;
-    border: 1.5px solid transparent; cursor: pointer;
+    border: 1.5px solid transparent; cursor: pointer; text-decoration: none;
     transition: background .15s, color .15s, border-color .15s, transform .15s;
     white-space: nowrap;
 }
-.mk-btn:hover { transform: translateY(-1px); }
-.mk-btn--primary { background: var(--brand); color: #fff; }
-.mk-btn--primary:hover { background: var(--brand-dark); color: #fff; }
-.mk-btn--ghost { background: transparent; color: var(--brand); border-color: var(--line); }
-.mk-btn--ghost:hover { background: var(--brand-soft); color: var(--brand-dark); border-color: var(--brand-soft); }
-.mk-btn--light { background: #fff; color: var(--ink-brand); }
-.mk-btn--light:hover { background: #eef4f7; color: var(--ink-brand); }
-.mk-btn--outline-light { background: transparent; color: #fff; border-color: rgba(255,255,255,.6); }
-.mk-btn--outline-light:hover { background: rgba(255,255,255,.12); color: #fff; }
-.mk-btn--sm { padding: .45rem 1rem; font-size: .9rem; }
+body.marketing .mk-btn:hover { transform: translateY(-1px); }
+body.marketing .mk-btn--accent { background: var(--accent); color: #fff; }
+body.marketing .mk-btn--accent:hover { background: var(--accent-dark); color: #fff; }
+body.marketing .mk-btn--primary { background: var(--brand); color: #fff; }
+body.marketing .mk-btn--primary:hover { background: var(--brand-dark); color: #fff; }
+body.marketing .mk-btn--ghost { background: transparent; color: var(--brand); border-color: var(--line); }
+body.marketing .mk-btn--ghost:hover { background: var(--brand-soft); color: var(--brand-dark); border-color: var(--brand-soft); }
+body.marketing .mk-btn--light { background: #fff; color: var(--brand); }
+body.marketing .mk-btn--light:hover { background: #eef2f4; color: var(--brand-dark); }
+body.marketing .mk-btn--outline-light { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.7); }
+body.marketing .mk-btn--outline-light:hover { background: rgba(255,255,255,.18); color: #fff; }
+body.marketing .mk-btn--sm { padding: .45rem 1rem; font-size: .9rem; }
 
 /* ---- Header / nav (Bootstrap navbar, restyled) ------------------------ */
 .mk-header {
@@ -106,22 +113,33 @@ body.marketing main { overflow-x: clip; }
 .mk-lang a:hover { color: var(--brand); }
 .mk-lang a.is-active:hover { color: #fff; }
 
-/* ---- Hero ------------------------------------------------------------- */
-.mk-hero {
-    position: relative; color: #fff;
-    background: linear-gradient(120deg, var(--ink-brand) 0%, var(--brand-dark) 100%);
-    overflow: hidden;
-}
-.mk-hero__bg { position: absolute; inset: 0; object-fit: cover; width: 100%; height: 100%; opacity: .35; }
-.mk-hero__scrim {
+/* ---- Hero slideshow ---------------------------------------------------
+   Auto-rotating crossfade carousel. A left-anchored gradient keeps the text
+   readable while the right side of the photo stays visible (CERN-style); a
+   bottom gradient fades the image into the page background (SOCIB-style). */
+.mk-hero { position: relative; background: var(--ink-brand); }
+.mk-hero .carousel,
+.mk-hero .carousel-inner,
+.mk-hero .carousel-item { height: min(80vh, 660px); }
+.mk-hero .carousel-item { position: relative; }
+.mk-hero__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mk-hero__grad {
     position: absolute; inset: 0;
-    background: linear-gradient(120deg, rgba(33,79,95,.92) 0%, rgba(14,93,146,.78) 60%, rgba(19,122,188,.55) 100%);
+    background:
+        linear-gradient(90deg, rgba(23,58,71,.90) 0%, rgba(23,58,71,.62) 36%, rgba(23,58,71,.15) 68%, rgba(23,58,71,0) 100%),
+        linear-gradient(0deg, var(--bg) 1%, rgba(255,255,255,0) 16%);
 }
-.mk-hero__inner { position: relative; padding-block: 6rem; max-width: 720px; }
-.mk-hero .mk-eyebrow { color: #bfe0f5; }
-.mk-hero h1 { color: #fff; font-size: clamp(2.1rem, 4vw, 3.2rem); margin-bottom: 1rem; }
-.mk-hero p { color: rgba(255,255,255,.9); font-size: 1.2rem; margin-bottom: 1.8rem; max-width: 36em; }
-.mk-hero__cta { display: flex; flex-wrap: wrap; gap: .8rem; }
+.mk-hero__content { position: relative; height: 100%; display: flex; align-items: center; }
+.mk-hero__content .mk-container { width: 100%; }
+.mk-hero__panel { max-width: 600px; color: #fff; padding-block: 2rem; animation: mkHeroIn .7s ease both; }
+.mk-hero__panel h2 { color: #fff; font-size: clamp(2rem, 3.6vw, 3rem); margin-bottom: 1rem; }
+.mk-hero__panel p { color: rgba(255,255,255,.92); font-size: 1.18rem; margin-bottom: 1.6rem; max-width: 34em; }
+.mk-hero .mk-eyebrow { color: #e79bad; }
+@keyframes mkHeroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.mk-hero .carousel-indicators { left: auto; right: auto; bottom: 1.5rem; margin: 0; padding-inline: max(1.25rem, calc((100% - var(--maxw)) / 2 + 1.25rem)); justify-content: flex-start; }
+.mk-hero .carousel-indicators [data-bs-target] { width: 36px; height: 4px; border-radius: 2px; }
+.mk-hero .carousel-control-prev, .mk-hero .carousel-control-next { width: 6%; opacity: .55; }
+.mk-hero .carousel-control-prev:hover, .mk-hero .carousel-control-next:hover { opacity: .9; }
 
 /* ---- Sections --------------------------------------------------------- */
 .mk-section { padding-block: var(--section-y); }

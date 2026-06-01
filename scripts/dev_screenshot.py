@@ -30,7 +30,12 @@ with sync_playwright() as p:
         # Strip the Django Debug Toolbar (dev-only; absent in prod) so it
         # doesn't overlap the page in screenshots.
         page.evaluate("document.getElementById('djDebug')?.remove()")
+        wait = int(os.environ.get("WAIT", "0"))
+        if wait:
+            page.wait_for_timeout(wait)
         slug = path.strip("/").replace("/", "_").replace("?", "_") or "home"
+        if wait:
+            slug = f"{slug}_t{wait}"
         fp = OUT / f"{slug}_{VW}x{VH}.png"
         page.screenshot(path=str(fp), full_page=FULL)
         print(fp)

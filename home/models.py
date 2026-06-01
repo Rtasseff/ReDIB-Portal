@@ -80,4 +80,45 @@ class HomePage(Page):
         ctx['news_index'] = (
             NewsIndexPage.objects.live().filter(locale=locale).first()
         )
+
+        # Hero slideshow: 3 rotating messages over the imaging photos.
+        imgs = [c.hero_image for c in cats if c.hero_image_id][:3]
+        calls_url = '/portal/calls/'
+        eq_url = ctx['equipment_index'].url if ctx['equipment_index'] else calls_url
+        if locale.language_code == 'en':
+            messages = [
+                {'eyebrow': 'Unique Scientific & Technical Infrastructure (ICTS)',
+                 'title': 'Distributed Biomedical Imaging Network',
+                 'text': 'Open access to cutting-edge clinical and preclinical biomedical imaging across four Spanish nodes.',
+                 'cta': 'Request access', 'url': calls_url},
+                {'eyebrow': 'Competitive Open Access',
+                 'title': 'Apply for access to our infrastructure',
+                 'text': 'Periodic calls give academic and industry researchers access to state-of-the-art imaging.',
+                 'cta': 'View calls', 'url': calls_url},
+                {'eyebrow': 'Equipment',
+                 'title': 'State-of-the-art clinical & preclinical imaging',
+                 'text': 'PET-MR, PET-CT, high-field MRI, SPECT and cyclotron radiochemistry.',
+                 'cta': 'Explore equipment', 'url': eq_url},
+            ]
+        else:
+            messages = [
+                {'eyebrow': 'Infraestructura Científica y Técnica Singular (ICTS)',
+                 'title': 'Red Distribuida de Imagen Biomédica',
+                 'text': 'Acceso abierto a imagen biomédica clínica y preclínica de vanguardia en cuatro nodos españoles.',
+                 'cta': 'Solicitar acceso', 'url': calls_url},
+                {'eyebrow': 'Acceso Abierto Competitivo',
+                 'title': 'Solicita acceso a nuestra infraestructura',
+                 'text': 'Convocatorias periódicas para investigadores académicos y de la industria.',
+                 'cta': 'Ver convocatorias', 'url': calls_url},
+                {'eyebrow': 'Equipamiento',
+                 'title': 'Imagen clínica y preclínica de última generación',
+                 'text': 'PET-RM, PET-TC, RM de alto campo, SPECT y radioquímica con ciclotrón.',
+                 'cta': 'Ver equipamiento', 'url': eq_url},
+            ]
+        slides = []
+        for i, m in enumerate(messages):
+            slide = dict(m)
+            slide['image'] = imgs[i] if i < len(imgs) else (imgs[0] if imgs else None)
+            slides.append(slide)
+        ctx['hero_slides'] = slides
         return ctx

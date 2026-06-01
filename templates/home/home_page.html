@@ -4,43 +4,44 @@
 {% block title %}{{ page.hero_heading|default:page.title }} — ReDIB{% endblock %}
 
 {% block content %}
-    {# ---- Hero ---- #}
+    {# ---- Hero slideshow ---- #}
     <section class="mk-hero">
-        {% with hero_cat=carousel_categories.0 %}
-            {% if page.hero_image %}
-                {% image page.hero_image fill-1920x760 class="mk-hero__bg" %}
-            {% elif hero_cat.hero_image %}
-                {% image hero_cat.hero_image fill-1920x760 class="mk-hero__bg" %}
-            {% endif %}
-        {% endwith %}
-        <div class="mk-hero__scrim"></div>
-        <div class="mk-container">
-            <div class="mk-hero__inner">
-                <p class="mk-eyebrow">
-                    {% if request.LANGUAGE_CODE == 'en' %}Unique Scientific &amp; Technical Infrastructure (ICTS){% else %}Infraestructura Científica y Técnica Singular (ICTS){% endif %}
-                </p>
-                <h1>
-                    {% if page.hero_heading %}{{ page.hero_heading }}
-                    {% elif request.LANGUAGE_CODE == 'en' %}Distributed Biomedical Imaging Network
-                    {% else %}Red Distribuida de Imagen Biomédica{% endif %}
-                </h1>
-                <p>
-                    {% if page.hero_subheading %}{{ page.hero_subheading }}
-                    {% elif request.LANGUAGE_CODE == 'en' %}Open access to advanced clinical and preclinical imaging across four leading Spanish nodes — for academic and industry researchers.
-                    {% else %}Acceso abierto a imagen clínica y preclínica avanzada en cuatro nodos españoles de referencia — para investigadores académicos y de la industria.{% endif %}
-                </p>
-                <div class="mk-hero__cta">
-                    <a href="/portal/calls/" class="mk-btn mk-btn--light">
-                        <i class="bi bi-megaphone" aria-hidden="true"></i>
-                        {% if request.LANGUAGE_CODE == 'en' %}Open calls{% else %}Convocatorias abiertas{% endif %}
-                    </a>
-                    {% if equipment_index %}
-                        <a href="{% pageurl equipment_index %}" class="mk-btn mk-btn--outline-light">
-                            {% if request.LANGUAGE_CODE == 'en' %}Explore equipment{% else %}Ver equipamiento{% endif %}
-                        </a>
-                    {% endif %}
-                </div>
+        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="6000">
+            <div class="carousel-inner">
+                {% for slide in hero_slides %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        {% if slide.image %}{% image slide.image fill-1920x760 class="mk-hero__img" alt="" %}{% endif %}
+                        <div class="mk-hero__grad"></div>
+                        <div class="mk-hero__content">
+                            <div class="mk-container">
+                                <div class="mk-hero__panel">
+                                    <p class="mk-eyebrow">{{ slide.eyebrow }}</p>
+                                    <h2>{{ slide.title }}</h2>
+                                    <p>{{ slide.text }}</p>
+                                    <a href="{{ slide.url }}" class="mk-btn mk-btn--accent">
+                                        {{ slide.cta }} <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
+            <div class="carousel-indicators">
+                {% for slide in hero_slides %}
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
+                            {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="{{ slide.title }}"></button>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Previous{% else %}Anterior{% endif %}</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Next{% else %}Siguiente{% endif %}</span>
+            </button>
         </div>
     </section>
 

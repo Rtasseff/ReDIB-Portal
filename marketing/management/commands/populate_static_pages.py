@@ -801,11 +801,17 @@ SECTIONS = [
         },
     },
     {
+        # Access info is minimally important on the marketing site and belongs
+        # with the portal calls page — hidden from the top nav. The page stays
+        # at /es-acceso (linked from the footer + the "Acceso" header CTA which
+        # points at /portal/calls/). Folding the body into the portal calls
+        # page is a follow-up (portal-owned template).
         'es_title': 'Acceso',
         'es_slug': 'es-acceso',
         'en_title': 'Access',
         'en_slug': 'en-access',
         'page_class': AccessIndexPage,
+        'show_in_menus': False,
         'es_fields': {
             'intro': 'Cómo acceder a las instalaciones esenciales de ReDIB: '
                      'Acceso Abierto Competitivo (AAC) y Acceso a Demanda (AaD).',
