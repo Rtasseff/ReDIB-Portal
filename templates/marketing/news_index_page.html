@@ -1,5 +1,5 @@
 {% extends "marketing_base.html" %}
-{% load wagtailcore_tags wagtailimages_tags %}
+{% load static wagtailcore_tags wagtailimages_tags %}
 
 {% block title %}{{ page.title }} — ReDIB{% endblock %}
 
@@ -24,9 +24,8 @@
                                     {% if item.hero_image %}
                                         {% image item.hero_image fill-480x300 class="mk-card__media" %}
                                     {% else %}
-                                        <span class="mk-card__media d-flex align-items-center justify-content-center mk-card__media--ph">
-                                            <i class="bi {% if item.kind == 'press' %}bi-megaphone{% elif item.kind == 'newsletter' %}bi-envelope-paper{% else %}bi-newspaper{% endif %}" aria-hidden="true"></i>
-                                        </span>
+                                        <img src="{% static 'images/news-fallback-'|add:item.placeholder_kind|add:'.svg' %}"
+                                             class="mk-card__media" alt="" loading="lazy">
                                     {% endif %}
                                 </a>
                                 <div class="mk-card__body">

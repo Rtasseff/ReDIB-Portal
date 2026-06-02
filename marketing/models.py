@@ -18,6 +18,24 @@ from wagtail.models import Page, TranslatableMixin
 from wagtail.snippets.models import register_snippet
 
 
+def news_placeholder_kind(title):
+    """Which branded fallback tile to show when a post has no photo.
+
+    Returns a stem matching ``static/images/news-fallback-<kind>.svg``
+    (developer-owned chrome). Derived from the title so editors never have to
+    pick one: newsletters (Boletín), open-call announcements, else generic
+    news. Press items pass 'press' directly.
+    """
+    t = (title or '').lower()
+    if 'bolet' in t or 'newsletter' in t:
+        return 'newsletter'
+    if ('convocatoria' in t or 'call for' in t
+            or 'competitive open access' in t
+            or 'acceso abierto competitivo' in t):
+        return 'call'
+    return 'news'
+
+
 # ---------------------------------------------------------------------------
 # Generic content page
 # ---------------------------------------------------------------------------
@@ -76,6 +94,7 @@ class NewsIndexPage(Page):
                 'date': p.date, 'title': p.title, 'url': p.url,
                 'intro': p.intro, 'hero_image': p.hero_image,
                 'kind': kind_of(p.title), 'external': False, 'outlet': '',
+                'placeholder_kind': news_placeholder_kind(p.title),
             })
         for p in PressItemPage.objects.live().filter(locale=self.locale):
             items.append({
@@ -83,6 +102,7 @@ class NewsIndexPage(Page):
                 'url': p.external_url or p.url, 'intro': p.intro,
                 'hero_image': None, 'kind': 'press',
                 'external': bool(p.external_url), 'outlet': p.outlet,
+                'placeholder_kind': 'press',
             })
         items.sort(key=lambda d: d['date'], reverse=True)
 
@@ -113,6 +133,11 @@ class NewsPage(Page):
     ]
 
     parent_page_types = ['marketing.NewsIndexPage']
+
+    @property
+    def placeholder_kind(self):
+        """Fallback-tile stem (see ``news_placeholder_kind``)."""
+        return news_placeholder_kind(self.title)
 
 
 # ---------------------------------------------------------------------------

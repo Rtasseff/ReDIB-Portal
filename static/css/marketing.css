@@ -126,15 +126,18 @@ body.marketing .mk-btn--sm { padding: .45rem 1rem; font-size: .9rem; }
 .mk-hero__grad {
     position: absolute; inset: 0;
     background:
-        linear-gradient(90deg, rgba(23,58,71,.90) 0%, rgba(23,58,71,.62) 36%, rgba(23,58,71,.15) 68%, rgba(23,58,71,0) 100%),
+        linear-gradient(90deg, rgba(23,58,71,.92) 0%, rgba(23,58,71,.70) 38%, rgba(23,58,71,.28) 70%, rgba(23,58,71,0) 100%),
         linear-gradient(0deg, var(--bg) 1%, rgba(255,255,255,0) 16%);
 }
 .mk-hero__content { position: relative; height: 100%; display: flex; align-items: center; }
 .mk-hero__content .mk-container { width: 100%; }
-.mk-hero__panel { max-width: 600px; color: #fff; padding-block: 2rem; animation: mkHeroIn .7s ease both; }
-.mk-hero__panel h2 { color: #fff; font-size: clamp(2rem, 3.6vw, 3rem); margin-bottom: 1rem; }
-.mk-hero__panel p { color: rgba(255,255,255,.92); font-size: 1.18rem; margin-bottom: 1.6rem; max-width: 34em; }
-.mk-hero .mk-eyebrow { color: #e79bad; }
+/* Hero text sits on the photo/gradient — force light, legible colours and
+   outrank the global `body.marketing h2` colour (same specificity trap that
+   bit the buttons). The soft shadow keeps it crisp over brighter photos. */
+.mk-hero__panel { max-width: 600px; padding-block: 2rem; animation: mkHeroIn .7s ease both; text-shadow: 0 1px 14px rgba(8,24,30,.45); }
+body.marketing .mk-hero__panel h2 { color: #fff; font-size: clamp(2rem, 3.6vw, 3rem); margin-bottom: 1rem; }
+body.marketing .mk-hero__panel p { color: rgba(255,255,255,.94); font-size: 1.18rem; margin-bottom: 1.6rem; max-width: 34em; }
+body.marketing .mk-hero .mk-eyebrow { color: #f2a6b7; text-shadow: 0 1px 10px rgba(8,24,30,.4); }
 @keyframes mkHeroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .mk-hero .carousel-indicators { left: auto; right: auto; bottom: 1.5rem; margin: 0; padding-inline: max(1.25rem, calc((100% - var(--maxw)) / 2 + 1.25rem)); justify-content: flex-start; }
 .mk-hero .carousel-indicators [data-bs-target] { width: 36px; height: 4px; border-radius: 2px; }
