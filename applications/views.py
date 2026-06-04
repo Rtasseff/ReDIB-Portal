@@ -171,6 +171,7 @@ def application_detail(request, pk):
         'application': application,
         'requested_access': requested_access,
         'is_coordinator': is_coordinator,
+        'is_applicant': application.applicant_id == user.id,
         'edit_requests': edit_requests,
         'phase_tracker': _build_phase_tracker(application),
     }
