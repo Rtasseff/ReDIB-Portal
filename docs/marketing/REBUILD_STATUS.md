@@ -25,6 +25,11 @@ This document is the "current state" entry-point. The other files in
 - [verification-report.md](verification-report.md) — Phase 4 walk of the
   rebuilt site with HTTP audit, content spot-checks, and an issue list
 
+Two living companion docs: [DESIGN.md](DESIGN.md) (visual language + CSS
+maintainability rules) and [../CONTENT_MANAGEMENT.md](../CONTENT_MANAGEMENT.md)
+(who edits what, where — the SharePoint-xlsx sync tier vs the CMS-edited
+tier, and the live-query bridge between portal and marketing data).
+
 ## TL;DR
 
 The marketing site is a faithful recreation of the live redib.net in dev,

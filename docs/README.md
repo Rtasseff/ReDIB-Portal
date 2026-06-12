@@ -10,6 +10,8 @@ This directory contains all project documentation, reference materials, and test
 
 **I want to understand the workflow as a user** → [USER_GUIDE.md](USER_GUIDE.md).
 
+**I need to update site content — equipment, nodes, news, team, newsletters** → [CONTENT_MANAGEMENT.md](CONTENT_MANAGEMENT.md) (who edits what, where: SharePoint-synced reference data vs CMS-edited content).
+
 **I'm adding a feature or fixing a bug** → [DEVELOPMENT.md](DEVELOPMENT.md), then the latest file in [developer/](developer/).
 
 **I have an idea / found a small UX nit / spotted a known test failure** → drop it in [developer/backlog.md](developer/backlog.md) for the next batch.
@@ -32,7 +34,8 @@ This directory contains all project documentation, reference materials, and test
 - **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** — What `seed_test_applicants` creates and how to use it
 - **[TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md)** — `send_test_emails` command for verifying every email template
 
-### Reference Data
+### Content & Reference Data
+- **[CONTENT_MANAGEMENT.md](CONTENT_MANAGEMENT.md)** — Data-ownership model for the merged site: SharePoint-xlsx-mastered reference data (equipment, nodes, users, …) vs CMS-edited content (news, press, newsletters, pages), and the sync runbook
 - **[../data/README.md](../data/README.md)** — TSV fixture format (nodes.tsv, organizations.tsv, users.tsv, equipment.tsv, funding_agencies.tsv)
 
 ### Historical / Archived

@@ -60,6 +60,9 @@ python manage.py populate_equipment_nodes # 4 NodePages + 4 EquipmentCategoryPag
 python manage.py populate_news_press      # 12 news + 12 press (sample)
 ```
 
+**Content governance** (what syncs from SharePoint xlsx vs what's edited in
+the CMS, and the sync runbook): [docs/CONTENT_MANAGEMENT.md](docs/CONTENT_MANAGEMENT.md).
+
 **Full status, decisions, and open items:** see
 [docs/marketing/REBUILD_STATUS.md](docs/marketing/REBUILD_STATUS.md).
 
