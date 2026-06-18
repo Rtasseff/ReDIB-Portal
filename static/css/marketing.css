@@ -163,7 +163,13 @@ body.marketing .mk-hero .mk-eyebrow { color: #f2a6b7; text-shadow: 0 1px 10px rg
     background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
     overflow: hidden; transition: transform .18s, box-shadow .18s, border-color .18s;
 }
-.mk-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: transparent; }
+/* The hover lift is the "this navigates" signal — give it only to cards that
+   are themselves a link (a.mk-card) or carry a stretched link (.mk-card--link).
+   Plain info cards (equipment, team) stay put so they don't read as clickable
+   when they aren't. */
+.mk-card--link { position: relative; }
+a.mk-card:hover,
+.mk-card--link:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: transparent; }
 .mk-card__media { aspect-ratio: 16 / 10; width: 100%; object-fit: cover; background: var(--bg-soft); display: block; }
 .mk-card__media--ph { background: var(--brand-soft); }
 .mk-card__media--ph i { font-size: 2.4rem; color: var(--brand); }
@@ -174,6 +180,26 @@ body.marketing .mk-hero .mk-eyebrow { color: #f2a6b7; text-shadow: 0 1px 10px rg
 .mk-card__meta { font-size: .82rem; color: var(--muted); font-weight: 600; }
 .mk-card__text { font-size: .92rem; color: var(--muted); margin: 0; }
 .mk-card__media-wrap { position: relative; }
+
+/* ---- Inline disclosure (full text inside an info card, no detail page) ----
+   Equipment cards have no detail page, so a clamped "…" would dead-end. A
+   native <details> lets the full description expand in place — no JS. */
+.mk-disclose { margin-top: .15rem; }
+.mk-disclose > summary { list-style: none; cursor: pointer; display: block; }
+.mk-disclose > summary::-webkit-details-marker { display: none; }
+.mk-disclose__text {
+    display: -webkit-box; -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4; overflow: hidden;
+}
+.mk-disclose[open] .mk-disclose__text { -webkit-line-clamp: unset; overflow: visible; }
+.mk-disclose > summary::after {
+    content: attr(data-more);
+    display: inline-block; margin-top: .45rem;
+    font-size: .82rem; font-weight: 600; color: var(--brand);
+}
+.mk-disclose[open] > summary::after { content: attr(data-less); }
+.mk-disclose > summary:hover::after { color: var(--brand-dark); text-decoration: underline; }
+.mk-disclose > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- Tags / badges ---------------------------------------------------- */
 .mk-tag {
@@ -271,7 +297,8 @@ body.marketing .card {
     overflow: hidden; transition: transform .18s, box-shadow .18s, border-color .18s;
 }
 body.marketing .card.shadow-sm { box-shadow: var(--shadow) !important; }
-body.marketing .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg) !important; border-color: transparent; }
+body.marketing a.card:hover,
+body.marketing .card.mk-card--link:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg) !important; border-color: transparent; }
 body.marketing .card-img-top { object-fit: cover; }
 body.marketing .card-body .text-muted { color: var(--muted) !important; }
 

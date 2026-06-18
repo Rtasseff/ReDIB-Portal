@@ -18,16 +18,15 @@
                 <div class="row g-4">
                     {% for item in feed_items %}
                         <div class="col-md-6 col-lg-4 d-flex">
-                            <article class="mk-card w-100">
-                                <a href="{{ item.url }}" class="mk-card__media-wrap"
-                                   {% if item.external %}target="_blank" rel="noopener"{% endif %}>
+                            <article class="mk-card mk-card--link w-100">
+                                <div class="mk-card__media-wrap">
                                     {% if item.hero_image %}
                                         {% image item.hero_image fill-480x300 class="mk-card__media" %}
                                     {% else %}
                                         <img src="{% static 'images/news-fallback-'|add:item.placeholder_kind|add:'.svg' %}"
                                              class="mk-card__media" alt="" loading="lazy">
                                     {% endif %}
-                                </a>
+                                </div>
                                 <div class="mk-card__body">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="mk-tag mk-tag--{{ item.kind }}">
@@ -40,7 +39,7 @@
                                         </span>
                                     </div>
                                     <h2 class="mk-card__title">
-                                        <a href="{{ item.url }}" {% if item.external %}target="_blank" rel="noopener"{% endif %}>{{ item.title }}</a>
+                                        <a href="{{ item.url }}" class="stretched-link" {% if item.external %}target="_blank" rel="noopener"{% endif %}>{{ item.title }}</a>
                                     </h2>
                                     {% if item.outlet %}<p class="mk-card__meta">{{ item.outlet }}</p>{% endif %}
                                     {% if item.intro %}<p class="mk-card__text">{{ item.intro|truncatechars:150 }}</p>{% endif %}

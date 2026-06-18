@@ -1,0 +1,23 @@
+{% comment %}
+Equipment info card. Params: eq (core.Equipment), show_area (bool).
+Static card (no link — equipment has no detail page); the full description
+expands in place via a native <details> so nothing dead-ends behind a "…".
+{% endcomment %}
+<div class="col-sm-6 col-md-4 d-flex">
+    <div class="mk-card w-100"><div class="mk-card__body">
+        <div class="fw-semibold">{{ eq.name }}</div>
+        <div class="mk-card__meta">{{ eq.get_category_display }}{% if show_area and eq.area %} · {{ eq.get_area_display }}{% endif %}</div>
+        {% if eq.description %}
+            {% if eq.description|length > 180 %}
+                <details class="mk-disclose">
+                    <summary data-more="{% if request.LANGUAGE_CODE == 'en' %}Read more{% else %}Ver más{% endif %}"
+                             data-less="{% if request.LANGUAGE_CODE == 'en' %}Show less{% else %}Ver menos{% endif %}">
+                        <span class="mk-card__text mk-disclose__text">{{ eq.description }}</span>
+                    </summary>
+                </details>
+            {% else %}
+                <p class="mk-card__text">{{ eq.description }}</p>
+            {% endif %}
+        {% endif %}
+    </div></div>
+</div>

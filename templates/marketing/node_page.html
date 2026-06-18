@@ -39,13 +39,7 @@
                 <div class="row g-3">
                     {% for eq in page.related_core_node.equipment.all %}
                         {% if eq.is_active %}
-                            <div class="col-sm-6 col-md-4 d-flex">
-                                <div class="mk-card w-100"><div class="mk-card__body">
-                                    <div class="fw-semibold">{{ eq.name }}</div>
-                                    <div class="mk-card__meta">{{ eq.get_category_display }}{% if eq.area %} · {{ eq.get_area_display }}{% endif %}</div>
-                                    {% if eq.description %}<p class="mk-card__text">{{ eq.description|truncatechars:200 }}</p>{% endif %}
-                                </div></div>
-                            </div>
+                            {% include "marketing/includes/equipment_card.html" with eq=eq show_area=True %}
                         {% endif %}
                     {% empty %}
                         <div class="col-12"><p class="text-muted">

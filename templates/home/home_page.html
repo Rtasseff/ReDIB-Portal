@@ -131,18 +131,18 @@
             <div class="row g-4">
                 {% for post in recent_news %}
                     <div class="col-md-4 d-flex">
-                        <article class="mk-card w-100">
-                            <a href="{% pageurl post %}" class="mk-card__media-wrap">
+                        <article class="mk-card mk-card--link w-100">
+                            <div class="mk-card__media-wrap">
                                 {% if post.hero_image %}
                                     {% image post.hero_image fill-480x300 class="mk-card__media" %}
                                 {% else %}
                                     <img src="{% static 'images/news-fallback-'|add:post.placeholder_kind|add:'.svg' %}"
                                          class="mk-card__media" alt="" loading="lazy">
                                 {% endif %}
-                            </a>
+                            </div>
                             <div class="mk-card__body">
                                 <span class="mk-card__meta">{% if request.LANGUAGE_CODE == 'en' %}{{ post.date|date:"M j, Y" }}{% else %}{{ post.date|date:"j M Y" }}{% endif %}</span>
-                                <h3 class="mk-card__title"><a href="{% pageurl post %}">{{ post.title }}</a></h3>
+                                <h3 class="mk-card__title"><a href="{% pageurl post %}" class="stretched-link">{{ post.title }}</a></h3>
                                 {% if post.intro %}<p class="mk-card__text">{{ post.intro|truncatechars:130 }}</p>{% endif %}
                             </div>
                         </article>

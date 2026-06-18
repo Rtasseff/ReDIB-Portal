@@ -26,13 +26,7 @@
                         <h2 class="mk-grouphead">{{ group.grouper.organization.short_name|default:group.grouper.organization.name }}</h2>
                         <div class="row g-3">
                             {% for eq in group.list %}
-                                <div class="col-sm-6 col-md-4 d-flex">
-                                    <div class="mk-card w-100"><div class="mk-card__body">
-                                        <div class="fw-semibold">{{ eq.name }}</div>
-                                        <div class="mk-card__meta">{{ eq.get_category_display }}</div>
-                                        {% if eq.description %}<p class="mk-card__text">{{ eq.description|truncatechars:200 }}</p>{% endif %}
-                                    </div></div>
-                                </div>
+                                {% include "marketing/includes/equipment_card.html" with eq=eq show_area=False %}
                             {% endfor %}
                         </div>
                     {% endfor %}
