@@ -140,6 +140,82 @@ and protected by the DB backup (`scripts/backup-db.sh`). Do **not** re-run
 populate commands on production expecting them to "update" content — live
 edits would win/lose unpredictably against the seed data.
 
+## Collecting images (heroes, reconstructions, photos)
+
+Editors and node contributors supply the photography and scientific images
+that fill hero banners, cards, and news posts. How the site renders them
+drives what to ask for.
+
+**How the site uses them.** Every hero is cropped to a wide banner by Wagtail's
+`fill-` image operation. The largest rendition is the **homepage carousel at
+1920×760**; node / section / equipment heroes render ~1200×420–500; cards use
+480×300 (16:10); team headshots 220×220 (square). After uploading in `/cms/`,
+**set the image's focal point** in the Wagtail image editor — `fill-` then
+crops around that point instead of dead-centre. This is the single most
+effective fix for a hero that crops awkwardly.
+
+There are two kinds of source image, with different rules:
+
+### Reconstruction / scientific images (the common case)
+
+PET/MRI/CT renders and slices. Usually **square and small** (matrix 128–512 px),
+so they do **not** fit the wide hero well — a flat slice loses its top and
+bottom to the crop, and upscaling a 256-px image to a 1920-px banner looks
+blocky.
+
+- Best hero candidates: **3D renders, MIPs, fused/volume views** rendered large
+  (long edge ≥ ~1500 px). Flat 2D slices are better as cards/insets. Color/
+  fused images read better than grayscale slices.
+- **PNG**, lossless, with the **window/level already applied** (send it looking
+  as it should). No pre-cropping or enlarging — native size and shape.
+- **⚠️ No patient-identifying data.** DICOM metadata is stripped on PNG/JPG
+  export, but **burned-in corner text (name / ID / date / institution) stays in
+  the pixels** — check it. Prefer anonymized + consented, or preclinical /
+  phantom data. This is a public EU site; treat PHI accordingly.
+- Open design item: a **letterbox-on-dark hero variant** (show the square scan
+  whole, centred on the teal panel, instead of cropping) is proposed but not
+  built — see [REBUILD_STATUS.md](marketing/REBUILD_STATUS.md).
+
+### Photos (facility, equipment, team — the minority)
+
+- **Landscape**, as large as possible, **JPG**, straight from the phone/camera —
+  don't crop, resize, or screenshot.
+- iPhone photos arrive as **HEIC**, which Wagtail won't ingest without the
+  `pillow-heif` package (not yet installed) — convert on receipt, or install it.
+
+**For both:** ask people to send the **original file** as an attachment or via
+Drive/Dropbox — **never pasted inline or over WhatsApp**, which silently
+downscale to ~1000 px (the #1 reason a collected image is too small to use).
+
+### Request to forward
+
+Spanish contributors who supply reconstructions are imaging professionals, so
+the technical wording lands fine; the photo bullets are the plain-language part.
+
+```
+Estamos recopilando imágenes para la nueva web de ReDIB — imágenes de
+reconstrucción/científicas y alguna foto. Consejos para que luzcan mejor:
+
+Si es una imagen de reconstrucción / científica:
+• Expórtala a la MAYOR resolución que permita tu visor. Los renders 3D, MIP y
+  vistas de volumen/fusión son los mejores banners (lado largo ≥ ~1500 px).
+  Los cortes 2D suelen ser pequeños — mejor como detalle que como banner.
+• Guárdala en PNG, con tu window/level ya aplicado (tal como debe verse).
+• No la recortes ni la amplíes; envíala en tamaño/forma original.
+• SIN identificadores de paciente: nada grabado en las esquinas (nombre/ID/
+  fecha); usa datos anonimizados y con consentimiento, o preclínicos/fantoma.
+
+Si es una foto (instalación, equipamiento, equipo):
+• Horizontal, lo más grande posible, en JPG, tal cual sale del móvil/cámara.
+
+En ambos casos: envía el ARCHIVO ORIGINAL como adjunto o por Drive/Dropbox —
+no pegado en el mensaje ni por WhatsApp (eso lo reduce). ¡Gracias!
+```
+
+(English equivalent: same structure — landscape JPG photos straight from the
+device; reconstructions as high-res PNG renders, window/level applied, no
+burned-in patient identifiers; original file as an attachment, not inline.)
+
 ## Where the tiers meet — the live-query bridge
 
 The marketing pages for nodes and equipment wrap **editorial framing**
@@ -175,4 +251,5 @@ exactly what the old site suffered from).
 | Newsletter dispatch + opt-in/out | [backlog #15](developer/backlog.md) |
 | Structured (CMS-friendly) pricing model | [REBUILD_STATUS.md](marketing/REBUILD_STATUS.md) deferred table |
 | Admin CMS UX pass for non-technical editors | REBUILD_STATUS deferred table |
+| Hero treatment for square reconstruction images (letterbox vs crop) + `pillow-heif` for HEIC | [REBUILD_STATUS.md](marketing/REBUILD_STATUS.md) 2026-06-18 entry |
 | SharePoint master-file links in this doc | TODO above |

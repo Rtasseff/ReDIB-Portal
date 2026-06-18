@@ -62,6 +62,37 @@ news posts, 3 oldest press clippings (2014-2016), CMS-editable pricing
 (structured model), and decimal-separator/translation spot-checks on the
 pricing tables.
 
+**2026-06-18 session — public-site UX polish + image-collection plan:**
+
+*Polish committed in `8999b24` (code) on this branch — still dev-only, not
+merged or deployed. Files: `static/css/marketing.css`,
+`templates/home/home_page.html`, `templates/marketing/news_index_page.html`,
+`.../equipment_category_page.html`, `.../node_page.html`,
+`.../includes/external_links.html`, + new `.../includes/equipment_card.html`.*
+
+- **Cards that "floated" but weren't clickable → fixed.** Hover-lift is now
+  scoped to real links only (`a.mk-card` / `.mk-card--link`). News/Actualidad
+  cards (home + `/noticias/`) and Enlaces de interés cards are clickable across
+  their whole surface (Bootstrap `.stretched-link`); Enlaces were also unified
+  to the `.mk-card` look. Equipment + team cards are static info cards (no link,
+  no false lift).
+- **Dead-end `…` truncation → fixed.** Equipment descriptions (all 14 are
+  200–1200 chars; equipment has no detail page) now expand in place via a no-JS
+  `<details>` disclosure ("Ver más" / "Read more"), shared through the new
+  `equipment_card.html` include. Clamped to 4 lines when closed. Verified with
+  headless Chromium (whole-card click navigates; static cards don't) +
+  `manage.py test marketing` + `manage.py check` — all green.
+- **Image quality → DEFERRED by owner.** The image *boxes* are correct
+  (`object-fit: cover`, exact ratios); bad crops are per-image source +
+  focal-point, not code. Owner expects most heroes to be **scientific
+  reconstructions** (PET/MRI/CT) — square and small, so they crop badly in the
+  wide `fill-1920x760` hero. New image-collection runbook in
+  [../CONTENT_MANAGEMENT.md](../CONTENT_MANAGEMENT.md) ("Collecting images").
+  Not-yet-built follow-ups: (a) a **letterbox-on-dark hero variant** so square
+  scans show whole instead of cropped; (b) add **`pillow-heif`** for iPhone
+  HEIC uploads; (c) set per-image **focal points** in `/cms/` — the real fix
+  for the "badly cropped hero" complaint.
+
 ## URL layout (on this branch)
 
 | URL prefix | What |
