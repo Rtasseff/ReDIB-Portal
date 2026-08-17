@@ -44,6 +44,8 @@ This directory contains all project documentation, reference materials, and test
 Developer guides, planning documents, and running notes:
 - `backlog.md` — **Dynamic backlog** of feature requests, UX polish, and known test issues to address in future batches. Add new ideas here when they come up but aren't being implemented immediately.
 - `developer-notes.md` — Running log of design decisions, deferred improvements, and gotchas
+- `worktrees.md` — **Parallel agent sessions**: one worktree dir per branch under `~/projects/ReDIB-Portal-wt/`, handoff-doc convention, registry of active worktrees, `scripts/new-worktree.sh`
+- `handoff-template.md` — Template seeded into `docs/handoffs/<slug>.md` on each new worktree branch
 - `branding-and-styles.md` — How to change branding, logo, colors, and CSS
 - `tier1-manual-test-checklist.md` — Manual QA checklist
 - `batch1-implementation-plan.md` / `batch1-progress.md` — Batch 1 (merged to main)
@@ -51,6 +53,9 @@ Developer guides, planning documents, and running notes:
 - `localtest3-database-plan.md` — Spec for the `setup_localtest3_database` sandbox (10 users, 2 calls, 16 apps spanning every status)
 - `localtest3-test-log.md` — Running log of the manual end-to-end walkthrough against the localtest3 sandbox
 - `issue-action-plan-20260204.md`, `issues-actionplan-20260301.md` — Older dated action plans (historical)
+
+### `/handoffs/`
+One brief per worktree branch (`<slug>.md`), committed on that branch and landing here at merge as a record. See `developer/worktrees.md`.
 
 ### `/reference/`
 Reference materials and specifications:

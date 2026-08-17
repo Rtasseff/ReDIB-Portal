@@ -27,10 +27,17 @@ made* (with a "what to do next when ready" section). This file records
 
 ### `feature/marketing-site` — Wagtail rebuild of redib.net
 
-Active long-running branch as of 2026-06-01, ~20 commits beyond `main`,
-not yet merged or deployed. Replaces the third-party-hosted public
-website (`redib.net`) with a Wagtail-based marketing site inside this
-same Django project, alongside the existing COA portal.
+Long-running branch, ~40 commits beyond `main`, not yet merged or
+deployed. Replaces the third-party-hosted public website (`redib.net`)
+with a Wagtail-based marketing site inside this same Django project,
+alongside the existing COA portal.
+
+**Parked 2026-08-17** in its own git worktree at
+`~/projects/ReDIB-Portal-wt/marketing-site/` (own venv/DB/media, port
+8001) while `main` prepares the October 2026 call. It ships next year
+after a cutover conversation. Branch-side brief:
+`docs/handoffs/marketing-site.md` on the branch. Worktree conventions:
+[worktrees.md](worktrees.md).
 
 **End-state URL layout** (takes effect at cutover):
 - `/` and `/en/` — Wagtail marketing site (Spanish default, English at `/en/`)
@@ -47,7 +54,9 @@ branch and will conflict at merge if you also change them here —
 - Most portal-app tests under `tests/` and `reports/tests.py`
 
 If you touch any of the above on `main`, consider whether the marketing
-branch needs a follow-up rebase later.
+branch needs a follow-up rebase later. The plan is **one deliberate
+rebase/merge once the October 2026 work settles**, not continuous
+tracking — keep this list current so that rebase is predictable.
 
 **Full status, architecture decisions, and pickup instructions:** on the
 branch at `docs/marketing/REBUILD_STATUS.md`. Read without checking out:

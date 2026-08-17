@@ -27,16 +27,29 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 - **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
 - **End-user walkthrough** (per role): [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
+## Worktrees & parallel sessions
+
+Large buckets of work get their own branch **and directory** under
+`~/projects/ReDIB-Portal-wt/<slug>/` (git worktree), with a dedicated agent
+session per directory; the handoff session sits on `main` in
+`~/projects/ReDIB-Portal/`. **If this checkout is a worktree, read
+`docs/handoffs/<slug>.md` first** — it is the branch's brief. Conventions,
+registry of active worktrees, and `scripts/new-worktree.sh` usage:
+[docs/developer/worktrees.md](docs/developer/worktrees.md).
+
 ## In-flight long-running branches
 
 - **`feature/marketing-site`** — Wagtail-based rebuild of the public `redib.net`
-  marketing website inside this same Django project. ~20 commits beyond `main`.
-  Not yet merged or deployed. At cutover the portal moves from root to `/portal/`
-  and Wagtail takes over `/`. Heads-up: changes on `main` to `redib/urls.py`,
-  `redib/settings.py`, `templates/base.html`, or any portal app's `urls.py` are
-  likely to conflict at merge. Full status, architecture decisions, and pickup
-  instructions live on that branch at `docs/marketing/REBUILD_STATUS.md` — read
-  it without switching branches via
+  marketing website inside this same Django project. **Parked** in its own
+  worktree at `~/projects/ReDIB-Portal-wt/marketing-site/` (port 8001) as of
+  2026-08-17; ships next year, not for the October 2026 call. ~40 commits
+  beyond `main`, not merged or deployed. At cutover the portal moves from root
+  to `/portal/` and Wagtail takes over `/`. Heads-up: changes on `main` to
+  `redib/urls.py`, `redib/settings.py`, `templates/base.html`, or any portal
+  app's `urls.py` are likely to conflict at merge. Full status, architecture
+  decisions, and pickup instructions live on that branch at
+  `docs/handoffs/marketing-site.md` and `docs/marketing/REBUILD_STATUS.md` —
+  read without switching via
   `git show feature/marketing-site:docs/marketing/REBUILD_STATUS.md`. See also
   the [in-flight branches entry in the developer backlog](docs/developer/backlog.md#in-flight-branches-not-on-main).
 
