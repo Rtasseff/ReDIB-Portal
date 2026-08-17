@@ -23,3 +23,9 @@ htmlcov/
 .coverage
 .pytest_cache/
 node_modules/
+
+# Exception: the user guide is rendered at request time by core.views.user_guide
+# (/help/user-guide/), so it must be in the image. Must stay the LAST rule --
+# it re-includes a file excluded by both `docs/` and `*.md` above, and the last
+# matching rule wins. Nothing else under docs/ enters the image.
+!docs/USER_GUIDE.md

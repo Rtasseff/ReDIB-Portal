@@ -14,6 +14,7 @@ class ProfileCompletionMiddleware:
     EXEMPT_PREFIXES = [
         '/accounts/',
         '/admin/',
+        '/help/',
         '/static/',
         '/media/',
     ]

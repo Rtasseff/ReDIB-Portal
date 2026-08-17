@@ -320,7 +320,21 @@ docker compose -f docker-compose.prod.yml logs caddy | grep "certificate obtaine
 
 # Visit in your browser
 # https://your-domain.com
+
+# The user guide is rendered from docs/USER_GUIDE.md at request time, so it
+# also confirms the docs/ exception in .dockerignore survived the build
+# https://your-domain.com/help/user-guide/
+
+# Same check from the shell -- should list USER_GUIDE.md and nothing else
+docker compose -f docker-compose.prod.yml exec web ls /app/docs
 ```
+
+> **Note on `.dockerignore`:** `docs/` and `*.md` are excluded from the build
+> context, with a single trailing `!docs/USER_GUIDE.md` exception so the guide
+> ships in the image. That exception must stay the **last** rule in the file
+> (last match wins). If it is ever dropped, `manage.py migrate` — which the
+> entrypoint runs on every start — fails the system check `core.E001` rather
+> than letting `/help/user-guide/` 404 silently.
 
 ---
 
@@ -588,6 +602,15 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 The entrypoint script runs migrations and collectstatic automatically on every restart.
+
+After the rebuild, spot-check the app plus the user guide (the guide is read
+from `docs/USER_GUIDE.md` inside the image, so it catches a broken build
+context):
+
+```bash
+# https://your-domain.com
+# https://your-domain.com/help/user-guide/
+```
 
 ### Running Management Commands
 

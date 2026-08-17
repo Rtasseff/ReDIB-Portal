@@ -1,11 +1,23 @@
 """
 Core application views.
 """
+import markdown
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.utils.safestring import mark_safe
+
+# Source of truth for the end-user guide. Rendered to HTML at request time by
+# `user_guide` below so the markdown in docs/ stays the only copy.
+USER_GUIDE_PATH = settings.BASE_DIR / 'docs' / 'USER_GUIDE.md'
+
+# Rendered-guide cache, keyed by the source file's mtime. In production the
+# file never changes within a container's lifetime, so this renders once per
+# process; in dev, editing the markdown invalidates it on the next request.
+_user_guide_cache = {}
 
 
 @login_required
@@ -145,3 +157,59 @@ def profile(request):
         'profile_incomplete': not user.is_profile_complete,
     }
     return render(request, 'core/profile.html', context)
+
+
+def _render_user_guide():
+    """
+    Render docs/USER_GUIDE.md, caching the result against the file's mtime.
+
+    Returns a dict with `html` (the guide body), `toc` (Python-Markdown's
+    nested `<div class="toc">` list) and `title` (the markdown's H1).
+    """
+    mtime = USER_GUIDE_PATH.stat().st_mtime
+
+    if _user_guide_cache.get('mtime') != mtime:
+        text = USER_GUIDE_PATH.read_text(encoding='utf-8')
+        md = markdown.Markdown(
+            extensions=['tables', 'toc', 'fenced_code', 'sane_lists'],
+            # Sidebar TOC stays navigable: h2/h3 only. All headings, h4
+            # included, still get an id so in-page anchors keep working.
+            extension_configs={'toc': {'toc_depth': '2-3'}},
+        )
+        html = md.convert(text)
+
+        # The markdown's H1 renders in the body; reuse its text for <title>.
+        # Skip over the leading HTML comment that heads the file.
+        title = 'User Guide'
+        for line in text.splitlines():
+            if line.startswith('# '):
+                title = line[2:].strip()
+                break
+
+        _user_guide_cache.update({
+            'mtime': mtime,
+            'html': mark_safe(html),
+            'toc': mark_safe(md.toc),
+            'title': title,
+        })
+
+    return _user_guide_cache
+
+
+def user_guide(request):
+    """
+    Public end-user guide, rendered from docs/USER_GUIDE.md at request time.
+
+    Deliberately not `login_required`: the guide it replaced was a public
+    static PDF, and first-time evaluators are pointed at it before they have
+    an account. `/help/` is exempt from ProfileCompletionMiddleware so users
+    with an incomplete profile can still read it.
+    """
+    guide = _render_user_guide()
+
+    context = {
+        'guide_html': guide['html'],
+        'guide_toc': guide['toc'],
+        'guide_title': guide['title'],
+    }
+    return render(request, 'help/user_guide.html', context)

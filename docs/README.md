@@ -25,7 +25,7 @@ This directory contains all project documentation, reference materials, and test
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** — Production deployment (VPS, Docker Compose, Caddy, backups, pre-launch checklist)
 
 ### User Documentation
-- **[USER_GUIDE.md](USER_GUIDE.md)** — End-user guide for all roles (applicant, node coordinator, evaluator, ReDIB coordinator, admin)
+- **[USER_GUIDE.md](USER_GUIDE.md)** — End-user guide for all roles (applicant, node coordinator, evaluator, ReDIB coordinator, admin). Rendered live in the portal at `/help/user-guide/`, so keep it self-contained: only `#anchor` links and absolute URLs — no images, no relative links to other docs.
 
 ### Testing
 - **[TESTING.md](TESTING.md)** — Automated test suite summary and manual end-to-end test plan
