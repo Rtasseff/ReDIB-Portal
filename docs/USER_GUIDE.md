@@ -7,7 +7,7 @@ images, no relative links to other docs.
 
 # ReDIB COA Portal - User Guide
 
-**Version 1.2** | **Last Updated: April 2026**
+**Version 1.3** | **Last Updated: August 2026**
 
 ---
 
@@ -190,6 +190,14 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 ### Accessing the Portal
 
 The ReDIB COA Portal is accessed through your web browser at the URL provided by your ReDIB administrator.
+
+**Pages you can read without logging in:**
+
+- `/calls/` — the published calls, with their deadlines and the equipment on offer.
+- `/newsletters/` — ReDIB newsletters, reachable from the **Newsletters** button on the calls page. Each one opens as a full newsletter inside the portal; links inside a newsletter open in a new tab.
+- `/help/user-guide/` — this guide, also linked from the **"Need help?"** menu in the navigation bar.
+
+You need an account to apply, review, or evaluate. Register at `/accounts/signup/`; new accounts receive the applicant role automatically.
 
 **For administrators accessing the admin interface:**
 Navigate to `/admin/` and log in with your administrator credentials. The admin interface is used for initial setup and configuration.
@@ -465,12 +473,16 @@ Everything a Coordinator can do, plus:
 
 ### How roles are assigned
 
-Roles are assigned by administrators through the Django admin interface at `/admin/`. A user can have:
+Anyone who registers through `/accounts/signup/` is given the **applicant** role automatically at signup, so you can start an application straight away. Every other role — node coordinator, evaluator, coordinator, admin — is assigned by administrators through the Django admin interface at `/admin/`.
+
+A user can have:
 - **No roles** - Limited access to public information only
 - **One role** - Access specific to that role
 - **Multiple roles** - Combined access from all assigned roles
 
 ### What happens if you have no roles assigned
+
+Because self-registration grants the applicant role, this state now only shows up for accounts created another way — imported from the ReDIB user list, or created in the admin panel — whose roles haven't been set yet.
 
 If you log in without any assigned roles, you will see:
 - A "no roles assigned" notice on your dashboard
@@ -569,8 +581,9 @@ you have multiple roles (e.g. evaluator + applicant), the panels combine.
 A few things every role sees at all times:
 
 - A **navigation bar at the top** with the ReDIB logo, your name menu (Profile /
-  Logout), and a **"Need help?"** link that opens an email to the ReDIB support
-  address.
+  Logout), and a **"Need help?"** dropdown holding two items: **User guide**
+  (this document, served as a portal page at `/help/user-guide/`) and
+  **Contact us**, which opens an email to the ReDIB support address.
 - A **footer** with the same support address.
 - If your profile is missing a required field (phone, organization, position,
   …), the system redirects you to your **Profile** page until you fill it in.
@@ -668,9 +681,14 @@ The left sidebar (under the **Applicant** heading) gives you:
 1. Click **Open Calls** (or *Browse Open Calls* on the dashboard). Each open
    call shows the submission deadline, the equipment available across nodes,
    and a description.
-2. On a call's detail page, click **Apply**. You enter a **5-step wizard**.
-   Drafts auto-save after each step — you can leave the wizard and come back
-   any time from **My Applications → Continue**.
+2. On a call's detail page, click **Apply**. You enter a **5-step wizard**
+   with one read-only interstitial page part-way through.
+
+   Your work is saved when you click **Next** on a step. Steps 2–5 also have
+   a **Save Draft** button that saves whatever you have typed so far —
+   including half-finished steps — and returns you to your dashboard, so you
+   can stop mid-step without losing anything. Come back any time from
+   **My Applications → Continue**.
    - **Step 1 — Applicant info**: name, ORCID, organization, email, phone,
      project name. Most fields pre-fill from your profile. The email and
      phone you enter *here* are what node coordinators will use to reach you,
@@ -681,16 +699,49 @@ The left sidebar (under the **Applicant** heading) gives you:
    - **Step 3 — Equipment request**: select equipment items from the call
      and enter the hours you need for each. You can request equipment from
      more than one node in the same application.
+   - **General Information and Instructions** — after step 3, **Next** takes
+     you to a read-only page carrying the instructions from the original
+     ReDIB application form. Nothing is collected here; read it and click
+     **I have read this — Continue to Scientific Content**. The same text
+     stays available from the info button on step 5 if you want it again.
    - **Step 4 — Scientific content**: six free-text sections — quality and
      originality, methodology, expected contributions, advancement of
      knowledge, social/economic impact, exploitation/dissemination.
      Evaluators score each one 0–2.
    - **Step 5 — Declarations**: animal/human use, ethics-committee
      approval, insurance, informed consent, and data-processing consent.
-     Some checkboxes only appear if upstream answers warrant them.
-3. When you click **Submit**, the application status moves to **Under
-   Feasibility Review** and feasibility-review emails go out to the relevant
-   node coordinators.
+     Some checkboxes only appear if upstream answers warrant them. One of
+     these is **"I have confirmed technical feasibility with the ReDIB
+     node"** — see *Talking to the node before you submit* below.
+3. **Preview & Submit.** The preview page shows the whole application as the
+   reviewers will see it. When you click **Submit**, the status moves to
+   **Under Feasibility Review** and feasibility-review emails go out to the
+   relevant node coordinators.
+
+#### Talking to the node before you submit
+
+ReDIB expects you to have discussed your proposal with the node(s) whose
+equipment you are requesting *before* you submit — feasibility is a technical
+conversation, and it goes much faster if it has already happened. Leaving
+step 5 triggers a short check on that:
+
+- If you **left the feasibility checkbox unticked**, the portal asks whether
+  you'd like to **request a consult**. Answer **"Yes, request a consult"** and
+  it emails the node coordinator at every node with equipment on your draft;
+  they will contact you to discuss feasibility. Your draft is saved and you
+  return to **My Applications**. Answer **"No, continue without a consult"**
+  and you go straight to the preview page.
+- If you **ticked the checkbox**, the portal asks you to confirm you really
+  did speak to the node. **"Yes, I confirmed feasibility"** continues to the
+  preview. **"No, not yet"** unticks the box and offers the consult request
+  above.
+
+Requesting a consult does **not** submit your application and does not block
+you from submitting later — you can request one, wait for the node's reply,
+then come back and submit. If you haven't picked any equipment yet, the
+request is recorded but no emails go out; choose your equipment on step 3 and
+request again. The request is visible to the node coordinators and the ReDIB
+coordinator on your application, so they can see the conversation is under way.
 
 #### What happens after you submit
 
@@ -763,7 +814,11 @@ The left sidebar (under **Node Coordinator**) gives you:
 1. Click **Review** on a queue entry (or open **Feasibility Reviews**). You
    see the full application — applicant info, project details, equipment
    requested **at your node only** (other nodes' equipment is their call,
-   not yours), and the scientific content.
+   not yours), and the scientific content. **Download PDF** on the
+   application page gives you the same content as a document, and works
+   for applications at your node in any state, drafts included. The
+   *Edit Application* / *Continue Editing* buttons are the applicant's
+   only — you won't see them.
 2. Pick one of three actions:
    - **Approve** — equipment is feasible at your node.
    - **Request edits** — applicant needs to revise before you can sign off
@@ -853,10 +908,19 @@ your past submissions read-only.
    auto-locks even if you haven't submitted, and the ReDIB coordinator is
    notified.
 
-If you have multiple specialization areas declared on your profile
-(preclinical / clinical / radiochemistry), the system tries to assign you
-applications matching one of them. Update your areas any time on your
-**Profile** page.
+#### How you get assigned
+
+The coordinator runs auto-assign once a call closes. It prefers evaluators
+whose declared specialization areas (preclinical / clinical / radiochemistry)
+match the application, but area match is a preference, not a requirement — if
+no area-matched evaluator is available you may still be assigned outside your
+areas so that no application is left short. It never assigns you an
+application from your own organization, and it spreads the load: there is a
+cap on how many applications any one evaluator can pick up in a call. Update
+your areas any time on your **Profile** page.
+
+If your account has been deactivated you are left out of the pool entirely,
+so you won't be assigned work you can't log in to do.
 
 ---
 
@@ -894,8 +958,11 @@ The left sidebar (under **Coordinator**) gives you four entry points:
    - **Status** — leave as **Draft** until you're ready to publish; only
      `Open` calls are visible to applicants.
    - **Submission period** (start + end), **Evaluation deadline**, **Execution
-     period** (start + end). All dates are date-only; the system uses 23:59
-     as the end-of-day cutoff. The form rejects illogical ordering.
+     period** (start + end). All dates are date-only. Start dates open at
+     **00:00** on the day you pick, and end dates and deadlines run to
+     **23:59** — so a call set to open today is open immediately, and
+     applicants get the whole of the closing day. The form rejects illogical
+     ordering.
    - **Equipment Allocations** — every active equipment item across all
      nodes is included by default. Tick the **Remove** column to exclude
      any. You must keep at least one.
@@ -913,14 +980,45 @@ have to use the admin panel at `/admin/`.
 
 #### Assigning evaluators
 
-After a call is closed, open **Assign Evaluators** and pick the call. The
-system shows every application that needs evaluators with suggested matches
-based on evaluator areas + conflict-of-interest detection (same organization).
-Accept the suggestion or override manually. **Today this fires assignment
-emails immediately** — there's a backlog item to add a confirm-and-review
-preview step (#4 in `docs/developer/backlog.md`).
+After a call is closed, open **Assign Evaluators** and pick the call. You can
+assign application by application, or run **auto-assign** across the whole
+call at once.
+
+Auto-assign allocates the call as a whole rather than one application at a
+time, so the work spreads across the pool:
+
+- **Never** assigns an evaluator to an application from their own
+  organization (conflict of interest), or the same evaluator twice to one
+  application.
+- **Caps** how many applications each evaluator can take in the call, counting
+  any evaluations they already have, so no one absorbs a disproportionate
+  share.
+- **Prefers** evaluators whose specialization areas match the application, but
+  falls back to any eligible evaluator rather than leaving an application
+  short-handed.
+- **Skips** evaluators whose user account is deactivated — they could receive
+  the assignment email but not log in to act on it.
+
+If some applications still come out short of evaluators, the page shows a
+warning listing their call codes so you can fill them in by hand.
+
+**Assignment fires the notification emails immediately** — there's a backlog
+item to add a confirm-and-review preview step (#4 in
+`docs/developer/backlog.md`).
 
 You can re-assign or add evaluators at any time before the deadline.
+
+#### Watching a call's applications
+
+A call's detail page is the status wall for that call: every application on
+it, with its current state. Two things worth knowing:
+
+- Applications a node coordinator has **sent back for edits** stay on the
+  wall even though they have returned to draft, so you can see who is stuck
+  waiting on the applicant instead of losing them from the list. Drafts that
+  were never submitted stay hidden.
+- **Download PDF** works from any application's page whatever its state, so
+  you can read a draft without needing the applicant to submit it first.
 
 #### Watching resolution
 
@@ -992,5 +1090,12 @@ Now that you understand the portal workflow and your role, you're ready to start
 - v1.2 (April 2026): "Using the Portal" rewritten as four role-based
   walkthroughs (Applicants, Node Coordinators, Evaluators, ReDIB
   Coordinators) covering each role end-to-end as the user sees it.
+- v1.3 (August 2026): caught up with the portal changes since April — the
+  wizard's General Information interstitial and the pre-submission
+  feasibility consult, Save Draft behaviour, applicant role on self-signup,
+  the public newsletters section, draft PDFs and bounced drafts for
+  reviewers, load-balanced evaluator auto-assign, and call open/close times.
+  This guide is now served as a portal page at `/help/user-guide/` rather
+  than downloaded as a PDF.
 
 ---

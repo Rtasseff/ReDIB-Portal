@@ -8,7 +8,7 @@
 | Created | 2026-08-17 |
 | Runserver port | **8002** (main = 8000, marketing = 8001) |
 | Handoff session | `main` checkout at `~/projects/ReDIB-Portal/` |
-| Status | **Ready to start** — Phase 1 is fully specified; Phase 2 needs Ryan's review at the end. |
+| Status | **Both phases done, pushed, PR open** — Phase 2 copy needs Ryan's review before merge. |
 
 Read this first, then `CLAUDE.md`, then `docs/README.md`. This directory is
 a git worktree: it *is* this branch — do not `git checkout` another branch
@@ -166,23 +166,87 @@ Nothing else on `main` is currently moving in these files.
 
 ## Status
 
-- [ ] Baseline `python manage.py test tests` recorded: __F / __E
-- [ ] Phase 1: dependency + `.dockerignore` + system check
-- [ ] Phase 1: view + URL + middleware exemption
-- [ ] Phase 1: template (TOC, table CSS, print CSS, back-to-top)
-- [ ] Phase 1: navbar link swapped, static PDF removed
-- [ ] Phase 1: tests green, docs updated (README, DEPLOYMENT, guide comment)
-- [ ] Docker context verified (or noted as "verify at deploy")
-- [ ] Phase 2: content-refresh diff written and listed below for review
-- [ ] Pushed; PR opened against `main`
+- [x] Baseline `python manage.py test tests` recorded: **7F / 2E** of 94 tests
+      (all in `test_phase7_acceptance`, unchanged by this branch). After the
+      branch: 105 tests, still 7F / 2E — same failures, no regressions.
+- [x] Phase 1: dependency + `.dockerignore` + system check
+- [x] Phase 1: view + URL + middleware exemption
+- [x] Phase 1: template (TOC, table CSS, print CSS, back-to-top)
+- [x] Phase 1: navbar link swapped, static PDF removed
+- [x] Phase 1: tests green (11/11), docs updated (README, DEPLOYMENT, guide comment)
+- [x] Docker context verified **here** — `docker build -t redib-test .` then
+      `docker run --rm redib-test ls -la /app/docs/` lists only `USER_GUIDE.md`.
+      The entrypoint's `migrate` also ran the new system check clean.
+- [x] Phase 2: content-refresh diff written and listed below for review
+- [x] Pushed; PR opened against `main`
+
+### Deviations from the brief
+
+- **TOC depth.** The spec's plain `markdown.markdown(...)` call would put all
+  86 headings in the sidebar. Rendering uses `toc_depth: '2-3'` so the sidebar
+  lists 46 h2/h3 entries; **every** heading (h4 included) still gets an `id`,
+  so no in-page anchor broke — the anchor-integrity test covers this.
+- **Page `<title>`** is the guide's own H1 ("ReDIB COA Portal - User Guide")
+  rather than the literal "User guide", which is what the brief's
+  "pass the guide's title to the template" is actually good for.
+- **The brief says "13 tables"** — that's 13 pipe-delimited *lines*. The guide
+  has exactly **one** markdown table (the dashboard-sections matrix, §Understanding
+  the Dashboard). It renders correctly with the Bootstrap-style CSS.
+- **No visual/print screenshot.** No headless browser in this worktree, so the
+  render was verified structurally (HTML, ids, TOC div, table markup) plus by
+  eye over the served HTML. `runserver 8002` is still up if you want to look.
+
+### Judgment call worth a second opinion
+
+`docs/USER_GUIDE.md` has its own hand-written `## Table of Contents` section,
+which now renders in the page body *next to* the sticky sidebar TOC — two
+tables of contents on one screen. I left it: it's what makes the markdown
+readable on GitHub, and the anchor-integrity test exists specifically to keep
+it honest. If you'd rather the page showed only the sidebar, the cheap fix is
+to strip that one section in `_render_user_guide()` — say the word.
 
 ## Questions for the handoff session
 
-- (Phase 2) List each guide section you changed and why, so Ryan can review
-  the copy before merge.
-- Anything in the current UI that contradicts the guide and *looks like a
-  bug rather than a doc gap* — note it here, don't fix it on this branch;
-  the handoff session routes it to the backlog or another bucket.
+### Phase 2 — copy to review before merge
+
+Bumped to **v1.3 | August 2026** with a version-history entry. Ten edits, each
+tied to a change on `main` since 2026-04-20. Nothing still-accurate was rewritten.
+
+| # | Section | Change | Driven by |
+|---|---------|--------|-----------|
+| 1 | Getting Started → Accessing the Portal | **New**: list of pages readable without logging in (`/calls/`, `/newsletters/`, `/help/user-guide/`) + a line that self-registration grants the applicant role | `3514e20` newsletters, `efba7a5` signup, this branch |
+| 2 | Using the Portal → preamble | "Need help?" is now a dropdown (User guide + Contact us), not a bare mailto | this branch |
+| 3 | Role Assignment → How roles are assigned | Self-signup auto-assigns applicant; all other roles still admin-assigned | `efba7a5` |
+| 4 | Role Assignment → No-roles state | Framed as only applying to imported/admin-created accounts now | `efba7a5` |
+| 5 | Applicants → Submitting an application | Save Draft on steps 2–5 really saves partial input (it used to discard it); reworded the misleading "auto-save after each step" | `2040cad`, `6f859d1` |
+| 6 | Applicants → Submitting an application | **New**: the General Information interstitial between step 3 and step 4 | `110e50f` |
+| 7 | Applicants → **new h4** "Talking to the node before you submit" | The two step-5 modals, what each button does, that a consult doesn't submit or block submission, and the no-equipment-yet soft path | `025b304`, `e94fcf4` |
+| 8 | Node Coordinators → Feasibility review | Download PDF works on drafts for reviewers; edit buttons are applicant-only | `2c7bf91` |
+| 9 | Coordinators → **new h4** "Watching a call's applications" | Edits-requested drafts stay on the call status wall; never-submitted drafts stay hidden | `6c45f2b`, `2c7bf91` |
+| 10 | Coordinators → Assigning evaluators, and Evaluators → **new h4** "How you get assigned" | Auto-assign is now a whole-call allocator: COI by organization, per-evaluator cap, area match preferred-not-required, deactivated accounts excluded, unfilled-applications warning | `a745d94`, `fa9c827` |
+| 11 | Coordinators → Creating a call | Start dates open at 00:00, end dates/deadlines run to 23:59 (was "23:59 for everything") | `3f6164b` |
+
+**Checked and deliberately left alone:**
+
+- The evaluator section already said the blind view shows funding origin. It
+  was *right* and the code was wrong; `8de57bb` fixed the code, so no edit.
+- Every sidebar entry the guide lists for all four roles still matches
+  `templates/dashboard_base.html` exactly.
+
+### Possible bugs — not fixed here, route them somewhere
+
+**None found.** Nothing in the current UI contradicted the guide in a way that
+looked like a bug rather than a doc gap. The one thing I stopped to check —
+whether `evaluation_deadline` normalizing to 23:59 (`3f6164b`) skews the
+7-day evaluator grace period — is fine: `grace_end = deadline + 7 days` in
+`evaluations/views.py:106`, so the evaluator gets the whole seventh day.
+
+Caveat on coverage: this was a **code-and-template walk**, not a click-through
+of the localtest3 sandbox — there's no browser in this worktree. Everything in
+the table above was verified against the views, forms and templates that
+implement it, and the sidebar/nav claims were diffed against
+`templates/dashboard_base.html`. A human pass over the live sandbox could
+still turn up copy that reads wrong in context.
 
 ## Return protocol
 
