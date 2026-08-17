@@ -8,6 +8,7 @@ is untouched until cutover.
 
 If you're (re)starting a session on this branch and need to orient quickly:
 
+0. **Read [`docs/handoffs/marketing-site.md`](../handoffs/marketing-site.md)** — the branch is *parked* in its own worktree while `main` prepares the October 2026 call; that doc says what is and isn't in scope for a session here.
 1. **Read this doc top to bottom** — it's the canonical current state.
 2. **Skim `git log --oneline main..feature/marketing-site`** — each commit message describes one phase or sub-phase.
 3. **Check the open items below in "What's deferred and needs your input"** before suggesting next work. Several items are explicitly waiting on human design decisions; don't decide them in an autonomous session.
@@ -192,10 +193,13 @@ re-writes the index pages unconditionally. Issues #8/#9 in
 
 ## How to run locally
 
+The branch lives in its own git worktree (since 2026-08-17) — do not
+`git checkout` it inside the `main` checkout:
+
 ```bash
-git checkout feature/marketing-site
+cd ~/projects/ReDIB-Portal-wt/marketing-site
 source venv/bin/activate
-python manage.py runserver
+python manage.py runserver 8001     # 8000 is the main checkout
 ```
 
 Then visit:
