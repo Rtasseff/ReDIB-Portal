@@ -244,7 +244,7 @@ Two workstreams, one branch, because (2) depends on (1):
 - [x] B: rate limit + middleware exemption
 - [x] B: coordinator list; tests green
 - [x] Docs: USER_GUIDE additions, system-design/CLAUDE.md status list
-- [ ] Pushed; PR opened against `main`
+- [x] Pushed; PR opened against `main` — [#33](https://github.com/Rtasseff/ReDIB-Portal/pull/33)
 
 **Result** (2026-08-17): `python manage.py check` clean.
 `python manage.py test tests` → 134 tests, **7F / 2E — identical to the
