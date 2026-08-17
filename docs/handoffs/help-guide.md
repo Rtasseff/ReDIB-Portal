@@ -1,5 +1,7 @@
 # Handoff — `feature/help-guide`
 
+> **Merged 2026-08-17** into `main` (`f8c6ae3`, PR #32). Worktree and branch removed. Kept as a record.
+
 | | |
 |---|---|
 | Branch | `feature/help-guide` |

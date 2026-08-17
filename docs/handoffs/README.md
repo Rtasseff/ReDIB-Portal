@@ -11,8 +11,11 @@ When a branch merges, its handoff doc lands here as a record — mark it
 Conventions, registry of active worktrees, and lifecycle:
 [../developer/worktrees.md](../developer/worktrees.md).
 
+Merged (kept as records):
+
+- `help-guide.md` — `feature/help-guide`, merged 2026-08-17 (PR #32): user guide rendered live at `/help/user-guide/`.
+
 Currently on branches (not yet on `main`):
 
 - `marketing-site.md` — `feature/marketing-site`, parked 2026-08-17.
-- `help-guide.md` — `feature/help-guide`, active since 2026-08-17 (user guide as a live portal page).
 - `public-calls.md` — `feature/public-calls`, active since 2026-08-17 (announced calls + public equipment consult).

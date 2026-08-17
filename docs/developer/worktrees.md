@@ -37,6 +37,13 @@ Rules that follow from this:
   Convention: `main` = 8000, then 8001, 8002, … in creation order (see the
   registry table below). The Wagtail `Site` record on the marketing branch
   is `localhost:8000` but is the default site, so it resolves on any port.
+  **WSL gotcha (2026-08-17):** on this machine the WSL→Windows `localhost`
+  relay was not forwarding a fresh port (8002), and a Windows-native
+  `python3.13.exe` was already listening on 8000. If `localhost:<port>` fails
+  from the Windows browser, bind `0.0.0.0:<port>` and browse to
+  `http://$(hostname -I | awk '{print $1}'):<port>/` with that IP added to
+  `ALLOWED_HOSTS` for the session; or `wsl --shutdown` and restart. Full
+  write-up: [../handoffs/help-guide.md](../handoffs/help-guide.md#wsl-localhostport-does-not-reach-runserver-on-this-machine).
 - Claude Code auto-memory is keyed by directory, so a session started in a
   worktree begins with **no** project memory. The handoff doc is the
   intended context carrier — write it so a fresh session needs nothing
@@ -100,7 +107,6 @@ commit.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
-| `help-guide/` | `feature/help-guide` | 8002 | 2026-08-17 | **Active.** Render `docs/USER_GUIDE.md` live at `/help/user-guide/` (replaces the static PDF) + content refresh. Handoff: `docs/handoffs/help-guide.md` on the branch. |
 | `public-calls/` | `feature/public-calls` | 8003 | 2026-08-17 | **Active.** `announced` call status + Announce action + auto-open (backlog #24); public per-equipment "Request a consult" form, persisted + emailed to all NCs (backlog #25). Handoff: `docs/handoffs/public-calls.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
