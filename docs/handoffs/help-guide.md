@@ -194,7 +194,10 @@ Nothing else on `main` is currently moving in these files.
   the Dashboard). It renders correctly with the Bootstrap-style CSS.
 - **No visual/print screenshot.** No headless browser in this worktree, so the
   render was verified structurally (HTML, ids, TOC div, table markup) plus by
-  eye over the served HTML. `runserver 8002` is still up if you want to look.
+  eye over the served HTML. Ryan did open the live page on 2026-08-17 and
+  signed off on how it looks — but only after working around a WSL networking
+  problem; see *WSL: `localhost:<port>` does not reach runserver* at the end
+  of this doc before you try to serve it.
 
 ### Judgment call worth a second opinion
 
@@ -267,7 +270,70 @@ source venv/bin/activate
 python manage.py runserver 8002      # http://localhost:8002/help/user-guide/
 ```
 
+**If you are on Windows driving WSL, that will very likely not open** — see
+the section below. Use this instead:
+
+```bash
+ALLOWED_HOSTS=localhost,127.0.0.1,$(hostname -I | awk '{print $1}') \
+  python manage.py runserver 0.0.0.0:8002
+# then browse to http://<WSL-IP>:8002/help/user-guide/  (hostname -I)
+```
+
 `.env`, `db.sqlite3` and `media/` were copied from the `main` checkout at
 creation time; `venv/` and `staticfiles/` were built here. After adding
 `Markdown` to `requirements.txt`, run `pip install -r requirements.txt` in
 this venv.
+
+## WSL: `localhost:<port>` does not reach runserver on this machine
+
+Hit while trying to eyeball the guide page on 2026-08-17. Recorded because it
+cost real time, it is **not** specific to this branch, and it contradicts what
+we expected from past experience on this same machine.
+
+**Symptom.** Django running in WSL, browser on Windows. `http://localhost:8002`
+and `http://127.0.0.1:8002` both fail to connect. `http://<WSL-IP>:8002` works.
+
+**What we established, in order:**
+
+1. Bound to `127.0.0.1:8002` (runserver's default) → nothing on Windows, as
+   expected for a namespace-local bind that the relay isn't picking up.
+2. Rebound to `0.0.0.0:8002`. Inside WSL, both `127.0.0.1:8002` and
+   `172.26.220.46:8002` returned 200. From Windows, **still only the WSL IP
+   worked.** This is what kills the obvious explanations — an
+   IPv6-vs-IPv4 `localhost` resolution mismatch would have been fixed by
+   binding to all interfaces, and it wasn't.
+3. `netstat.exe -an` on the Windows side shows **no listener on 8002 at all**.
+   WSL's localhost forwarding works by creating a `127.0.0.1:<port>` listener
+   on the Windows side; there isn't one. **The relay is not running for this
+   port.** That is the actual fault.
+4. Ruled out — port 8002 is not inside any Windows reserved range
+   (`netsh.exe interface ipv4 show excludedportrange protocol=tcp`: the
+   exclusions are all ≥50000).
+5. Ruled out — there is no `.wslconfig` in `%USERPROFILE%`, so
+   `localhostForwarding` is at its default of **true** and networking is
+   default NAT mode. Nothing is switching it off by configuration.
+   WSL 2.6.1.0, kernel 6.6.87.2.
+
+**Hypothesis for "but this always worked before."** Windows currently has a
+**native** `python3.13.exe` (PID 65252 at the time of writing) listening on
+`0.0.0.0:8000` — a Windows-side Python, nothing to do with WSL. If earlier
+dev work used the default port 8000 and was checked at `localhost:8000` from
+Windows, that would have connected to *this Windows process*, not to WSL,
+and would look identical from the browser. Unverified, but it fits: 8000 has
+a Windows listener, 8002 has none, and 8002 is the one that fails. Worth a
+glance at what that process is — it may also collide with the `main`
+checkout's runserver, which uses 8000.
+
+**Workarounds, cheapest first:**
+
+- Browse to `http://<WSL-IP>:8002/...` (`hostname -I`). Requires binding
+  `0.0.0.0` **and** putting the WSL IP in `ALLOWED_HOSTS` — it defaults to
+  `['localhost', '127.0.0.1']`, so the WSL IP returns **400**, not a
+  connection error. The IP changes on every WSL restart.
+- `wsl --shutdown` from Windows, then restart the distro. Standard fix for a
+  wedged localhost relay; not attempted here because it would have killed the
+  session mid-task.
+
+**Not a code problem.** Nothing in the app or its settings was changed for
+any of this — the bind address and the extra `ALLOWED_HOSTS` entry were
+passed on the command line for the session only.
