@@ -1,0 +1,58 @@
+{% comment %}
+Consult requests table. Expects `consult_requests` in context.
+Used by calls/detail.html (ReDIB coordinators) and calls/consult_requests.html
+(node coordinators, filtered to their own nodes).
+{% endcomment %}
+{% if consult_requests %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Received</th>
+                <th>Requester</th>
+                <th>Contact</th>
+                <th>Equipment</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for consult in consult_requests %}
+            <tr>
+                <td class="text-nowrap">
+                    <small>{{ consult.created_at|date:"M d, Y H:i" }}</small>
+                    {% if not consult.emails_sent_at %}
+                    <br><span class="badge bg-warning text-dark" title="Coordinator notifications were not dispatched — contact the requester manually.">Not emailed</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ consult.name }}
+                    {% if consult.organization %}<br><small class="text-muted">{{ consult.organization }}</small>{% endif %}
+                    {% if consult.user_id %}<br><span class="badge bg-light text-dark">Portal user</span>{% endif %}
+                </td>
+                <td>
+                    <a href="mailto:{{ consult.email }}">{{ consult.email }}</a>
+                    {% if consult.phone %}<br><small class="text-muted">{{ consult.phone }}</small>{% endif %}
+                </td>
+                <td>
+                    {% for item in consult.equipment.all %}
+                    <span class="badge bg-secondary">{{ item.name }}</span>
+                    <small class="text-muted">{{ item.node.organization.short_name|default:item.node.name }}</small><br>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if consult.message %}
+                    <small>{{ consult.message|truncatewords:30|linebreaksbr }}</small>
+                    {% else %}
+                    <small class="text-muted">&mdash;</small>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted mb-0">
+    <i class="bi bi-info-circle"></i> No consult requests for this call yet.
+</p>
+{% endif %}

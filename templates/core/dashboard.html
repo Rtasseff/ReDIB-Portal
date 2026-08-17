@@ -255,7 +255,7 @@
                             <strong>{{ call.code }}</strong><br>
                             <small class="text-muted">{{ call.title|truncatewords:10 }}</small>
                         </div>
-                        <span class="badge {% if call.status == 'open' %}bg-success{% else %}bg-warning{% endif %}">
+                        <span class="badge {% if call.status == 'open' %}bg-success{% elif call.status == 'announced' %}bg-primary{% else %}bg-warning{% endif %}">
                             {{ call.get_status_display }}
                         </span>
                     </li>

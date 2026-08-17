@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Consult request sent - {{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h1 class="h3 mt-3">Thank you — your request has been sent</h1>
+
+                    {% if consult %}
+                    <p class="lead text-muted">
+                        {% if nodes %}
+                        {% if nodes|length == 1 %}
+                        The coordinator of {{ nodes.0.organization.short_name|default:nodes.0.name }}
+                        will get in touch with you.
+                        {% else %}
+                        The coordinators of the following nodes will get in touch with you:
+                        {% for node in nodes %}<strong>{{ node.organization.short_name|default:node.name }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+                        {% endif %}
+                        {% else %}
+                        The relevant node coordinators will get in touch with you.
+                        {% endif %}
+                    </p>
+                    <p>
+                        We will reply to <strong>{{ consult.email }}</strong>. A copy of your
+                        request has been sent there too — check your spam folder if it does
+                        not arrive.
+                    </p>
+
+                    <div class="text-start mx-auto" style="max-width: 32rem;">
+                        <h6 class="text-muted">You asked about</h6>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for item in consult.equipment.all %}
+                            <li class="list-group-item">
+                                {{ item.name }}
+                                <small class="text-muted">
+                                    &middot; {{ item.node.organization.short_name|default:item.node.name }}
+                                </small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <p class="lead text-muted">
+                        The relevant node coordinators have been notified and will get in
+                        touch with you.
+                    </p>
+                    {% endif %}
+
+                    <p class="text-muted small">
+                        This was an informal enquiry — no application has been started.
+                        {% if call.status == 'announced' %}
+                        {{ call.code }} opens for submissions on
+                        {{ call.submission_start|date:"F d, Y" }}.
+                        {% else %}
+                        Submissions for {{ call.code }} close on
+                        {{ call.submission_end|date:"F d, Y" }}.
+                        {% endif %}
+                        Questions in the meantime? Write to
+                        <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-2 mt-4">
+                        <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Back to {{ call.code }}
+                        </a>
+                        <a href="{% url 'calls:public_list' %}" class="btn btn-outline-secondary">
+                            All calls
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

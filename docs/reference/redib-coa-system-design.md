@@ -167,7 +167,11 @@ class Call(models.Model):
     """COA Call periods"""
     code = models.CharField(max_length=20, unique=True)  # e.g., "COA-2025-01"
     title = models.CharField(max_length=200)
-    status = models.CharField(choices=CALL_STATUSES)  # draft, open, closed, resolved
+    status = models.CharField(choices=CALL_STATUSES)  # draft, announced, open,
+                                                      # closed, resolved
+    # `announced` = advertised publicly as upcoming, takes no applications;
+    # auto-promotes to `open` on submission_start (calls.tasks, daily beat,
+    # plus a view-level fallback on the public pages).
     submission_start = models.DateTimeField()
     submission_end = models.DateTimeField()
     evaluation_deadline = models.DateTimeField()

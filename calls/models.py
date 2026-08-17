@@ -2,6 +2,9 @@
 Call management models for ReDIB COA portal.
 """
 
+import hashlib
+
+from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
@@ -13,10 +16,15 @@ class Call(models.Model):
 
     CALL_STATUSES = [
         ('draft', 'Draft'),
+        ('announced', 'Announced - Opens Soon'),
         ('open', 'Open for Submissions'),
         ('closed', 'Closed - Under Evaluation'),
         ('resolved', 'Resolved'),
     ]
+
+    # Statuses whose calls are visible on the public site. `draft` is not
+    # public; `announced` is advertised but takes no applications.
+    PUBLIC_STATUSES = ['announced', 'open', 'closed', 'resolved']
 
     code = models.CharField(
         max_length=20,
@@ -70,6 +78,22 @@ class Call(models.Model):
         )
 
     @property
+    def is_announced(self):
+        """Call is advertised publicly but not yet accepting submissions."""
+        return self.status == 'announced'
+
+    @property
+    def is_publicly_visible(self):
+        """Call appears on the public calls pages."""
+        return self.status in self.PUBLIC_STATUSES
+
+    @property
+    def accepts_consult_requests(self):
+        """Anyone can ask a node for a consult while a call is announced or
+        open. Once submissions close there is nothing left to consult about."""
+        return self.status in ['announced', 'open']
+
+    @property
     def total_approved_hours(self):
         """Calculate total approved hours across all equipment in this call"""
         from applications.models import RequestedAccess
@@ -119,3 +143,75 @@ class CallEquipmentAllocation(models.Model):
         ).aggregate(
             total=models.Sum('hours_requested')
         )['total'] or 0
+
+
+class ConsultRequest(models.Model):
+    """An informal request for a consult about specific equipment on a call.
+
+    Submitted from the public call page by anyone (login not required) while
+    the call is announced or open. Routed by email to every active node
+    coordinator of each node whose equipment was selected. This is contact
+    only: it starts no application and no feasibility review.
+    """
+
+    call = models.ForeignKey(
+        Call,
+        on_delete=models.CASCADE,
+        related_name='consult_requests'
+    )
+    equipment = models.ManyToManyField(
+        Equipment,
+        related_name='consult_requests',
+        help_text='Equipment on this call the requester asked about'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='consult_requests',
+        help_text='Set when the requester was logged in; anonymous otherwise'
+    )
+
+    # Contact details as typed on the form (never overwritten from the profile,
+    # so the row stays a faithful record of what was submitted).
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    organization = models.CharField(max_length=255, blank=True)
+    message = models.TextField(blank=True, max_length=2000)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    emails_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the coordinator notifications were dispatched'
+    )
+    ip_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text='SHA-256 of the submitting IP, for abuse follow-up only'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Consult Request'
+
+    def __str__(self):
+        return f"{self.call.code} - {self.name} ({self.created_at:%Y-%m-%d})"
+
+    @staticmethod
+    def hash_ip(ip_address):
+        """One-way hash of a client IP. Returns '' for a missing address."""
+        if not ip_address:
+            return ''
+        return hashlib.sha256(ip_address.encode('utf-8')).hexdigest()
+
+    def equipment_by_node(self):
+        """Requested equipment grouped as {node: [equipment, ...]}."""
+        grouped = {}
+        for item in self.equipment.select_related('node__organization').order_by(
+            'node__code', 'name'
+        ):
+            grouped.setdefault(item.node, []).append(item)
+        return grouped

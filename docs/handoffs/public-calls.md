@@ -226,26 +226,120 @@ Two workstreams, one branch, because (2) depends on (1):
 
 ## Status
 
-- [ ] Baseline `python manage.py test tests` recorded: __F / __E
-- [ ] A: `announced` status + migration + helpers
-- [ ] A: Announce action, Publish guard, badges everywhere
-- [ ] A: auto-open (beat task + view fallback), emails factored
-- [ ] A: public list cards + public detail for announced calls
-- [ ] A: `call_announced` template seeded; tests green
-- [ ] B: `ConsultRequest` model + migration + admin
-- [ ] B: form (grouped checkboxes, honeypot), view, thank-you, prefill, `?equipment=`
-- [ ] B: emails to all NCs + confirmation; templates seeded
-- [ ] B: rate limit + middleware exemption
-- [ ] B: coordinator list; tests green
-- [ ] Docs: USER_GUIDE additions, system-design/CLAUDE.md status list
+- [x] Baseline `python manage.py test tests` recorded (2026-08-17, 94 tests): **7F / 2E**
+      — `test_phase9_publications` ×2 (E), `test_phase7_acceptance` ×4,
+      `test_design` ×2 (`test_calls_list_renders`, `test_dashboard_renders`),
+      `test_batch2_phase4.test_node_coord_can_promote_waitlisted_application`.
+- [x] A: `announced` status + migration + helpers
+      (`calls/migrations/0003_…`; `is_announced`, `is_publicly_visible`,
+      `accepts_consult_requests`, `Call.PUBLIC_STATUSES`)
+- [x] A: Announce action, Publish guard, badges everywhere
+- [x] A: auto-open (beat task + view fallback), emails factored into
+      `calls/services.py`
+- [x] A: public list cards + public detail for announced calls
+- [x] A: `call_announced` template seeded; tests green
+- [x] B: `ConsultRequest` model + migration + admin (read-only)
+- [x] B: form (grouped checkboxes, honeypot), view, thank-you, prefill, `?equipment=`
+- [x] B: emails to all NCs + confirmation; templates seeded
+- [x] B: rate limit + middleware exemption
+- [x] B: coordinator list; tests green
+- [x] Docs: USER_GUIDE additions, system-design/CLAUDE.md status list
 - [ ] Pushed; PR opened against `main`
+
+**Result** (2026-08-17): `python manage.py check` clean.
+`python manage.py test tests` → 134 tests, **7F / 2E — identical to the
+baseline list above**, no regressions. `tests/test_public_calls.py` → 40 tests,
+all green. Dev walkthrough run end-to-end on the localtest3 sandbox (announce →
+public list card → detail with "Opens on" → anonymous consult across CICBIO +
+CNIC → one email per NC + confirmation + thank-you → BIOIMAC has no NC, so the
+ReDIB office was emailed and the requester was told → logged-in prefill →
+`?equipment=` preselect → coordinator and node-coordinator lists → auto-open on
+`/calls/` once the start date passed → Apply appears).
+
+### Deviations / decisions taken while building
+
+1. **Node-coordinator view of consult requests** = a small
+   `calls:consult_requests` page (`<pk>/consult-requests/`,
+   `@role_required('coordinator', 'node_coordinator')`, filtered to the NC's
+   own nodes). Widening `calls:detail` (a whole call-management page) to node
+   coordinators was the bigger surface. ReDIB coordinators additionally see the
+   table inline on `calls/detail.html`; both render the same include
+   (`templates/calls/includes/consult_requests_table.html`).
+2. **Middleware exemption is by URL name**, not path prefix: `EXEMPT_URL_NAMES`
+   + `resolve()` in `ProfileCompletionMiddleware`, because the consult paths
+   carry a `<pk>` that a prefix list can't express — and it survives the
+   `/portal/` move on `feature/marketing-site`. `EXEMPT_PREFIXES` is untouched,
+   so the `feature/help-guide` `'/help/'` line still merges cleanly.
+3. **`emails_sent_at` is only stamped when something actually went out**, so
+   the coordinator table can flag a request nobody was told about ("Not
+   emailed" badge). The DB row is written regardless.
+4. **Dates in email context are pre-formatted strings** — see Questions below.
+5. **Coordinator dashboard** (`core/views.py:dashboard`) now includes
+   `announced` in `active_calls`; evaluation/report/assignment surfaces
+   deliberately stay `['open', 'closed']`.
+6. `Publish` on an `announced` call is allowed once its window has started
+   (button reads **Open Now**), and refused with guidance before that.
 
 ## Questions for the handoff session
 
-- Exact wording of the two/three new email templates and the USER_GUIDE
-  additions — list them here for Ryan's review before merge.
-- Anything in the current calls code that looks like a bug rather than a
-  gap for this feature — note it here, don't fix it on this branch.
+### For Ryan — wording to approve before merge
+
+Three new email templates in
+`communications/management/commands/seed_email_templates.py` (full text there;
+subjects and the substance below):
+
+1. **`call_announced`** — to everyone with `receive_call_notifications=True`,
+   at announce time.
+   *Subject:* `ReDIB COA: Upcoming Call {{ call_code }} - opens {{ submission_start }}`
+   Says the call has been announced but is **not open yet**; lists code,
+   title, opens/closes dates; points out that the equipment list is already
+   visible and that a consult can be requested without an account; promises a
+   second email on the opening date.
+2. **`equipment_consult_request`** — to **every** active node coordinator of
+   each node involved (and to the ReDIB coordinator(s) when a node has none).
+   *Subject:* `ReDIB COA: Equipment consult requested for {{ node_name }} ({{ call_code }})`
+   Requester name / email / phone / institution, node, equipment list, call
+   code + title + status, submission window, their message, a link to the call
+   and to the consult-request list. Closes with "No application, feasibility
+   review, or other workflow step has been triggered by this request." Tone
+   follows `feasibility_consult_request`.
+3. **`equipment_consult_confirmation`** — to the requester.
+   *Subject:* `ReDIB COA: We received your consult request for {{ call_code }}`
+   Names the node(s) that will contact them, echoes what they asked about and
+   their message, states plainly that no application has been started, gives
+   `settings.CONTACT_EMAIL` as the fallback contact.
+
+USER_GUIDE additions (all self-contained, `#anchors` only):
+
+- Phase 1 overview: two bullets on announced calls + public consult.
+- Applicants → new **"Asking a node about equipment before you apply"**
+  subsection (Consult button per instrument, prefill when logged in, informal
+  contact only, no account needed).
+- Node coordinators → new **"Consult requests from the public call pages"**
+  subsection (what arrives, reply directly, nothing automatic, no-coordinator
+  fallback).
+- Coordinators → **"Announce vs Publish"** subsection + the Creating-a-call
+  steps reworded (Draft is invisible; Announce vs Publish; auto-open lag).
+
+### Bugs noticed in existing calls code (not fixed here)
+
+- `call_publish` used to put **datetime objects** into `context_data` for
+  `send_email_from_template.delay`. Under Celery's JSON serializer those
+  arrive at the worker as raw ISO strings, so production "Now Open" emails
+  would render `2026-10-01T00:00:00+00:00` while dev (eager) renders a
+  formatted date. The factored-out helper (`calls/services.notify_call_audience`)
+  now formats dates as `%B %d, %Y` strings before queueing, which fixes
+  `call_published` as a side effect of the refactor. One other sender has the
+  same shape and was left alone: `applications/tasks.py:338`
+  (`'deadline': app.acceptance_deadline` in the acceptance-reminder email).
+  Worth a follow-up backlog item.
+- `calls/views.py:_auto_close_expired_calls` uses `.update()`, which skips
+  `simple_history` (no historical row for auto-closes) and `updated_at`. Same
+  pre-existing behaviour; the new `open_announced_calls` saves per instance
+  instead, so auto-opens *are* recorded.
+- `call_close` has no status guard — a `draft` or `announced` call can be
+  closed directly from a crafted URL. Not reachable from the UI (the button
+  only renders for `open`), so left alone.
 
 ## Return protocol
 

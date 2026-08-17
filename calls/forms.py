@@ -5,7 +5,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils import timezone
 from datetime import time
-from .models import Call, CallEquipmentAllocation
+from .models import Call, CallEquipmentAllocation, ConsultRequest
 from core.models import Equipment
 
 
@@ -127,6 +127,90 @@ CallEquipmentFormSet = inlineformset_factory(
     min_num=0,
     validate_min=False
 )
+
+
+class ConsultRequestForm(forms.ModelForm):
+    """Public "request a consult" form on a call page.
+
+    Anonymous submissions are allowed, so the form carries a honeypot field
+    (`website`) that real users never see and never fill in.
+    """
+
+    equipment = forms.ModelMultipleChoiceField(
+        queryset=Equipment.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={
+            'required': 'Select at least one instrument you would like to discuss.',
+            'invalid_choice': 'That equipment is not available on this call.',
+            'invalid_pk_value': 'That equipment is not available on this call.',
+        },
+    )
+
+    # Honeypot: hidden from humans via CSS, bots fill it in.
+    website = forms.CharField(
+        required=False,
+        label='Website',
+        widget=forms.TextInput(attrs={
+            'autocomplete': 'off',
+            'tabindex': '-1',
+            'class': 'consult-hp',
+        }),
+    )
+
+    class Meta:
+        model = ConsultRequest
+        fields = ['name', 'email', 'phone', 'organization', 'message']
+        labels = {
+            'name': 'Your name',
+            'email': 'Email',
+            'phone': 'Phone (optional)',
+            'organization': 'Institution / company (optional)',
+            'message': 'What would you like to discuss? (optional)',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'organization': forms.TextInput(attrs={'class': 'form-control'}),
+            'message': forms.Textarea(attrs={
+                'rows': 5,
+                'class': 'form-control',
+                'placeholder': 'Briefly describe your study, the imaging you have '
+                               'in mind, or the questions you have for the node.',
+            }),
+        }
+
+    def __init__(self, *args, call=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.call = call
+        self.fields['equipment'].queryset = Equipment.objects.filter(
+            call_allocations__call=call
+        ).select_related('node__organization').order_by('node__code', 'name')
+
+    def clean_website(self):
+        """Honeypot — any value at all means this was not a human."""
+        if self.cleaned_data.get('website'):
+            raise forms.ValidationError('Your submission could not be processed.')
+        return ''
+
+    def grouped_equipment(self):
+        """Equipment choices grouped by node, for checkbox rendering.
+
+        Returns [{'node': node, 'items': [{'equipment': eq, 'checked': bool}]}]
+        preserving whatever the user had ticked on a redisplayed form.
+        """
+        raw_selection = self['equipment'].value() or []
+        selected = {str(value) for value in raw_selection}
+
+        groups = []
+        for equipment in self.fields['equipment'].queryset:
+            if not groups or groups[-1]['node'] != equipment.node:
+                groups.append({'node': equipment.node, 'items': []})
+            groups[-1]['items'].append({
+                'equipment': equipment,
+                'checked': str(equipment.pk) in selected,
+            })
+        return groups
 
 
 def get_equipment_formset_for_create(active_equipment_count):

@@ -4,7 +4,7 @@ Django admin configuration for calls models.
 
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Call, CallEquipmentAllocation
+from .models import Call, CallEquipmentAllocation, ConsultRequest
 
 
 class CallEquipmentAllocationInline(admin.TabularInline):
@@ -45,3 +45,25 @@ class CallEquipmentAllocationAdmin(SimpleHistoryAdmin):
     ordering = ['call', 'equipment']
 
     readonly_fields = ['total_approved_hours']
+
+
+@admin.register(ConsultRequest)
+class ConsultRequestAdmin(admin.ModelAdmin):
+    """Read-only audit view of public consult requests."""
+
+    list_display = ['created_at', 'call', 'name', 'email', 'organization', 'emails_sent_at']
+    list_filter = ['call', 'created_at', 'equipment__node']
+    search_fields = ['name', 'email', 'organization', 'message', 'call__code']
+    ordering = ['-created_at']
+    date_hierarchy = 'created_at'
+
+    readonly_fields = [
+        'call', 'equipment', 'user', 'name', 'email', 'phone', 'organization',
+        'message', 'created_at', 'emails_sent_at', 'ip_hash',
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

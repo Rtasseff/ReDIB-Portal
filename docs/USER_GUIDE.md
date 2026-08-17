@@ -75,6 +75,11 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 - Coordinators create and publish calls for applications
 - Each call specifies submission deadlines, evaluation deadlines, and available equipment
 - Published calls become visible to all users on the public call listing
+- A call can also be *announced* ahead of time: it is listed publicly as
+  upcoming, takes no applications, and opens automatically on its submission
+  start date
+- Anyone can request a consult with a node about specific equipment listed on
+  an announced or open call, without an account
 
 ### Phase 2: Application Submission
 **Who:** Applicants (Researchers)
@@ -656,6 +661,29 @@ The left sidebar (under the **Applicant** heading) gives you:
 - **Publications** — your reported publications + the form to add new ones.
 - **Open Calls** — currently-published calls you can apply to.
 
+#### Asking a node about equipment before you apply
+
+The public `/calls/` page lists open calls **and** upcoming ones that have been
+announced but not yet opened. Either kind of call has a detail page with the
+full equipment list, and next to each instrument a **Consult** button (there is
+also a general *Request a consult* button at the top of the equipment list).
+
+Use it when you want to know whether an instrument suits your study, what it
+can do, or whether time is likely to be available:
+
+1. Click **Consult** on the instrument you are interested in — it arrives
+   pre-ticked. You can tick more instruments, across as many nodes as you like.
+2. Fill in your name and email (if you are logged in these are pre-filled from
+   your profile, and you can edit them), optionally a phone number, your
+   institution, and what you would like to discuss.
+3. Send it. The coordinator(s) of every node whose equipment you ticked get
+   your enquiry by email and will contact you directly, and you receive a copy
+   for your records.
+
+This is informal contact only: it does not create an application, does not
+commit you to applying, and no account is needed. To actually apply you still
+have to log in and use the application wizard once the call is open.
+
 #### Submitting an application
 
 1. Click **Open Calls** (or *Browse Open Calls* on the dashboard). Each open
@@ -750,6 +778,17 @@ The left sidebar (under **Node Coordinator**) gives you:
 - **Access Tracking** — master list of all applications at your node, plus
   the buttons for **promoting waitlisted** applications to accepted and for
   **marking access complete + logging hours**.
+
+#### Consult requests from the public call pages
+
+While a call is announced or open, anyone can ask about specific equipment
+from its public page. Every active coordinator of the node concerned gets the
+enquiry by email — name, contact details, the instruments they asked about and
+their message — and the email links to the full list of requests for that call.
+
+Reply to the requester directly. Nothing else happens automatically: no
+application, no feasibility review, no deadline. If a node has no active
+coordinator on file, the ReDIB office is notified instead.
 
 #### Feasibility review
 
@@ -884,8 +923,8 @@ The left sidebar (under **Coordinator**) gives you four entry points:
    on a fresh system). Fill in:
    - **Call Code** (e.g. `COA-2026-01`), **Title**, **Description**, optional
      Guidelines.
-   - **Status** — leave as **Draft** until you're ready to publish; only
-     `Open` calls are visible to applicants.
+   - **Status** — leave as **Draft** until you're ready to announce or
+     publish; `Draft` calls are invisible to applicants.
    - **Submission period** (start + end), **Evaluation deadline**, **Execution
      period** (start + end). All dates are date-only; the system uses 23:59
      as the end-of-day cutoff. The form rejects illogical ordering.
@@ -893,16 +932,42 @@ The left sidebar (under **Coordinator**) gives you four entry points:
      nodes is included by default. Tick the **Remove** column to exclude
      any. You must keep at least one.
 2. **Save Call** — the call is saved as a Draft, only you can see it.
-3. When ready, click **Publish Call** (with confirmation). Status moves to
-   **Open**, the `published_at` timestamp is set, a notification email goes
-   out to every user who opted in to call announcements, and the call appears
-   on the public `/calls/` page.
+3. When ready, click **Announce** or **Publish** — see *Announce vs Publish*
+   below.
 4. After the submission deadline, click **Close** to stop new submissions and
    open the call for evaluator assignment.
 
 You can edit a call after publication, but you **cannot delete** it once
 published or unpublish it. To revert a published-but-empty call to Draft you
 have to use the admin panel at `/admin/`.
+
+#### Announce vs Publish
+
+Both actions make a call public; they differ in whether it is open for
+submissions.
+
+- **Announce** — use this when the submission period starts in the future.
+  The call moves to **Announced**, appears on the public `/calls/` page under
+  *Upcoming Calls* with its own detail page (dates, equipment list, and a
+  *Request a consult* button), and an "upcoming call" email goes out to
+  everyone who opted in to call announcements. No applications can be
+  submitted yet.
+- The announced call **opens by itself** on its submission start date, and
+  the "Now Open" email goes out then, not at announce time. The check runs
+  daily and also whenever someone loads the public calls pages, so the
+  changeover may lag by a few hours at most.
+- **Publish** — opens the call for submissions **now** and sends the "Now
+  Open" email immediately. It is refused if the submission start date is
+  still in the future; announce the call instead and let it open on schedule.
+  You can also click **Open Now** on an announced call if you want to bring
+  the opening forward — edit the submission start date first.
+
+While a call is Announced or Open, anyone visiting its public page — with or
+without a portal account — can send a consult request about specific
+instruments. Those requests arrive by email at the coordinator(s) of each node
+involved, and are listed for you under **Consult requests** on the call detail
+page. They are informal enquiries: no application or feasibility review is
+created.
 
 #### Assigning evaluators
 

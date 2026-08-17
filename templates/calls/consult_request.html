@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Request a consult - {{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Honeypot: never shown to humans, bots fill it in. */
+    .consult-hp-wrapper {
+        position: absolute;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'calls:public_list' %}">Calls</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'calls:public_detail' call.pk %}">{{ call.code }}</a></li>
+                    <li class="breadcrumb-item active">Request a consult</li>
+                </ol>
+            </nav>
+
+            <h1 class="h2">Request a consult</h1>
+            <p class="lead text-muted">{{ call.code }} &mdash; {{ call.title }}</p>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                Pick the instruments you would like to discuss and we will put you in
+                touch with the coordinator of each node that operates them. This is an
+                informal enquiry: it does not start an application and does not commit
+                you to anything.
+                {% if call.status == 'announced' %}
+                This call opens on <strong>{{ call.submission_start|date:"F d, Y" }}</strong>.
+                {% else %}
+                Submissions close on <strong>{{ call.submission_end|date:"F d, Y" }}</strong>.
+                {% endif %}
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-gear"></i> Equipment you are interested in</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if form.equipment.errors %}
+                        <div class="alert alert-danger py-2">{{ form.equipment.errors }}</div>
+                        {% endif %}
+
+                        {% for group in form.grouped_equipment %}
+                        <fieldset class="mb-3">
+                            <legend class="h6 text-muted border-bottom pb-1">
+                                {{ group.node.organization.short_name|default:group.node.name }}
+                                {% if group.node.location %}<small class="fw-normal">&middot; {{ group.node.location }}</small>{% endif %}
+                            </legend>
+                            {% for item in group.items %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="equipment"
+                                       value="{{ item.equipment.pk }}" id="equipment_{{ item.equipment.pk }}"
+                                       {% if item.checked %}checked{% endif %}>
+                                <label class="form-check-label" for="equipment_{{ item.equipment.pk }}">
+                                    {{ item.equipment.name }}
+                                    <span class="badge bg-light text-dark">{{ item.equipment.get_category_display }}</span>
+                                    {% if item.equipment.description %}
+                                    <br><small class="text-muted">{{ item.equipment.description|truncatewords:25 }}</small>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </fieldset>
+                        {% empty %}
+                        <p class="text-muted mb-0">No equipment has been listed for this call yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-person"></i> How can we reach you?</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }} *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }} *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.organization.id_for_label }}" class="form-label">{{ form.organization.label }}</label>
+                                {{ form.organization }}
+                                {% if form.organization.errors %}<div class="text-danger small">{{ form.organization.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }}</label>
+                                {{ form.message }}
+                                {% if form.message.errors %}<div class="text-danger small">{{ form.message.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="consult-hp-wrapper" aria-hidden="true">
+                            <label for="{{ form.website.id_for_label }}">{{ form.website.label }}</label>
+                            {{ form.website }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'calls:public_detail' call.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to call
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Send request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

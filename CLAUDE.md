@@ -55,6 +55,15 @@ registry of active worktrees, and `scripts/new-worktree.sh` usage:
 
 ## Workflow states (cheat-sheet)
 
+**Call statuses**: `draft` → `announced` → `open` → `closed` → `resolved`.
+`announced` is public-but-not-accepting: it shows on `/calls/` under "Upcoming
+Calls" and auto-promotes to `open` on `submission_start` (daily beat task
+`calls.tasks.check_call_deadlines` plus a view-level fallback on the public
+pages). Publish is refused while `submission_start` is in the future — announce
+instead. Announced and open calls both accept public `ConsultRequest`s.
+
+**Application statuses**:
+
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` →
 `evaluated` → `accepted` / `pending` / `rejected`
 

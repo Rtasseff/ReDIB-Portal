@@ -36,6 +36,8 @@
                 <td>
                     {% if call.status == 'draft' %}
                     <span class="badge bg-secondary">Draft</span>
+                    {% elif call.status == 'announced' %}
+                    <span class="badge bg-primary">Announced</span>
                     {% elif call.status == 'open' %}
                     <span class="badge bg-success">Open</span>
                     {% elif call.status == 'closed' %}
@@ -69,13 +71,22 @@
                         </a>
 
                         {% if call.status == 'draft' %}
+                        <a href="{% url 'calls:announce' call.pk %}" class="btn btn-outline-primary"
+                           onclick="return confirm('Announce this call? It will be listed publicly as upcoming and opens automatically on its start date.')" title="Announce">
+                            <i class="bi bi-megaphone"></i>
+                        </a>
                         <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
-                           onclick="return confirm('Publish this call? This will notify users.')" title="Publish">
+                           onclick="return confirm('Publish this call? This opens it for submissions now and notifies users.')" title="Publish (open now)">
                             <i class="bi bi-send"></i>
                         </a>
                         <a href="{% url 'calls:delete' call.pk %}" class="btn btn-outline-danger"
                            onclick="return confirm('WARNING: This will permanently delete this call. This action cannot be undone. Are you sure?')" title="Delete">
                             <i class="bi bi-trash"></i>
+                        </a>
+                        {% elif call.status == 'announced' %}
+                        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
+                           onclick="return confirm('Open this call for submissions now?')" title="Open now">
+                            <i class="bi bi-send"></i>
                         </a>
                         {% elif call.status == 'open' %}
                         <a href="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
@@ -116,6 +127,11 @@
         <ul class="list-unstyled mb-0">
             <li class="mb-2">
                 <span class="badge bg-secondary">Draft</span> - Call is being prepared, not visible to applicants
+            </li>
+            <li class="mb-2">
+                <span class="badge bg-primary">Announced</span> - Advertised publicly as upcoming; no applications yet.
+                Opens by itself on the submission start date, when the "Now Open" email goes out.
+                Visitors can already request a consult about the listed equipment.
             </li>
             <li class="mb-2">
                 <span class="badge bg-success">Open</span> - Call is published and accepting applications
