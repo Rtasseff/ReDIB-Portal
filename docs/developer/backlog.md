@@ -25,6 +25,19 @@ made* (with a "what to do next when ready" section). This file records
 
 ## In-flight branches (not on `main`)
 
+Registry of active worktrees (dir, port, status): [worktrees.md](worktrees.md).
+
+### `feature/help-guide` — user guide as a live portal page
+
+Active since 2026-08-17 in `~/projects/ReDIB-Portal-wt/help-guide/`.
+Renders `docs/USER_GUIDE.md` at `/help/user-guide/` (Python-Markdown,
+public, sticky TOC, print stylesheet) and swaps the navbar "User guide"
+PDF download for that page; deletes `static/documents/user_guide.pdf`;
+Phase 2 refreshes the guide's content for changes since April 2026.
+Brief: `docs/handoffs/help-guide.md` on the branch. Touches
+`templates/base.html` (one line), `core/urls.py`, `core/middleware.py`,
+`requirements.txt`, `.dockerignore`.
+
 ### `feature/marketing-site` — Wagtail rebuild of redib.net
 
 Long-running branch, ~40 commits beyond `main`, not yet merged or

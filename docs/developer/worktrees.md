@@ -100,6 +100,7 @@ commit.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
+| `help-guide/` | `feature/help-guide` | 8002 | 2026-08-17 | **Active.** Render `docs/USER_GUIDE.md` live at `/help/user-guide/` (replaces the static PDF) + content refresh. Handoff: `docs/handoffs/help-guide.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 
