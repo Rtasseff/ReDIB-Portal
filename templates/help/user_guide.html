@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Renders docs/USER_GUIDE.md (see core.views.user_guide). The body and the
+sidebar TOC are both produced by Python-Markdown, so everything below is
+styling only -- keep guide content in the markdown, not here.
+{% endcomment %}
+
+{% block title %}{{ guide_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ---- Layout ------------------------------------------------------- */
+    .user-guide-toc {
+        border: 1px solid #dee2e6;
+        border-radius: .375rem;
+        background: #f8f9fa;
+        padding: 1rem;
+        /* Small screens: the grid collapses and the TOC sits above the
+           guide, so cap it rather than pushing the content off-screen. */
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    @media (min-width: 992px) {
+        .user-guide-toc {
+            position: sticky;
+            top: 1rem;
+            max-height: calc(100vh - 2rem);
+        }
+    }
+
+    /* ---- Sidebar TOC (Python-Markdown's <div class="toc">) ------------- */
+    .user-guide-toc .toc ul {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .user-guide-toc .toc ul ul {
+        padding-left: .85rem;
+    }
+
+    .user-guide-toc .toc li {
+        margin: .15rem 0;
+    }
+
+    .user-guide-toc .toc a {
+        display: block;
+        padding: .1rem 0;
+        font-size: .875rem;
+        line-height: 1.35;
+        color: #495057;
+        text-decoration: none;
+    }
+
+    .user-guide-toc .toc > ul > li > a {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .user-guide-toc .toc a:hover,
+    .user-guide-toc .toc a:focus {
+        color: var(--bs-primary);
+        text-decoration: underline;
+    }
+
+    /* ---- Guide body ---------------------------------------------------- */
+    .user-guide {
+        max-width: 62rem;
+    }
+
+    /* Navbar is static, not fixed, but keep anchored headings off the very
+       top edge of the viewport. */
+    .user-guide :is(h1, h2, h3, h4, h5, h6) {
+        scroll-margin-top: 1rem;
+    }
+
+    .user-guide h1 {
+        font-size: 2rem;
+    }
+
+    .user-guide h2 {
+        font-size: 1.5rem;
+        margin-top: 2.5rem;
+        padding-bottom: .3rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .user-guide h3 {
+        font-size: 1.2rem;
+        margin-top: 1.75rem;
+    }
+
+    .user-guide h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1.25rem;
+        color: #495057;
+    }
+
+    .user-guide hr {
+        margin: 2rem 0;
+    }
+
+    .user-guide code {
+        background: #f8f9fa;
+        padding: .1rem .3rem;
+        border-radius: .2rem;
+        color: #d63384;
+    }
+
+    .user-guide pre {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: .375rem;
+        padding: .75rem 1rem;
+        overflow-x: auto;
+    }
+
+    .user-guide pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+    }
+
+    .user-guide blockquote {
+        border-left: .25rem solid #dee2e6;
+        padding-left: 1rem;
+        color: #6c757d;
+    }
+
+    /* ---- Markdown tables, styled like .table.table-sm.table-striped ---- */
+    .user-guide table {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        font-size: .9375rem;
+        vertical-align: top;
+        border-color: #dee2e6;
+    }
+
+    .user-guide th,
+    .user-guide td {
+        padding: .3rem .5rem;
+        border-bottom: 1px solid #dee2e6;
+        text-align: left;
+    }
+
+    .user-guide thead th {
+        border-bottom: 2px solid #dee2e6;
+        background: #f8f9fa;
+        white-space: nowrap;
+    }
+
+    .user-guide tbody tr:nth-of-type(odd) td {
+        background: rgba(0, 0, 0, .03);
+    }
+
+    @media (max-width: 991.98px) {
+        /* Wide tables scroll instead of stretching the page. */
+        .user-guide table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+
+    /* ---- Print --------------------------------------------------------- */
+    @media print {
+        .navbar,
+        footer,
+        .user-guide-toc-col,
+        .user-guide-back-to-top {
+            display: none !important;
+        }
+
+        .user-guide {
+            max-width: none;
+        }
+
+        .user-guide h2,
+        .user-guide h3 {
+            page-break-after: avoid;
+        }
+
+        .user-guide table,
+        .user-guide pre {
+            page-break-inside: avoid;
+        }
+
+        a[href^="http"]::after {
+            content: " (" attr(href) ")";
+            font-size: .8em;
+            word-break: break-all;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4" id="user-guide-top">
+    <aside class="col-lg-4 col-xl-3 order-1 order-lg-2 user-guide-toc-col">
+        <nav class="user-guide-toc" aria-label="Guide contents">
+            <p class="h6 text-uppercase text-muted small mb-2">On this page</p>
+            {{ guide_toc }}
+        </nav>
+    </aside>
+
+    <div class="col-lg-8 col-xl-9 order-2 order-lg-1">
+        <article class="user-guide">
+            {{ guide_html }}
+        </article>
+
+        <p class="user-guide-back-to-top mt-4 pt-3 border-top">
+            <a href="#user-guide-top"><i class="bi bi-arrow-up-short"></i> Back to top</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

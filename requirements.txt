@@ -43,3 +43,6 @@ crispy-bootstrap5>=2.0
 
 # Email
 django-anymail[brevo]>=10.2
+
+# User guide rendering (docs/USER_GUIDE.md -> /help/user-guide/)
+Markdown>=3.6,<4

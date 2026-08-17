@@ -1,3 +1,10 @@
+<!--
+This file is the single source of truth for the end-user guide. It is
+rendered live in the portal at /help/user-guide/ (core.views.user_guide),
+so keep it self-contained: only `#anchor` links and absolute URLs -- no
+images, no relative links to other docs.
+-->
+
 # ReDIB COA Portal - User Guide
 
 **Version 1.2** | **Last Updated: April 2026**
