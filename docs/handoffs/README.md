@@ -15,3 +15,4 @@ Currently on branches (not yet on `main`):
 
 - `marketing-site.md` — `feature/marketing-site`, parked 2026-08-17.
 - `help-guide.md` — `feature/help-guide`, active since 2026-08-17 (user guide as a live portal page).
+- `public-calls.md` — `feature/public-calls`, active since 2026-08-17 (announced calls + public equipment consult).
