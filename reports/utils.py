@@ -93,7 +93,7 @@ def generate_call_report_excel(call):
     ])
 
     for allocation in call.equipment_allocations.select_related('equipment__node').all():
-        total_approved = allocation.total_approved_hours  # Sum of hours_requested from accepted apps
+        total_approved = allocation.total_approved_hours
 
         ws3.append([
             allocation.equipment.name,

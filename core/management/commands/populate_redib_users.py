@@ -36,6 +36,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Mark users not in TSV as inactive (is_active=False)'
         )
+        parser.add_argument(
+            '--dry-run',
+            action='store_true',
+            help='Print the per-field diff this run would apply, without writing anything'
+        )
 
     def load_users_from_csv(self, csv_path):
         """Load user data from TSV file."""
@@ -90,6 +95,35 @@ class Command(BaseCommand):
         Only the literal TRUE / 1 / YES (case-insensitive) flips to True."""
         return (value or '').strip().upper() in ('TRUE', '1', 'YES')
 
+    @staticmethod
+    def _diff_fields(existing_obj, new_values):
+        """Return {field: (old, new)} for fields where new_values differs
+        from the current value on existing_obj."""
+        diffs = {}
+        for field, new_value in new_values.items():
+            old_value = getattr(existing_obj, field)
+            if old_value != new_value:
+                diffs[field] = (old_value, new_value)
+        return diffs
+
+    @staticmethod
+    def _describe_role_change(user, role_name, node, role_areas):
+        """Describe what a UserRole write would do, without writing it.
+
+        Returns None if the role already exists with matching areas/is_active.
+        """
+        if user is None:
+            return 'would create (new user)'
+        existing = UserRole.objects.filter(user=user, role=role_name, node=node).first()
+        if existing is None:
+            return 'would create'
+        changes = []
+        if existing.areas != role_areas:
+            changes.append(f'areas: {existing.areas!r} -> {role_areas!r}')
+        if not existing.is_active:
+            changes.append('is_active: False -> True')
+        return f"would update ({', '.join(changes)})" if changes else None
+
     def parse_roles(self, roles_string):
         """
         Parse roles string into list of (role, node_code) tuples.
@@ -138,18 +172,23 @@ class Command(BaseCommand):
 
         csv_path = options['tsv']
         sync_mode = options['sync']
+        dry_run = options['dry_run']
 
         self.stdout.write(f'Loading user data from: {csv_path}')
+        if dry_run:
+            self.stdout.write(self.style.WARNING('Dry run: no changes will be written.'))
         if sync_mode:
             self.stdout.write(self.style.WARNING('Sync mode enabled: Will mark orphaned users as inactive'))
 
         # Load user data from TSV
         users_data = self.load_users_from_csv(csv_path)
+        tsv_emails = {u['email'] for u in users_data}
 
         created_count = 0
         updated_count = 0
+        unchanged_count = 0
         roles_created_count = 0
-        processed_user_ids = set()  # Track user IDs processed from TSV
+        roles_changed_count = 0
 
         for user_data in users_data:
             email = user_data['email']
@@ -169,50 +208,72 @@ class Command(BaseCommand):
                         f'or fix the TSV.'
                     )
 
-            # Get or create user
-            user, user_created = User.objects.update_or_create(
-                email=email,
-                defaults={
-                    'first_name': user_data['first_name'],
-                    'last_name': user_data['last_name'],
-                    'organization': organization,
-                    'orcid': user_data['orcid'],
-                    'phone': user_data['phone'],
-                    'position': user_data['position'],
-                    'is_staff': user_data['is_staff'],
-                    'is_active': user_data['is_active'],
-                    'auto_data_consent': user_data['auto_data_consent'],
-                }
-            )
+            new_field_values = {
+                'first_name': user_data['first_name'],
+                'last_name': user_data['last_name'],
+                'organization': organization,
+                'orcid': user_data['orcid'],
+                'phone': user_data['phone'],
+                'position': user_data['position'],
+                'is_staff': user_data['is_staff'],
+                'is_active': user_data['is_active'],
+                'auto_data_consent': user_data['auto_data_consent'],
+            }
 
-            # Always set password so all loaded users have a known password
-            user.set_password('changeme123')
-            user.save()
-
-            # Ensure allauth EmailAddress exists and is verified
-            EmailAddress.objects.update_or_create(
-                user=user,
-                email=email,
-                defaults={'verified': True, 'primary': True},
-            )
-
-            if user_created:
-                created_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'  ✓ Created: {email} ({user.get_full_name()})'
-                    )
-                )
+            if dry_run:
+                # Look, don't touch: diff against whatever's in the DB today.
+                user = User.objects.filter(email=email).first()
+                if user is None:
+                    created_count += 1
+                    self.stdout.write(self.style.SUCCESS(f'  + Would create: {email}'))
+                    for field, value in new_field_values.items():
+                        self.stdout.write(f'      {field}: {value!r}')
+                    self.stdout.write('      password: set to default (new user)')
+                else:
+                    diffs = self._diff_fields(user, new_field_values)
+                    if diffs:
+                        updated_count += 1
+                        self.stdout.write(self.style.WARNING(f'  ~ Would update: {email}'))
+                        for field, (old, new) in diffs.items():
+                            self.stdout.write(f'      {field}: {old!r} -> {new!r}')
+                    else:
+                        unchanged_count += 1
+                        self.stdout.write(f'  = Unchanged: {email}')
+                    self.stdout.write('      password: left unchanged (existing user)')
             else:
-                updated_count += 1
-                self.stdout.write(
-                    self.style.WARNING(
-                        f'  ↻ Updated: {email} ({user.get_full_name()})'
-                    )
+                # Get or create user
+                user, user_created = User.objects.update_or_create(
+                    email=email,
+                    defaults=new_field_values,
                 )
 
-            # Track this user as processed
-            processed_user_ids.add(user.id)
+                # Only set the default password for brand-new users — an
+                # existing user keeps whatever password they set themselves.
+                if user_created:
+                    user.set_password('changeme123')
+                    user.save()
+
+                # Ensure allauth EmailAddress exists and is verified
+                EmailAddress.objects.update_or_create(
+                    user=user,
+                    email=email,
+                    defaults={'verified': True, 'primary': True},
+                )
+
+                if user_created:
+                    created_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f'  ✓ Created: {email} ({user.get_full_name()})'
+                        )
+                    )
+                else:
+                    updated_count += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'  ↻ Updated: {email} ({user.get_full_name()})'
+                        )
+                    )
 
             # Validate areas from the separate `areas` column.
             # Convention: areas apply ONLY to the evaluator role. They are stored on
@@ -252,25 +313,33 @@ class Command(BaseCommand):
 
                 # Areas only apply to the evaluator role
                 role_areas = user_areas if role_name == 'evaluator' else ''
+                node_info = f" at {node.code}" if node else ""
+                area_info = f" ({role_areas})" if role_areas else ""
 
-                # Create or update user role
-                role, role_created = UserRole.objects.update_or_create(
-                    user=user,
-                    role=role_name,
-                    node=node,
-                    defaults={
-                        'areas': role_areas,
-                        'is_active': True,
-                    }
-                )
-
-                if role_created:
-                    roles_created_count += 1
-                    node_info = f" at {node.code}" if node else ""
-                    area_info = f" ({role_areas})" if role_areas else ""
-                    self.stdout.write(
-                        f'    → Role: {role_name}{node_info}{area_info}'
+                if dry_run:
+                    change = self._describe_role_change(user, role_name, node, role_areas)
+                    if change:
+                        roles_changed_count += 1
+                        self.stdout.write(
+                            f'    → Role {role_name}{node_info}{area_info}: {change}'
+                        )
+                else:
+                    # Create or update user role
+                    role, role_created = UserRole.objects.update_or_create(
+                        user=user,
+                        role=role_name,
+                        node=node,
+                        defaults={
+                            'areas': role_areas,
+                            'is_active': True,
+                        }
                     )
+
+                    if role_created:
+                        roles_created_count += 1
+                        self.stdout.write(
+                            f'    → Role: {role_name}{node_info}{area_info}'
+                        )
 
         # Handle sync mode: Mark orphaned users as inactive
         deactivated_count = 0
@@ -278,21 +347,26 @@ class Command(BaseCommand):
             self.stdout.write('\n' + '-' * 60)
             self.stdout.write('Checking for orphaned users (in DB but not in TSV)...')
 
-            # Find all users not in the processed set, excluding superusers
-            orphaned_users = User.objects.exclude(id__in=processed_user_ids).filter(
+            # Any active, non-superuser account whose email isn't in this TSV
+            orphaned_users = User.objects.exclude(email__in=tsv_emails).filter(
                 is_active=True,
                 is_superuser=False
             )
 
             for user in orphaned_users:
-                user.is_active = False
-                user.save()
-                deactivated_count += 1
-                self.stdout.write(
-                    self.style.WARNING(
-                        f'  ⊗ Deactivated: {user.email} ({user.get_full_name()}) (not in TSV)'
+                if dry_run:
+                    self.stdout.write(
+                        f'  - Would deactivate: {user.email} ({user.get_full_name()}) (not in TSV)'
                     )
-                )
+                else:
+                    user.is_active = False
+                    user.save()
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'  ⊗ Deactivated: {user.email} ({user.get_full_name()}) (not in TSV)'
+                        )
+                    )
+                deactivated_count += 1
 
             if deactivated_count == 0:
                 self.stdout.write(self.style.SUCCESS('  ✓ No orphaned users found'))
@@ -301,15 +375,21 @@ class Command(BaseCommand):
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write(
             self.style.SUCCESS(
-                f'User population complete!'
+                'Dry run complete — nothing was written.' if dry_run else 'User population complete!'
             )
         )
-        self.stdout.write(f'  Users created: {created_count}')
-        self.stdout.write(f'  Users updated: {updated_count}')
+        self.stdout.write(f'  Users to create: {created_count}' if dry_run else f'  Users created: {created_count}')
+        self.stdout.write(f'  Users to update: {updated_count}' if dry_run else f'  Users updated: {updated_count}')
+        if dry_run:
+            self.stdout.write(f'  Users unchanged: {unchanged_count}')
         if sync_mode and deactivated_count > 0:
-            self.stdout.write(f'  Users deactivated: {deactivated_count}')
-        self.stdout.write(f'  Total users: {created_count + updated_count}')
-        self.stdout.write(f'  Roles assigned: {roles_created_count}')
-        if created_count > 0:
+            label = 'Users that would be deactivated' if dry_run else 'Users deactivated'
+            self.stdout.write(f'  {label}: {deactivated_count}')
+        self.stdout.write(f'  Total users in TSV: {created_count + updated_count + unchanged_count}')
+        if dry_run:
+            self.stdout.write(f'  Roles that would change: {roles_changed_count}')
+        else:
+            self.stdout.write(f'  Roles assigned: {roles_created_count}')
+        if created_count > 0 and not dry_run:
             self.stdout.write('\n' + self.style.WARNING('Note: New users have default password "changeme123"'))
         self.stdout.write('=' * 60 + '\n')

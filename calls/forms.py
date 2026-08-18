@@ -15,7 +15,7 @@ class CallForm(forms.ModelForm):
     class Meta:
         model = Call
         fields = [
-            'code', 'title', 'status', 'description', 'guidelines',
+            'code', 'title', 'description', 'guidelines',
             'submission_start', 'submission_end', 'evaluation_deadline',
             'execution_start', 'execution_end'
         ]
@@ -50,7 +50,6 @@ class CallForm(forms.ModelForm):
             }),
             'code': forms.TextInput(attrs={'class': 'form-control'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def clean(self):
