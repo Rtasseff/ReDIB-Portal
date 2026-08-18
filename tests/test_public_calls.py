@@ -762,3 +762,99 @@ class ConsultMiddlewareExemptionTests(TestCase):
 
         self.assertRedirects(response, reverse('core:profile'),
                              fetch_redirect_response=False)
+
+
+@override_settings(
+    STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage'
+)
+class CallStatusNotEditableTests(TestCase):
+    """#27 — `status` must not be settable through `CallForm`.
+
+    The 2026-08-18 production walkthrough found that hand-setting it created
+    states no guard catches: `announced` that can never send its announcement
+    (the Announce action requires `draft`), and `open` with a future
+    `submission_start`, which falls out of both public querysets while staying
+    live at its direct URL. Transitions belong to the guarded action views.
+    """
+
+    def _form_data(self, call, **overrides):
+        data = {
+            'code': call.code,
+            'title': call.title,
+            'description': call.description,
+            'guidelines': call.guidelines,
+            'submission_start': call.submission_start.strftime('%Y-%m-%dT%H:%M'),
+            'submission_end': call.submission_end.strftime('%Y-%m-%dT%H:%M'),
+            'evaluation_deadline': call.evaluation_deadline.strftime('%Y-%m-%dT%H:%M'),
+            'execution_start': call.execution_start.strftime('%Y-%m-%dT%H:%M'),
+            'execution_end': call.execution_end.strftime('%Y-%m-%dT%H:%M'),
+        }
+        data.update(overrides)
+        return data
+
+    def test_status_is_not_a_form_field(self):
+        from calls.forms import CallForm
+        self.assertNotIn('status', CallForm().fields)
+
+    def test_smuggled_status_is_ignored_on_edit(self):
+        from calls.forms import CallForm
+        call, _, _ = _make_call(status='announced', code='COA-STATUS-1')
+        form = CallForm(data=self._form_data(call, status='open'), instance=call)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        call.refresh_from_db()
+        self.assertEqual(call.status, 'announced')
+
+    def test_smuggled_status_is_ignored_on_create(self):
+        from calls.forms import CallForm
+        template, _, _ = _make_call(status='draft', code='COA-STATUS-2')
+        data = self._form_data(template, code='COA-STATUS-3', status='open')
+        form = CallForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
+        created = form.save()
+        self.assertEqual(created.status, 'draft')
+
+
+@override_settings(
+    STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage'
+)
+class TotalApprovedHoursTests(TestCase):
+    """#33 — the "Total Approved Hours" figure summed `hours_requested`.
+
+    On REDIB-2601 that reported 2,176 h against a true 1,991 h. Approved
+    hours are the truth; requested is only a fallback for a line the node has
+    not resolved yet.
+    """
+
+    def setUp(self):
+        from decimal import Decimal
+        from applications.models import Application, RequestedAccess
+
+        self.call, equipment, coordinators = _make_call(
+            status='closed', code='COA-HOURS-1', num_nodes=2,
+        )
+        self.equipment = equipment
+        application = Application.objects.create(
+            applicant=coordinators[0], call=self.call, code='COA-HOURS-1-001',
+            brief_description='hours test', status='accepted',
+            resolution='accepted', applicant_email='a@test.com',
+        )
+        # Resolved line: 40 h asked, 25 h granted.
+        RequestedAccess.objects.create(
+            application=application, equipment=equipment[0],
+            hours_requested=Decimal('40'), hours_approved=Decimal('25'),
+        )
+        # Unresolved line: nothing granted yet, so requested stands in.
+        RequestedAccess.objects.create(
+            application=application, equipment=equipment[1],
+            hours_requested=Decimal('10'),
+        )
+
+    def test_call_total_uses_approved_hours(self):
+        from decimal import Decimal
+        self.assertEqual(self.call.total_approved_hours, Decimal('35'))
+
+    def test_allocation_total_uses_approved_hours(self):
+        from decimal import Decimal
+        allocation = self.call.equipment_allocations.get(equipment=self.equipment[0])
+        self.assertEqual(allocation.total_approved_hours, Decimal('25'))
