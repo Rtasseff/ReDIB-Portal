@@ -781,19 +781,22 @@ def application_submit(request, pk):
         current_nodes.add(access_request.equipment.node)
 
     # Ensure a feasibility review exists for each current node
-    # (handles both first submission and resubmission with potentially changed nodes)
+    # (handles both first submission and resubmission with potentially changed nodes).
+    # `reviewer` is just the deterministic default assignee (first by pk) —
+    # any active node coordinator for the node can act on the review; see
+    # feasibility_review()'s node-role authorization check below.
     for node in current_nodes:
-        coord = UserRole.objects.filter(
+        node_coordinators = list(UserRole.objects.filter(
             node=node,
             role='node_coordinator',
             is_active=True
-        ).select_related('user').first()
+        ).select_related('user').order_by('pk'))
 
-        if coord:
+        if node_coordinators:
             FeasibilityReview.objects.get_or_create(
                 application=application,
                 node=node,
-                defaults={'reviewer': coord.user}
+                defaults={'reviewer': node_coordinators[0].user}
             )
 
     # Reset all reviews to pending (covers both new reviews and any from a prior submission cycle)
@@ -820,25 +823,33 @@ def application_submit(request, pk):
             related_application_id=application.id
         )
 
-        # Send feasibility request emails
+        # Send feasibility request emails to every active node coordinator of
+        # each node under review, not just the review's default assignee.
         for review in application.feasibility_reviews.all():
             # Build absolute URL for the review
             review_url = request.build_absolute_uri(
                 reverse('applications:feasibility_review', kwargs={'pk': review.pk})
             )
 
-            send_email_from_template.delay(
-                template_type='feasibility_request',
-                recipient_email=review.reviewer.email,
-                context_data={
-                    'reviewer_name': review.reviewer.get_full_name(),
-                    'application_code': application.code,
-                    'node_name': review.node.name,
-                    'review_url': review_url,
-                },
-                recipient_user_id=review.reviewer.id,
-                related_application_id=application.id
-            )
+            node_coordinators = UserRole.objects.filter(
+                node=review.node,
+                role='node_coordinator',
+                is_active=True
+            ).select_related('user').order_by('pk')
+
+            for coord_role in node_coordinators:
+                send_email_from_template.delay(
+                    template_type='feasibility_request',
+                    recipient_email=coord_role.user.email,
+                    context_data={
+                        'reviewer_name': coord_role.user.get_full_name(),
+                        'application_code': application.code,
+                        'node_name': review.node.name,
+                        'review_url': review_url,
+                    },
+                    recipient_user_id=coord_role.user.id,
+                    related_application_id=application.id
+                )
         email_status = "You will receive confirmation by email."
     except Exception as e:
         # Celery/Redis not available - log and continue
