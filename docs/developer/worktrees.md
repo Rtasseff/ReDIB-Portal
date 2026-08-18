@@ -81,15 +81,35 @@ matched to risk, not two:
 | Change | Review |
 |---|---|
 | Docs, copy, small UI | Read the diff; run the suite. No automated review. |
-| Ordinary features | Run the suite; targeted read of the risky files (permissions, queries, emails). No multi-agent review. |
-| Public/anonymous surfaces, auth or permission changes, migrations that touch prod data, email fan-out, money/hours accounting | **One** `/code-review` at *medium*, run **by the branch session on its own branch before opening the PR** (it's on the cheaper model; findings and fixes land in the PR). The handoff session then reads only what was flagged plus the security-critical paths. |
+| Ordinary features | Run the suite; targeted read of the risky files (permissions, queries, emails). |
+| Public/anonymous surfaces, auth or permission changes, migrations that touch prod data, email fan-out, money/hours accounting | **One** `/code-review` at *medium*, ideally run **by the branch session on its own branch before opening the PR** so findings and fixes land in the PR. The handoff session then reads only what was flagged plus the security-critical paths. |
 
-**Never fan out subagents from the handoff session** — they run on its
-(top-tier) model and a single high-effort review can eat a large slice of
-the weekly budget (2026-08-18: ~20% in one afternoon). Do not run a manual
-full-diff read *and* a multi-agent review on the same PR. A completed human click-through counts as evidence — lean lighter, not
-heavier, when it's been done. Always: `manage.py check`,
-`makemigrations --check`, full suite not worse than the recorded baseline.
+Always: `manage.py check`, `makemigrations --check`, full suite not worse
+than the recorded baseline. Never run a manual full-diff read **and** an
+automated review on the same PR — pick one. A completed human click-through
+counts as evidence; lean lighter, not heavier, when it has been done.
+
+### Cost control when fanning out subagents
+
+Subagents themselves are not the expensive part — each starts with a fresh,
+narrow context instead of the handoff session's accumulated one, which often
+makes a focused subagent *cheaper* than doing the same read inline. What
+costs is the combination: top-tier model × high effort × unbounded scope ×
+several at once, running for tens of minutes. (2026-08-18: a single
+`/code-review` at *high* launched from the handoff session ate roughly 20% of
+the weekly budget in one afternoon.)
+
+So set the knobs deliberately rather than avoiding the tool:
+
+- **Model and effort explicit, not inherited.** Sonnet or Haiku at
+  low/medium handles "check X in file Y" fine. Keep the session's top-tier
+  model for the judgement calls you make yourself.
+- **One narrow question per agent, naming the files.** "Audit this PR" is
+  what turns into a ten-minute run; "does `_cache_get` fail open when Redis
+  is down?" does not.
+- **Bounded count and bounded scope** — a handful of targeted agents, not a
+  dozen open-ended ones, unless the work genuinely is that wide.
+- **Not stacked on top of a full manual read.** One layer, per the table.
 
 ## Creating a bucket
 
