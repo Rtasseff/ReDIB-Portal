@@ -56,11 +56,16 @@ here (see `docs/developer/worktrees.md`).
 ## Return protocol
 
 1. Keep this doc's **Status** current; note anything you deviated from.
-2. Run the relevant tests (`python manage.py test <apps>`) and `python manage.py check`.
-3. Push the branch and open a PR against `main`; put the summary in the PR body
-   and reference this doc.
-4. The handoff session reviews/merges and updates the registry in
-   `docs/developer/worktrees.md`.
+2. `python manage.py check`; `python manage.py makemigrations --check`;
+   full suite `python manage.py test tests` — record the pass/fail counts
+   against the baseline you took before starting (do not make it worse).
+3. Push the branch and open a PR against `main`. PR body = the review
+   packet: what changed and why, deviations from this brief, the test
+   counts, anything user-facing (email wording, guide copy) quoted for
+   review, and any pre-existing bug you noticed but did not fix.
+4. The handoff session reviews proportionately to risk (see
+   `docs/developer/worktrees.md` § Review policy), merges, and updates the
+   registry.
 
 ## Running locally (this worktree)
 

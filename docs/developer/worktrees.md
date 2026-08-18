@@ -49,6 +49,46 @@ Rules that follow from this:
   intended context carrier — write it so a fresh session needs nothing
   else beyond `CLAUDE.md` and `docs/`.
 
+## When to use a worktree at all
+
+Not every task needs one. The handoff/worktree cycle costs a brief, a
+bootstrap, and a review; it pays off when the implementation is a real
+chunk of work that a fresh, cheaper session can run with. Rules of thumb:
+
+- **Inline on `main`, in the handoff session:** backlog edits, docs/copy
+  tweaks, one- or two-file fixes, anything under ~an hour. No branch, no
+  brief.
+- **Worktree bucket:** multi-file features, anything with a model/migration,
+  anything that will take a session hours, or work you want to hand to a
+  different model. One bucket = one coherent deliverable (it can have
+  phases inside).
+
+## Model split (why the briefs are as detailed as they are)
+
+Design and the handoff brief happen on the top-tier model in the handoff
+session; **branch sessions run on a cheaper model** (Opus today, Sonnet
+worth trying) — switch with `/model` after opening the session in the
+worktree. The brief is what makes that safe: it fixes the decisions so the
+implementer never has to re-derive them. If a cheaper implementer struggles,
+tighten the brief before reaching for a bigger model.
+
+## Review policy (proportionate — never pay twice)
+
+The branch agent already ran the suite and wrote a status log; the human
+usually did a click-through. The handoff-session review adds one layer
+matched to risk, not two:
+
+| Change | Review |
+|---|---|
+| Docs, copy, small UI | Read the diff; run the suite. No automated review. |
+| Ordinary features | Run the suite; targeted read of the risky files (permissions, queries, emails). No multi-agent review. |
+| Public/anonymous surfaces, auth or permission changes, migrations that touch prod data, email fan-out, money/hours accounting | **One** `/code-review` at *medium*; the reviewer reads only what it flags plus the security-critical paths. |
+
+Do not run a manual full-diff read *and* a multi-agent review on the same
+PR. A completed human click-through counts as evidence — lean lighter, not
+heavier, when it's been done. Always: `manage.py check`,
+`makemigrations --check`, full suite not worse than the recorded baseline.
+
 ## Creating a bucket
 
 From the `main` checkout, on a clean tree:
@@ -107,7 +147,6 @@ commit.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
-| `public-calls/` | `feature/public-calls` | 8003 | 2026-08-17 | **Active.** `announced` call status + Announce action + auto-open (backlog #24); public per-equipment "Request a consult" form, persisted + emailed to all NCs (backlog #25). Handoff: `docs/handoffs/public-calls.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 

@@ -1,5 +1,7 @@
 # Handoff — `feature/public-calls`
 
+> **Merged 2026-08-18** into `main` (`705552f`, PR #33) with four review fix-ups (`2ee0c7c`). Worktree and branch removed. Kept as a record.
+
 | | |
 |---|---|
 | Branch | `feature/public-calls` |

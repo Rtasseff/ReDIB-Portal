@@ -13,9 +13,9 @@ Conventions, registry of active worktrees, and lifecycle:
 
 Merged (kept as records):
 
+- `public-calls.md` — `feature/public-calls`, merged 2026-08-18 (PR #33): announced calls on `/calls/` + public per-equipment consult requests.
 - `help-guide.md` — `feature/help-guide`, merged 2026-08-17 (PR #32): user guide rendered live at `/help/user-guide/`.
 
 Currently on branches (not yet on `main`):
 
 - `marketing-site.md` — `feature/marketing-site`, parked 2026-08-17.
-- `public-calls.md` — `feature/public-calls`, active since 2026-08-17 (announced calls + public equipment consult).
