@@ -351,8 +351,8 @@ Update on every merge, in the same commit as the registry change.
 
 | Bucket | Cut | Merged | Deployed | Notes |
 |---|---|---|---|---|
-| `baseline` | 2026-08-18 | | | **Branch done 2026-08-18, PR #35 open, awaiting handoff review.** Merge first — it is the green-suite measuring stick and two buckets are cut from it. |
-| `call-hardening` | 2026-08-18 | | | **Branch done 2026-08-18, PR #34 open, awaiting handoff review.** Rebase on `main` after `baseline` merges. Carries #27, which prod raised to High on 2026-08-18. |
+| `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | | Suite green: **173 tests, 0 failures** — that is the number later buckets measure against. Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
+| `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`: `feasibility_reminder` still emails only the original assignee. |
 | `closeout` | | | | cut once `baseline` merges |
 | `eval-reminders` | | | | cut once `closeout` merges |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
@@ -360,3 +360,10 @@ Update on every merge, in the same commit as the registry change.
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
 2026-08-18.
+
+**Waiting on the next deploy** (`main` as of 2026-08-18, after PRs #34 + #35):
+#27, #31, #33, #13-min, #9, the `resolution_accepted` template guard, and
+`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`. Two of those need a follow-up on
+prod after the deploy — the template guard only takes effect once
+`seed_email_templates` re-runs (the entrypoint does it), and the waitlist
+`hours_approved` backfill needs real figures from the node coordinators.
