@@ -939,6 +939,7 @@ Please do not reply to this email.
 
             {% if resolution_comments %}<p>{{ resolution_comments }}</p>{% endif %}
 
+            {% if acceptance_deadline %}
             <h3>Next Step: Accept or Decline Access</h3>
             <p>You have until <strong>{{ acceptance_deadline|date:"F d, Y" }}</strong> to respond.</p>
 
@@ -949,6 +950,11 @@ Please do not reply to this email.
             <p><small>Or copy this link into your browser: {{ accept_url }}</small></p>
 
             <p><em>If you do not respond by the deadline, your access will expire automatically.</em></p>
+            {% else %}
+            <p>You have already accepted this access, so there is nothing further
+            to confirm. Your node coordinator will be in touch to arrange dates —
+            see the separate hand-off email for the equipment and contact details.</p>
+            {% endif %}
 
             <p>Best regards,<br>
             ReDIB COA Team</p>
@@ -972,13 +978,17 @@ Hours Approved: {{ hours_approved }} hours
 
 {{ resolution_comments }}
 
-Next Step: Accept or Decline Access
+{% if acceptance_deadline %}Next Step: Accept or Decline Access
 You have until {{ acceptance_deadline|date:"F d, Y" }} to respond.
 
 Please visit the following link to accept or decline:
 {{ accept_url }}
 
 If you do not respond by the deadline, your access will expire automatically.
+{% else %}You have already accepted this access, so there is nothing further to
+confirm. Your node coordinator will be in touch to arrange dates - see the
+separate hand-off email for the equipment and contact details.
+{% endif %}
 
 Best regards,
 ReDIB COA Team''',

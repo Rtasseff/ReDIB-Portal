@@ -1517,6 +1517,12 @@ def promote_waitlisted_application(request, pk):
     # promotion is the moment this application's resolution actually becomes
     # "accepted" — send the same resolution_accepted notification a
     # directly-accepted applicant gets, then the handoff email.
+    # NB: `acceptance_deadline` is None three lines above, so
+    # send_single_resolution_notification_task leaves acceptance_deadline /
+    # accept_url out of the context. The resolution_accepted template guards
+    # its "Next Step: Accept or Decline" block on that, precisely so this
+    # path doesn't mail a blank deadline and an empty link to someone who
+    # accepted weeks ago.
     import logging
     from applications.services import NodeResolutionService
     log = logging.getLogger(__name__)
