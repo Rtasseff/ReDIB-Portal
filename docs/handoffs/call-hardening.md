@@ -114,13 +114,54 @@ Settled in the round plan — implement these, don't re-litigate:
 ## Status
 
 <!-- Keep this current. Checklist + short dated notes. -->
-- [ ] Baseline recorded (`python manage.py test tests` before any change)
-- [ ] #27 — committed **on its own, first** (see below)
-- [ ] #33 — approved-hours figures agree across page, admin, report
-- [ ] #13 — password-on-create-only + `--dry-run`
-- [ ] #9 — feasibility fan-out (+ authorization check)
-- [ ] Rebased on `main` after `baseline` merged
-- [ ] `check` + `makemigrations --check` clean, suite not worse
+- [x] Baseline recorded (`python manage.py test tests` before any change): 145 tests, 7 failures / 2 errors — 2026-08-18. Pre-existing (test_phase7_acceptance x4, test_phase9_publications x2 errors, test_batch2_phase4 x1, test_design x2). Not caused by this branch; target is "not worse," not green (green comes after `baseline` merges).
+- [x] #27 — `CallForm.Meta.fields` and `call_form.html` no longer expose
+  `status`. Verified via test client: rendered edit form has no `status`
+  input, and POSTing a raw `status=closed`/`status=open` field is ignored
+  (call status unchanged); a fresh call still lands in `draft` even when
+  `status=open` is smuggled into the create POST. **Committed on its own,
+  first**, per the note below — 2026-08-18.
+- [x] #33 — `Call.total_approved_hours`, `CallEquipmentAllocation.total_approved_hours`
+  (`calls/models.py`) now `Sum(Coalesce('hours_approved', 'hours_requested'))`
+  instead of summing `hours_requested`. `reports/utils.py` Equipment Summary
+  sheet calls the same (now-fixed) property, so it agrees automatically; its
+  stale comment acknowledging the bug is removed. No template changes needed —
+  `templates/calls/detail.html` and the admin only ever showed one number
+  (mislabeled "Total Approved Hours"), so fixing the property doesn't drop any
+  information that was actually being shown. Verified the aggregate logic
+  with a rolled-back transaction (partial-approval row correctly changes the
+  total); could not reproduce the exact 1,991h/310h REDIB-2601 figures
+  locally since that data isn't in this worktree's dev DB — logic is
+  verified, not the literal prod numbers.
+- [x] #13 — `core/management/commands/populate_redib_users.py`: (a)
+  `set_password('changeme123')` now only runs when `update_or_create` reports
+  `user_created`; existing users keep their password across re-runs. (b)
+  added `--dry-run`, which diffs TSV values against the DB per field (and per
+  role) and writes nothing — validated end-to-end in a rolled-back
+  transaction (create shows full field dump, drifted field shows old→new,
+  unchanged user shows nothing, `--sync --dry-run` lists would-be
+  deactivations without touching `is_active`). Orphan detection in `--sync`
+  now matches by email instead of by id, so it works the same in dry-run and
+  real runs.
+- [x] #9 — `applications/views.py` `application_submit`: feasibility request
+  emails now go to every active `node_coordinator` of each node (not just
+  `review.reviewer`); the assignee stored on the single `FeasibilityReview`
+  row is deterministic (`order_by('pk')`, first active coordinator). **No
+  authorization change was needed** — `feasibility_queue` and
+  `feasibility_review` already authorize by node role
+  (`UserRole(role='node_coordinator', node=review.node, is_active=True)`),
+  not by `review.reviewer == request.user`, and `feasibility_review already
+  reassigns `review.reviewer = request.user` on save — so "whoever acts first
+  claims it" already worked. `applications/tasks.py`'s `feasibility_reminder`
+  was left untouched per the conflict watchlist (owned by `closeout`), so the
+  *reminder* email for an unclaimed review still goes only to the original
+  assignee, not the full fan-out — noted for the handoff session, not fixed
+  here.
+- [ ] Rebase on `main` after `baseline` merges — not yet needed, `baseline`
+  hasn't merged as of 2026-08-18; revisit before opening the PR.
+- [x] `check` + `makemigrations --check` clean, suite not worse: 145 tests,
+  7 failures / 2 errors — identical to the pre-change baseline recorded
+  above (same test names, no new failures).
 - [ ] PR opened
 
 **#27 ships as its own commit, first.** It gates the ~2026-09-15 announce; if
@@ -133,6 +174,15 @@ that single commit and ships it alone. Keep it clean and self-contained.
 - **When is the next production user load?** #13's deadline is "before the
   next time `populate_redib_users` runs against prod", which is likely part of
   preparing the new call. Ryan to confirm; assume before 2026-10-13.
+- **#9 leftover: `feasibility_reminder` in `applications/tasks.py` still
+  emails only `review.reviewer`, not the full node-coordinator fan-out.**
+  Left alone because this branch is barred from touching `applications/tasks.py`
+  (owned by `closeout`). Once `closeout` merges or releases that file, worth a
+  follow-up so the reminder matches the initial-request fan-out — otherwise a
+  node with multiple coordinators only nags the original assignee, not the
+  others, on stale pending reviews. Not blocking for October; parking here
+  rather than the backlog since it's a direct consequence of this bucket's
+  scope line, not a new discovery.
 
 ## Return protocol
 
