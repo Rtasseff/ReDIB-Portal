@@ -162,7 +162,7 @@ Settled in the round plan — implement these, don't re-litigate:
 - [x] `check` + `makemigrations --check` clean, suite not worse: 145 tests,
   7 failures / 2 errors — identical to the pre-change baseline recorded
   above (same test names, no new failures).
-- [ ] PR opened
+- [x] PR opened: https://github.com/Rtasseff/ReDIB-Portal/pull/34
 
 **#27 ships as its own commit, first.** It gates the ~2026-09-15 announce; if
 this bucket looks like missing 2026-09-08, the handoff session cherry-picks
