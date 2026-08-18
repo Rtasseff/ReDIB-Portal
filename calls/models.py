@@ -6,6 +6,7 @@ import hashlib
 
 from django.conf import settings
 from django.db import models
+from django.db.models.functions import Coalesce
 from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
 from core.models import Equipment
@@ -95,13 +96,17 @@ class Call(models.Model):
 
     @property
     def total_approved_hours(self):
-        """Calculate total approved hours across all equipment in this call"""
+        """Sum of hours actually approved across all equipment in this call.
+
+        Falls back to hours_requested only for lines not yet resolved
+        (hours_approved still null).
+        """
         from applications.models import RequestedAccess
         return RequestedAccess.objects.filter(
             application__call=self,
             application__resolution='accepted'
         ).aggregate(
-            total=models.Sum('hours_requested')
+            total=models.Sum(Coalesce('hours_approved', 'hours_requested'))
         )['total'] or 0
 
 
@@ -134,14 +139,18 @@ class CallEquipmentAllocation(models.Model):
 
     @property
     def total_approved_hours(self):
-        """Calculate total approved hours for this equipment in this call"""
+        """Sum of hours actually approved for this equipment in this call.
+
+        Falls back to hours_requested only for lines not yet resolved
+        (hours_approved still null).
+        """
         from applications.models import RequestedAccess
         return RequestedAccess.objects.filter(
             equipment=self.equipment,
             application__call=self.call,
             application__resolution='accepted'
         ).aggregate(
-            total=models.Sum('hours_requested')
+            total=models.Sum(Coalesce('hours_approved', 'hours_requested'))
         )['total'] or 0
 
 
