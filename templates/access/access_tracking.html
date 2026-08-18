@@ -46,14 +46,9 @@
                                 <i class="bi bi-eye"></i> View
                             </a>
                             {% if app.status == 'pending' and app.accepted_by_applicant %}
-                                <form method="post" action="{% url 'applications:promote_waitlisted' app.pk %}"
-                                      class="d-inline"
-                                      onsubmit="return confirm('Promote {{ app.code }} from the waitlist to Accepted? The applicant will receive the acceptance email and the handoff email will go out to node coordinators.');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="bi bi-fast-forward"></i> Promote to Accepted
-                                    </button>
-                                </form>
+                                <a href="{% url 'applications:promote_waitlisted' app.pk %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-fast-forward"></i> Promote to Accepted
+                                </a>
                             {% elif app.status == 'accepted' and app.accepted_by_applicant and not app.is_completed %}
                                 <a href="{% url 'access:mark_complete' app.id %}" class="btn btn-sm btn-success">
                                     <i class="bi bi-check-circle"></i> Mark Complete + Log Hours

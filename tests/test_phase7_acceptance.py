@@ -15,6 +15,7 @@ from datetime import timedelta
 from applications.models import Application
 from applications.tasks import process_acceptance_deadlines
 from communications.models import EmailLog
+from core.test_utils import create_complete_user
 
 User = get_user_model()
 
@@ -29,11 +30,8 @@ class AcceptanceWorkflowTest(TestCase):
         self.client = Client()
 
         # Create test user
-        self.applicant = User.objects.create_user(
-            username='test_applicant',
-            email='applicant@test.com',
-            password='testpass123'
-        )
+        self.applicant = create_complete_user(
+            email='applicant@test.com', password='testpass123')
 
         # Create test call
         self.call = Call.objects.create(
@@ -216,11 +214,8 @@ class PhaseIntegrationTest(TestCase):
         from calls.models import Call
 
         # Create test user
-        applicant = User.objects.create_user(
-            username='test_applicant3',
-            email='applicant3@test.com',
-            password='testpass123'
-        )
+        applicant = create_complete_user(
+            email='applicant3@test.com', password='testpass123')
 
         # Create test call
         call = Call.objects.create(

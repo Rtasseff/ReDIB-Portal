@@ -16,6 +16,8 @@ from django.template.loader import get_template
 from pathlib import Path
 import os
 
+from core.test_utils import create_complete_user
+
 User = get_user_model()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -239,8 +241,7 @@ class DashboardPageRenderTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser', email='test@test.com', password='testpass123')
+        self.user = create_complete_user(email='test@test.com', password='testpass123')
         self.client.login(email='test@test.com', password='testpass123')
 
     def test_dashboard_renders(self):

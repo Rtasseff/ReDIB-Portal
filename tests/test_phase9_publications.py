@@ -15,6 +15,7 @@ from datetime import timedelta
 from applications.models import Application
 from access.models import Publication
 from access.tasks import send_publication_followups
+from core.test_utils import create_complete_user
 
 User = get_user_model()
 
@@ -28,11 +29,8 @@ class PublicationSubmissionTest(TestCase):
         self.client = Client()
 
         # Create test user
-        self.applicant = User.objects.create_user(
-            username='test_applicant',
-            email='applicant@test.com',
-            password='testpass123'
-        )
+        self.applicant = create_complete_user(
+            email='applicant@test.com', password='testpass123')
 
         # Create test call
         self.call = Call.objects.create(
@@ -59,13 +57,33 @@ class PublicationSubmissionTest(TestCase):
         )
 
     def test_applicant_can_submit_publication(self):
-        """Test applicant can submit a publication for their accepted application."""
+        """Test applicant can submit a publication for their completed application.
+
+        Publications can only be reported against completed applications (see
+        test_form_shows_only_completed_applications), so this uses a separate
+        completed application rather than self.application, which is
+        deliberately accepted-but-not-completed for that other test.
+        """
+        completed_application = Application.objects.create(
+            applicant=self.applicant,
+            call=self.call,
+            code='TEST-APP-001-COMPLETED',
+            brief_description='Completed test application',
+            status='completed',
+            resolution='accepted',
+            accepted_by_applicant=True,
+            accepted_at=timezone.now() - timedelta(days=185),
+            handoff_email_sent_at=timezone.now() - timedelta(days=185),
+            is_completed=True,
+            completed_at=timezone.now() - timedelta(days=10),
+        )
+
         self.client.force_login(self.applicant)
 
         response = self.client.post(
             '/access/publications/submit/',
             {
-                'application': self.application.pk,
+                'application': completed_application.pk,
                 'title': 'Novel Research Findings Using ReDIB',
                 'authors': 'Smith, J., Doe, A.',
                 'journal': 'Journal of Test Science',
@@ -80,7 +98,7 @@ class PublicationSubmissionTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
         # Check publication created
-        publication = Publication.objects.get(application=self.application)
+        publication = Publication.objects.get(application=completed_application)
         self.assertEqual(publication.title, 'Novel Research Findings Using ReDIB')
         self.assertEqual(publication.reported_by, self.applicant)
         self.assertTrue(publication.redib_acknowledged)
@@ -389,11 +407,8 @@ class PhaseIntegrationTest(TestCase):
         from calls.models import Call
 
         # Create test users
-        applicant = User.objects.create_user(
-            username='test_applicant4',
-            email='applicant4@test.com',
-            password='testpass123'
-        )
+        applicant = create_complete_user(
+            email='applicant4@test.com', password='testpass123')
 
         coordinator = User.objects.create_user(
             username='coordinator2',
@@ -426,9 +441,18 @@ class PhaseIntegrationTest(TestCase):
             handoff_email_sent_at=timezone.now() - timedelta(days=185)
         )
 
-        # 2. Follow-up task runs (would send email)
+        # 2. Follow-up task runs (would send email) — targets accepted apps,
+        # same population as the 'accepted' status set above.
         result = send_publication_followups()
         self.assertIn('1', result)  # 1 follow-up sent
+
+        # 2b. Applicant marks the application complete (reports actual hours
+        # used) — publications can only be reported against completed
+        # applications, so this has to happen before step 3.
+        application.status = 'completed'
+        application.is_completed = True
+        application.completed_at = timezone.now()
+        application.save()
 
         # 3. Applicant submits publication
         client = Client()

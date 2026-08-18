@@ -189,3 +189,81 @@ class PendingWaitlistLifecycleTest(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'pending')
+
+    def test_promote_get_shows_hours_confirmation_form(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.get(reverse('applications:promote_waitlisted',
+                             kwargs={'pk': self.application.pk}))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn(f'hours_approved_{self.equipment.id}', content)
+        self.assertIn('Scanner', content)
+
+    def test_promote_records_confirmed_hours(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.post(reverse('applications:promote_waitlisted',
+                              kwargs={'pk': self.application.pk}),
+                      {f'hours_approved_{self.equipment.id}': '5.5'})
+        self.assertEqual(resp.status_code, 302)
+        self.req.refresh_from_db()
+        self.assertEqual(self.req.hours_approved, Decimal('5.5'))
+
+    def test_promote_refused_when_all_hours_zero(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.post(reverse('applications:promote_waitlisted',
+                              kwargs={'pk': self.application.pk}),
+                      {f'hours_approved_{self.equipment.id}': '0'})
+        self.assertEqual(resp.status_code, 302)
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'pending',
+                         "Promotion must be refused when every line is 0 hours")
+
+    def test_promote_resolution_email_omits_accept_decline_block(self):
+        """The `resolution_accepted` email on promotion must not ask the
+        applicant to accept again.
+
+        Promotion clears `acceptance_deadline` (they accepted the waitlist
+        offer weeks ago), so `send_single_resolution_notification_task` leaves
+        `acceptance_deadline` / `accept_url` out of the context. Without a
+        guard in the template that renders as "You have until  to respond",
+        an empty link, and "your access will expire automatically" — sent to
+        someone whose access has just been confirmed.
+        """
+        # This module's `_seed_templates` installs stubs; the point of this
+        # test is the real template body, so seed the real ones over them.
+        from django.core.management import call_command
+        call_command('seed_email_templates', verbosity=0)
+
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        EmailLog.objects.all().delete()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.post(reverse('applications:promote_waitlisted',
+                              kwargs={'pk': self.application.pk}),
+                      {f'hours_approved_{self.equipment.id}': '5.5'})
+        self.assertEqual(resp.status_code, 302)
+
+        logs = list(EmailLog.objects.filter(
+            related_application_id=self.application.id,
+            template__template_type='resolution_accepted',
+        ))
+        self.assertTrue(logs, "promotion should still send resolution_accepted")
+        for log in logs:
+            for body in (log.html_content, log.text_content):
+                self.assertNotIn('Accept or Decline Access', body)
+                self.assertNotIn('will expire automatically', body)
+                self.assertIn('already accepted this access', body)
