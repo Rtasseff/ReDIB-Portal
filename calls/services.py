@@ -73,7 +73,12 @@ def open_announced_calls(request=None, send_emails=True):
     from .models import Call
 
     now = timezone.now()
-    due = list(Call.objects.filter(status='announced', submission_start__lte=now))
+    # Only calls whose window is *currently* open. An announced call whose end
+    # date has already passed (e.g. status edited by hand) must not fire the
+    # 'Now Open' email; _auto_close_expired_calls / check_call_deadlines close it.
+    due = list(Call.objects.filter(
+        status='announced', submission_start__lte=now, submission_end__gt=now,
+    ))
     if not due:
         return [], 0
 

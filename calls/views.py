@@ -43,7 +43,7 @@ def _auto_close_expired_calls():
     This ensures correct behavior even if Celery Beat is not running.
     """
     now = timezone.now()
-    expired = Call.objects.filter(status='open', submission_end__lt=now)
+    expired = Call.objects.filter(status__in=['open', 'announced'], submission_end__lt=now)
     count = expired.count()
     if count > 0:
         expired.update(status='closed')
@@ -137,19 +137,36 @@ def _client_ip(request):
     return request.META.get('REMOTE_ADDR', '')
 
 
+def _cache_get(key, default=None):
+    """cache.get that fails open: the cache is Redis in prod (shared with the
+    Celery broker); if it is down the consult form must still work."""
+    try:
+        return cache.get(key, default)
+    except Exception:
+        logger.warning("Consult rate-limit cache unavailable (get %s)", key)
+        return default
+
+
+def _cache_set(key, value, timeout):
+    try:
+        cache.set(key, value, timeout)
+    except Exception:
+        logger.warning("Consult rate-limit cache unavailable (set %s)", key)
+
+
 def _consult_ip_throttled(ip_hash):
     """True when this IP has already submitted its hourly allowance."""
     if not ip_hash:
         return False
     key = f'consult_rl:ip:{ip_hash}'
-    return (cache.get(key) or 0) >= CONSULT_MAX_PER_IP_PER_HOUR
+    return (_cache_get(key) or 0) >= CONSULT_MAX_PER_IP_PER_HOUR
 
 
 def _consult_record_submission(ip_hash):
     """Count one submission against the hourly allowance for this IP."""
     key = f'consult_rl:ip:{ip_hash}'
-    count = cache.get(key) or 0
-    cache.set(key, count + 1, 3600)
+    count = _cache_get(key) or 0
+    _cache_set(key, count + 1, 3600)
 
 
 def _consult_duplicate_key(ip_hash, call, equipment_ids):
@@ -191,7 +208,7 @@ def public_consult_request(request, pk):
             equipment = form.cleaned_data['equipment']
             duplicate_key = _consult_duplicate_key(ip_hash, call, [e.pk for e in equipment])
 
-            if ip_hash and cache.get(duplicate_key):
+            if ip_hash and _cache_get(duplicate_key):
                 messages.warning(
                     request,
                     "We already have that request — the node coordinator(s) have "
@@ -239,7 +256,7 @@ def public_consult_request(request, pk):
                 )
 
             if ip_hash:
-                cache.set(duplicate_key, True, CONSULT_DUPLICATE_WINDOW_SECONDS)
+                _cache_set(duplicate_key, True, CONSULT_DUPLICATE_WINDOW_SECONDS)
                 _consult_record_submission(ip_hash)
 
             request.session['consult_request_id'] = consult.pk
@@ -251,7 +268,7 @@ def public_consult_request(request, pk):
             initial['equipment'] = preselected
         if request.user.is_authenticated:
             initial.update({
-                'name': request.user.get_full_name() or '',
+                'name': f"{request.user.first_name} {request.user.last_name}".strip(),
                 'email': request.user.email,
                 'phone': request.user.phone,
                 'organization': (
@@ -531,7 +548,7 @@ def consult_requests(request, pk):
 
     ReDIB coordinators see every request; node coordinators see only the
     requests that involve equipment at one of their nodes (and only the
-    equipment of those nodes is highlighted in the table).
+    only requests touching those nodes are listed).
     """
     call = get_object_or_404(Call, pk=pk)
 
@@ -558,7 +575,6 @@ def consult_requests(request, pk):
         'call': call,
         'consult_requests': requests_qs,
         'is_redib_coordinator': is_redib_coordinator,
-        'my_node_ids': my_node_ids,
     }
     return render(request, 'calls/consult_requests.html', context)
 
