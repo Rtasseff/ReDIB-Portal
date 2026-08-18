@@ -82,10 +82,12 @@ matched to risk, not two:
 |---|---|
 | Docs, copy, small UI | Read the diff; run the suite. No automated review. |
 | Ordinary features | Run the suite; targeted read of the risky files (permissions, queries, emails). No multi-agent review. |
-| Public/anonymous surfaces, auth or permission changes, migrations that touch prod data, email fan-out, money/hours accounting | **One** `/code-review` at *medium*; the reviewer reads only what it flags plus the security-critical paths. |
+| Public/anonymous surfaces, auth or permission changes, migrations that touch prod data, email fan-out, money/hours accounting | **One** `/code-review` at *medium*, run **by the branch session on its own branch before opening the PR** (it's on the cheaper model; findings and fixes land in the PR). The handoff session then reads only what was flagged plus the security-critical paths. |
 
-Do not run a manual full-diff read *and* a multi-agent review on the same
-PR. A completed human click-through counts as evidence — lean lighter, not
+**Never fan out subagents from the handoff session** — they run on its
+(top-tier) model and a single high-effort review can eat a large slice of
+the weekly budget (2026-08-18: ~20% in one afternoon). Do not run a manual
+full-diff read *and* a multi-agent review on the same PR. A completed human click-through counts as evidence — lean lighter, not
 heavier, when it's been done. Always: `manage.py check`,
 `makemigrations --check`, full suite not worse than the recorded baseline.
 
