@@ -4,11 +4,17 @@ Django settings for ReDIB COA portal.
 
 from pathlib import Path
 import os
+import sys
 import environ
 from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# True under `manage.py test`/pytest. Needed early: the static storage
+# backend below is chosen based on it, ahead of the Celery eager-mode flags
+# further down that also depend on it.
+_IS_TESTING = 'test' in sys.argv or 'pytest' in sys.argv[0]
 
 # Initialize environment variables
 env = environ.Env(
@@ -134,7 +140,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# The manifest storage requires `collectstatic` to have already run so it
+# has a staticfiles.json to resolve hashed names against. The test runner
+# doesn't run collectstatic, so tests fall back to plain storage — otherwise
+# any template using {% static %} errors on a fresh checkout / CI run.
+STATICFILES_STORAGE = (
+    'django.contrib.staticfiles.storage.StaticFilesStorage' if _IS_TESTING
+    else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
 
 # Media files (user uploads)
 MEDIA_URL = '/media/'
@@ -200,9 +213,8 @@ CELERY_TIMEZONE = TIME_ZONE
 # tasks synchronously in-process. Tests run with DEBUG=False but still need
 # eager execution so mail.outbox captures outgoing workflow emails and tests
 # aren't silently broken by an absent broker. In production neither flag is
-# set so .delay() queues to the real broker normally.
-import sys as _sys
-_IS_TESTING = 'test' in _sys.argv or 'pytest' in _sys.argv[0]
+# set so .delay() queues to the real broker normally. (_IS_TESTING is set
+# near the top of this file, ahead of the static storage backend choice.)
 CELERY_TASK_ALWAYS_EAGER = DEBUG or _IS_TESTING
 CELERY_TASK_EAGER_PROPAGATES = DEBUG or _IS_TESTING
 

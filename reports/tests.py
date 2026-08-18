@@ -12,6 +12,7 @@ from datetime import timedelta
 from calls.models import Call
 from applications.models import Application
 from core.models import UserRole
+from core.test_utils import create_complete_user
 from access.models import Publication
 from .models import ReportGeneration
 
@@ -25,11 +26,8 @@ class StatisticsDashboardTests(TestCase):
         self.client = Client()
 
         # Create coordinator user
-        self.coordinator = User.objects.create_user(
-            username='coordinator',
-            email='coord@test.com',
-            password='testpass123'
-        )
+        self.coordinator = create_complete_user(
+            email='coord@test.com', password='testpass123')
         UserRole.objects.create(user=self.coordinator, role='coordinator')
 
         # Create regular user
@@ -116,11 +114,8 @@ class ExcelExportTests(TestCase):
         self.client = Client()
 
         # Create coordinator user
-        self.coordinator = User.objects.create_user(
-            username='coordinator2',
-            email='coord2@test.com',
-            password='testpass123'
-        )
+        self.coordinator = create_complete_user(
+            email='coord2@test.com', password='testpass123')
         UserRole.objects.create(user=self.coordinator, role='coordinator')
 
         # Create test call
@@ -188,11 +183,8 @@ class ReportHistoryTests(TestCase):
         self.client = Client()
 
         # Create coordinator user
-        self.coordinator = User.objects.create_user(
-            username='coordinator3',
-            email='coord3@test.com',
-            password='testpass123'
-        )
+        self.coordinator = create_complete_user(
+            email='coord3@test.com', password='testpass123')
         UserRole.objects.create(user=self.coordinator, role='coordinator')
 
         # Create test call
@@ -248,11 +240,8 @@ class PhaseIntegrationTest(TestCase):
     def test_full_reporting_workflow(self):
         """Test complete flow: dashboard → export → history."""
         # Create coordinator
-        coordinator = User.objects.create_user(
-            username='coordinator4',
-            email='coord4@test.com',
-            password='testpass123'
-        )
+        coordinator = create_complete_user(
+            email='coord4@test.com', password='testpass123')
         UserRole.objects.create(user=coordinator, role='coordinator')
 
         # Create call with application
