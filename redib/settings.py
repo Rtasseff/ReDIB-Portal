@@ -201,6 +201,17 @@ if EMAIL_BACKEND != 'django.core.mail.backends.console.EmailBackend':
     EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 CONTACT_EMAIL = env('CONTACT_EMAIL', default='info@redib.net')
 
+# Mass "call announced" / "now open" emails to every opted-in account.
+# OFF by default, deliberately — see backlog #41. The audience is every
+# account (1193 of 1193 in prod, since receive_call_notifications defaults
+# True and no one has ever opted out), the fan-out has no rate limit, no
+# retry, no bounce handling and no unsubscribe link, and IONOS's bulk-mail
+# ceiling is unknown. Announcements go out by hand with the /calls/ link
+# until that work is done. Do not flip this on without it.
+CALL_ANNOUNCEMENT_EMAILS_ENABLED = env.bool(
+    'CALL_ANNOUNCEMENT_EMAILS_ENABLED', default=False
+)
+
 # Celery Configuration
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')

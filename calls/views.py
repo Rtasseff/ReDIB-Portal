@@ -467,14 +467,21 @@ def call_announce(request, pk):
     call.save()
 
     # Send notification emails (async) - gracefully handle Celery unavailability
-    try:
-        count = notify_call_audience(
-            call, 'call_announced', build_call_url(call, request)
+    if not settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED:
+        email_status = (
+            "No announcement email was sent — the mass call-announcement email "
+            "is turned off. Announce it yourself and link people to the public "
+            "call page."
         )
-        email_status = f"Announcement emails queued for {count} users."
-    except Exception as e:
-        logger.warning(f"Email notification failed (Celery unavailable): {e}")
-        email_status = "(Email notifications disabled - Celery not running)"
+    else:
+        try:
+            count = notify_call_audience(
+                call, 'call_announced', build_call_url(call, request)
+            )
+            email_status = f"Announcement emails queued for {count} users."
+        except Exception as e:
+            logger.warning(f"Email notification failed (Celery unavailable): {e}")
+            email_status = "(Email notifications disabled - Celery not running)"
 
     messages.success(
         request,
@@ -524,15 +531,22 @@ def call_publish(request, pk):
     call.save()
 
     # Send notification emails (async) - gracefully handle Celery unavailability
-    try:
-        count = notify_call_audience(
-            call, 'call_published', build_call_url(call, request)
+    if not settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED:
+        email_status = (
+            "No 'now open' email was sent — the mass call-announcement email is "
+            "turned off. Tell people yourself and link them to the public call "
+            "page."
         )
-        email_status = f"Notification emails queued for {count} users."
-    except Exception as e:
-        # Celery/Redis not available - log and continue
-        logger.warning(f"Email notification failed (Celery unavailable): {e}")
-        email_status = "(Email notifications disabled - Celery not running)"
+    else:
+        try:
+            count = notify_call_audience(
+                call, 'call_published', build_call_url(call, request)
+            )
+            email_status = f"Notification emails queued for {count} users."
+        except Exception as e:
+            # Celery/Redis not available - log and continue
+            logger.warning(f"Email notification failed (Celery unavailable): {e}")
+            email_status = "(Email notifications disabled - Celery not running)"
 
     messages.success(
         request,

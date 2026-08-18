@@ -31,14 +31,26 @@ def notify_call_audience(call, template_type, call_url):
     Used for both `call_announced` (call becomes visible) and `call_published`
     (call actually opens). Returns the number of recipients queued. Callers
     are responsible for surviving an unavailable broker.
+
+    Returns 0 without sending anything while
+    `settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED` is False, which is the
+    default — see backlog #41 for what has to be true before it goes back on.
     """
     from communications.tasks import send_email_from_template
     from core.models import User
 
     recipients = list(
-        User.objects.filter(receive_call_notifications=True)
+        User.objects.filter(receive_call_notifications=True, is_active=True)
         .values_list('email', 'id')
     )
+
+    if not settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED:
+        logger.info(
+            "Call announcement emails are off (CALL_ANNOUNCEMENT_EMAILS_ENABLED"
+            "=False): skipped %s for call %s — %d recipient(s) not mailed.",
+            template_type, call.code, len(recipients),
+        )
+        return 0
 
     # Dates are pre-formatted: Celery's JSON serializer turns datetimes into
     # raw ISO strings, so passing the objects through renders differently in

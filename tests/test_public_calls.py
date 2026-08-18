@@ -139,6 +139,33 @@ class AnnounceCallTests(TestCase):
         self.assertTrue(call.is_publicly_visible)
         self.assertFalse(call.is_open)
 
+    def test_announce_sends_nothing_while_the_fan_out_is_off(self):
+        """Default is off — see backlog #41.
+
+        The audience is every account on the portal and the fan-out has no
+        rate limit, retry, bounce handling or unsubscribe link, so
+        announcements go out by hand until that is built. The call must still
+        become publicly visible: that is the part that matters for the
+        announcement, and it is what the coordinator is told.
+        """
+        call, _, _ = _make_call()
+        User.objects.create_user(
+            username='sub', email='sub@test.com', password='x',
+            receive_call_notifications=True,
+        )
+        self.client.force_login(self.coordinator)
+        mail.outbox = []
+
+        response = self.client.get(
+            reverse('calls:announce', kwargs={'pk': call.pk}), follow=True
+        )
+
+        call.refresh_from_db()
+        self.assertEqual(call.status, 'announced')
+        self.assertEqual(mail.outbox, [])
+        self.assertContains(response, 'turned off')
+
+    @override_settings(CALL_ANNOUNCEMENT_EMAILS_ENABLED=True)
     def test_announce_emails_opted_in_users_only(self):
         call, _, _ = _make_call()
         User.objects.create_user(
@@ -282,6 +309,7 @@ class AutoOpenTests(TestCase):
     def setUpTestData(cls):
         _seed_email_templates()
 
+    @override_settings(CALL_ANNOUNCEMENT_EMAILS_ENABLED=True)
     def test_beat_task_promotes_and_emails_once(self):
         call, _, _ = _make_call(status='announced', starts_in_days=-1)
         User.objects.create_user(
