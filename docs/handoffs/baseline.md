@@ -175,7 +175,7 @@ promotion bug surfacing.
   backfill-command tests), 0 failures. `python manage.py test reports` and
   full `python manage.py test` also green. `check` and
   `makemigrations --check --dry-run` both clean.
-- [ ] PR opened
+- [x] PR opened — https://github.com/Rtasseff/ReDIB-Portal/pull/35
 
 ### Deviation: a third, unrelated cause behind 2 of the 9 baseline failures
 
