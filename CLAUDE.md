@@ -42,6 +42,15 @@ session per directory; the handoff session sits on `main` in
 registry of active worktrees, and `scripts/new-worktree.sh` usage:
 [docs/developer/worktrees.md](docs/developer/worktrees.md).
 
+**Not on the production VPS.** The worktree scheme is a *development* device for
+large code changes. On prod we work directly on `main` in
+`/home/deploy/ReDIB-Portal/` and never branch: normal prod work is a content fix,
+a config tweak, or a doc note — edit, commit, push, redeploy. Anything big enough
+to want a branch belongs in a dev worktree and arrives here via
+`git pull origin main`. Disk and the 4 GB RAM budget are tight and fully
+accounted for by the running stack, so do not create extra checkouts, virtualenvs,
+databases, or side containers on this machine the way you would in dev.
+
 ## In-flight long-running branches
 
 - **`feature/marketing-site`** — Wagtail-based rebuild of the public `redib.net`
