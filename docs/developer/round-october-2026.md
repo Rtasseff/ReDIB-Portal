@@ -61,19 +61,21 @@ Deploy machinery itself has one known defect: **#37**, the three app containers
 racing to run `migrate`. Fix it before the December `release-gate` deploy — see
 § 5.
 
-**On the announcement critical path** — must be in prod by ~2026-09-12, three
-days before the announce, because the announce is the first time any of this
-code runs for real:
+**On the announcement critical path** — must be in prod by ~2026-09-12:
 
 - **#27** (CallForm status guard) — announcing is done through that form, and
-  the prod walkthrough on 2026-08-18 found two silent bad states it lets a
-  coordinator create. **Fixed in PR #34**, awaiting merge.
-- **#38** (announce fan-out: no `is_active` filter, no throttle, no retry) —
-  the announce is a ~1200-message burst through IONOS shared SMTP, twice
-  (announce, then auto-open). The largest email event the portal has ever run.
-- **#39** (which lifecycle transitions email whom) — the auto-open send is new
-  code that has never run on a real call, and it can fire from an anonymous
-  page load. Settle the contract before the announce, not after.
+  the 2026-08-18 prod walkthrough found two silent bad states it lets a
+  coordinator create. **Fixed in PR #34.**
+- **The announcement email is off** (`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`,
+  shipped inline 2026-08-18). Ryan and the node coordinators announce by hand
+  with the `/calls/` link; the portal's job for 09-15 is only to have the call
+  listed as upcoming on `/calls/`, which already works. Re-enabling is #41,
+  wanted before the ~2027-05 call and built on top of #40 — see
+  [call-lifecycle-proposal.md](call-lifecycle-proposal.md).
+
+That is the whole announcement path. It was briefly a bucket of its own
+(`announce-email`, #38 + #39) on 2026-08-18; Ryan's call to turn the fan-out
+off instead removed it from the round.
 
 **On the first-application critical path** — must be in prod by 2026-10-15:
 
@@ -90,7 +92,7 @@ are published (~2027-01/02).
 
 ## 3. Buckets
 
-Seven buckets, at most **two branch sessions live at once** plus the handoff
+Six buckets, at most **two branch sessions live at once** plus the handoff
 session on `main` — the human relays between them, and that is the real
 bandwidth limit. Ports are reused as buckets retire; the registry table in
 [worktrees.md](worktrees.md) is the source of truth for what is live.
@@ -101,17 +103,16 @@ bandwidth limit. Ports are reused as buckets retire; the registry table in
 |---|---|---|---|---|---|---|---|
 | 1 | `baseline` | 7, 8, 31 | — (`main`) | 2026-08-21 | 2026-08-22 | Sonnet | diff read + suite |
 | 2 | `call-hardening` | 27, 33, 13-min, 9 | — (`main`) | 2026-09-08 | **#27 by 09-12**, rest by 10-13 | Sonnet | targeted read + suite |
-| 3 | `announce-email` | 38, 39 (code half) | `baseline` | 2026-09-05 | **2026-09-12** — before the announce | Sonnet | `/code-review` medium |
-| 4 | `closeout` | 29, 30, 36, 17, 28 (35 stretch) | `baseline` | 2026-09-11 | 2026-09-15 | Sonnet | `/code-review` medium |
-| 5 | `eval-reminders` | 32, 5 | `closeout` | 2026-10-09 | 2026-10-13 (else before evaluator assignments, ~12) | Sonnet | `/code-review` medium |
-| 6 | `release-gate` | 15 (16 stretch) | `call-hardening` | **2026-12-05 (abort date)** | before the first evaluation completes | Opus | `/code-review` medium |
-| 7 | `resolution-report` | 20 | `eval-reminders` | 2027-01-15 | before results are published | Sonnet | targeted read + suite |
+| 3 | `closeout` | 29, 30, 36, 17, 28 (35 stretch) | `baseline` | 2026-09-11 | 2026-09-15 | Sonnet | `/code-review` medium |
+| 4 | `eval-reminders` | 32, 5 | `closeout` | 2026-10-09 | 2026-10-13 (else before evaluator assignments, ~12) | Sonnet | `/code-review` medium |
+| 5 | `release-gate` | 15 (16 stretch) | `call-hardening` | **2026-12-05 (abort date)** | before the first evaluation completes | Opus | `/code-review` medium |
+| 6 | `resolution-report` | 20 | `eval-reminders` | 2027-01-15 | before results are published | Sonnet | targeted read + suite |
 
-**#40 is not in a bucket — it is the handoff session's own work, and it gates
-bucket 3.** "Is call status date-derived or coordinator-set?" has to be
-answered before `announce-email` can be briefed, because the answer decides
-whether the auto-open send should exist at all. Assessment only this round
-(§ 4.7); no implementation.
+**#40 (call lifecycle) is not in this round.** It is agreed in principle and
+written up in [call-lifecycle-proposal.md](call-lifecycle-proposal.md) so it can
+be picked up cold in the ~2027-03 → ~2027-05 window. Nothing in this round
+depends on it; the October call runs fine on the current code now that #27 has
+removed the dropdown.
 
 Review tiers follow [worktrees.md § Review policy](worktrees.md#review-policy-proportionate--never-pay-twice);
 where it says `/code-review` medium, the **branch session** runs it on its own
@@ -130,13 +131,7 @@ any single-file fix that surfaces mid-round.
   dir. Always **append at the end**, and on conflict **keep both sides** —
   that turns a scary-looking conflict into a mechanical one.
 - **File ownership.** While `closeout` is live it owns `applications/tasks.py`;
-  while `announce-email` is live it owns `calls/services.py`, `calls/views.py`
-  and `calls/tasks.py`. Nothing on `main` or in another bucket edits an owned
-  file until that bucket merges. The two overlap at one point: `closeout`'s
-  **#36** (`closed → resolved`) is a `Call` lifecycle transition, so it takes
-  its rules from the same contract `announce-email` implements — see § 4.7.
-  Keep #36 in `closeout` (it is inseparable from #30) but write it against
-  that contract, not against a fresh reading of the code.
+  nothing on `main` or in another bucket edits that file until it merges.
 - **Rebase early** against the conflict watchlist in each brief.
 - **Baseline.** From bucket #1 onward the suite is expected **green**. Record
   the pre-start counts anyway and never make them worse.
@@ -310,55 +305,6 @@ resolution data. Read-only: it must not mutate anything.
 **Watchlist.** `reports/` only — the most isolated bucket of the six. Depends on
 #33's hours fix being correct.
 
-### 4.7 `announce-email` — the announce is a 1200-message event
-
-**Cut after `baseline`. Merge by 2026-09-05, in prod by 2026-09-12.** Raised
-from production on 2026-08-18; it did not exist when this plan was written.
-
-**Goal.** Make the announce and auto-open sends safe to run on a real call,
-against a written contract of which lifecycle transitions email whom.
-
-**Gated on the handoff session first.** Two things must be written before this
-bucket is briefed, and neither is the branch session's to decide:
-
-1. **#40's assessment** — is call status date-derived or coordinator-set?
-   Today it is both and they disagree. Full implementation is out of scope this
-   round; the assessment is not. If the answer is "status is truth", the
-   auto-open send stops being a silent write and this bucket shrinks.
-2. **#39's contract** — a table of transitions (announce / open / close /
-   resolve, plus the `submission_end` nudges) × who is emailed × what triggers
-   it. `closeout`'s #36 builds against the same table.
-
-**In (expected, pending the contract):**
-- **#38** — `notify_call_audience` (`calls/services.py:38-41`): add
-  `is_active=True` to the recipient query; rate-limit or batch the fan-out to
-  the real IONOS ceiling; show the recipient count on the Announce/Publish
-  confirmation before the coordinator commits.
-- **#39's code half** — make the send points match the contract. In particular
-  whether an anonymous GET of `/calls/` may trigger a ~1200-message send
-  (`calls/views.py:75,107` → `open_announced_calls`), and whether
-  `published_at` should keep doing double duty as both "announced at" and
-  "opened at".
-
-**Out:** #40's implementation (either lifecycle model is a rework, not this
-round). Retry-on-failure is **#34**, inline on `main` — do not fold it in here,
-but do not design the throttle in a way that makes retry harder later.
-
-**Ship the `is_active=True` filter as its own first commit**, the way #27 was
-handled in `call-hardening`: if the bucket slips, the handoff session
-cherry-picks that one line and ships it alone.
-
-**Blocked on Ryan:** the actual IONOS shared-SMTP per-hour/per-day ceiling — it
-is documented nowhere in this repo and the throttle cannot be sized without it.
-Park in Questions and build the batching so the ceiling is a setting, not a
-constant, if the number has not arrived.
-
-**Acceptance.** Announcing a call sends to active accounts only; the
-coordinator sees the recipient count before committing; the fan-out stays under
-the ceiling; every send point in the contract has a test asserting who receives
-it. Review tier: **one `/code-review` at medium**, run by the branch session
-before opening the PR — email fan-out is squarely in that tier.
-
 ## 5. Unscheduled — inline on `main` if a window opens
 
 Not in any bucket, but still wanted this round. Tagged `T3 inline` in the
@@ -389,6 +335,16 @@ side note) — a no-code chore, good filler while waiting on a branch session.
 Items 4, 12, 19, 21, 22, 6, 1, 2, 3, 10, 11, and the `feature/marketing-site`
 branch (parked until 2027). Revisit after the winter resolution.
 
+Two more were added on 2026-08-18 and deliberately deferred together, in that
+order, to the window after this call closes (~2027-03) and before the next one
+(~2027-05):
+
+- **#40** — call status becomes one manual gate plus a derived phase. Proposal:
+  [call-lifecycle-proposal.md](call-lifecycle-proposal.md).
+- **#41** — re-enable the call announcement email, after the IONOS bulk-mail
+  rules, an unsubscribe path, bounce handling and a throttle. Built **on top
+  of** #40.
+
 ## 7. Live status
 
 Update on every merge, in the same commit as the registry change.
@@ -397,7 +353,6 @@ Update on every merge, in the same commit as the registry change.
 |---|---|---|---|---|
 | `baseline` | 2026-08-18 | | | **Branch done 2026-08-18, PR #35 open, awaiting handoff review.** Merge first — it is the green-suite measuring stick and two buckets are cut from it. |
 | `call-hardening` | 2026-08-18 | | | **Branch done 2026-08-18, PR #34 open, awaiting handoff review.** Rebase on `main` after `baseline` merges. Carries #27, which prod raised to High on 2026-08-18. |
-| `announce-email` | | | | cut once `baseline` merges **and** #40/#39 are written; in prod by 09-12 |
 | `closeout` | | | | cut once `baseline` merges |
 | `eval-reminders` | | | | cut once `closeout` merges |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
