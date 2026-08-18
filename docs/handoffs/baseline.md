@@ -104,18 +104,115 @@ promotion bug surfacing.
 ## Status
 
 <!-- Keep this current. Checklist + short dated notes. -->
-- [ ] Baseline recorded (`python manage.py test tests` before any change)
-- [ ] #7 — middleware-blocked tests
-- [ ] #8 — static-manifest-blocked tests
-- [ ] #31 — approved hours confirmed at promotion
-- [ ] Prod-data question answered (already-promoted applications? command needed?)
-- [ ] Suite green; `check` + `makemigrations --check` clean
+- [x] Baseline recorded (`python manage.py test tests` before any change) —
+  2026-08-18: 145 tests, 2 ERROR, 7 FAIL (branch was cut from an older `main`
+  commit than HEAD of `main`; test count differs from the 134 recorded at
+  cut time but the same 9 tests fail — hypothesis confirmed, see below).
+- [x] #7 — middleware-blocked tests. Root cause confirmed: affected tests
+  create users via `User.objects.create_user(...)` without
+  phone/organization/position, so `ProfileCompletionMiddleware` 302s them to
+  `/profile/` before the view under test runs. Added `core/test_utils.py`
+  (`create_complete_user`) and used it in `tests/test_design.py`,
+  `tests/test_phase7_acceptance.py`, `tests/test_phase9_publications.py`,
+  `reports/tests.py`.
+- [x] #8 — static-manifest-blocked tests. Did **not** reproduce in this
+  worktree as-is (a `staticfiles/staticfiles.json` manifest from an earlier
+  `collectstatic` run was already sitting on disk — gitignored, so a fresh
+  checkout/CI wouldn't have it). Confirmed the real bug by moving
+  `staticfiles/` aside: `AuthPageRenderTest` throws
+  `ValueError: Missing staticfiles manifest entry` with no manifest present.
+  Fixed at the root: `redib/settings.py` now picks plain
+  `StaticFilesStorage` under `_IS_TESTING` instead of whitenoise's manifest
+  storage (which requires `collectstatic` to have already run). Moved the
+  existing `_IS_TESTING` computation to the top of the file since the static
+  storage setting needs it earlier than the Celery eager-mode block did.
+- [x] #31 — approved hours confirmed at promotion. `promote_waitlisted`
+  (`applications:promote_waitlisted`) now does GET (render
+  `templates/applications/promote_waitlist_confirm.html`, a per-equipment
+  hours table defaulting to `hours_requested`, same interaction as
+  `node_resolution/review.html`) / POST (apply it) instead of POST-only.
+  Refuses promotion — message + redirect, no state change — when every
+  equipment line would be 0 approved hours. `access_tracking.html`'s
+  "Promote to Accepted" is now a link to that page instead of a one-click
+  POST button. Also fixed: promotion never fired `resolution_accepted` (the
+  function's own docstring said it should; an inline comment right above the
+  email call contradicted the docstring and said the opposite) — now calls
+  `NodeResolutionService()._trigger_resolution_notification(application)`
+  before the handoff email, matching the normal (non-waitlist) accept path.
+  Added 3 new tests to `tests/test_batch2_phase4.py` covering the GET
+  confirmation page, custom-hours confirmation, and the all-zero refusal.
+- [x] Prod-data question / backfill command. This worktree's brief hedged
+  ("no data command needed" if nothing was already promoted), but
+  `round-october-2026.md` §4.1 **Decisions** (settled, not reopened here)
+  is unconditional: "#31 ships with a small idempotent management command
+  that backfills `hours_approved` for the affected REDIB-2601
+  applications." Also, backlog #31 already states as fact that all 7
+  REDIB-2601 waitlisted applications sit at 0 approved hours today — so
+  shipped the command per the settled decision rather than re-litigating
+  the "if". Added
+  `applications/management/commands/backfill_waitlist_hours_approved.py`:
+  reads a TSV (`application_code`, `equipment_name`, `hours_approved`),
+  hard-errors on an unmatched application/equipment or a value that isn't
+  a valid non-negative decimal, only ever writes a line whose current
+  `hours_approved` is null/0 (never overwrites an existing nonzero value —
+  logged as skipped instead), and is idempotent (rewriting the same value
+  is a no-op). `--dry-run` previews without writing. **Deliberately does
+  not derive figures from `hours_requested`** — the TSV has to carry
+  numbers a node coordinator actually confirmed. 7 tests in
+  `tests/test_backfill_waitlist_hours_approved.py` (backfill, dry-run,
+  idempotency, skip-nonzero, missing app/equipment, missing file).
+  **Not run against prod from here** — no prod DB access from this dev
+  worktree, and the real per-equipment figures have to come from the node
+  coordinators, not from me. Template at
+  `data/waitlist_hours_backfill.tsv.example` with the column layout and one
+  documented example row (`REDIB-2601-022`, cited in backlog #31); the
+  handoff session needs to get the real 7 applications' confirmed hours
+  from the node coordinators, fill in a real TSV from the template, and run
+  `python manage.py backfill_waitlist_hours_approved --tsv <file> --dry-run`
+  first, then for real, against prod.
+- [x] Suite green; `check` + `makemigrations --check` clean — 2026-08-18:
+  `python manage.py test tests` → 155 tests (145 + 3 promotion tests + 7
+  backfill-command tests), 0 failures. `python manage.py test reports` and
+  full `python manage.py test` also green. `check` and
+  `makemigrations --check --dry-run` both clean.
 - [ ] PR opened
+
+### Deviation: a third, unrelated cause behind 2 of the 9 baseline failures
+
+`test_applicant_can_submit_publication` and `test_full_publication_workflow`
+(`tests/test_phase9_publications.py`) were in the recorded-baseline FAIL
+list and looked like #7 (they errored on a `Publication.DoesNotExist` after
+a masked redirect), but fixing #7 alone didn't turn them green — they hit a
+**separate, pre-existing bug**: `PublicationForm`'s `application` queryset
+only includes `status='completed'` applications
+(`access/forms.py`), a rule explicitly locked in by
+`test_form_shows_only_completed_applications` in the same test file
+("Updated for the rule that publications can only be reported against
+completed access"). Both failing tests used fixture applications with
+`status='accepted'` (not completed) — stale from before that rule existed.
+Fixed by updating the two tests' fixtures (one now creates its own
+completed application instead of reusing the shared accepted one; the other
+marks the application complete between the follow-up-email step and the
+submission step), not by touching the form. **Did not touch** `access/forms.py`.
+
+Noticed but **not fixed** (genuinely out of scope, flagging for backlog):
+`access/tasks.py send_publication_followups` sends the 6-month reminder
+email to applications with `status__in=['accepted', 'completed']`, but the
+form that reminder points to only accepts `status='completed'` — an
+applicant who gets the nudge while still merely `accepted` can't yet act on
+it. Not a regression from this branch; pre-existing.
 
 ## Questions for the handoff session
 
 <!-- Don't guess — park it here and continue with what doesn't depend on it. -->
-- (none open at cut time)
+- Run the backfill command against prod (see Status above): get the 7
+  REDIB-2601 applications' confirmed approved hours from the node
+  coordinators, build a real TSV from
+  `data/waitlist_hours_backfill.tsv.example`, `--dry-run` it, then run it
+  for real. Needs prod DB access this worktree doesn't have.
+- Backlog item worth filing: `send_publication_followups` reminds
+  `accepted`-but-not-`completed` applicants to report a publication before
+  they're actually allowed to submit one (see Deviation note above).
 
 ## Return protocol
 
