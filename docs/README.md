@@ -42,6 +42,7 @@ This directory contains all project documentation, reference materials, and test
 
 ### `/developer/`
 Developer guides, planning documents, and running notes:
+- `round-october-2026.md` — **Current round's operating plan** (2026-27 COA call): bucket order, worktree assignments, production deadlines, settled decisions, live status. Start here when resuming work.
 - `backlog.md` — **Dynamic backlog** of feature requests, UX polish, and known test issues to address in future batches. Add new ideas here when they come up but aren't being implemented immediately.
 - `developer-notes.md` — Running log of design decisions, deferred improvements, and gotchas
 - `worktrees.md` — **Parallel agent sessions**: one worktree dir per branch under `~/projects/ReDIB-Portal-wt/`, handoff-doc convention, registry of active worktrees, `scripts/new-worktree.sh`

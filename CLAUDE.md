@@ -22,6 +22,11 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 - **All documentation** is in `docs/` — start at [docs/README.md](docs/README.md). Don't put
   long-form docs in this file or the project README.
 - **Reference TSVs**: `data/` — schema and load order at [data/README.md](data/README.md).
+- **What we're working on right now**:
+  [docs/developer/round-october-2026.md](docs/developer/round-october-2026.md) — the operating
+  plan for the 2026-27 COA round (announce ~2026-09-15, call opens ~2026-10-15). Bucket order,
+  worktree assignments, hard production deadlines, settled decisions, live status. **Read this
+  first when picking the work back up after a break.**
 - **Backlog of deferred work**: [docs/developer/backlog.md](docs/developer/backlog.md). Drop new
   feature requests, UX nits, and known-broken-tests there when they're not in the active batch.
 - **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
