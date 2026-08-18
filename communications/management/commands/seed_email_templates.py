@@ -1654,6 +1654,303 @@ Please do not reply to this email.
     "submission_end": "Formatted submission deadline of the call"
 }
                 '''
+            },
+            {
+                'template_type': 'call_announced',
+                'subject': 'ReDIB COA: Upcoming Call {{ call_code }} - opens {{ submission_start }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Upcoming Call for Applications</p>
+        </div>
+        <div class="content">
+            <p>Dear colleague,</p>
+            <p>A new ReDIB Competitive Open Access call has been announced. It is not open yet &mdash; we are letting you know in advance so you have time to prepare.</p>
+            <div class="info-box">
+                <p><strong>Call Code:</strong> {{ call_code }}</p>
+                <p><strong>Title:</strong> {{ call_title }}</p>
+                <p><strong>Opens:</strong> {{ submission_start }}</p>
+                <p><strong>Submission deadline:</strong> {{ submission_end }}</p>
+            </div>
+            <p>You can already see the full list of available equipment on the call page. If you would like to discuss whether a particular instrument suits your study, you can request a consult with the node that operates it &mdash; no account and no application needed.</p>
+            <p style="text-align: center;">
+                <a href="{{ call_url }}" class="button">View Call Details</a>
+            </p>
+            <p>We will email you again on {{ submission_start }} when the call opens for submissions.</p>
+            <p>You are receiving this notification because your account is set to receive new-call announcements. You can update this preference in your profile.</p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear colleague,
+
+A new ReDIB Competitive Open Access call has been announced. It is not open yet - we are letting you know in advance so you have time to prepare.
+
+Call Details:
+- Call Code: {{ call_code }}
+- Title: {{ call_title }}
+- Opens: {{ submission_start }}
+- Submission deadline: {{ submission_end }}
+
+You can already see the full list of available equipment on the call page. If you would like to discuss whether a particular instrument suits your study, you can request a consult with the node that operates it - no account and no application needed.
+
+View Call Details:
+{{ call_url }}
+
+We will email you again on {{ submission_start }} when the call opens for submissions.
+
+You are receiving this notification because your account is set to receive new-call announcements. You can update this preference in your profile.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: call_code, call_title, submission_start, submission_end, call_url'''
+            },
+            {
+                'template_type': 'equipment_consult_request',
+                'subject': 'ReDIB COA: Equipment consult requested for {{ node_name }} ({{ call_code }})',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #fff7e0; border-left: 4px solid #e6a23c; padding: 15px; margin: 15px 0; }
+        .message-box { background-color: #ffffff; border: 1px solid #ddd; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Equipment consult requested</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+
+            {% if no_node_coordinator %}
+            <p>A visitor asked for a consult about equipment on call <strong>{{ call_code }}</strong>, but the node(s) below have no active coordinator on file. You are receiving this as the ReDIB coordinator so the request does not go unanswered.</p>
+            {% else %}
+            <p>Someone has asked for a consult about equipment at your node, from the public page of call <strong>{{ call_code }}</strong> ({{ call_status }}). They have not applied &mdash; this is an informal enquiry before the application stage.</p>
+            {% endif %}
+
+            <div class="info-box">
+                <p><strong>Requester:</strong> {{ requester_name }}</p>
+                <p><strong>Contact:</strong> {{ requester_email }}{% if requester_phone %} &middot; {{ requester_phone }}{% endif %}</p>
+                {% if requester_organization %}<p><strong>Institution:</strong> {{ requester_organization }}</p>{% endif %}
+                <p><strong>Node:</strong> {{ node_name }}</p>
+                <p><strong>Equipment they asked about:</strong> {{ equipment_list }}</p>
+                <p><strong>Call:</strong> {{ call_code }} &mdash; {{ call_title }}</p>
+                <p><strong>Submission window:</strong> {{ submission_start }} to {{ submission_end }}</p>
+            </div>
+
+            {% if message %}
+            <div class="message-box">
+                <p><strong>Their message:</strong></p>
+                <p>{{ message|linebreaksbr }}</p>
+            </div>
+            {% endif %}
+
+            <p>Please reply to them directly at <a href="mailto:{{ requester_email }}">{{ requester_email }}</a>. They have been told that the node will get in touch.</p>
+
+            <p style="text-align: center;">
+                <a href="{{ call_url }}" class="button">View the call</a>
+            </p>
+
+            <p>All consult requests for this call are listed here: <a href="{{ consult_requests_url }}">{{ consult_requests_url }}</a></p>
+
+            <p>No application, feasibility review, or other workflow step has been triggered by this request.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+{% if no_node_coordinator %}A visitor asked for a consult about equipment on call {{ call_code }}, but the node(s) below have no active coordinator on file. You are receiving this as the ReDIB coordinator so the request does not go unanswered.{% else %}Someone has asked for a consult about equipment at your node, from the public page of call {{ call_code }} ({{ call_status }}). They have not applied - this is an informal enquiry before the application stage.{% endif %}
+
+Requester: {{ requester_name }}
+Contact: {{ requester_email }}{% if requester_phone %} - {{ requester_phone }}{% endif %}
+{% if requester_organization %}Institution: {{ requester_organization }}
+{% endif %}Node: {{ node_name }}
+Equipment they asked about: {{ equipment_list }}
+Call: {{ call_code }} - {{ call_title }}
+Submission window: {{ submission_start }} to {{ submission_end }}
+{% if message %}
+Their message:
+{{ message }}
+{% endif %}
+Please reply to them directly at {{ requester_email }}. They have been told that the node will get in touch.
+
+View the call:
+{{ call_url }}
+
+All consult requests for this call:
+{{ consult_requests_url }}
+
+No application, feasibility review, or other workflow step has been triggered by this request.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''
+{
+    "coordinator_name": "Full name of the recipient coordinator",
+    "requester_name": "Name typed on the public consult form",
+    "requester_email": "Contact email of the requester",
+    "requester_phone": "Contact phone (may be blank)",
+    "requester_organization": "Institution / company (may be blank)",
+    "call_code": "Code of the call (e.g., COA-2026-01)",
+    "call_title": "Title of the call",
+    "call_status": "Human-readable call status (Announced / Open)",
+    "node_name": "Name of the node this request concerns",
+    "equipment_list": "Comma-separated equipment at this node the requester selected",
+    "message": "Free-text message from the requester (may be blank)",
+    "submission_start": "Call submission start date (e.g. October 01, 2026)",
+    "submission_end": "Call submission deadline (e.g. October 31, 2026)",
+    "call_url": "Absolute URL of the public call page",
+    "consult_requests_url": "Absolute URL of the coordinator consult-request list",
+    "no_node_coordinator": "True when sent to a ReDIB coordinator because the node has no active coordinator"
+}
+                '''
+            },
+            {
+                'template_type': 'equipment_consult_confirmation',
+                'subject': 'ReDIB COA: We received your consult request for {{ call_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Consult request received</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ requester_name }},</p>
+
+            <p>Thank you for your interest in ReDIB. We have passed your enquiry to the coordinator(s) of <strong>{{ node_names }}</strong>, who will contact you directly.</p>
+
+            <div class="info-box">
+                <p><strong>Call:</strong> {{ call_code }} &mdash; {{ call_title }}</p>
+                <p><strong>Equipment you asked about:</strong> {{ equipment_list }}</p>
+                <p><strong>Submission window:</strong> {{ submission_start }} to {{ submission_end }}</p>
+            </div>
+
+            {% if message %}
+            <p><strong>Your message:</strong></p>
+            <p>{{ message|linebreaksbr }}</p>
+            {% endif %}
+
+            <p>This was an informal enquiry: no application has been started, and you are under no obligation to submit one. If you do decide to apply, you can do so from the call page while the call is open.</p>
+
+            <p style="text-align: center;">
+                <a href="{{ call_url }}" class="button">View the call</a>
+            </p>
+
+            <p>If you do not hear back within a few working days, or if you have any other question, write to us at <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ requester_name }},
+
+Thank you for your interest in ReDIB. We have passed your enquiry to the coordinator(s) of {{ node_names }}, who will contact you directly.
+
+Call: {{ call_code }} - {{ call_title }}
+Equipment you asked about: {{ equipment_list }}
+Submission window: {{ submission_start }} to {{ submission_end }}
+{% if message %}
+Your message:
+{{ message }}
+{% endif %}
+This was an informal enquiry: no application has been started, and you are under no obligation to submit one. If you do decide to apply, you can do so from the call page while the call is open.
+
+View the call:
+{{ call_url }}
+
+If you do not hear back within a few working days, or if you have any other question, write to us at {{ contact_email }}.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''
+{
+    "requester_name": "Name typed on the public consult form",
+    "call_code": "Code of the call (e.g., COA-2026-01)",
+    "call_title": "Title of the call",
+    "node_names": "Comma-separated names of the nodes that were notified",
+    "equipment_list": "Equipment the requester selected, with node names",
+    "message": "Free-text message from the requester (may be blank)",
+    "submission_start": "Call submission start date (e.g. October 01, 2026)",
+    "submission_end": "Call submission deadline (e.g. October 31, 2026)",
+    "call_url": "Absolute URL of the public call page",
+    "contact_email": "ReDIB contact address (settings.CONTACT_EMAIL)"
+}
+                '''
             }
         ]
 

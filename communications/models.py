@@ -14,7 +14,10 @@ class EmailTemplate(models.Model):
     """
 
     TEMPLATE_TYPES = [
+        ('call_announced', 'Call Announced (Opens Soon)'),
         ('call_published', 'Call Published'),
+        ('equipment_consult_request', 'Equipment Consult Request (to Node Coordinator)'),
+        ('equipment_consult_confirmation', 'Equipment Consult Confirmation (to Requester)'),
         ('application_received', 'Application Received'),
         ('feasibility_request', 'Feasibility Review Request'),
         ('feasibility_consult_request', 'Feasibility Consult Request'),

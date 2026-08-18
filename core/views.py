@@ -115,8 +115,11 @@ def dashboard(request):
         from calls.models import Call
         from applications.models import Application
 
+        # Announced calls are included so coordinators can see an upcoming
+        # call they have already advertised; evaluation and report surfaces
+        # deliberately stay open/closed only.
         context['active_calls'] = Call.objects.filter(
-            status__in=['open', 'closed']
+            status__in=['announced', 'open', 'closed']
         ).order_by('-submission_start')[:5]
 
         context['recent_applications'] = Application.objects.exclude(

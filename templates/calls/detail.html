@@ -28,9 +28,18 @@
         </div>
 
         {% if call.status == 'draft' %}
+        <a href="{% url 'calls:announce' call.pk %}" class="btn btn-sm btn-primary me-2"
+           onclick="return confirm('Announce this call? It will be listed publicly as upcoming, notification emails go out now, and it opens automatically on the submission start date.')">
+            <i class="bi bi-megaphone"></i> Announce
+        </a>
         <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
-           onclick="return confirm('Publish this call? This will send notification emails to users.')">
+           onclick="return confirm('Publish this call? This opens it for submissions now and sends notification emails to users.')">
             <i class="bi bi-send"></i> Publish
+        </a>
+        {% elif call.status == 'announced' %}
+        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
+           onclick="return confirm('Open this call for submissions now? This sends the &quot;Now Open&quot; email.')">
+            <i class="bi bi-send"></i> Open Now
         </a>
         {% elif call.status == 'open' %}
         <a href="{% url 'calls:close' call.pk %}" class="btn btn-sm btn-warning"
@@ -48,6 +57,8 @@
                 <h3 class="mb-0">
                     {% if call.status == 'draft' %}
                     <span class="badge bg-secondary">Draft</span>
+                    {% elif call.status == 'announced' %}
+                    <span class="badge bg-primary">Announced</span>
                     {% elif call.status == 'open' %}
                     <span class="badge bg-success">Open</span>
                     {% elif call.status == 'closed' %}
@@ -93,8 +104,13 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-3">
-                <strong>Published:</strong><br>
+                <strong>{% if call.status == 'announced' %}Announced{% else %}Published{% endif %}:</strong><br>
                 {{ call.published_at|date:"F d, Y"|default:"Not yet" }}
+                {% if call.status == 'announced' %}
+                <br><small class="text-muted">
+                    Opens automatically on {{ call.submission_start|date:"F d, Y" }}
+                </small>
+                {% endif %}
             </div>
             <div class="col-md-3">
                 <strong>Submission:</strong><br>
@@ -205,6 +221,28 @@
             {% endif %}
         </p>
         {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-chat-left-dots"></i> Consult Requests</h5>
+        <div>
+            {% if consult_requests %}
+            <span class="badge bg-primary me-2">{{ consult_requests.count }}</span>
+            {% endif %}
+            <a href="{% url 'calls:consult_requests' call.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-box-arrow-up-right"></i> Open list
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">
+            <i class="bi bi-info-circle"></i>
+            Informal enquiries about equipment on this call, sent from the public call
+            page. Each one was emailed to the coordinator(s) of the node(s) involved.
+        </p>
+        {% include "calls/includes/consult_requests_table.html" %}
     </div>
 </div>
 
