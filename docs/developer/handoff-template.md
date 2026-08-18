@@ -16,6 +16,10 @@ Read this first, then `CLAUDE.md`, then `docs/README.md`. This directory is
 a git worktree: it *is* this branch — do not `git checkout` another branch
 here (see `docs/developer/worktrees.md`).
 
+**Development document.** These are instructions for the agent session working
+in this worktree. Once the branch merges, this file lands on `main` as a
+record — on the production VPS it is history, not a task list.
+
 ## Goal
 
 <!-- One paragraph: what this branch delivers and why now. -->

@@ -1,5 +1,11 @@
 # Round plan — October 2026 call
 
+> **Development document.** This plans and directs work in a dev checkout. On the
+> production VPS (`/home/deploy/ReDIB-Portal/`) it is background context only — read
+> it, don't act on it. Problems found in production go into
+> [backlog.md](backlog.md) as new entries; the work itself happens in dev and arrives
+> via `git pull origin main`.
+
 **Status: active** (opened 2026-08-18). This is the operating plan for the
 2026–27 COA round: what ships, in what order, in which worktree, by when,
 and what must be on the production server before each hard date.
@@ -50,6 +56,10 @@ and that is the date that matters. Two consequences:
   Take a `scripts/backup-db.sh` snapshot before anything with a migration,
   pick a window when no beat task is about to fire, and re-check the public
   `/calls/` pages and the applicant dashboard afterwards.
+
+Deploy machinery itself has one known defect: **#37**, the three app containers
+racing to run `migrate`. Fix it before the December `release-gate` deploy — see
+§ 5.
 
 **On the first-application critical path** — must be in prod by 2026-10-15:
 
@@ -283,6 +293,13 @@ between merges rather than earning a bucket:
   forgotten; `emails_sent_at` means "queued"). Same fix, same file; doing them
   apart is wasted setup. Not before `closeout` merges — it is adding emails to
   the same module.
+- **#37** — the three app containers race to run `migrate` on every deploy
+  (found on prod during the 2026-08-18 deploy). Benign today because postgres
+  DDL is transactional, but it makes a real migration failure indistinguishable
+  from a spurious one in the log — and `release-gate` deploys a migration into
+  a **live call** in December. Wanted in the pre-open batch (2026-10-13), and
+  required before that December deploy. Cannot be verified in dev — no Docker
+  locally — so the next real deploy is the test.
 - **#18** — coordinator "reinstate expired application". Wanted before the
   first expiry of the new call (~2027-01).
 - **#23** — scientific-project guidance text. Blocked on Ángel's worked

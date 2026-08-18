@@ -1,5 +1,9 @@
 # Worktrees & handoffs — running parallel agent sessions
 
+> **Development document.** Worktrees are a dev device; there are none on the
+> production VPS, which works directly on `main` in `/home/deploy/ReDIB-Portal/`.
+> See the environment note at the top of `CLAUDE.md`.
+
 How we organise parallel work on this repo: one **handoff session** sits on
 `main` in the primary checkout and coordinates; each large bucket of work
 gets its own branch **and its own directory** via `git worktree`, with a

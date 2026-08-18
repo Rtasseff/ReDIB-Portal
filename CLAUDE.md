@@ -6,10 +6,21 @@ content-update mode**, deployed at `portal.redib.net`.
 
 ## Always do first
 
-**Ask which environment we're in** before suggesting commands or making changes.
+**Work out which environment we're in** before suggesting commands or making changes — the
+checkout path tells you, so ask only if it's still unclear.
 
-- **Dev (local):** Python venv + SQLite + `manage.py runserver`. No Docker / Redis / Celery.
-- **Prod (VPS):** Docker Compose with PostgreSQL + Redis + Celery + Caddy on IONOS.
+- **Dev (local):** `~/projects/ReDIB-Portal/` (or a worktree under `~/projects/ReDIB-Portal-wt/`).
+  Python venv + SQLite + `manage.py runserver`. No Docker / Redis / Celery.
+- **Prod (VPS):** `/home/deploy/ReDIB-Portal/`. Docker Compose with PostgreSQL + Redis + Celery +
+  Caddy on IONOS.
+
+**`docs/developer/` is written for dev, and only dev acts on it.** The round plan, batch plans,
+handoff briefs and the backlog describe work that happens in a dev checkout and reaches prod
+through `git pull origin main` — nothing else. On prod those files are **context you read, never
+a to-do list you execute**: don't start a plan item, cut a branch, or run a migration because a
+doc says the work is due. Prod's own work is content fixes, config tweaks, doc notes, and
+**writing new entries into the backlog** — which is the right way to hand a problem you found in
+production back to dev.
 
 The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.production.template`
 (prod). Full env-var reference: [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md).
@@ -25,8 +36,9 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
 - **What we're working on right now**:
   [docs/developer/round-october-2026.md](docs/developer/round-october-2026.md) — the operating
   plan for the 2026-27 COA round (announce ~2026-09-15, call opens ~2026-10-15). Bucket order,
-  worktree assignments, hard production deadlines, settled decisions, live status. **Read this
-  first when picking the work back up after a break.**
+  worktree assignments, hard production deadlines, settled decisions, live status. **In a dev
+  checkout, read this first when picking the work back up after a break**; on prod it is
+  background only.
 - **Backlog of deferred work**: [docs/developer/backlog.md](docs/developer/backlog.md). Drop new
   feature requests, UX nits, and known-broken-tests there when they're not in the active batch.
 - **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
