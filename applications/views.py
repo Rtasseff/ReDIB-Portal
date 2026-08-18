@@ -1399,7 +1399,6 @@ def application_acceptance(request, pk):
 
 
 @login_required
-@require_POST
 @transaction.atomic
 def promote_waitlisted_application(request, pk):
     """Node coordinator promotes a waitlisted (pending) application into
@@ -1411,7 +1410,16 @@ def promote_waitlisted_application(request, pk):
     - Caller is a coordinator / superuser, OR is a node_coordinator whose
       node has equipment on this application.
 
+    GET renders a confirmation page where the coordinator sets the approved
+    hours per equipment line (defaults to hours_requested); POST applies it.
+    A bare POST with no hours fields (e.g. a plain "Promote" submit) also
+    defaults every line to hours_requested — the confirmation step is about
+    letting the coordinator adjust or catch a stale offer, not forcing a
+    re-entry of numbers that already look right.
+
     Effect:
+    - hours_approved recorded per equipment line (refused if every line
+      would be 0)
     - status: pending -> accepted
     - resolution: pending -> accepted
     - resolution_date refreshed to now; acceptance_deadline is cleared
@@ -1455,6 +1463,45 @@ def promote_waitlisted_application(request, pk):
         )
         return redirect('applications:detail', pk=application.pk)
 
+    requested_access = list(application.requested_access.select_related('equipment'))
+
+    if request.method != 'POST':
+        equipment_forms = [
+            {
+                'equipment_id': ra.equipment.id,
+                'equipment_name': ra.equipment.name,
+                'hours_requested': ra.hours_requested,
+            }
+            for ra in requested_access
+        ]
+        return render(request, 'applications/promote_waitlist_confirm.html', {
+            'application': application,
+            'equipment_forms': equipment_forms,
+        })
+
+    from decimal import Decimal, InvalidOperation
+
+    approved_hours = {}
+    for ra in requested_access:
+        field_name = f'hours_approved_{ra.equipment.id}'
+        try:
+            hours = Decimal(request.POST.get(field_name, ra.hours_requested))
+        except (InvalidOperation, ValueError, TypeError):
+            hours = ra.hours_requested
+        approved_hours[ra.equipment_id] = hours
+
+    if requested_access and not any(hours > 0 for hours in approved_hours.values()):
+        messages.error(
+            request,
+            f"Cannot promote {application.code}: every equipment line has 0 "
+            "approved hours. Set at least one line above 0 before promoting."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    for ra in requested_access:
+        ra.hours_approved = approved_hours[ra.equipment_id]
+        ra.save(update_fields=['hours_approved'])
+
     application.status = 'accepted'
     application.resolution = 'accepted'
     application.resolution_date = timezone.now()
@@ -1466,11 +1513,17 @@ def promote_waitlisted_application(request, pk):
     application.acceptance_deadline = None  # applicant has already accepted
     application.save()
 
-    # Fire the handoff email only — the applicant already received and
-    # accepted the original resolution_pending notification, so resending
-    # a resolution email on promotion is unnecessary and confusing.
+    # The applicant accepted the original resolution_pending offer, but
+    # promotion is the moment this application's resolution actually becomes
+    # "accepted" — send the same resolution_accepted notification a
+    # directly-accepted applicant gets, then the handoff email.
     import logging
+    from applications.services import NodeResolutionService
     log = logging.getLogger(__name__)
+    try:
+        NodeResolutionService()._trigger_resolution_notification(application)
+    except Exception:
+        log.exception("Resolution-accepted notification failed on promotion of %s", application.code)
     try:
         _send_handoff_email(application)
         application.handoff_email_sent_at = timezone.now()

@@ -189,3 +189,43 @@ class PendingWaitlistLifecycleTest(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'pending')
+
+    def test_promote_get_shows_hours_confirmation_form(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.get(reverse('applications:promote_waitlisted',
+                             kwargs={'pk': self.application.pk}))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn(f'hours_approved_{self.equipment.id}', content)
+        self.assertIn('Scanner', content)
+
+    def test_promote_records_confirmed_hours(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.post(reverse('applications:promote_waitlisted',
+                              kwargs={'pk': self.application.pk}),
+                      {f'hours_approved_{self.equipment.id}': '5.5'})
+        self.assertEqual(resp.status_code, 302)
+        self.req.refresh_from_db()
+        self.assertEqual(self.req.hours_approved, Decimal('5.5'))
+
+    def test_promote_refused_when_all_hours_zero(self):
+        self._resolve_as_pending()
+        self.application.accepted_by_applicant = True
+        self.application.save()
+        c = Client()
+        c.force_login(self.nc)
+        resp = c.post(reverse('applications:promote_waitlisted',
+                              kwargs={'pk': self.application.pk}),
+                      {f'hours_approved_{self.equipment.id}': '0'})
+        self.assertEqual(resp.status_code, 302)
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'pending',
+                         "Promotion must be refused when every line is 0 hours")
