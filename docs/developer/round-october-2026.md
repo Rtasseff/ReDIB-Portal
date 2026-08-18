@@ -122,9 +122,14 @@ never sets `hours_approved`).
 **Out:** any other backlog item; refactoring the test base classes beyond what
 #7/#8 need.
 
-**Decisions.** #31 ships with a **small idempotent management command** that
-backfills `hours_approved` for the affected REDIB-2601 applications — not a
-shell one-liner run against prod, so the fix is reviewable and repeatable.
+**Decisions.** The promotion screen defaults each line to `hours_requested`
+and a human confirms — nothing auto-approves. Check whether any REDIB-2601
+application was *already* promoted with zero hours; the 7 waitlisted ones may
+simply not have been promoted yet, in which case the promotion-time fix is
+enough and no data command is needed. If some were, the correction ships as a
+**small idempotent management command** (reviewable, repeatable) — never a
+shell one-liner against prod — and it must not copy `hours_requested` into
+`hours_approved`, because approved hours are a coordinator's decision.
 
 **Acceptance.** `python manage.py test tests` green (from 134 tests / 2 ERROR /
 7 FAIL). Two of those failures — `test_node_coord_can_promote_waitlisted_application`

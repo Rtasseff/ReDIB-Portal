@@ -166,8 +166,14 @@ commit.
 
 ## Registry — active worktrees
 
+Which bucket comes next, and why, is in
+[round-october-2026.md](round-october-2026.md) — this table is only what is
+live right now.
+
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
+| `baseline/` | `feature/baseline` | 8002 | 2026-08-18 | Green test baseline + waitlist approved hours (#7, #8, #31). Merge by 08-21. Brief: `docs/handoffs/baseline.md` on the branch. |
+| `call-hardening/` | `feature/call-hardening` | 8003 | 2026-08-18 | Bugs the new call would hit (#27, #33, #13-min, #9). Merge by 09-08; **#27 in prod before the ~09-15 announce**. Brief on the branch. |
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
