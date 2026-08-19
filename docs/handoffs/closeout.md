@@ -27,8 +27,8 @@ submission deadline: 22 accepted projects are running with nobody nudging them
 to record hours or mark themselves done, 7 waitlisted applicants have heard
 nothing since they accepted in June, and there is no UI path to move the call to
 `resolved` at all. This bucket adds the missing end-of-lifecycle machinery —
-reminders, a waitlist outcome, and a close-out action — and fixes the two small
-bugs in the same code path while we are in it.
+reminders, a waitlist outcome, and a close-out action — and fixes the three small
+bugs sitting in the same code path while we are in it.
 
 **Why the date matters.** REDIB-2601's execution window closes **2026-10-30**.
 A reminder deployed in October has almost no runway. Merge by **2026-09-11**, in
@@ -38,19 +38,22 @@ prod by **2026-09-15** — that date is the point of the bucket, not a nicety.
 
 **In**, and this is the order to build them (rationale in "Decisions" below):
 
-1. **#17** — `process_acceptance_deadlines` ignores waitlisted applicants. High,
+1. **#43** — `send_feasibility_reminders` has no dedupe *and* still emails only
+   the original assignee. High, ~15 lines, and the smallest thing here. Left
+   over from #9; see the note below before you fan anything out.
+2. **#17** — `process_acceptance_deadlines` ignores waitlisted applicants. High,
    ~one line in two places, plus verification.
-2. **#28** — datetimes in Celery `context_data`. Small; **the backlog diagnosis
+3. **#28** — datetimes in Celery `context_data`. Small; **the backlog diagnosis
    is partly wrong, read the note below before fixing.**
-3. **#36** — call close-out: `closed → resolved` + `is_resolution_locked` from
+4. **#36** — call close-out: `closed → resolved` + `is_resolution_locked` from
    the UI. Must land before #30 because it is what fires #30's closure email.
-4. **#30** — waitlist follow-up, three parts (a) coordinator digest, (b) "not
+5. **#30** — waitlist follow-up, three parts (a) coordinator digest, (b) "not
    reached this call" close-out action + applicant email, (c) freed-capacity
    notice.
-5. **#29** — execution-phase completion reminders (applicant + node
+6. **#29** — execution-phase completion reminders (applicant + node
    coordinators).
 
-**Stretch — only once all five are green and committed:** #35, the draft nudge
+**Stretch — only once all six are green and committed:** #35, the draft nudge
 at T−7 / T−2 before `submission_end`. Same shape, same files, near-zero marginal
 setup cost. If time is short, drop it without hesitation; it is wanted for the
 October call, not for REDIB-2601.
@@ -170,6 +173,37 @@ So the real content of #28 is **prophylactic, and it is still worth doing**:
   value types. Correct the backlog entry's diagnosis in your PR body so the next
   reader is not misled.
 
+### #43 — fix the dedupe *before* the fan-out, not after
+
+`send_feasibility_reminders` (`applications/tasks.py:15`) has two defects and
+the order you fix them in matters.
+
+Its docstring says it sends only if "no reminder sent in last 3 days". **That
+check does not exist.** There is no `EmailLog` query anywhere in the function.
+Compare `process_acceptance_deadlines` (`:278`) and
+`evaluations.tasks.send_evaluation_reminders` (`:97`), which both do it properly
+— copy one of those. So today, once a feasibility review is 5 days old, its
+reviewer is emailed **every morning at 09:00** until they act.
+
+It also emails `review.reviewer` only, while #9 (shipped, PR #34) fanned the
+initial `feasibility_request` out to every active node coordinator of the node.
+The reminder should match — **but do the dedupe first.** Fanning out a
+daily-repeating email multiplies it by the coordinator count, which is how the
+evaluator side ended up sending two people 42 reminders each (#32, next bucket).
+
+Reuse the fan-out query from `applications/views.py:~834` (the #9 fan-out) so the reminder and
+the request address the same people:
+
+```python
+UserRole.objects.filter(node=review.node, role='node_coordinator', is_active=True)
+```
+
+Dedupe **per (review, recipient)**, not per review — otherwise one coordinator
+being emailed suppresses the others. Keep the existing
+`notification_preferences` opt-out check, and apply it per recipient. While you
+are in this function, its `'deadline'` context value is one of #28's two raw
+datetimes; fix it here rather than making a second pass.
+
 ### #17 — the two filters, and what changes downstream
 
 `process_acceptance_deadlines` (`applications/tasks.py:241`) filters
@@ -236,6 +270,7 @@ elsewhere:
 <!-- Keep this current as you work. -->
 
 - [ ] Baseline recorded (`test`, `check`, `makemigrations --check`) before any change
+- [ ] #43 feasibility reminder: dedupe first, then fan out
 - [ ] #17 acceptance deadlines include waitlisted applicants
 - [ ] #28 datetimes pre-formatted + `context_data` audit
 - [ ] #36 "Mark call resolved" action
