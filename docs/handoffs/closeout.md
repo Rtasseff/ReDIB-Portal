@@ -86,10 +86,20 @@ October call, not for REDIB-2601.
   with the applicant emailed exactly once.
 - Every new email is seeded by `seed_email_templates` and renders **pre-formatted
   date strings** (#28).
-- `python manage.py check` and `makemigrations --check` clean; full suite
-  `python manage.py test tests` **not worse than the baseline you record before
-  starting** — `main` @ `c883be7` was **173 tests, 0 failures, 0 errors**, so the
-  suite is expected green from the first commit. New tests for each item.
+- `python manage.py check` and `makemigrations --check` clean; the suite **not
+  worse than the baseline you record before starting**. New tests for each item.
+
+  **Run both commands.** `tests/` has no `__init__.py`, so Django's default
+  discovery walks straight past it and `manage.py test` alone gives you a green
+  light from 6% of the suite:
+
+  ```bash
+  python manage.py test tests    # 162 tests — the workflow suite
+  python manage.py test          #  11 tests — reports/tests.py
+  ```
+
+  Both were green on `main` @ `c883be7`. Do not "fix" this by adding
+  `tests/__init__.py` — it is backlog #46, deliberately not this bucket.
 
 ## Context & decisions already made
 
@@ -303,8 +313,9 @@ that is the whole reason the tier exists.
 
 1. Keep this doc's **Status** current; note anything you deviated from.
 2. `python manage.py check`; `python manage.py makemigrations --check`;
-   full suite `python manage.py test tests` — record the pass/fail counts
-   against the baseline you took before starting (do not make it worse).
+   `python manage.py test tests` **and** `python manage.py test` — record both
+   pass/fail counts against the baseline you took before starting (do not make
+   either worse).
 3. Push the branch and open a PR against `main`. PR body = the review
    packet: what changed and why, deviations from this brief, the test
    counts, **the exact subject + body of every new email quoted for review**,
