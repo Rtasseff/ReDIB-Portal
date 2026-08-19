@@ -7,7 +7,7 @@
 |---|---|
 | Branch | `feature/closeout` |
 | Worktree dir | `/home/rtasseff/projects/ReDIB-Portal-wt/closeout` |
-| Base | `main` @ `0971e16` |
+| Base | `main` @ `c883be7` (rebased 2026-08-19) |
 | Created | 2026-08-19 |
 | Runserver port | 8002 |
 | Handoff session | `main` checkout at `~/projects/ReDIB-Portal/` |
@@ -88,7 +88,7 @@ October call, not for REDIB-2601.
   date strings** (#28).
 - `python manage.py check` and `makemigrations --check` clean; full suite
   `python manage.py test tests` **not worse than the baseline you record before
-  starting** — `main` @ `0971e16` was **173 tests, 0 failures, 0 errors**, so the
+  starting** — `main` @ `c883be7` was **173 tests, 0 failures, 0 errors**, so the
   suite is expected green from the first commit. New tests for each item.
 
 ## Context & decisions already made
