@@ -48,6 +48,14 @@ app.conf.beat_schedule = {
         'task': 'evaluations.tasks.notify_coordinator_overdue_evaluations',
         'schedule': crontab(hour=9, minute=45),  # Daily at 9:45 AM
     },
+    'send-waitlist-digest': {
+        'task': 'applications.tasks.send_waitlist_digest',
+        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
+    },
+    'send-completion-reminders': {
+        'task': 'applications.tasks.send_completion_reminders',
+        'schedule': crontab(hour=8, minute=15),  # Daily at 8:15 AM
+    },
 }
 
 @app.task(bind=True, ignore_result=True)

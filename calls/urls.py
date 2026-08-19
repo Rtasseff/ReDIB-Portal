@@ -22,5 +22,6 @@ urlpatterns = [
     path('<int:pk>/announce/', views.call_announce, name='announce'),
     path('<int:pk>/publish/', views.call_publish, name='publish'),
     path('<int:pk>/close/', views.call_close, name='close'),
+    path('<int:pk>/resolve/', views.call_resolve, name='resolve'),
     path('<int:pk>/delete/', views.call_delete, name='delete'),
 ]

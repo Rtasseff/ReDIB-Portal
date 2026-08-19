@@ -29,6 +29,8 @@ Palette rationale:
     <span class="badge bg-secondary">Expired</span>
 {% elif app.status == 'declined_by_applicant' %}
     <span class="badge bg-secondary">Declined</span>
+{% elif app.status == 'not_reached' %}
+    <span class="badge bg-secondary">Not Reached This Call</span>
 {% elif app.status == 'rejected' or app.status == 'rejected_feasibility' %}
     <span class="badge bg-secondary">{{ app.get_status_display }}</span>
 {% elif app.status == 'draft' %}

@@ -1,0 +1,36 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Mark Resolved: {{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:detail' call.pk %}">{{ call.code }}</a></li>
+            <li class="breadcrumb-item active">Mark Resolved</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Mark {{ call.code }} Resolved</h1>
+
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>This closes out the call's lifecycle.</strong> {{ call.code }} will move from
+        <strong>Closed</strong> to <strong>Resolved</strong> and its resolution will be locked.
+        <strong>No emails are sent</strong> by this action — every application's resolution
+        notification and handoff email has already gone out through the normal per-node flow.
+        This step only records that the round is administratively closed out.
+    </div>
+
+    <form method="post" action="{% url 'calls:resolve' call.pk %}">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Mark {{ call.code }} resolved and lock its resolution? No emails will be sent.');">
+                <i class="bi bi-check-circle"></i> Confirm &amp; Mark Resolved
+            </button>
+            <a href="{% url 'calls:detail' call.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

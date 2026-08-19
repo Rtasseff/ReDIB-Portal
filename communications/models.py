@@ -39,6 +39,11 @@ class EmailTemplate(models.Model):
         ('acceptance_expired', 'Acceptance Expired'),
         ('access_scheduled', 'Access Scheduled'),
         ('publication_followup', 'Publication Follow-up'),
+        ('waitlist_digest', 'Waitlist Digest (to Node Coordinator)'),
+        ('waitlist_not_reached', 'Waitlist: Not Reached This Call'),
+        ('freed_capacity_notice', 'Freed Capacity Notice (to Node Coordinator)'),
+        ('completion_reminder', 'Completion Reminder (to Applicant)'),
+        ('completion_reminder_coordinator', 'Completion Reminder (to Node Coordinator)'),
     ]
 
     template_type = models.CharField(

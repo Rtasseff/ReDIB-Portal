@@ -67,6 +67,7 @@ class Application(models.Model):
         ('declined_by_applicant', 'Declined by Applicant'),  # Phase 7
         ('expired', 'Acceptance Expired'),  # Phase 7
         ('completed', 'Completed'),  # Phase 8
+        ('not_reached', 'Not Reached This Call'),  # Waitlist close-out
     ]
 
     # Spanish AEI (Agencia Estatal de Investigación) subject area classification
@@ -302,11 +303,12 @@ class Application(models.Model):
         'under_evaluation': ['evaluated'],
         'evaluated': ['accepted', 'pending', 'rejected'],
         'accepted': ['declined_by_applicant', 'expired', 'completed'],  # Phase 7/8: Decline, expire, or complete
-        'pending': ['accepted', 'rejected', 'declined_by_applicant', 'expired'],  # Waitlist: promote, reject, or applicant decline / timeout
+        'pending': ['accepted', 'rejected', 'declined_by_applicant', 'expired', 'not_reached'],  # Waitlist: promote, reject, applicant decline / timeout, or close-out
         'rejected': [],  # Terminal state
         'declined_by_applicant': [],  # Terminal state - Phase 7
         'expired': [],  # Terminal state - Phase 7
         'completed': [],  # Terminal state - Phase 8
+        'not_reached': [],  # Terminal state - waitlist close-out
     }
 
     def save(self, *args, **kwargs):

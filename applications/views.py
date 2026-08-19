@@ -275,6 +275,7 @@ def _build_phase_tracker(application):
         'declined_by_applicant': 'acceptance',
         'expired': 'acceptance',
         'completed': 'access',
+        'not_reached': 'acceptance',
     }.get(status, 'draft')
 
     # Once the applicant has accepted and the handoff email has been sent,
@@ -287,7 +288,7 @@ def _build_phase_tracker(application):
 
     terminal_fail_statuses = {
         'rejected_feasibility', 'rejected',
-        'declined_by_applicant', 'expired',
+        'declined_by_applicant', 'expired', 'not_reached',
     }
     is_terminal_fail = status in terminal_fail_statuses
     phase_order = [p_id for p_id, _ in PHASES]
@@ -1391,6 +1392,18 @@ def application_acceptance(request, pk):
                 application.resolution_comments += f"\n\n[DECLINED BY APPLICANT]\n{decline_reason}"
             application.save()
 
+            # #30(c): declining an accepted (not waitlist) grant frees real
+            # allocated hours — a waitlisted applicant held no allocation.
+            if not is_waitlist:
+                try:
+                    from applications.tasks import _notify_freed_capacity
+                    _notify_freed_capacity(application, reason='declined')
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "Freed-capacity notice failed for declined application %s", application.code
+                    )
+
             messages.info(request, "You have declined this access grant.")
             return redirect('applications:detail', pk=application.pk)
 
@@ -1407,6 +1420,30 @@ def application_acceptance(request, pk):
         'is_waitlist': is_waitlist,
     }
     return render(request, 'applications/acceptance_form.html', context)
+
+
+def _can_manage_waitlisted_application(user, application):
+    """True if `user` may act (promote or close out) on a waitlisted
+    application: a ReDIB coordinator/superuser, or a node_coordinator of a
+    node with equipment on this application. Shared by
+    promote_waitlisted_application and close_out_waitlisted_application so
+    the two stay in lockstep as this authorization rule evolves.
+    """
+    from core.models import UserRole
+
+    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
+    if 'coordinator' in user_roles or user.is_superuser:
+        return True
+
+    requested_node_ids = set(
+        application.requested_access.values_list('equipment__node_id', flat=True)
+    )
+    nc_node_ids = set(
+        UserRole.objects.filter(
+            user=user, role='node_coordinator', is_active=True,
+        ).values_list('node_id', flat=True)
+    )
+    return bool(requested_node_ids & nc_node_ids)
 
 
 @login_required
@@ -1438,25 +1475,12 @@ def promote_waitlisted_application(request, pk):
     - resolution_accepted notification + handoff email dispatched to
       applicant and node coordinators.
     """
-    from core.models import UserRole
-
     application = get_object_or_404(Application, pk=pk)
 
     user = request.user
-    user_roles = list(user.roles.filter(is_active=True).values_list('role', flat=True))
-    is_coordinator = 'coordinator' in user_roles or user.is_superuser
-    if not is_coordinator:
-        requested_node_ids = set(
-            application.requested_access.values_list('equipment__node_id', flat=True)
-        )
-        nc_node_ids = set(
-            UserRole.objects.filter(
-                user=user, role='node_coordinator', is_active=True,
-            ).values_list('node_id', flat=True)
-        )
-        if not (requested_node_ids & nc_node_ids):
-            messages.error(request, "You are not authorised to promote this application.")
-            return redirect('access:access_tracking')
+    if not _can_manage_waitlisted_application(user, application):
+        messages.error(request, "You are not authorised to promote this application.")
+        return redirect('access:access_tracking')
 
     if application.status != 'pending':
         messages.error(
@@ -1552,6 +1576,101 @@ def promote_waitlisted_application(request, pk):
         request,
         f"Application {application.code} has been promoted from the waitlist. "
         "The applicant and node coordinators have been notified."
+    )
+    return redirect('applications:detail', pk=application.pk)
+
+
+@login_required
+@transaction.atomic
+def close_out_waitlisted_application(request, pk):
+    """Close out a waitlisted (pending) application as 'Not Reached This
+    Call' (#30b) — the terminal outcome for a waitlist offer whose capacity
+    never opened.
+
+    Requirements:
+    - Application is in 'pending' status AND the applicant has already
+      accepted the waitlist offer (accepted_by_applicant=True) — an
+      unanswered offer still has its own 10-day response window (#17) and
+      should not be short-circuited before that window runs out.
+    - Caller is a coordinator / superuser, OR is a node_coordinator whose
+      node has equipment on this application (same authorization as
+      promote_waitlisted_application).
+    - A free-text reason is required and stored alongside the other
+      resolution comments.
+
+    Effect:
+    - status: pending -> not_reached (terminal; not routed through the
+      competitive-funding reject protection — this is not a
+      resolution-phase reject, see Application.has_any_denied_evaluation).
+    - waitlist_not_reached email sent to the applicant, exactly once.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    if not _can_manage_waitlisted_application(user, application):
+        messages.error(request, "You are not authorised to close out this application.")
+        return redirect('access:access_tracking')
+
+    if application.status != 'pending':
+        messages.error(
+            request,
+            f"Cannot close out application {application.code}: status is "
+            f"'{application.get_status_display()}', not Pending (Waitlist)."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if not application.accepted_by_applicant:
+        messages.error(
+            request,
+            f"Cannot close out {application.code}: the applicant has not yet "
+            "responded to the waitlist offer. Wait for their response, or let "
+            "it auto-expire."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if request.method != 'POST':
+        return render(request, 'applications/waitlist_close_out_confirm.html', {
+            'application': application,
+        })
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        messages.error(request, "A reason is required to close out a waitlisted application.")
+        return redirect('applications:waitlist_close_out', pk=application.pk)
+
+    application.status = 'not_reached'
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[NOT REACHED THIS CALL] by {user.get_full_name() or user.email} "
+          f"on {timezone.now().date()}\n{reason}"
+    ).strip()
+    application.save()
+
+    from communications.tasks import send_email_from_template
+    recipient_email = application.applicant_email or application.applicant.email
+    try:
+        send_email_from_template(
+            template_type='waitlist_not_reached',
+            recipient_email=recipient_email,
+            context_data={
+                'applicant_name': application.applicant.get_full_name(),
+                'application_code': application.code,
+                'call_code': application.call.code,
+                'reason': reason,
+            },
+            recipient_user_id=application.applicant.id,
+            related_application_id=application.id,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "waitlist_not_reached email failed for application %s", application.code
+        )
+
+    messages.success(
+        request,
+        f"Application {application.code} closed out as 'Not Reached This Call'. "
+        "The applicant has been notified."
     )
     return redirect('applications:detail', pk=application.pk)
 

@@ -49,6 +49,9 @@
                                 <a href="{% url 'applications:promote_waitlisted' app.pk %}" class="btn btn-sm btn-success">
                                     <i class="bi bi-fast-forward"></i> Promote to Accepted
                                 </a>
+                                <a href="{% url 'applications:waitlist_close_out' app.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Not Reached This Call
+                                </a>
                             {% elif app.status == 'accepted' and app.accepted_by_applicant and not app.is_completed %}
                                 <a href="{% url 'access:mark_complete' app.id %}" class="btn btn-sm btn-success">
                                     <i class="bi bi-check-circle"></i> Mark Complete + Log Hours
