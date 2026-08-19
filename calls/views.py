@@ -611,6 +611,53 @@ def call_close(request, pk):
 
 
 @coordinator_required
+def call_resolve(request, pk):
+    """
+    Mark a call resolved: 'closed' -> 'resolved', resolution locked.
+
+    Deliberately separate from the legacy `finalize_resolution` bulk flow
+    (`applications/services/resolution.py`), which also re-dispatches
+    resolution notification emails to every applicant — unsafe to press on
+    a call whose node resolutions have already gone out per-application.
+    This action has **no email side-effects**; it only closes out the
+    call's lifecycle field. See docs/developer/call-lifecycle-proposal.md
+    for the (deferred) redesign this manual action deliberately does not
+    anticipate.
+    """
+    call = get_object_or_404(Call, pk=pk)
+
+    if call.status != 'closed':
+        messages.error(
+            request,
+            f"Call {call.code} is {call.get_status_display()} and cannot be marked "
+            "resolved. Only a closed call can be resolved."
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    still_evaluated = call.applications.filter(status='evaluated')
+    if still_evaluated.exists():
+        messages.error(
+            request,
+            f"Cannot resolve {call.code}: {still_evaluated.count()} application(s) "
+            "are still in 'Evaluated' status and need a resolution first."
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    if request.method != 'POST':
+        return render(request, 'calls/resolve_confirm.html', {'call': call})
+
+    call.status = 'resolved'
+    call.is_resolution_locked = True
+    call.save()
+
+    messages.success(
+        request,
+        f"Call {call.code} marked resolved. Resolution is now locked; no emails were sent."
+    )
+    return redirect('calls:detail', pk=call.pk)
+
+
+@coordinator_required
 def call_delete(request, pk):
     """
     Delete a draft call.

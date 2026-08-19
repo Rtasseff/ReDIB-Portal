@@ -1961,6 +1961,309 @@ Please do not reply to this email.''',
     "contact_email": "ReDIB contact address (settings.CONTACT_EMAIL)"
 }
                 '''
+            },
+            {
+                'template_type': 'waitlist_digest',
+                'subject': 'ReDIB COA: Waitlisted applications need a decision',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Waitlisted Applications Need a Decision</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+            <p>The following applicants have accepted a waitlist offer and are still waiting to hear whether a slot has opened. For each one: if a slot is now available, promote it to Accepted; if it will not open this call, close it out as "Not Reached This Call" so it does not dangle.</p>
+            {% for node in node_summaries %}
+            <div class="info-box">
+                <p><strong>{{ node.node_name }}</strong></p>
+                {% for app in node.applications %}
+                <p>&bull; {{ app.application_code }} &mdash; {{ app.applicant_name }} (waiting {{ app.days_waiting }} days)</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            <p style="text-align: center;">
+                <a href="{{ access_tracking_url }}" class="button">Open Access Tracking</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+The following applicants have accepted a waitlist offer and are still waiting to hear whether a slot has opened. For each one: if a slot is now available, promote it to Accepted; if it will not open this call, close it out as "Not Reached This Call" so it does not dangle.
+{% for node in node_summaries %}
+{{ node.node_name }}:
+{% for app in node.applications %}  - {{ app.application_code }} - {{ app.applicant_name }} (waiting {{ app.days_waiting }} days)
+{% endfor %}{% endfor %}
+Open Access Tracking:
+{{ access_tracking_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: coordinator_name, node_summaries (list of {node_name, applications: [{application_code, applicant_name, days_waiting}]}), access_tracking_url'''
+            },
+            {
+                'template_type': 'waitlist_not_reached',
+                'subject': 'ReDIB COA: Update on your waitlisted application {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #7f8c8d; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .info-box { background-color: #ecf0f1; border-left: 4px solid #7f8c8d; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Waitlist Update</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+            <p>Thank you for your patience while you were on the waiting list for <strong>{{ call_code }}</strong>. Unfortunately no slot became available before the call closed, so we are not able to offer you access this round.</p>
+            <div class="info-box">
+                <p><strong>Application:</strong> {{ application_code }}</p>
+                <p><strong>Note from the coordinator:</strong> {{ reason }}</p>
+            </div>
+            <p>This is not a reflection of your application's merit — it reached the waiting list on its own strength. We encourage you to apply again in a future call.</p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+Thank you for your patience while you were on the waiting list for {{ call_code }}. Unfortunately no slot became available before the call closed, so we are not able to offer you access this round.
+
+Application: {{ application_code }}
+Note from the coordinator: {{ reason }}
+
+This is not a reflection of your application's merit - it reached the waiting list on its own strength. We encourage you to apply again in a future call.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated message from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, reason'''
+            },
+            {
+                'template_type': 'freed_capacity_notice',
+                'subject': 'ReDIB COA: Capacity freed on {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Equipment Hours Freed</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}) at <strong>{{ node_name }}</strong> {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:</p>
+            <div class="info-box">
+                {% for line in freed_lines %}
+                <p>&bull; {{ line.equipment_name }}: {{ line.hours_freed }} hours</p>
+                {% endfor %}
+            </div>
+            <p>If you have waitlisted applicants for this equipment, consider promoting one from Access Tracking.</p>
+            <p style="text-align: center;">
+                <a href="{{ access_tracking_url }}" class="button">Open Access Tracking</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notice from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+Application {{ application_code }} ({{ applicant_name }}) at {{ node_name }} {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:
+{% for line in freed_lines %}  - {{ line.equipment_name }}: {{ line.hours_freed }} hours
+{% endfor %}
+If you have waitlisted applicants for this equipment, consider promoting one from Access Tracking.
+
+Open Access Tracking:
+{{ access_tracking_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated notice from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: coordinator_name, application_code, applicant_name, node_name, reason ('expired' or 'declined'), freed_lines (list of {equipment_name, hours_freed}), application_url, access_tracking_url'''
+            },
+            {
+                'template_type': 'completion_reminder',
+                'subject': 'ReDIB COA: Log your final hours for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Reminder: Report Your Final Hours</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+            <p>Your access under <strong>{{ call_code }}</strong> is still open. Once your work on each piece of equipment is finished, please mark it done and enter the actual hours used so the network can close out the project.</p>
+            <div class="info-box">
+                <p><strong>Application:</strong> {{ application_code }}</p>
+            </div>
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">Open Your Application</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+Your access under {{ call_code }} is still open. Once your work on each piece of equipment is finished, please mark it done and enter the actual hours used so the network can close out the project.
+
+Application: {{ application_code }}
+
+Open your application:
+{{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, application_url'''
+            },
+            {
+                'template_type': 'completion_reminder_coordinator',
+                'subject': 'ReDIB COA: Check completion status for {{ application_code }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .info-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Reminder: Confirm Completion Status</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            <div class="info-box">
+                <p><strong>Node(s):</strong> {{ node_name }}</p>
+            </div>
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">Open Application</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+Application {{ application_code }} ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
+
+Node(s): {{ node_name }}
+
+Open application:
+{{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: coordinator_name, application_code, applicant_name, call_code, node_name (comma-separated if the coordinator manages more than one of this application's nodes), application_url'''
             }
         ]
 

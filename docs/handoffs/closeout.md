@@ -279,25 +279,49 @@ elsewhere:
 
 <!-- Keep this current as you work. -->
 
-- [ ] Baseline recorded (`test`, `check`, `makemigrations --check`) before any change
-- [ ] #45 feasibility reminder: dedupe first, then fan out
-- [ ] #17 acceptance deadlines include waitlisted applicants
-- [ ] #28 datetimes pre-formatted + `context_data` audit
-- [ ] #36 "Mark call resolved" action
-- [ ] #30(a) waitlist digest to node coordinators
-- [ ] #30(b) "not reached this call" close-out + applicant email
-- [ ] #30(c) freed-capacity notice on expiry/decline
-- [ ] #29 completion reminders (applicant + node coordinators)
-- [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [ ] Suite green, PR opened
-- [ ] *(stretch)* #35 draft nudge
+- [x] Baseline recorded (`test`, `check`, `makemigrations --check`) before any change
+      — `manage.py test tests`: 162 passed. `manage.py test`: 11 passed. Both
+      clean on `check` / `makemigrations --check` @ `c883be7`.
+- [x] #45 feasibility reminder: dedupe first, then fan out
+- [x] #17 acceptance deadlines include waitlisted applicants
+- [x] #28 datetimes pre-formatted + `context_data` audit
+- [x] #36 "Mark call resolved" action
+- [x] #30(a) waitlist digest to node coordinators
+- [x] #30(b) "not reached this call" close-out + applicant email
+- [x] #30(c) freed-capacity notice on expiry/decline
+- [x] #29 completion reminders (applicant + node coordinators)
+- [x] `/code-review` at **medium**, on this branch, before opening the PR
+      — 6 findings, all applied except the `call_resolve` guard scope
+      (flagged above instead, per the brief's own settled scope). See PR
+      body for the full list and what changed.
+- [x] Suite green — `manage.py test tests`: 201 passed (162 baseline + 39
+      new). `manage.py test`: 11 passed. `check` / `makemigrations --check`
+      clean.
+- [ ] PR opened
+- [ ] *(stretch)* #35 draft nudge — **dropped**, per brief's own
+      "drop it without hesitation" guidance: all six required items plus
+      their test coverage and the code review already consumed the budget
+      this bucket warranted, and #35 is wanted for the October call, not
+      REDIB-2601.
 
 ## Questions for the handoff session
 
 <!-- Park anything needing the human or `main` here and continue with what does
      not depend on it. Do not guess on these. -->
 
-- Nothing yet.
+- **`call_resolve`'s guard only checks `status='evaluated'`, per this brief's
+  own spec** ("guarded by 'no application still in evaluated'"). `/code-review`
+  flagged that this lets a coordinator mark a call resolved while it still has
+  applications earlier in the pipeline (`under_feasibility_review`,
+  `pending_evaluation`, `under_evaluation`) or applications mid-way through
+  their 10-day accept/decline window (`accepted`/`pending` with
+  `accepted_by_applicant` unset). For REDIB-2601 specifically this can't
+  happen — everything left is `evaluated`-and-resolved or already terminal —
+  but as a general guard for future calls it's narrower than "is this call
+  actually done." Left exactly as specified rather than widening it
+  unilaterally, since #40 (deferred call-lifecycle redesign, ~2027-03) is the
+  place a broader "is this call done" concept belongs. Flagging for a
+  decision: tighten the guard now, or fold into #40.
 
 ## Review
 

@@ -46,6 +46,10 @@
            onclick="return confirm('Close this call for submissions?')">
             <i class="bi bi-lock"></i> Close Submissions
         </a>
+        {% elif call.status == 'closed' %}
+        <a href="{% url 'calls:resolve' call.pk %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-check-circle"></i> Mark Call Resolved
+        </a>
         {% endif %}
     </div>
 </div>
