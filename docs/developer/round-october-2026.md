@@ -79,9 +79,30 @@ off instead removed it from the round.
 
 **On the first-application critical path** — must be in prod by 2026-10-15:
 
-- **#9** (feasibility fan-out) — fires the moment the first application is
-  submitted. Late means reproducing REDIB-2601's single-arbitrary-coordinator
-  problem on the new call.
+- **#9** (feasibility fan-out) — **shipped and deployed 2026-08-19.** But it
+  only helps a node that *has* an active coordinator, and **#48** says a node
+  without one is silently dropped from feasibility review entirely. Fix #48
+  inline once `closeout` merges.
+- **Coordinator coverage — unverified, and it needs a prod check.** Ask prod to
+  run, read-only:
+
+  ```python
+  from core.models import Node, UserRole
+  for n in Node.objects.order_by('code'):
+      c = UserRole.objects.filter(node=n, role='node_coordinator', is_active=True).count()
+      print(f'{n.code:16} {c} active coordinator(s)', '  <-- NONE' if not c else '')
+  ```
+
+  Any node printing 0 cannot receive a feasibility review in October. BioImaC
+  is the one to watch: Cristina was deactivated in `1acb6d1` and her
+  replacement `aac.bioimac@ucm.es` carries `node_coordinator:BioImaC` in
+  `data/users.tsv:23` — but **the loader has never been run on prod**, because
+  #43 blocks it. So that role may exist only in the file. That is the link
+  between #43 and #48: the fix for the blocked loader is also what installs
+  the missing coordinator.
+
+  (The local dev sandbox shows BioImaC at 0, but its `db.sqlite3` predates
+  these TSVs and is not evidence about prod either way — hence the check.)
 - **#13-minimal** — **shipped and deployed 2026-08-19.** Its new `--dry-run`
   immediately paid for itself: prod ran it and found **#43**, which now blocks
   the load it was meant to make safe. A plain `populate_redib_users` today would
