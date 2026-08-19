@@ -83,8 +83,10 @@ off instead removed it from the round.
   only helps a node that *has* an active coordinator, and **#48** says a node
   without one is silently dropped from feasibility review entirely. Fix #48
   inline once `closeout` merges.
-- **Coordinator coverage — unverified, and it needs a prod check.** Ask prod to
-  run, read-only:
+- **Coordinator coverage — checked on prod 2026-08-19: every node has at least
+  one active `node_coordinator`.** So #48 is latent rather than firing, and
+  `aac.bioimac@ucm.es` is in place at BioImaC despite the loader still being
+  blocked by #43. Re-run the check after any role change during call prep:
 
   ```python
   from core.models import Node, UserRole
@@ -92,24 +94,6 @@ off instead removed it from the round.
       c = UserRole.objects.filter(node=n, role='node_coordinator', is_active=True).count()
       print(f'{n.code:16} {c} active coordinator(s)', '  <-- NONE' if not c else '')
   ```
-
-  Any node printing 0 cannot receive a feasibility review in October. BioImaC
-  is the one to watch: Cristina was deactivated in `1acb6d1` and her
-  replacement `aac.bioimac@ucm.es` carries `node_coordinator:BioImaC` in
-  `data/users.tsv:23` — but **the loader has never been run on prod**, because
-  #43 blocks it. So that role may exist only in the file. That is the link
-  between #43 and #48: the fix for the blocked loader is also what installs
-  the missing coordinator.
-
-  (The local dev sandbox shows BioImaC at 0, but its `db.sqlite3` predates
-  these TSVs and is not evidence about prod either way — hence the check.)
-- **#13-minimal** — **shipped and deployed 2026-08-19.** Its new `--dry-run`
-  immediately paid for itself: prod ran it and found **#43**, which now blocks
-  the load it was meant to make safe. A plain `populate_redib_users` today would
-  deactivate a serving evaluator and clear `auto_data_consent` on ~14 accounts,
-  because the shared loader rule writes a blank cell as `False`. **Do not load
-  users on prod until #43 is settled** — it is the one thing standing between us
-  and preparing the new call's accounts.
 
 Not on the critical path but worth knowing: **#35**'s draft nudge must be live
 about a week before `submission_end` (~2026-11-23); **#17/#28** are not needed
