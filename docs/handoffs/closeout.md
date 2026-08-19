@@ -1,5 +1,14 @@
 # Handoff — `feature/closeout`
 
+> **Merged 2026-08-19 (PR #36).** Record only — the branch and its worktree
+> are gone. All six required items shipped (#45, #17, #28, #36, #30, #29);
+> #35 was dropped and reassigned to `eval-reminders`. The one question left
+> open below (`call_resolve`'s guard scope) was answered in the handoff
+> session: keep the narrow `evaluated`-only guard, fold the broader "is this
+> call done" concept into #40. See
+> [round-october-2026.md § 7](../developer/round-october-2026.md) for the
+> merge record and the pre-deploy check this bucket carries.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/closeout.md on the branch. Keep "Status" current. -->
 
@@ -322,6 +331,17 @@ elsewhere:
   unilaterally, since #40 (deferred call-lifecycle redesign, ~2027-03) is the
   place a broader "is this call done" concept belongs. Flagging for a
   decision: tighten the guard now, or fold into #40.
+
+  **Answered 2026-08-19 (handoff session): keep the guard as specified, fold
+  the broader concept into #40.** Widening it is the more dangerous option.
+  `is_resolution_locked` is read by exactly one caller — `finalize_resolution`,
+  the legacy bulk flow this action deliberately replaces — and nothing gates
+  the workflow on `call.status == 'resolved'`, so an early resolve is
+  administratively untidy, not destructive. A stricter guard, by contrast,
+  would let a single application stuck in `under_evaluation` block the call
+  from ever being closed out, with no coordinator override — which is exactly
+  the situation REDIB-2601 is in and exactly what this bucket exists to fix.
+  Trading a cosmetic risk for an un-closable call is the wrong trade.
 
 ## Review
 

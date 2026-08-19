@@ -114,7 +114,7 @@ bandwidth limit. Ports are reused as buckets retire; the registry table in
 | 1 | `baseline` | 7, 8, 31 | — (`main`) | 2026-08-21 | 2026-08-22 | Sonnet | diff read + suite |
 | 2 | `call-hardening` | 27, 33, 13-min, 9 | — (`main`) | 2026-09-08 | **#27 by 09-12**, rest by 10-13 | Sonnet | targeted read + suite |
 | 3 | `closeout` | 45, 17, 28, 36, 30, 29 (35 stretch) | `baseline` | 2026-09-11 | 2026-09-15 | Sonnet | `/code-review` medium |
-| 4 | `eval-reminders` | 32, 5 | `closeout` | 2026-10-09 | 2026-10-13 (else before evaluator assignments, ~12) | Sonnet | `/code-review` medium |
+| 4 | `eval-reminders` | 32, 5, 35, 49 | `closeout` | 2026-10-09 | 2026-10-13 (else before evaluator assignments, ~12) | Sonnet | `/code-review` medium |
 | 5 | `release-gate` | 15 (16 stretch) | `call-hardening` | **2026-12-05 (abort date)** | before the first evaluation completes | Opus | `/code-review` medium |
 | 6 | `resolution-report` | 20 | `eval-reminders` | 2027-01-15 | before results are published | Sonnet | targeted read + suite |
 
@@ -212,6 +212,11 @@ coordinator of the node, and all of them are emailed.
 
 ### 4.3 `closeout` — finish REDIB-2601, and the waitlist lifecycle
 
+> **Merged 2026-08-19 (PR #36).** All six required items shipped; #35 was
+> dropped and reassigned to `eval-reminders`. Kept below as the record of what
+> was asked for. Review of the PR added four backlog items (#49–#52) and one
+> **pre-deploy check** — see § 7.
+
 **Goal.** Give the running call an ending: nudge participants to log actual
 hours and complete, resolve the waitlist, and move the call itself to
 `resolved`.
@@ -261,6 +266,10 @@ for the coordinator.
 **In:** #32 (per-evaluator digest, backoff, dedupe — REDIB-2601 sent two
 evaluators 42 reminders each), #5 (on-demand reminder dispatch for a chosen
 scope) as phase 2. #5 is the escape hatch if #32's backoff turns out too quiet.
+Picked up from `closeout` 2026-08-19: **#35** (draft nudge, dropped there as the
+stretch item) and **#49** (`send_completion_reminders` is per-application where
+it should be a per-coordinator digest — the same bug as #32, one call cycle
+later). #49 is cheap here because #32 builds the digest shape anyway.
 
 **Out:** #4 (auto-assign preview) — deferred this round.
 
@@ -343,6 +352,13 @@ between merges rather than earning a bucket:
   alone, matching the password-on-create-only rule) or `data/users.tsv` is
   refreshed from prod first. Decide before touching code. **Blocks the October
   user load**, so it is the first inline item, not the last.
+- **#52** — `acceptance_reminder` and `acceptance_expired` read as if the
+  recipient had been granted access, and `closeout`'s #17 has just started
+  sending both to **waitlisted** applicants. One tells them their grant will be
+  "offered to the next applicant on the waiting list"; the other calls their
+  application "approved". Applicant-facing, template-only, no migration. Fires
+  on the first October waitlist offer, so it wants doing before the call
+  resolves — and before the pre-deploy check in § 7 is answered.
 - **#18** — coordinator "reinstate expired application". Wanted before the
   first expiry of the new call (~2027-01).
 - **#23** — scientific-project guidance text. Blocked on Ángel's worked
@@ -374,8 +390,8 @@ Update on every merge, in the same commit as the registry change.
 |---|---|---|---|---|
 | `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | **2026-08-19** | Suite green — but it takes **two commands**, because `tests/` has no `__init__.py` and default discovery skips it: `manage.py test tests` = **162**, `manage.py test` = **11** (`reports/tests.py`). 173 total; that pair is what later buckets measure against (see #46). Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
 | `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
-| `closeout` | **2026-08-19** | | | Cut from `main` @ `0971e16`, worktree `closeout/` port 8002. #45, #17, #28, #36, #30, #29; #35 stretch. Owns `applications/tasks.py`. |
-| `eval-reminders` | | | | cut once `closeout` merges |
+| `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
+| `eval-reminders` | | | | **Ready to cut** (`closeout` merged 2026-08-19). #32, #5, plus #35 and #49 inherited from `closeout`. Port 8002 is free. |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
 | `resolution-report` | | | | cut once `eval-reminders` merges |
 
@@ -384,11 +400,43 @@ Update on every merge, in the same commit as the registry change.
 
 **Deployed 2026-08-19** (prod pulled `0971e16`): #27, #31, #33, #13-min, #9,
 the `resolution_accepted` template guard, and the announcement-email switch
-(`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`). Nothing is waiting on a deploy right now.
+(`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`).
+
+**Waiting on a deploy: `closeout` (target 2026-09-15).** Two choices-only
+`AlterField` migrations (`applications.0014`, `communications.0008` — `sqlmigrate`
+confirms no-op DDL), five new `EmailTemplate` rows seeded by the entrypoint's
+`seed_email_templates`, and two new beat tasks at 08:00 and 08:15.
+
+**Pre-deploy check — run this on prod before the first beat cycle after the
+pull.** #17 adds `status='pending'` to the auto-expire branch of
+`process_acceptance_deadlines`. That branch is retroactive: it expires anything
+whose deadline has already passed. So on the first 09:00 run after deploy, every
+REDIB-2601 waitlist offer that was never answered gets auto-expired **and
+emailed** — months after the fact, using `acceptance_expired`, whose wording is
+wrong for a waitlisted applicant (#52).
+
+```python
+from django.utils import timezone
+from applications.models import Application
+
+Application.objects.filter(
+    status='pending',
+    accepted_by_applicant__isnull=True,      # never responded
+    acceptance_deadline__lt=timezone.now(),  # window already closed
+).values_list('code', 'acceptance_deadline')
+```
+
+Empty result → deploy is uneventful. Non-empty → decide deliberately first:
+ship #52's wording fix with it, or clear those rows by hand before the beat
+runs. Either way it is a decision, not a surprise. (The seven `pending`
+REDIB-2601 applications prod counted on 2026-08-19 are the population to check;
+whether any of them has an unanswered deadline is not knowable from dev.)
 
 Prod's post-deploy verification produced two findings, both in the backlog:
-**#43** (High, blocks the user load — see § 5) and **#44** (Low, blocked on
-BioImaC confirming two 0-hour lines were deliberate). The waitlist
+**#43** (High, blocks the user load — see § 5) and **#44** (Low, answered
+2026-08-19 — the two 0-hour lines are deliberate; what survives is that a
+declined instrument and an unfilled one are indistinguishable, which #20's
+resolution table is the natural moment to fix). The waitlist
 `hours_approved` backfill turned out **not to be needed**: prod checked and
 neither 0-hour application was ever waitlisted, so #31's promotion fix covers
 the round with no data command to run.
