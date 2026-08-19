@@ -176,6 +176,7 @@ live right now.
 
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
+| `closeout/` | `feature/closeout` | 8002 | 2026-08-19 | **Live.** REDIB-2601 close-out + waitlist lifecycle (#45, #17, #28, #36, #30, #29; #35 stretch). Merge by 2026-09-11, in prod by 2026-09-15. Owns `applications/tasks.py`. Handoff: `docs/handoffs/closeout.md` on the branch. |
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree

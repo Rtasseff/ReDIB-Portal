@@ -177,6 +177,44 @@ promotion bug surfacing.
   `makemigrations --check --dry-run` both clean.
 - [x] PR opened — https://github.com/Rtasseff/ReDIB-Portal/pull/35
 
+### Outcome on prod, 2026-08-19 — the backfill was never needed
+
+The last checklist item above tells the handoff session to collect confirmed
+hours from the node coordinators and run the backfill against prod. **Do not
+act on that.** Prod verified after the 2026-08-19 deploy: all 7 REDIB-2601
+waitlisted applications (002, 004, 006, 008, 012, 020, 022) are **still
+`pending`** with `handoff_email_sent_at = None`. None was ever promoted, so
+#31's promotion-time fix covers the round and there is no data to correct.
+
+The command stays — it is the right tool the first time a promotion does need
+correcting — but it has never been run against prod.
+
+**The query to use next time**, which is *not* the one that was used on
+2026-08-19. That one filtered on status + null/0 hours only, so it also
+returned two applications that were never waitlisted at all (backlog #44).
+`Application` carries `simple_history` (`applications/models.py:43`), so scope
+it to "was ever `pending`":
+
+```python
+from django.db.models import Q
+from applications.models import Application, RequestedAccess
+
+ever_pending = set(
+    Application.history
+    .filter(code__startswith='REDIB-2601', status='pending')
+    .values_list('code', flat=True)
+)
+rows = RequestedAccess.objects.filter(
+    Q(hours_approved__isnull=True) | Q(hours_approved=0),
+    application__code__in=ever_pending,
+    application__status__in=['accepted', 'completed'],
+).select_related('application', 'equipment')
+```
+
+Caveat: `history` records ORM-level saves, so a status changed by a bulk
+`update()` would not appear. Cross-check a non-empty result against the
+applications' current status before acting on it.
+
 ### Deviation: a third, unrelated cause behind 2 of the 9 baseline failures
 
 `test_applicant_can_submit_publication` and `test_full_publication_workflow`
