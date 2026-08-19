@@ -82,8 +82,13 @@ off instead removed it from the round.
 - **#9** (feasibility fan-out) — fires the moment the first application is
   submitted. Late means reproducing REDIB-2601's single-arbitrary-coordinator
   problem on the new call.
-- **#13-minimal** — before the next time users are loaded onto prod, which is
-  likely part of preparing the new call. Confirm with Ryan when that load is.
+- **#13-minimal** — **shipped and deployed 2026-08-19.** Its new `--dry-run`
+  immediately paid for itself: prod ran it and found **#43**, which now blocks
+  the load it was meant to make safe. A plain `populate_redib_users` today would
+  deactivate a serving evaluator and clear `auto_data_consent` on ~14 accounts,
+  because the shared loader rule writes a blank cell as `False`. **Do not load
+  users on prod until #43 is settled** — it is the one thing standing between us
+  and preparing the new call's accounts.
 
 Not on the critical path but worth knowing: **#35**'s draft nudge must be live
 about a week before `submission_end` (~2026-11-23); **#17/#28** are not needed
@@ -103,7 +108,7 @@ bandwidth limit. Ports are reused as buckets retire; the registry table in
 |---|---|---|---|---|---|---|---|
 | 1 | `baseline` | 7, 8, 31 | — (`main`) | 2026-08-21 | 2026-08-22 | Sonnet | diff read + suite |
 | 2 | `call-hardening` | 27, 33, 13-min, 9 | — (`main`) | 2026-09-08 | **#27 by 09-12**, rest by 10-13 | Sonnet | targeted read + suite |
-| 3 | `closeout` | 29, 30, 36, 17, 28 (35 stretch) | `baseline` | 2026-09-11 | 2026-09-15 | Sonnet | `/code-review` medium |
+| 3 | `closeout` | 45, 17, 28, 36, 30, 29 (35 stretch) | `baseline` | 2026-09-11 | 2026-09-15 | Sonnet | `/code-review` medium |
 | 4 | `eval-reminders` | 32, 5 | `closeout` | 2026-10-09 | 2026-10-13 (else before evaluator assignments, ~12) | Sonnet | `/code-review` medium |
 | 5 | `release-gate` | 15 (16 stretch) | `call-hardening` | **2026-12-05 (abort date)** | before the first evaluation completes | Opus | `/code-review` medium |
 | 6 | `resolution-report` | 20 | `eval-reminders` | 2027-01-15 | before results are published | Sonnet | targeted read + suite |
@@ -126,9 +131,10 @@ any single-file fix that surfaces mid-round.
 ### Cross-bucket rules (put these in every brief)
 
 - **Shared files.** Three files are touched by every bucket that adds a
-  reminder or an email: `CELERY_BEAT_SCHEDULE` in `redib/settings.py`,
-  `core/management/commands/seed_email_templates.py`, and the email template
-  dir. Always **append at the end**, and on conflict **keep both sides** —
+  reminder or an email: `app.conf.beat_schedule` in **`redib/celery.py:22`**,
+  **`communications/management/commands/seed_email_templates.py`**, and
+  `TEMPLATE_TYPES` in `communications/models.py:16`. (Corrected 2026-08-19 —
+  this rule named two paths that do not exist.) Always **append at the end**, and on conflict **keep both sides** —
   that turns a scary-looking conflict into a mechanical one.
 - **File ownership.** While `closeout` is live it owns `applications/tasks.py`;
   nothing on `main` or in another bucket edits that file until it merges.
@@ -205,10 +211,12 @@ coordinator of the node, and all of them are emailed.
 hours and complete, resolve the waitlist, and move the call itself to
 `resolved`.
 
-**In:** #29 (execution-phase completion reminders), #30 (waitlist follow-up),
-#36 (call close-out: `closed → resolved` + `is_resolution_locked` from the UI),
-#17 (acceptance deadline task ignores waitlisted applicants), #28 (datetime
-objects in Celery `context_data`). **Stretch, only once the rest is green:**
+**In, in this order** (smallest first, then #36 before #30 because #36 is what
+fires #30's closure email): #45 (`send_feasibility_reminders` has no dedupe and
+still emails one assignee — left over from #9), #17 (acceptance deadline task
+ignores waitlisted applicants), #28 (datetimes in Celery `context_data`), #36
+(call close-out: `closed → resolved` + `is_resolution_locked` from the UI), #30
+(waitlist follow-up), #29 (execution-phase completion reminders). **Stretch, only once the rest is green:**
 #35 (draft nudge before the submission deadline) — same shape, same files,
 near-zero marginal setup cost.
 
@@ -322,6 +330,14 @@ between merges rather than earning a bucket:
   a **live call** in December. Wanted in the pre-open batch (2026-10-13), and
   required before that December deploy. Cannot be verified in dev — no Docker
   locally — so the next real deploy is the test.
+- **#43** — `populate_redib_users` treats a blank cell as an explicit `False`.
+  Found on prod 2026-08-19 by the `--dry-run` that #13-min added. One file, but
+  it carries a decision: the blank→False rule is **shared by all five
+  `populate_redib_*` loaders** and documented in `CLAUDE.md`, so either
+  `is_active`/`auto_data_consent` become an explicit exception (blank = leave
+  alone, matching the password-on-create-only rule) or `data/users.tsv` is
+  refreshed from prod first. Decide before touching code. **Blocks the October
+  user load**, so it is the first inline item, not the last.
 - **#18** — coordinator "reinstate expired application". Wanted before the
   first expiry of the new call (~2027-01).
 - **#23** — scientific-project guidance text. Blocked on Ángel's worked
@@ -351,9 +367,9 @@ Update on every merge, in the same commit as the registry change.
 
 | Bucket | Cut | Merged | Deployed | Notes |
 |---|---|---|---|---|
-| `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | | Suite green: **173 tests, 0 failures** — that is the number later buckets measure against. Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
-| `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`: `feasibility_reminder` still emails only the original assignee. |
-| `closeout` | | | | cut once `baseline` merges |
+| `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | **2026-08-19** | Suite green: **173 tests, 0 failures** — that is the number later buckets measure against. Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
+| `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
+| `closeout` | **2026-08-19** | | | Cut from `main` @ `0971e16`, worktree `closeout/` port 8002. #45, #17, #28, #36, #30, #29; #35 stretch. Owns `applications/tasks.py`. |
 | `eval-reminders` | | | | cut once `closeout` merges |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
 | `resolution-report` | | | | cut once `eval-reminders` merges |
@@ -361,9 +377,13 @@ Update on every merge, in the same commit as the registry change.
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
 2026-08-18.
 
-**Waiting on the next deploy** (`main` as of 2026-08-18, after PRs #34 + #35):
-#27, #31, #33, #13-min, #9, the `resolution_accepted` template guard, and
-`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`. Two of those need a follow-up on
-prod after the deploy — the template guard only takes effect once
-`seed_email_templates` re-runs (the entrypoint does it), and the waitlist
-`hours_approved` backfill needs real figures from the node coordinators.
+**Deployed 2026-08-19** (prod pulled `0971e16`): #27, #31, #33, #13-min, #9,
+the `resolution_accepted` template guard, and the announcement-email switch
+(`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`). Nothing is waiting on a deploy right now.
+
+Prod's post-deploy verification produced two findings, both in the backlog:
+**#43** (High, blocks the user load — see § 5) and **#44** (Low, blocked on
+BioImaC confirming two 0-hour lines were deliberate). The waitlist
+`hours_approved` backfill turned out **not to be needed**: prod checked and
+neither 0-hour application was ever waitlisted, so #31's promotion fix covers
+the round with no data command to run.
