@@ -367,7 +367,7 @@ Update on every merge, in the same commit as the registry change.
 
 | Bucket | Cut | Merged | Deployed | Notes |
 |---|---|---|---|---|
-| `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | **2026-08-19** | Suite green: **173 tests, 0 failures** — that is the number later buckets measure against. Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
+| `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | **2026-08-19** | Suite green — but it takes **two commands**, because `tests/` has no `__init__.py` and default discovery skips it: `manage.py test tests` = **162**, `manage.py test` = **11** (`reports/tests.py`). 173 total; that pair is what later buckets measure against (see #46). Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
 | `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
 | `closeout` | **2026-08-19** | | | Cut from `main` @ `0971e16`, worktree `closeout/` port 8002. #45, #17, #28, #36, #30, #29; #35 stretch. Owns `applications/tasks.py`. |
 | `eval-reminders` | | | | cut once `closeout` merges |

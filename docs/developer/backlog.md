@@ -151,6 +151,7 @@ Registry of active worktrees (dir, port, status): [worktrees.md](worktrees.md).
 
 | # | Priority | Round | Item |
 |---|----------|-------|------|
+| 46 | Low | — | **`manage.py test` misses 94% of the suite.** `tests/` has no `__init__.py`, so Django's default discovery walks past it: `python manage.py test` runs **11** tests (only `reports/tests.py`, the one app-level module with real content) and exits `OK`, while the actual workflow suite needs the explicit `python manage.py test tests` — **162** tests. Anyone running the obvious command gets a green light from 6% of the suite. Likely a one-line fix (`touch tests/__init__.py`, then check nothing double-collects), but it is test infrastructure mid-round, so it is not urgent — the round plan and the handoff briefs now name both commands. (Source: handoff session, 2026-08-19, while recording the `closeout` baseline.) |
 
 ---
 
