@@ -297,7 +297,7 @@ elsewhere:
 - [x] Suite green — `manage.py test tests`: 201 passed (162 baseline + 39
       new). `manage.py test`: 11 passed. `check` / `makemigrations --check`
       clean.
-- [ ] PR opened
+- [x] PR opened — https://github.com/Rtasseff/ReDIB-Portal/pull/36
 - [ ] *(stretch)* #35 draft nudge — **dropped**, per brief's own
       "drop it without hesitation" guidance: all six required items plus
       their test coverage and the code review already consumed the budget
