@@ -38,7 +38,7 @@ prod by **2026-09-15** — that date is the point of the bucket, not a nicety.
 
 **In**, and this is the order to build them (rationale in "Decisions" below):
 
-1. **#43** — `send_feasibility_reminders` has no dedupe *and* still emails only
+1. **#45** — `send_feasibility_reminders` has no dedupe *and* still emails only
    the original assignee. High, ~15 lines, and the smallest thing here. Left
    over from #9; see the note below before you fan anything out.
 2. **#17** — `process_acceptance_deadlines` ignores waitlisted applicants. High,
@@ -173,7 +173,7 @@ So the real content of #28 is **prophylactic, and it is still worth doing**:
   value types. Correct the backlog entry's diagnosis in your PR body so the next
   reader is not misled.
 
-### #43 — fix the dedupe *before* the fan-out, not after
+### #45 — fix the dedupe *before* the fan-out, not after
 
 `send_feasibility_reminders` (`applications/tasks.py:15`) has two defects and
 the order you fix them in matters.
@@ -270,7 +270,7 @@ elsewhere:
 <!-- Keep this current as you work. -->
 
 - [ ] Baseline recorded (`test`, `check`, `makemigrations --check`) before any change
-- [ ] #43 feasibility reminder: dedupe first, then fan out
+- [ ] #45 feasibility reminder: dedupe first, then fan out
 - [ ] #17 acceptance deadlines include waitlisted applicants
 - [ ] #28 datetimes pre-formatted + `context_data` audit
 - [ ] #36 "Mark call resolved" action
