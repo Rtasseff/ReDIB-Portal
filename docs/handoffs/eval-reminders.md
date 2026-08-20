@@ -267,8 +267,23 @@ Shared with `acceptance-repair` regardless — **rebase early and often**:
       `communications/models.py`, the choices migration — regenerated
       fresh per the conflict watchlist note; `redib/celery.py` auto-merged
       cleanly) and implemented #49 on top
-- [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [ ] Suite green — record both counts
+- [x] `/code-review` at **medium**, on this branch, before opening the PR —
+      3-finder-angle fan-out + Phase 2 verification, 5 findings, all
+      CONFIRMED. 4 fixed: completion-digest milestone dedupe used `min()`
+      instead of `max()` (silently dropped a later application's
+      execution_end nudge); the feasibility per-call dispatch's dedupe
+      collided across a multi-node application's separate
+      `FeasibilityReview`s (fixed with a run-scoped snapshot; a narrower
+      cross-run gap remains, same structural limitation as backlog #50);
+      the evaluator per-call dispatch's dedupe could shadow the full daily
+      digest for a different call (fixed via `related_call_id` scoping);
+      a hardcoded `timedelta(days=7)` remained in two spots instead of
+      `GRACE_PERIOD_DAYS`. The 5th (overdue notices now respect the
+      per-evaluator opt-out, per the brief) is a settled-decision question,
+      parked above rather than reopened.
+- [x] Suite green — record both counts — 315 in `tests/` (was 201 at
+      baseline), 11 in `reports/`, both green; `check` clean, no missing
+      migrations
 - [ ] PR opened
 
 ## Questions for the handoff session
@@ -276,7 +291,19 @@ Shared with `acceptance-repair` regardless — **rebase early and often**:
 <!-- Park anything needing the human or `main` here and continue with what does
      not depend on it. Do not guess on these. -->
 
--
+- `/code-review medium` flagged that folding `notify_overdue_evaluators` into
+  the digest means an evaluator who opted out via `notify_reminders` /
+  `notify_evaluation_assigned` now gets **zero** overdue warning too (the old
+  task sent overdue notices unconditionally, no preference check at all).
+  This matches the brief's explicit instruction — "check
+  `notify_reminders`/`notify_evaluation_assigned` once, when deciding whether
+  to build that evaluator's digest at all" — so I implemented it as written
+  rather than reopening it, but flagging it since the practical effect (an
+  opted-out evaluator can drift into the 7-day lockout with no warning at
+  all) is exactly the kind of silent-miss this bucket exists to prevent.
+  Worth a deliberate call: should the overdue half ignore the opt-out (since
+  missing a lockout is worse than an unwanted email), or is per-evaluator "no
+  reminders at all, including overdue" genuinely what should happen?
 
 ## Review
 

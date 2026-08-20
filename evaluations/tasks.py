@@ -5,6 +5,7 @@ Based on design document section 7.3 - Periodic Tasks.
 
 from celery import shared_task
 from django.conf import settings
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
@@ -100,14 +101,41 @@ def _evaluator_digest_template(entry):
     return 'evaluation_overdue' if any(i['is_overdue'] for i in entry['items']) else 'evaluation_reminder'
 
 
-def _send_evaluator_digest(entry, now, force=False):
-    """Send one evaluator's pending-evaluations digest, unless they opted
-    out or (unless `force`) were already sent this template today. Returns
-    True if sent, False if skipped. Shared by the daily beat task and #5's
-    manual dispatch so both produce the identical email.
+def _evaluator_digest_recently_sent(template_type, recipient_email, now, call=None):
+    """True if `recipient_email` already got this digest template in the
+    last 24h — scoped so a #5 manual dispatch for one call cannot shadow
+    the full daily cross-call digest, and vice versa.
+
+    The daily task's one digest can span several calls at once, so its
+    sends are logged with `related_call_id=None` and only a prior *unscoped*
+    send counts against it (`call=None` here matches only those). A #5
+    manual dispatch is scoped to one call, so a prior send counts against
+    it if it was either unscoped (a fuller send that necessarily already
+    covered this call) or scoped to this same call — but NOT a scoped send
+    for a *different* call, which says nothing about this one.
     """
     from communications.models import EmailLog
 
+    qs = EmailLog.objects.filter(
+        template__template_type=template_type,
+        recipient_email=recipient_email,
+        sent_at__gte=now - timedelta(days=1),
+    )
+    if call is None:
+        qs = qs.filter(related_call_id__isnull=True)
+    else:
+        qs = qs.filter(Q(related_call_id__isnull=True) | Q(related_call_id=call.id))
+    return qs.exists()
+
+
+def _send_evaluator_digest(entry, now, force=False, call=None):
+    """Send one evaluator's pending-evaluations digest, unless they opted
+    out or (unless `force`) were already sent this template today. Returns
+    True if sent, False if skipped. Shared by the daily beat task
+    (`call=None`) and #5's manual dispatch (`call` set) so both produce the
+    identical email — see `_evaluator_digest_recently_sent` for why `call`
+    matters to the dedupe.
+    """
     evaluator = entry['user']
 
     if hasattr(evaluator, 'notification_preferences'):
@@ -117,14 +145,8 @@ def _send_evaluator_digest(entry, now, force=False):
 
     template_type = _evaluator_digest_template(entry)
 
-    if not force:
-        already_sent = EmailLog.objects.filter(
-            template__template_type=template_type,
-            recipient_email=evaluator.email,
-            sent_at__gte=now - timedelta(days=1),
-        ).exists()
-        if already_sent:
-            return False
+    if not force and _evaluator_digest_recently_sent(template_type, evaluator.email, now, call=call):
+        return False
 
     send_email_from_template(
         template_type=template_type,
@@ -135,6 +157,7 @@ def _send_evaluator_digest(entry, now, force=False):
             'pending_count': len(entry['items']),
         },
         recipient_user_id=evaluator.id,
+        related_call_id=call.id if call is not None else None,
     )
     return True
 
@@ -182,8 +205,6 @@ def preview_evaluation_reminders(call, include_recent=False):
     Returns a list of dicts: {recipient_name, recipient_email, detail,
     will_send, skip_reason}, sorted by recipient name.
     """
-    from communications.models import EmailLog
-
     now = timezone.now()
     by_evaluator = _group_pending_evaluations(now, call=call)
 
@@ -199,12 +220,7 @@ def preview_evaluation_reminders(call, include_recent=False):
                 skip_reason = 'notifications disabled'
 
         if skip_reason is None and not include_recent:
-            recently_sent = EmailLog.objects.filter(
-                template__template_type=template_type,
-                recipient_email=evaluator.email,
-                sent_at__gte=now - timedelta(days=1),
-            ).exists()
-            if recently_sent:
+            if _evaluator_digest_recently_sent(template_type, evaluator.email, now, call=call):
                 skip_reason = 'already reminded today'
 
         pending_count = len(entry['items'])
@@ -236,7 +252,7 @@ def send_evaluation_reminders_now(call, include_recent=False):
     sent = 0
     skipped = 0
     for entry in by_evaluator.values():
-        if _send_evaluator_digest(entry, now, force=include_recent):
+        if _send_evaluator_digest(entry, now, force=include_recent, call=call):
             sent += 1
         else:
             skipped += 1
@@ -288,14 +304,15 @@ def notify_coordinator_overdue_evaluations():
             continue
 
         days_overdue = (now - call.evaluation_deadline).days
-        is_lockout = days_overdue >= 7
+        is_lockout = days_overdue >= GRACE_PERIOD_DAYS
 
-        # Only send on day 0 (deadline just passed) or day 7 (lockout)
-        # Allow a 25-hour window for the daily check
+        # Only send on day 0 (deadline just passed) or the lockout day
+        # (see evaluations.utils.GRACE_PERIOD_DAYS / is_evaluation_locked).
+        # Allow a 25-hour window for the daily check.
         deadline_just_passed = (0 <= days_overdue <= 1 and
             (now - call.evaluation_deadline).total_seconds() < 25 * 3600)
-        lockout_just_happened = (7 <= days_overdue <= 8 and
-            (now - (call.evaluation_deadline + timedelta(days=7))).total_seconds() < 25 * 3600)
+        lockout_just_happened = (GRACE_PERIOD_DAYS <= days_overdue <= GRACE_PERIOD_DAYS + 1 and
+            (now - (call.evaluation_deadline + timedelta(days=GRACE_PERIOD_DAYS))).total_seconds() < 25 * 3600)
 
         if not deadline_just_passed and not lockout_just_happened:
             continue

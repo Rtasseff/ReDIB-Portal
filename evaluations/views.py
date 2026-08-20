@@ -15,7 +15,7 @@ from core.models import UserRole, User
 from calls.models import Call
 from applications.models import Application
 from .models import Evaluation
-from .utils import is_evaluation_locked
+from .utils import is_evaluation_locked, GRACE_PERIOD_DAYS
 from .tasks import assign_evaluators_to_application, assign_evaluators_to_call
 
 
@@ -103,7 +103,7 @@ def evaluation_detail(request, pk):
     grace_days_remaining = None
     if deadline and deadline < timezone.now() and not is_locked:
         is_in_grace_period = True
-        grace_end = deadline + timedelta(days=7)
+        grace_end = deadline + timedelta(days=GRACE_PERIOD_DAYS)
         grace_days_remaining = (grace_end - timezone.now()).days
 
     if request.method == 'POST' and not is_locked:

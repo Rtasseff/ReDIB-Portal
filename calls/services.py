@@ -265,26 +265,51 @@ def _feasibility_reminder_candidates(call):
             yield review, coord_role.user
 
 
-def _feasibility_reminder_skip_reason(review, recipient, now, include_recent):
-    """None if `recipient` should be reminded about `review` now; otherwise
-    why not. `include_recent` mirrors the dispatch's "send anyway" override
-    — it never bypasses an opted-out notification preference."""
+def _recently_reminded_feasibility_pairs(now):
+    """Snapshot of (recipient_email, application_id) pairs already sent a
+    'feasibility_reminder' in the last 24h, taken once per preview/send
+    call rather than re-queried per review.
+
+    `EmailLog` has no per-node column, only `related_application_id` — and
+    one application can have several simultaneously-pending
+    `FeasibilityReview`s, one per requested node (`unique_together =
+    ['application', 'node']`). Re-querying live after each send would let
+    the *first* node's freshly-created row make a *second* node's review
+    for the same application and recipient look "already reminded" within
+    the very same run, even though no email ever mentioned that node.
+    Taking the snapshot up front — before this run sends anything — closes
+    that hole. A residual, narrower gap remains across separate runs
+    (e.g. two manual dispatches minutes apart): the second run's snapshot
+    would legitimately include the first run's row and could still
+    conflate two different nodes on the same application. That is the same
+    structural limitation as backlog #50 (per-application, not per-node,
+    dedupe), deliberately deferred there as low-priority/latent for the
+    same reason.
+    """
     from communications.models import EmailLog
 
+    return set(
+        EmailLog.objects.filter(
+            template__template_type='feasibility_reminder',
+            sent_at__gte=now - timedelta(days=1),
+            related_application_id__isnull=False,
+        ).values_list('recipient_email', 'related_application_id')
+    )
+
+
+def _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent):
+    """None if `recipient` should be reminded about `review` now; otherwise
+    why not. `recently_reminded` is the snapshot from
+    `_recently_reminded_feasibility_pairs`. `include_recent` mirrors the
+    dispatch's "send anyway" override — it never bypasses an opted-out
+    notification preference."""
     if hasattr(recipient, 'notification_preferences'):
         prefs = recipient.notification_preferences
         if not prefs.notify_reminders or not prefs.notify_feasibility_requests:
             return 'notifications disabled'
 
-    if not include_recent:
-        recently_sent = EmailLog.objects.filter(
-            template__template_type='feasibility_reminder',
-            recipient_email=recipient.email,
-            related_application_id=review.application.id,
-            sent_at__gte=now - timedelta(days=1),
-        ).exists()
-        if recently_sent:
-            return 'already reminded today'
+    if not include_recent and (recipient.email, review.application_id) in recently_reminded:
+        return 'already reminded today'
 
     return None
 
@@ -298,9 +323,10 @@ def preview_feasibility_reminders(call, include_recent=False):
     will_send, skip_reason}, sorted by recipient name then detail.
     """
     now = timezone.now()
+    recently_reminded = _recently_reminded_feasibility_pairs(now)
     rows = []
     for review, recipient in _feasibility_reminder_candidates(call):
-        skip_reason = _feasibility_reminder_skip_reason(review, recipient, now, include_recent)
+        skip_reason = _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent)
         rows.append({
             'recipient_name': recipient.get_full_name(),
             'recipient_email': recipient.email,
@@ -317,11 +343,12 @@ def send_feasibility_reminders_now(call, include_recent=False):
     from communications.tasks import send_email_from_template
 
     now = timezone.now()
+    recently_reminded = _recently_reminded_feasibility_pairs(now)
     sent = 0
     skipped = 0
 
     for review, recipient in _feasibility_reminder_candidates(call):
-        skip_reason = _feasibility_reminder_skip_reason(review, recipient, now, include_recent)
+        skip_reason = _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent)
         if skip_reason is not None:
             skipped += 1
             continue

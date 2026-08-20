@@ -228,3 +228,70 @@ class CompletionReminderTest(TestCase):
             ).count(),
             1,
         )
+
+    def test_later_milestone_not_suppressed_by_earlier_apps_already_sent_nudge(self):
+        """A coordinator covering two applications whose calls have
+        different execution_end dates must still get a milestone nudge for
+        the later-opening one, even though the earlier one's nudge already
+        went out — the dedupe must key off the latest milestone_end, not
+        the earliest."""
+        call_a = Call.objects.create(
+            code='CLOSEOUT-COMP-MILESTONE-A',
+            title='Milestone Call A',
+            submission_start=timezone.now() - timedelta(days=200),
+            submission_end=timezone.now() - timedelta(days=170),
+            evaluation_deadline=timezone.now() - timedelta(days=160),
+            execution_start=timezone.now() - timedelta(days=150),
+            execution_end=timezone.now() - timedelta(days=6),  # milestone opened 6 days ago
+        )
+        call_b = Call.objects.create(
+            code='CLOSEOUT-COMP-MILESTONE-B',
+            title='Milestone Call B',
+            submission_start=timezone.now() - timedelta(days=200),
+            submission_end=timezone.now() - timedelta(days=170),
+            evaluation_deadline=timezone.now() - timedelta(days=160),
+            execution_start=timezone.now() - timedelta(days=150),
+            execution_end=timezone.now() - timedelta(days=1),  # milestone opened 1 day ago
+        )
+
+        def _make_app(call, code):
+            app = Application.objects.create(
+                applicant=self.applicant,
+                call=call,
+                code=code,
+                brief_description='Active grant',
+                status='accepted',
+                resolution='accepted',
+                accepted_by_applicant=True,
+                accepted_at=timezone.now() - timedelta(days=10),  # not a 60/30 cadence day
+                handoff_email_sent_at=timezone.now() - timedelta(days=10),
+                is_completed=False,
+            )
+            RequestedAccess.objects.create(
+                application=app, equipment=self.equipment,
+                hours_requested=Decimal('10.0'), hours_approved=Decimal('10.0'),
+            )
+            return app
+
+        app_a = _make_app(call_a, 'CLOSEOUT-COMP-MILESTONE-A-001')
+        app_b = _make_app(call_b, 'CLOSEOUT-COMP-MILESTONE-B-001')
+
+        # Simulate app_a's milestone nudge already sent, right after its
+        # own window opened (5 days ago) — well before call_b's window
+        # opened (1 day ago).
+        coordinator_template = EmailTemplate.objects.get(template_type='completion_reminder_coordinator')
+        EmailLog.objects.create(
+            template=coordinator_template, recipient_email=self.coordinator.email,
+            subject='x', status='sent',
+            sent_at=call_a.execution_end + timedelta(days=1),
+        )
+
+        send_completion_reminders()
+
+        coordinator_emails = EmailLog.objects.filter(
+            template__template_type='completion_reminder_coordinator',
+            recipient_email=self.coordinator.email,
+            sent_at__gte=call_b.execution_end,
+        )
+        self.assertEqual(coordinator_emails.count(), 1)
+        self.assertIn(app_b.code, coordinator_emails.first().html_content)

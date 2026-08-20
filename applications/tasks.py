@@ -757,10 +757,15 @@ def send_completion_reminders():
 
         milestone_sent = False
         if entry['milestone_ends']:
+            # max(), not min(): a message sent since the *latest* milestone
+            # window opened necessarily covers every earlier one too. Using
+            # min() would let an old email — sent after an earlier app's
+            # window opened but before a later app's did — wrongly count as
+            # covering that later app's still-unsent nudge.
             milestone_sent = EmailLog.objects.filter(
                 template__template_type='completion_reminder_coordinator',
                 recipient_email=recipient.email,
-                sent_at__gte=min(entry['milestone_ends']),
+                sent_at__gte=max(entry['milestone_ends']),
             ).exists()
 
         should_send = (

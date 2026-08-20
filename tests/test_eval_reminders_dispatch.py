@@ -19,7 +19,11 @@ from communications.models import EmailLog, NotificationPreference
 from core.models import Node, Organization, UserRole
 from core.test_utils import create_complete_user
 from evaluations.models import Evaluation
-from evaluations.tasks import preview_evaluation_reminders, send_evaluation_reminders_now
+from evaluations.tasks import (
+    preview_evaluation_reminders,
+    send_evaluation_reminders,
+    send_evaluation_reminders_now,
+)
 
 
 class EvaluatorDispatchTest(TestCase):
@@ -108,6 +112,57 @@ class EvaluatorDispatchTest(TestCase):
         response = self.client.post(f'/calls/{self.call.pk}/remind/evaluators/')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(EmailLog.objects.count(), 1)
+
+    def test_scoped_manual_dispatch_does_not_shadow_daily_digest_for_other_call(self):
+        """An evaluator with pending evaluations on two different calls: a
+        manual dispatch scoped to call A must not make the later, full
+        daily digest (which covers both A and B) think the evaluator was
+        already handled and skip call B's reminder entirely."""
+        call_a = Call.objects.create(
+            code='DISPATCH-EVAL-2026-A',
+            title='Dispatch Eval Call A',
+            submission_start=timezone.now() - timedelta(days=60),
+            submission_end=timezone.now() - timedelta(days=30),
+            evaluation_deadline=timezone.now() + timedelta(days=7),  # T-7 checkpoint
+            execution_start=timezone.now() + timedelta(days=30),
+            execution_end=timezone.now() + timedelta(days=120),
+        )
+        call_b = Call.objects.create(
+            code='DISPATCH-EVAL-2026-B',
+            title='Dispatch Eval Call B',
+            submission_start=timezone.now() - timedelta(days=60),
+            submission_end=timezone.now() - timedelta(days=30),
+            evaluation_deadline=timezone.now() + timedelta(days=7),  # T-7 checkpoint
+            execution_start=timezone.now() + timedelta(days=30),
+            execution_end=timezone.now() + timedelta(days=120),
+        )
+        app_a = Application.objects.create(
+            applicant=self.applicant, call=call_a, code='DISPATCH-EVAL-2026-A-001',
+            brief_description='Call A application', status='under_evaluation',
+        )
+        app_b = Application.objects.create(
+            applicant=self.applicant, call=call_b, code='DISPATCH-EVAL-2026-B-001',
+            brief_description='Call B application', status='under_evaluation',
+        )
+        Evaluation.objects.create(application=app_a, evaluator=self.evaluator)
+        Evaluation.objects.create(application=app_b, evaluator=self.evaluator)
+
+        # Coordinator manually dispatches for call A only.
+        sent, skipped = send_evaluation_reminders_now(call_a)
+        self.assertEqual((sent, skipped), (1, 0))
+
+        # The full daily digest, covering both calls, must still fire.
+        result = send_evaluation_reminders()
+        self.assertIn('1', result)
+
+        logs = EmailLog.objects.filter(
+            template__template_type='evaluation_reminder',
+            recipient_email=self.evaluator.email,
+        ).order_by('id')
+        self.assertEqual(logs.count(), 2)
+        self.assertNotIn(app_b.code, logs[0].html_content)  # scoped call-A-only send
+        self.assertIn(app_a.code, logs[1].html_content)  # full daily digest covers both
+        self.assertIn(app_b.code, logs[1].html_content)
 
 
 class FeasibilityDispatchTest(TestCase):
@@ -200,3 +255,30 @@ class FeasibilityDispatchTest(TestCase):
         response = self.client.get(f'/calls/{self.call.pk}/remind/feasibility/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Nobody is currently due a reminder')
+
+    def test_coordinator_covering_two_nodes_on_same_application_gets_both_reminders(self):
+        """A single application can have a pending FeasibilityReview at more
+        than one node; a coordinator covering both must get a reminder for
+        each, not have the first node's freshly-sent EmailLog make the
+        second node's review look 'already reminded' in the same run."""
+        other_node = Node.objects.create(
+            code='DISPATCH-FEAS-NODE-2', organization=self.org, location='Test City 2'
+        )
+        UserRole.objects.create(user=self.node_coord, role='node_coordinator', node=other_node, is_active=True)
+        other_review = FeasibilityReview.objects.create(
+            application=self.application,
+            node=other_node,
+            reviewer=self.node_coord,
+            status='pending',
+        )
+
+        sent, skipped = send_feasibility_reminders_now(self.call)
+
+        self.assertEqual((sent, skipped), (2, 0))
+        self.assertEqual(
+            EmailLog.objects.filter(
+                template__template_type='feasibility_reminder',
+                recipient_email=self.node_coord.email,
+            ).count(),
+            2,
+        )
