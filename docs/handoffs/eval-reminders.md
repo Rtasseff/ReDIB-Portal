@@ -284,7 +284,7 @@ Shared with `acceptance-repair` regardless — **rebase early and often**:
 - [x] Suite green — record both counts — 315 in `tests/` (was 201 at
       baseline), 11 in `reports/`, both green; `check` clean, no missing
       migrations
-- [ ] PR opened
+- [x] PR opened — [#38](https://github.com/Rtasseff/ReDIB-Portal/pull/38)
 
 ## Questions for the handoff session
 
