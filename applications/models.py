@@ -306,7 +306,10 @@ class Application(models.Model):
         'pending': ['accepted', 'rejected', 'declined_by_applicant', 'expired', 'not_reached'],  # Waitlist: promote, reject, applicant decline / timeout, or close-out
         'rejected': [],  # Terminal state
         'declined_by_applicant': [],  # Terminal state - Phase 7
-        'expired': [],  # Terminal state - Phase 7
+        # #18/#53: expiry is a coordinator's click, so it has a repair path —
+        # reinstate returns the application to the status its `resolution`
+        # names. Choices are unchanged, so this needs no migration.
+        'expired': ['accepted', 'pending'],
         'completed': [],  # Terminal state - Phase 8
         'not_reached': [],  # Terminal state - waitlist close-out
     }

@@ -45,7 +45,19 @@
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary" title="View application">
                                 <i class="bi bi-eye"></i> View
                             </a>
-                            {% if app.status == 'pending' and app.accepted_by_applicant %}
+                            {% if app.accepted_by_applicant is None and app.acceptance_deadline_passed %}
+                                {# #53: stalled past the deadline with no applicant response.
+                                   Nothing expires on its own any more — it takes one of these
+                                   two clicks, and the ReDIB coordinator is told either way. #}
+                                {% if app.status == 'accepted' or app.status == 'pending' %}
+                                <a href="{% url 'applications:expire_stalled' app.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Expire
+                                </a>
+                                <a href="{% url 'applications:force_accept_stalled' app.pk %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-check2-circle"></i> Accept on Behalf
+                                </a>
+                                {% endif %}
+                            {% elif app.status == 'pending' and app.accepted_by_applicant %}
                                 <a href="{% url 'applications:promote_waitlisted' app.pk %}" class="btn btn-sm btn-success">
                                     <i class="bi bi-fast-forward"></i> Promote to Accepted
                                 </a>

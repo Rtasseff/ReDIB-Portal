@@ -1,0 +1,62 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Reinstate {{ application.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'applications:detail' application.pk %}">{{ application.code }}</a>
+            </li>
+            <li class="breadcrumb-item active">Reinstate</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Reinstate {{ application.code }}</h1>
+
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        This returns the application to
+        <strong>{% if is_waitlist %}Pending (Waitlist){% else %}Accepted{% endif %}</strong> &mdash;
+        the status its resolution names, since expiring it never changed the node's decision.
+        The applicant gets a fresh 10-day window (until
+        <strong>{{ new_deadline|date:"M d, Y" }}</strong>) and an email telling them their
+        accept/decline link works again.
+    </div>
+
+    <dl class="row mb-4">
+        <dt class="col-sm-3">Applicant</dt>
+        <dd class="col-sm-9">{{ application.applicant.get_full_name }}
+            &lt;{{ application.applicant_email|default:application.applicant.email }}&gt;</dd>
+        <dt class="col-sm-3">Call</dt>
+        <dd class="col-sm-9">{{ application.call.code }}</dd>
+        <dt class="col-sm-3">Resolution</dt>
+        <dd class="col-sm-9">{{ application.get_resolution_display }}</dd>
+        <dt class="col-sm-3">Expired deadline</dt>
+        <dd class="col-sm-9">{{ application.acceptance_deadline|date:"M d, Y" }}</dd>
+    </dl>
+
+    <form method="post" action="{% url 'applications:reinstate' application.pk %}">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label for="reason" class="form-label"><strong>Reason</strong> (required, stored on the application)</label>
+            <textarea name="reason" id="reason" class="form-control" rows="3" required
+                      placeholder="e.g. Expired by mistake; the applicant had replied by email inside the window."></textarea>
+        </div>
+
+        <div class="alert alert-info py-2">
+            <i class="bi bi-envelope"></i>
+            The ReDIB coordinator is notified of this action.
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-arrow-counterclockwise"></i> Confirm &amp; Reinstate
+            </button>
+            <a href="{% url 'applications:detail' application.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

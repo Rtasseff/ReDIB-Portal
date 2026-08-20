@@ -52,4 +52,10 @@ urlpatterns = [
     path('<int:pk>/promote-waitlist/', views.promote_waitlisted_application, name='promote_waitlisted'),
     # Node-coordinator close-out of a waitlisted (pending) application ("not reached this call")
     path('<int:pk>/waitlist-close-out/', views.close_out_waitlisted_application, name='waitlist_close_out'),
+
+    # #53: the two coordinator actions on a stalled acceptance, plus the
+    # reinstate repair path (#18). Nothing expires without one of these.
+    path('<int:pk>/expire/', views.expire_stalled_application, name='expire_stalled'),
+    path('<int:pk>/force-accept/', views.force_accept_stalled_application, name='force_accept_stalled'),
+    path('<int:pk>/reinstate/', views.reinstate_expired_application, name='reinstate'),
 ]

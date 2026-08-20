@@ -3,17 +3,27 @@ Tests for closeout #17 (process_acceptance_deadlines covers waitlisted
 'pending' applications too) and #30(c) (freed-capacity notice fires only
 for a previously-'accepted' application, never for an expiring 'pending'
 waitlist offer, which held no allocation).
+
+Rewritten for #53. These used to assert that the beat task auto-expired an
+unanswered application on day 10. It no longer does — nothing expires
+unless a node coordinator clicks Expire — so the same scenarios now assert
+that the application is left alone and that `send_stalled_acceptance_reminders`
+nags the node coordinator instead. The #30(c) rules are unchanged; they
+just moved to the manual expire action.
 """
 from decimal import Decimal
 
 import io
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.utils import timezone
 from datetime import timedelta
 
 from applications.models import Application, RequestedAccess
-from applications.tasks import process_acceptance_deadlines
+from applications.tasks import (
+    process_acceptance_deadlines,
+    send_stalled_acceptance_reminders,
+)
 from calls.models import Call
 from communications.models import EmailLog
 from core.models import Equipment, Node, Organization, UserRole
@@ -68,8 +78,18 @@ class WaitlistDeadlineTest(TestCase):
         )
         return application
 
-    def test_waitlisted_application_gets_day7_reminder(self):
-        app = self._make_application('pending', 'pending', timezone.now() + timedelta(days=2))
+    def _expire_via_view(self, application, notify_applicant=False):
+        """Drive the manual expire action the way a node coordinator would."""
+        client = Client()
+        client.force_login(self.coordinator)
+        data = {'reason': 'No response after repeated contact.'}
+        if notify_applicant:
+            data['notify_applicant'] = '1'
+        return client.post(f'/applications/{application.pk}/expire/', data)
+
+    def test_waitlisted_application_gets_reminder_before_deadline(self):
+        """#17: the reminder half of the task still covers 'pending'."""
+        app = self._make_application('pending', 'pending', timezone.now() + timedelta(days=3))
 
         process_acceptance_deadlines()
 
@@ -80,34 +100,63 @@ class WaitlistDeadlineTest(TestCase):
             ).exists()
         )
 
-    def test_waitlisted_application_auto_expires_on_day10(self):
+    def test_waitlisted_application_does_not_auto_expire(self):
+        """#53: the deadline passing changes nothing on its own."""
         app = self._make_application('pending', 'pending', timezone.now() - timedelta(days=1))
 
         process_acceptance_deadlines()
         app.refresh_from_db()
 
-        self.assertEqual(app.status, 'expired')
-        self.assertFalse(app.accepted_by_applicant)
+        self.assertEqual(app.status, 'pending')
+        self.assertIsNone(app.accepted_by_applicant)
 
-    def test_expiring_waitlist_application_frees_no_capacity(self):
-        """A 'pending' application never held an allocation, so its expiry
-        must not fire the #30c freed-capacity notice."""
-        self._make_application('pending', 'pending', timezone.now() - timedelta(days=1))
+    def test_accepted_application_does_not_auto_expire(self):
+        app = self._make_application(
+            'accepted', 'accepted', timezone.now() - timedelta(days=1), hours_approved=Decimal('8.0')
+        )
 
         process_acceptance_deadlines()
+        app.refresh_from_db()
 
+        self.assertEqual(app.status, 'accepted')
+        self.assertIsNone(app.accepted_by_applicant)
+
+    def test_stalled_application_nags_the_node_coordinator_instead(self):
+        """#53: what used to expire the application now chases the node."""
+        app = self._make_application('pending', 'pending', timezone.now() - timedelta(days=1))
+
+        send_stalled_acceptance_reminders()
+        app.refresh_from_db()
+
+        self.assertEqual(app.status, 'pending')
+        nag = EmailLog.objects.filter(
+            template__template_type='stalled_acceptance_reminder',
+            related_application_id=app.id,
+        ).first()
+        self.assertIsNotNone(nag)
+        self.assertEqual(nag.recipient_email, self.coordinator.email)
+
+    def test_expiring_waitlist_application_frees_no_capacity(self):
+        """A 'pending' application never held an allocation, so expiring it
+        must not fire the #30c freed-capacity notice."""
+        app = self._make_application('pending', 'pending', timezone.now() - timedelta(days=1))
+
+        self._expire_via_view(app)
+        app.refresh_from_db()
+
+        self.assertEqual(app.status, 'expired')
         self.assertEqual(
             EmailLog.objects.filter(template__template_type='freed_capacity_notice').count(), 0
         )
 
     def test_expiring_accepted_application_frees_capacity(self):
         """A previously-'accepted' application held a real allocation, so
-        its expiry must notify the node coordinator(s)."""
+        expiring it must notify the node coordinator(s)."""
         app = self._make_application(
             'accepted', 'accepted', timezone.now() - timedelta(days=1), hours_approved=Decimal('8.0')
         )
 
-        process_acceptance_deadlines()
+        self._expire_via_view(app)
         app.refresh_from_db()
 
         self.assertEqual(app.status, 'expired')
@@ -120,8 +169,8 @@ class WaitlistDeadlineTest(TestCase):
 
     def test_freed_capacity_notice_does_not_double_send(self):
         """_notify_freed_capacity dedupes per (recipient, application, day)
-        like every other notification helper in this module, so a retried
-        or overlapping call does not double-send."""
+        like every other notification helper in that module, so a retried
+        or double-submitted action does not double-send."""
         from applications.tasks import _notify_freed_capacity
 
         app = self._make_application(
@@ -140,15 +189,25 @@ class WaitlistDeadlineTest(TestCase):
             1,
         )
 
-    def test_both_statuses_included_in_single_run(self):
+    def test_both_statuses_survive_a_single_run(self):
+        """#53: neither an accepted nor a waitlisted application is touched
+        by the beat task once its deadline passes — both are just nagged."""
         accepted = self._make_application(
             'accepted', 'accepted', timezone.now() - timedelta(days=1), hours_approved=Decimal('5.0')
         )
         pending = self._make_application('pending', 'pending', timezone.now() - timedelta(days=1))
 
         process_acceptance_deadlines()
+        send_stalled_acceptance_reminders()
         accepted.refresh_from_db()
         pending.refresh_from_db()
 
-        self.assertEqual(accepted.status, 'expired')
-        self.assertEqual(pending.status, 'expired')
+        self.assertEqual(accepted.status, 'accepted')
+        self.assertEqual(pending.status, 'pending')
+        for app in (accepted, pending):
+            self.assertTrue(
+                EmailLog.objects.filter(
+                    template__template_type='stalled_acceptance_reminder',
+                    related_application_id=app.id,
+                ).exists()
+            )

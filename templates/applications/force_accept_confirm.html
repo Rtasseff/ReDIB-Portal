@@ -1,0 +1,66 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Accept on behalf of applicant - {{ application.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'access:access_tracking' %}">Access Tracking</a></li>
+            <li class="breadcrumb-item active">Accept on behalf &mdash; {{ application.code }}</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Accept {{ application.code }} on the applicant's behalf</h1>
+
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-octagon"></i>
+        <strong>Not recommended.</strong> This records an acceptance the applicant never gave.
+        {% if is_waitlist %}
+        It moves them from the waiting list to "accepted the offer" — they still wait for a
+        slot, and no handoff email is sent until you promote the application.
+        {% else %}
+        The handoff email goes out to the applicant and the node coordinator(s) immediately,
+        committing them to work inside the execution window.
+        {% endif %}
+        Only do this if you are sure the applicant is prepared to proceed.
+    </div>
+
+    <dl class="row mb-4">
+        <dt class="col-sm-3">Applicant</dt>
+        <dd class="col-sm-9">{{ application.applicant.get_full_name }}
+            &lt;{{ application.applicant_email|default:application.applicant.email }}&gt;</dd>
+        <dt class="col-sm-3">Call</dt>
+        <dd class="col-sm-9">{{ application.call.code }}</dd>
+        <dt class="col-sm-3">Current status</dt>
+        <dd class="col-sm-9">{{ application.get_status_display }}</dd>
+        <dt class="col-sm-3">Deadline passed</dt>
+        <dd class="col-sm-9">{{ application.acceptance_deadline|date:"M d, Y" }}</dd>
+    </dl>
+
+    <form method="post" action="{% url 'applications:force_accept_stalled' application.pk %}">
+        {% csrf_token %}
+
+        <div class="mb-4">
+            <label for="reason" class="form-label">
+                <strong>Reason</strong> (required &mdash; say how you know the applicant is ready)
+            </label>
+            <textarea name="reason" id="reason" class="form-control" rows="3" required
+                      placeholder="e.g. Spoke to the PI by phone on 3 Sept; they confirmed the dates and simply never clicked the link."></textarea>
+        </div>
+
+        <div class="alert alert-info py-2">
+            <i class="bi bi-envelope"></i>
+            The ReDIB coordinator is emailed with this reason and your name.
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning"
+                    onclick="return confirm('Accept {{ application.code }} on the applicant’s behalf?');">
+                <i class="bi bi-check2-circle"></i> Confirm &amp; Accept on their behalf
+            </button>
+            <a href="{% url 'access:access_tracking' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

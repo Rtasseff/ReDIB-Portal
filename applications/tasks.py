@@ -299,22 +299,30 @@ def send_single_resolution_notification_task(application_id):
 @shared_task
 def process_acceptance_deadlines():
     """
-    Daily task to process acceptance deadlines for approved AND waitlisted
-    applications — both 'accepted' and 'pending' (waitlist) applications
-    carry the same 10-day accept/decline window (see NodeResolutionService
-    and promote_waitlisted_application).
+    Daily task that reminds approved AND waitlisted applicants to respond
+    before their acceptance deadline — both 'accepted' and 'pending'
+    (waitlist) applications carry the same 10-day accept/decline window
+    (see NodeResolutionService and promote_waitlisted_application).
 
     Per REDIB-02-PDA section 6.1.6: "Applicants have 10 days to accept or reject"
 
     Actions:
-    - Day 7: Send reminder email (3 days before deadline)
-    - Day 10: Auto-expire applications with no response (status → 'expired').
-      An expiring 'pending' application frees no capacity — a waitlisted
-      applicant holds no allocation — so the freed-capacity notice (#30c)
-      only fires for a previously-'accepted' application.
+    - Reminder ladder at 7, 3 and 1 days before `acceptance_deadline`
+      (equivalently days 3, 7 and 9 of a standard 10-day window). Three
+      chances spread across the window, not two crammed into the last
+      three days — the stalled-acceptance nag
+      (`send_stalled_acceptance_reminders`) tells the node coordinator the
+      applicant "was sent several reminders", and that has to be true.
+
+    **This task never writes an Application.status.** It used to auto-expire
+    on day 10; #53 removed that. Nothing expires unless a node coordinator
+    clicks Expire (`applications.views.expire_stalled_application`). Once
+    the deadline passes, this task goes quiet for that application and
+    `send_stalled_acceptance_reminders` takes over, nagging the node
+    coordinator instead of the applicant.
 
     Returns:
-        str: Summary of reminders sent and applications expired
+        str: Summary of reminders sent
     """
     from django.utils import timezone
     from datetime import timedelta
@@ -322,24 +330,37 @@ def process_acceptance_deadlines():
 
     now = timezone.now()
 
-    # === DAY 7: Send Reminders (3 days before deadline) ===
-    seven_days_from_now = now + timedelta(days=3)
+    # Reminder ladder: 7 / 3 / 1 days before the deadline.
+    #
+    # Anchored on `acceptance_deadline`, not `resolution_date`, so a
+    # reinstated application (#18) — which gets a fresh deadline of now +
+    # 10 days while `resolution_date` stays where it was — runs the ladder
+    # again on its new window. The two anchors are otherwise equivalent,
+    # since acceptance_deadline is resolution_date + 10 days.
     reminder_apps = Application.objects.filter(
         status__in=['accepted', 'pending'],
         accepted_by_applicant__isnull=True,  # Not yet responded
-        acceptance_deadline__lte=seven_days_from_now,
-        acceptance_deadline__gte=now,  # Not yet expired
+        acceptance_deadline__gte=now,        # Deadline not yet passed
+        acceptance_deadline__lte=now + timedelta(days=8),
     ).select_related('applicant')
 
-    # Filter: only send reminder if not already reminded in last 24 hours
-    # (Check EmailLog for recent 'acceptance_reminder' emails)
     from communications.models import EmailLog
     reminders_sent = 0
+    today = timezone.localtime(now).date()
 
     for app in reminder_apps:
+        # Whole-day granularity: the beat runs once a day, so compare
+        # calendar dates rather than raw timedeltas, which would make the
+        # checkpoint depend on the time of day the resolution was recorded.
+        days_remaining = (timezone.localtime(app.acceptance_deadline).date() - today).days
+        if days_remaining not in (7, 3, 1):
+            continue
+
         applicant_email = app.applicant_email or app.applicant.email
 
-        # Check if reminder already sent recently
+        # Belt-and-braces against a same-day re-run (beat restart, manual
+        # invocation): the ladder above already fires at most once per
+        # checkpoint day.
         recent_reminder = EmailLog.objects.filter(
             template__template_type='acceptance_reminder',
             recipient_email=applicant_email,
@@ -362,8 +383,9 @@ def process_acceptance_deadlines():
             'application_code': app.code,
             'brief_description': app.brief_description,
             'deadline': timezone.localtime(app.acceptance_deadline).strftime('%B %d, %Y'),
-            'days_remaining': app.days_until_acceptance_deadline,
+            'days_remaining': days_remaining,
             'acceptance_url': f'{settings.SITE_URL}/applications/{app.id}/accept/',
+            'is_waitlist': app.status == 'pending',
         }
 
         send_email_from_template(
@@ -376,70 +398,23 @@ def process_acceptance_deadlines():
 
         reminders_sent += 1
 
-    # === DAY 10+: Auto-Expire ===
-    expired_apps = Application.objects.filter(
-        status__in=['accepted', 'pending'],
-        accepted_by_applicant__isnull=True,  # Not yet responded
-        acceptance_deadline__lt=now  # Deadline passed
-    )
-
-    expired_count = 0
-    for app in expired_apps:
-        was_accepted = app.status == 'accepted'  # vs. 'pending' (waitlist) — see #30c below
-        app.status = 'expired'
-        app.accepted_by_applicant = False  # Mark as declined by timeout
-        app.accepted_at = now
-        app.resolution_comments += f"\n\n[AUTO-EXPIRED] No response by acceptance deadline ({app.acceptance_deadline.date()})"
-        app.save()
-
-        # Optionally: send expiration notification to applicant
-        try:
-            applicant_email = app.applicant_email or app.applicant.email
-            send_email_from_template(
-                template_type='acceptance_expired',
-                recipient_email=applicant_email,
-                context_data={
-                    'applicant_name': app.applicant.get_full_name(),
-                    'application_code': app.code,
-                    'deadline': timezone.localtime(app.acceptance_deadline).strftime('%B %d, %Y'),
-                },
-                recipient_user_id=app.applicant.id,
-                related_application_id=app.id
-            )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Failed to send expiration email for {app.code}: {e}")
-
-        # #30(c): a previously-accepted application freed real allocated
-        # hours; a waitlisted (pending) one held no allocation and frees
-        # nothing, so only notify node coordinators in the accepted case.
-        if was_accepted:
-            try:
-                _notify_freed_capacity(app, reason='expired')
-            except Exception:
-                import logging
-                logging.getLogger(__name__).exception(
-                    "Freed-capacity notice failed for expired application %s", app.code
-                )
-
-        expired_count += 1
-
-    return f"Sent {reminders_sent} acceptance reminders, auto-expired {expired_count} applications"
+    return f"Sent {reminders_sent} acceptance reminders"
 
 
 def _notify_freed_capacity(application, reason):
     """Notify the node coordinator(s) of equipment hours freed when an
-    accepted application's grant lapses (#30c: auto-expire or applicant
-    decline). Only meaningful for a previously-'accepted' application — a
-    waitlisted (pending) application holds no allocation to free.
+    accepted application's grant lapses (#30c: coordinator expiry or
+    applicant decline). Only meaningful for a previously-'accepted'
+    application — a waitlisted (pending) application holds no allocation
+    to free.
 
-    Each call site only triggers this once per application today (the
-    auto-expire query naturally excludes an already-expired application on
-    a re-run, and the decline view guards on "already responded"), but
-    dedupes per (recipient, application, day) via EmailLog anyway, matching
-    every other notification helper in this module — cheap insurance
-    against an overlapping/retried beat run.
+    Both call sites live in `applications/views.py` — the manual expire
+    action (#53 moved it there when auto-expire was deleted) and the
+    applicant decline branch — and each guards on "already responded", so
+    neither fires twice for one application. It dedupes per (recipient,
+    application, day) via EmailLog anyway, matching every other
+    notification helper in this module — cheap insurance against a
+    double-submitted form or a retry.
 
     Args:
         application: Application instance (already transitioned away from
@@ -749,3 +724,129 @@ def send_completion_reminders():
             reminders_sent += 1
 
     return f"Sent {reminders_sent} completion reminders"
+
+
+@shared_task
+def send_stalled_acceptance_reminders():
+    """
+    Daily task (#53): nag the node coordinator(s) of every application
+    stalled past its acceptance deadline with no applicant response.
+
+    Replaces the auto-expire branch deleted from
+    `process_acceptance_deadlines`. **This task writes no
+    Application.status** — it computes and notifies, nothing more. A
+    stalled application stays exactly where it is, indefinitely, until a
+    node coordinator expires it or force-accepts it
+    (`applications.views.expire_stalled_application` /
+    `force_accept_stalled_application`).
+
+    Audience: every active node_coordinator of every node with equipment
+    on the application, with every active ReDIB `coordinator` cc'd — CC,
+    not a second To, so everyone can Reply All and the ReDIB coordinator
+    can see the nag is happening without being the one asked to act.
+
+    Cadence: first 1 day after `acceptance_deadline`, then every 3 days,
+    indefinitely. Deliberately uncapped — nagging the nodes is the point.
+
+    The body carries "this is reminder #N", counted from EmailLog by
+    **distinct send day**, not row: a node with two active coordinators
+    produces two rows per send, and both people must see the same number.
+
+    Returns:
+        str: Summary of nags sent
+    """
+    from core.models import UserRole
+    from communications.models import EmailLog
+    from .models import Application
+
+    now = timezone.now()
+
+    stalled_apps = Application.objects.filter(
+        status__in=['accepted', 'pending'],
+        accepted_by_applicant__isnull=True,  # Nobody has responded
+        acceptance_deadline__lt=now,         # Deadline has passed
+    ).select_related('applicant', 'call').prefetch_related(
+        'requested_access__equipment__node'
+    )
+
+    coordinator_emails = list(
+        UserRole.objects.filter(role='coordinator', is_active=True)
+        .exclude(user__email='')
+        .values_list('user__email', flat=True)
+        .distinct()
+    )
+
+    reminders_sent = 0
+
+    for app in stalled_apps:
+        if not _reminder_is_due(app.acceptance_deadline, 1, 3, now):
+            continue
+
+        # Reminder number counts distinct days this application has been
+        # nagged about, so every recipient of this send sees the same N.
+        reminder_number = EmailLog.objects.filter(
+            template__template_type='stalled_acceptance_reminder',
+            related_application_id=app.id,
+        ).values('sent_at__date').distinct().count() + 1
+
+        is_waitlist = app.status == 'pending'
+        nodes = {ra.equipment.node for ra in app.requested_access.all()}
+        node_name = ', '.join(sorted(node.name for node in nodes)) or '—'
+
+        context_base = {
+            'application_code': app.code,
+            'call_code': app.call.code,
+            'applicant_name': app.applicant_name or app.applicant.get_full_name(),
+            'applicant_email': app.applicant_email or app.applicant.email,
+            'node_name': node_name,
+            'status_label': app.get_status_display(),
+            'deadline': timezone.localtime(app.acceptance_deadline).strftime('%B %d, %Y'),
+            'reminder_number': reminder_number,
+            'is_waitlist': is_waitlist,
+            'application_url': f'{settings.SITE_URL}/applications/{app.id}/',
+            'expire_url': settings.SITE_URL + reverse(
+                'applications:expire_stalled', args=[app.id]
+            ),
+            'force_accept_url': settings.SITE_URL + reverse(
+                'applications:force_accept_stalled', args=[app.id]
+            ),
+        }
+
+        for node in nodes:
+            node_coordinators = UserRole.objects.filter(
+                node=node, role='node_coordinator', is_active=True
+            ).select_related('user')
+
+            for coord_role in node_coordinators:
+                recipient = coord_role.user
+                if hasattr(recipient, 'notification_preferences'):
+                    prefs = recipient.notification_preferences
+                    if not prefs.notify_reminders or not prefs.notify_application_updates:
+                        continue
+
+                # Dedupe per (recipient, application, day) so a same-day
+                # re-run cannot double-send, and so a coordinator covering
+                # two nodes on one application is nagged once.
+                already_sent = EmailLog.objects.filter(
+                    template__template_type='stalled_acceptance_reminder',
+                    recipient_email=recipient.email,
+                    related_application_id=app.id,
+                    sent_at__gte=now - timedelta(days=1),
+                ).exists()
+                if already_sent:
+                    continue
+
+                send_email_from_template(
+                    template_type='stalled_acceptance_reminder',
+                    recipient_email=recipient.email,
+                    context_data={
+                        **context_base,
+                        'coordinator_name': recipient.get_full_name() or recipient.email,
+                    },
+                    recipient_user_id=recipient.id,
+                    related_application_id=app.id,
+                    cc_emails=coordinator_emails,
+                )
+                reminders_sent += 1
+
+    return f"Sent {reminders_sent} stalled-acceptance reminders"
