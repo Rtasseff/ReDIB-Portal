@@ -393,7 +393,7 @@ touch the same beat schedule and seed command. Nothing else is live.
 - [x] `/code-review` at **medium**, on this branch, before opening the PR
 - [x] Suite green — `test tests` **278 OK** (from 201), `test` **11 OK**;
       `check` and `makemigrations --check` clean
-- [ ] PR opened
+- [x] PR opened — [#37](https://github.com/Rtasseff/ReDIB-Portal/pull/37), rebased onto `main` @ `69caa17`
 
 ### `/code-review` at medium — findings and disposition
 
