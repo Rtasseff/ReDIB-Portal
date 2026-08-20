@@ -487,22 +487,65 @@ What `closeout` carries when it does go: two choices-only
 confirms no-op DDL), five new `EmailTemplate` rows seeded by the entrypoint's
 `seed_email_templates`, and two new beat tasks at 08:00 and 08:15.
 
-**Post-deploy check — no longer a hazard, now a heads-up.** The retroactive
-auto-expiry this section used to warn about cannot happen: `acceptance-repair`
-deleted the branch. What the same query now tells you is **who the first
-stalled-acceptance nag will name** on the morning after the deploy — the node
-coordinators of these applications get a reminder, with you cc'd, and nothing
-changes state until one of them clicks.
+### What the joint deploy actually does on prod
+
+Three migrations, all choices-only `AlterField` (`applications.0014`,
+`communications.0008`, `communications.0009`) — `sqlmigrate` confirms no-op DDL.
+`seed_email_templates` runs from the entrypoint and should report **7 created**
+(`waitlist_digest`, `waitlist_not_reached`, `freed_capacity_notice`,
+`completion_reminder`, `completion_reminder_coordinator`,
+`stalled_acceptance_reminder`, `stalled_acceptance_actioned`) and the rest
+updated. Three new beat entries: 08:00, 08:15, 10:15.
+
+**`seed_email_templates` uses `update_or_create`** — it overwrites subject and
+body on every deploy. Any template hand-edited in the Django admin is silently
+reverted. Worth asking prod once whether anything was edited that way; if so it
+needs to move into the seed file to survive.
+
+**What fires the first morning.** Only one of the new tasks will produce mail
+against REDIB-2601:
+
+- `send_stalled_acceptance_reminders` (10:15) — every application still sitting
+  in `accepted`/`pending` with no applicant response and a deadline in the past.
+  The cadence is "1 day after the deadline, then every 3 days", so on any given
+  day about a third of them fire; all of them will have fired within three days
+  of the deploy. Each goes to that node's coordinator(s) with the ReDIB
+  coordinator cc'd, and the counter starts at reminder #1. **This is the
+  intended effect**, not a side effect.
+- `send_completion_reminders` (08:15) — cadence is 60 days after handoff then
+  every 30, matched on the exact day, so only projects landing on a checkpoint
+  fire on deploy day. The burst risk is **not** at deploy: it is the week after
+  `execution_end` (2026-10-30), when every still-open project hits the
+  milestone window at once. That is #49, and it gives `eval-reminders` a real
+  deadline — #49 wants to be in prod before ~2026-10-31.
+- `send_waitlist_digest` (08:00) — same exact-day cadence off the applicant's
+  acceptance; likely nothing on day one.
+- `process_acceptance_deadlines` (10:00) — its ladder only covers deadlines in
+  the next 7 days. REDIB-2601's are all past, so nothing.
+
+**Count before you deploy, so the volume is known rather than discovered.**
+Read-only, safe to run any time:
 
 ```python
 from django.utils import timezone
 from applications.models import Application
 
-Application.objects.filter(
-    status='pending',
-    accepted_by_applicant__isnull=True,      # never responded
-    acceptance_deadline__lt=timezone.now(),  # window already closed
-).values_list('code', 'acceptance_deadline')
+now = timezone.now()
+stalled = Application.objects.filter(
+    status__in=['accepted', 'pending'],
+    accepted_by_applicant__isnull=True,
+    acceptance_deadline__lt=now,
+)
+print('stalled acceptances (will be nagged over ~3 days):', stalled.count())
+for a in stalled:
+    print(' ', a.code, a.status, a.acceptance_deadline.date())
+
+# #55: these are invisible to the nag and to both coordinator actions.
+print('no deadline recorded (invisible to everything):', Application.objects.filter(
+    status__in=['accepted', 'pending'],
+    accepted_by_applicant__isnull=True,
+    acceptance_deadline__isnull=True,
+).count())
 ```
 
 (The seven `pending` REDIB-2601 applications prod counted on 2026-08-19 are the
