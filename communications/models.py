@@ -44,6 +44,8 @@ class EmailTemplate(models.Model):
         ('freed_capacity_notice', 'Freed Capacity Notice (to Node Coordinator)'),
         ('completion_reminder', 'Completion Reminder (to Applicant)'),
         ('completion_reminder_coordinator', 'Completion Reminder (to Node Coordinator)'),
+        ('stalled_acceptance_reminder', 'Stalled Acceptance Nag (to Node Coordinator)'),
+        ('stalled_acceptance_actioned', 'Stalled Acceptance Actioned (to Coordinator)'),
     ]
 
     template_type = models.CharField(

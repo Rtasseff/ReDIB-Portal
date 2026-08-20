@@ -29,8 +29,16 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=9, minute=0),  # Daily at 9 AM
     },
     'check-acceptance-deadlines': {
-        'task': 'applications.tasks.process_acceptance_deadlines',  # Updated for Phase 7
+        # Reminder ladder to the applicant only — #53 removed the
+        # auto-expire branch; this task writes no Application.status.
+        'task': 'applications.tasks.process_acceptance_deadlines',
         'schedule': crontab(hour=10, minute=0),  # Daily at 10 AM
+    },
+    'send-stalled-acceptance-reminders': {
+        # #53: nags the node coordinator(s) once the deadline has passed,
+        # ReDIB coordinator cc'd. Computes and notifies; never transitions.
+        'task': 'applications.tasks.send_stalled_acceptance_reminders',
+        'schedule': crontab(hour=10, minute=15),  # Daily at 10:15 AM
     },
     'send-publication-followups': {
         'task': 'access.tasks.send_publication_followups',

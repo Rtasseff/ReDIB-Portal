@@ -1,6 +1,9 @@
 """
 Views for the applications app - 5-step application wizard.
 """
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.views.decorators.http import require_POST
@@ -174,6 +177,10 @@ def application_detail(request, pk):
         'is_applicant': application.applicant_id == user.id,
         'edit_requests': edit_requests,
         'phase_tracker': _build_phase_tracker(application),
+        # #18: the reinstate button is the only coordinator action offered
+        # from this page, and it is offered on the same terms as the
+        # Access Tracking actions.
+        'can_manage_application': _can_manage_application(user, application),
     }
 
     # Add feasibility review status for coordinators
@@ -1337,8 +1344,9 @@ def application_acceptance(request, pk):
     # Check if deadline passed
     if application.acceptance_deadline_passed:
         messages.error(request,
-            f"The acceptance deadline ({application.acceptance_deadline.date()}) has passed. "
-            "This application will be marked as expired."
+            f"The acceptance deadline ({application.acceptance_deadline.date()}) has passed, "
+            "so this application can no longer be accepted or declined here. "
+            "Your node coordinator will be in touch."
         )
         return redirect('applications:detail', pk=application.pk)
 
@@ -1422,12 +1430,15 @@ def application_acceptance(request, pk):
     return render(request, 'applications/acceptance_form.html', context)
 
 
-def _can_manage_waitlisted_application(user, application):
-    """True if `user` may act (promote or close out) on a waitlisted
-    application: a ReDIB coordinator/superuser, or a node_coordinator of a
-    node with equipment on this application. Shared by
-    promote_waitlisted_application and close_out_waitlisted_application so
-    the two stay in lockstep as this authorization rule evolves.
+def _can_manage_application(user, application):
+    """True if `user` may act on this application on a node's behalf: a
+    ReDIB coordinator/superuser, or a node_coordinator of a node with
+    equipment on this application.
+
+    Shared by every coordinator-driven action on the acceptance half of
+    this module — promote and close out a waitlisted application, and
+    (#53) expire, force-accept and reinstate a stalled one — so they stay
+    in lockstep as this authorization rule evolves.
     """
     from core.models import UserRole
 
@@ -1478,7 +1489,7 @@ def promote_waitlisted_application(request, pk):
     application = get_object_or_404(Application, pk=pk)
 
     user = request.user
-    if not _can_manage_waitlisted_application(user, application):
+    if not _can_manage_application(user, application):
         messages.error(request, "You are not authorised to promote this application.")
         return redirect('access:access_tracking')
 
@@ -1607,7 +1618,7 @@ def close_out_waitlisted_application(request, pk):
     application = get_object_or_404(Application, pk=pk)
 
     user = request.user
-    if not _can_manage_waitlisted_application(user, application):
+    if not _can_manage_application(user, application):
         messages.error(request, "You are not authorised to close out this application.")
         return redirect('access:access_tracking')
 
@@ -1675,6 +1686,470 @@ def close_out_waitlisted_application(request, pk):
     return redirect('applications:detail', pk=application.pk)
 
 
+def _notify_coordinators_of_action(application, action, actioned_by, reason, change_line):
+    """Email every active ReDIB coordinator that a node coordinator took a
+    manual action on a stalled or expired application (#53).
+
+    This is the audit trail that replaces the deleted auto-expire: none of
+    these three actions is reversible from the applicant's side, and
+    force-accept in particular commits someone to an execution window
+    without their word, so the ReDIB coordinator hears about every one of
+    them — with the reason, who did it, and what changed.
+
+    Args:
+        application: Application instance, already saved in its new state.
+        action: 'expired', 'force-accepted' or 'reinstated'.
+        actioned_by: the User who clicked.
+        reason: the required free-text reason.
+        change_line: one plain sentence stating what changed.
+    """
+    from core.models import UserRole
+    from communications.tasks import send_email_from_template
+
+    nodes = {ra.equipment.node for ra in application.requested_access.select_related('equipment__node')}
+    context = {
+        'action': action,
+        'actioned_by': actioned_by.get_full_name() or actioned_by.email,
+        'actioned_on': timezone.localtime(timezone.now()).strftime('%B %d, %Y'),
+        'reason': reason,
+        'change_line': change_line,
+        'application_code': application.code,
+        'call_code': application.call.code,
+        'applicant_name': application.applicant_name or application.applicant.get_full_name(),
+        'applicant_email': application.applicant_email or application.applicant.email,
+        'node_name': ', '.join(sorted(node.name for node in nodes)) or '—',
+        'status_label': application.get_status_display(),
+        'application_url': f'{settings.SITE_URL}/applications/{application.id}/',
+    }
+
+    import logging
+    for role in UserRole.objects.filter(role='coordinator', is_active=True).select_related('user'):
+        recipient = role.user
+        if not recipient.email:
+            continue
+        try:
+            send_email_from_template(
+                template_type='stalled_acceptance_actioned',
+                recipient_email=recipient.email,
+                context_data={**context, 'coordinator_name': recipient.get_full_name() or recipient.email},
+                recipient_user_id=recipient.id,
+                related_application_id=application.id,
+            )
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "stalled_acceptance_actioned notice failed for %s (%s)", application.code, action
+            )
+
+
+def _stalled_action_refusal(application):
+    """Return an error message if `application` is not a stalled
+    acceptance, else None.
+
+    Shared by expire_stalled_application and
+    force_accept_stalled_application. "Stalled" means: still sitting in an
+    acceptance-window status, the applicant has said nothing either way,
+    and the deadline has run out. Before the deadline the decision is the
+    applicant's, not a coordinator's — that is the whole point of the
+    10-day window — so both actions refuse until it has passed.
+    """
+    if application.status not in ('accepted', 'pending'):
+        return (
+            f"Cannot act on application {application.code}: status is "
+            f"'{application.get_status_display()}', not Accepted or Pending (Waitlist)."
+        )
+    if application.accepted_by_applicant is not None:
+        answer = "accepted" if application.accepted_by_applicant else "declined"
+        return (
+            f"Cannot act on application {application.code}: the applicant has "
+            f"already {answer} it."
+        )
+    if not application.acceptance_deadline:
+        # Pre-existing hole, not a #53 regression: the deleted auto-expire
+        # branch filtered on `acceptance_deadline__lt=now` and skipped these
+        # too. An accepted/pending application with no deadline is invisible
+        # to the nag as well, so say so plainly rather than claiming a
+        # deadline "has not passed yet". Filed for the backlog.
+        return (
+            f"Cannot act on application {application.code}: it has no "
+            "acceptance deadline recorded, so there is no window to close. "
+            "Please report this — the application needs a coordinator to set "
+            "its resolution date."
+        )
+    if not application.acceptance_deadline_passed:
+        return (
+            f"Cannot act on application {application.code}: its acceptance "
+            "deadline has not passed yet. Until it does, the decision is the "
+            "applicant's."
+        )
+    return None
+
+
+@login_required
+@transaction.atomic
+def expire_stalled_application(request, pk):
+    """Node coordinator expires an application whose acceptance deadline
+    passed with no applicant response (#53).
+
+    This is the human replacement for the auto-expire branch deleted from
+    `process_acceptance_deadlines`: nothing expires unless someone clicks
+    this. Reached from the Access Tracking buttons or from the recurring
+    `stalled_acceptance_reminder` nag.
+
+    Requirements:
+    - The application is stalled (see `_stalled_action_refusal`).
+    - Caller is a coordinator / superuser, or a node_coordinator of a node
+      with equipment on this application.
+    - A free-text reason is required and stored with the other resolution
+      comments.
+
+    Effect:
+    - status: accepted|pending -> expired, accepted_by_applicant = False.
+    - A previously-'accepted' application frees real allocated hours, so
+      the #30c freed-capacity notice fires; a 'pending' (waitlist) one held
+      no allocation and frees nothing.
+    - The applicant is emailed only if the coordinator ticked the box —
+      the node has often already phoned them.
+    - Every active ReDIB coordinator is notified.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    if not _can_manage_application(user, application):
+        messages.error(request, "You are not authorised to expire this application.")
+        return redirect('access:access_tracking')
+
+    refusal = _stalled_action_refusal(application)
+    if refusal:
+        messages.error(request, refusal)
+        return redirect('applications:detail', pk=application.pk)
+
+    if request.method != 'POST':
+        return render(request, 'applications/expire_stalled_confirm.html', {
+            'application': application,
+            'is_waitlist': application.status == 'pending',
+        })
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        messages.error(request, "A reason is required to expire an application.")
+        return redirect('applications:expire_stalled', pk=application.pk)
+
+    notify_applicant = bool(request.POST.get('notify_applicant'))
+    was_accepted = application.status == 'accepted'  # vs. 'pending' (waitlist) — see #30c below
+    now = timezone.now()
+
+    application.status = 'expired'
+    application.accepted_by_applicant = False
+    application.accepted_at = now
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[EXPIRED BY COORDINATOR] by {user.get_full_name() or user.email} "
+          f"on {timezone.localtime(now).date()}\n{reason}"
+    ).strip()
+    application.save()
+
+    import logging
+    log = logging.getLogger(__name__)
+
+    # #30(c): a previously-accepted application freed real allocated hours;
+    # a waitlisted (pending) one held no allocation and frees nothing.
+    if was_accepted:
+        try:
+            from applications.tasks import _notify_freed_capacity
+            _notify_freed_capacity(application, reason='expired')
+        except Exception:
+            log.exception("Freed-capacity notice failed for expired application %s", application.code)
+
+    if notify_applicant:
+        from communications.tasks import send_email_from_template
+        try:
+            send_email_from_template(
+                template_type='acceptance_expired',
+                recipient_email=application.applicant_email or application.applicant.email,
+                context_data={
+                    'applicant_name': application.applicant.get_full_name(),
+                    'application_code': application.code,
+                    'deadline': timezone.localtime(application.acceptance_deadline).strftime('%B %d, %Y'),
+                    'is_waitlist': not was_accepted,
+                },
+                recipient_user_id=application.applicant.id,
+                related_application_id=application.id,
+            )
+        except Exception:
+            log.exception("acceptance_expired email failed for application %s", application.code)
+
+    _notify_coordinators_of_action(
+        application,
+        action='expired',
+        actioned_by=user,
+        reason=reason,
+        change_line=(
+            f"The application moved from "
+            f"{'Accepted' if was_accepted else 'Pending (Waitlist)'} to Expired. "
+            + (
+                "Its approved hours are free again and the node coordinator(s) "
+                "have been told."
+                if was_accepted else
+                "It held no allocation, so no capacity was freed."
+            )
+            + (" The applicant was emailed." if notify_applicant else
+               " The applicant was not emailed.")
+        ),
+    )
+
+    messages.success(
+        request,
+        f"Application {application.code} has been expired."
+        + (" The applicant has been notified." if notify_applicant
+           else " The applicant was not emailed.")
+    )
+    return redirect('applications:detail', pk=application.pk)
+
+
+@login_required
+@transaction.atomic
+def force_accept_stalled_application(request, pk):
+    """Node coordinator accepts on a silent applicant's behalf (#53).
+
+    The dangerous one: it commits an applicant to an execution window
+    without their word. Node coordinators keep the power anyway — refusing
+    it just moves the mess back to private email where nobody can see it —
+    but it never happens silently. A reason is required, and every active
+    ReDIB coordinator is emailed with the reason and who did it.
+
+    Mirrors the accept branch of `application_acceptance`, including the
+    try/except around the handoff email:
+
+    - status 'accepted': handoff email fires now — the one system email the
+      applicant still gets after the deadline, and the right one, since
+      they are being handed off to a node and need to know.
+    - status 'pending': no handoff, status stays pending. The waitlist path
+      defers it until a node coordinator promotes the application later
+      (`promote_waitlisted_application`).
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    if not _can_manage_application(user, application):
+        messages.error(request, "You are not authorised to accept this application.")
+        return redirect('access:access_tracking')
+
+    refusal = _stalled_action_refusal(application)
+    if refusal:
+        messages.error(request, refusal)
+        return redirect('applications:detail', pk=application.pk)
+
+    is_waitlist = application.status == 'pending'
+
+    if request.method != 'POST':
+        return render(request, 'applications/force_accept_confirm.html', {
+            'application': application,
+            'is_waitlist': is_waitlist,
+        })
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        messages.error(request, "A reason is required to accept on the applicant's behalf.")
+        return redirect('applications:force_accept_stalled', pk=application.pk)
+
+    now = timezone.now()
+    application.accepted_by_applicant = True
+    application.accepted_at = now
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[FORCE-ACCEPTED BY COORDINATOR] by {user.get_full_name() or user.email} "
+          f"on {timezone.localtime(now).date()}\n{reason}"
+    ).strip()
+    application.save()
+
+    import logging
+    log = logging.getLogger(__name__)
+    handoff_sent = False
+
+    if not is_waitlist:
+        # Acceptance must succeed even if the email fails (missing template,
+        # SMTP outage, etc.) — log it and leave handoff_email_sent_at unset
+        # so coordinators can retry.
+        # NB: send_email_from_template catches everything and returns False
+        # rather than raising (communications/tasks.py), so the try/except
+        # alone would report success for a missing template or an SMTP
+        # outage. This notice is an audit record the ReDIB coordinator
+        # reads, so check the return value and only stamp
+        # handoff_email_sent_at on a real send — leaving it unset is what
+        # lets a coordinator retry.
+        try:
+            handoff_sent = bool(_send_handoff_email(application))
+        except Exception:
+            handoff_sent = False
+            log.exception("Handoff email failed on force-accept of %s", application.code)
+        if handoff_sent:
+            application.handoff_email_sent_at = timezone.now()
+            application.save(update_fields=['handoff_email_sent_at'])
+        else:
+            log.warning("Handoff email did not send on force-accept of %s", application.code)
+
+    if is_waitlist:
+        change_line = (
+            "The applicant is now recorded as having accepted the waitlist "
+            "offer. The application stays on the waiting list until a node "
+            "coordinator promotes it; no handoff email was sent."
+        )
+    elif handoff_sent:
+        change_line = (
+            "The applicant is now recorded as having accepted the access "
+            "grant, and the handoff email has gone to them and to the node "
+            "coordinator(s)."
+        )
+    else:
+        change_line = (
+            "The applicant is now recorded as having accepted the access "
+            "grant, but the handoff email could not be sent — it needs to be "
+            "followed up manually."
+        )
+
+    _notify_coordinators_of_action(
+        application,
+        action='force-accepted',
+        actioned_by=user,
+        reason=reason,
+        change_line=change_line,
+    )
+
+    if is_waitlist:
+        messages.success(
+            request,
+            f"Application {application.code} is now recorded as having accepted "
+            "the waitlist offer. Promote it when a slot opens."
+        )
+    elif handoff_sent:
+        messages.success(
+            request,
+            f"Application {application.code} has been accepted on the applicant's "
+            "behalf. Handoff email sent."
+        )
+    else:
+        messages.success(
+            request,
+            f"Application {application.code} has been accepted on the applicant's "
+            "behalf. The handoff email could not be sent automatically — please follow up."
+        )
+    return redirect('applications:detail', pk=application.pk)
+
+
+@login_required
+@transaction.atomic
+def reinstate_expired_application(request, pk):
+    """Put an expired application back into its acceptance window (#18).
+
+    Now that expiry is a human click rather than a beat task, this is the
+    repair path for a mis-clicked expire — and for the case where the
+    applicant surfaces after the fact with a good reason.
+
+    The application returns to the status its `resolution` names: expiry
+    never touched the node's decision, so restoring it is the honest thing
+    to do. The applicant gets a fresh 10-day window and an
+    `acceptance_reminder` telling them their link works again.
+
+    Reached from the application detail page, not Access Tracking — this is
+    a rare repair, not part of the daily flow.
+    """
+    application = get_object_or_404(Application, pk=pk)
+
+    user = request.user
+    if not _can_manage_application(user, application):
+        messages.error(request, "You are not authorised to reinstate this application.")
+        return redirect('applications:detail', pk=application.pk)
+
+    if application.status != 'expired':
+        messages.error(
+            request,
+            f"Cannot reinstate application {application.code}: status is "
+            f"'{application.get_status_display()}', not Expired."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if application.resolution not in ('accepted', 'pending'):
+        messages.error(
+            request,
+            f"Cannot reinstate application {application.code}: its resolution is "
+            f"'{application.get_resolution_display() or application.resolution or 'not set'}', "
+            "so there is no acceptance window to restore."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    if request.method != 'POST':
+        return render(request, 'applications/reinstate_confirm.html', {
+            'application': application,
+            'is_waitlist': application.resolution == 'pending',
+            'new_deadline': timezone.now() + timedelta(days=10),
+        })
+
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        messages.error(request, "A reason is required to reinstate an application.")
+        return redirect('applications:reinstate', pk=application.pk)
+
+    now = timezone.now()
+    application.status = application.resolution
+    application.accepted_by_applicant = None
+    application.accepted_at = None
+    application.acceptance_deadline = now + timedelta(days=10)
+    application.resolution_comments = (
+        (application.resolution_comments or '')
+        + f"\n\n[REINSTATED BY COORDINATOR] by {user.get_full_name() or user.email} "
+          f"on {timezone.localtime(now).date()}\n{reason}"
+    ).strip()
+    application.save()
+
+    is_waitlist = application.status == 'pending'
+    deadline_str = timezone.localtime(application.acceptance_deadline).strftime('%B %d, %Y')
+
+    import logging
+    from communications.tasks import send_email_from_template
+    try:
+        send_email_from_template(
+            template_type='acceptance_reminder',
+            recipient_email=application.applicant_email or application.applicant.email,
+            context_data={
+                'applicant_name': application.applicant.get_full_name(),
+                'application_code': application.code,
+                'brief_description': application.brief_description,
+                'deadline': deadline_str,
+                'days_remaining': 10,
+                'acceptance_url': f'{settings.SITE_URL}/applications/{application.id}/accept/',
+                'is_waitlist': is_waitlist,
+            },
+            recipient_user_id=application.applicant.id,
+            related_application_id=application.id,
+        )
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "acceptance_reminder email failed on reinstate of %s", application.code
+        )
+
+    _notify_coordinators_of_action(
+        application,
+        action='reinstated',
+        actioned_by=user,
+        reason=reason,
+        change_line=(
+            f"The application moved from Expired back to "
+            f"{application.get_status_display()}, with a fresh acceptance "
+            f"deadline of {deadline_str}. The applicant has been told their "
+            "accept/decline link works again."
+        ),
+    )
+
+    messages.success(
+        request,
+        f"Application {application.code} has been reinstated as "
+        f"{application.get_status_display()}. The applicant has until "
+        f"{deadline_str} to respond."
+    )
+    return redirect('applications:detail', pk=application.pk)
+
+
+
 def _send_handoff_email(application):
     """Helper function to send handoff email to applicant and node coordinators."""
     from communications.tasks import send_email_from_template
@@ -1728,7 +2203,7 @@ def _send_handoff_email(application):
     # the submitting User's account email.
     recipient_email = application.applicant_email or application.applicant.email
 
-    send_email_from_template(
+    return send_email_from_template(
         template_type='handoff_notification',
         recipient_email=recipient_email,
         context_data=context,

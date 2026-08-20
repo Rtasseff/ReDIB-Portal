@@ -4,7 +4,13 @@ Simple test suite for Phase 7: Acceptance & Handoff
 Tests the simplified acceptance workflow:
 - Applicant accepts/declines approved applications
 - Handoff email sent to applicant + node coordinators
-- 10-day deadline enforcement (reminder day 7, auto-expire day 10)
+- 10-day deadline: reminder ladder at 7 / 3 / 1 days before it
+
+Rewritten for #53: there is no longer an auto-expire on day 10. The beat
+task never writes an Application.status, so `test_auto_expire_after_deadline`
+became `test_deadline_passing_does_not_expire_anything` — the test that the
+behaviour it used to assert is gone. What happens instead lives in
+tests/test_acceptance_repair.py.
 """
 
 from django.test import TestCase, Client
@@ -134,7 +140,7 @@ class AcceptanceWorkflowTest(TestCase):
 
 
 class DeadlineEnforcementTest(TestCase):
-    """Test 10-day deadline enforcement."""
+    """Test what the 10-day deadline does — and, since #53, does not do."""
 
     def setUp(self):
         from calls.models import Call
@@ -157,8 +163,10 @@ class DeadlineEnforcementTest(TestCase):
             execution_end=timezone.now() + timedelta(days=100),
         )
 
-    def test_auto_expire_after_deadline(self):
-        """Test applications auto-expire when deadline passes."""
+    def test_deadline_passing_does_not_expire_anything(self):
+        """#53: an application whose deadline passes with no applicant
+        response stays exactly where it is, indefinitely. Only a node
+        coordinator's click can expire it."""
         # Create application with passed deadline
         application = Application.objects.create(
             applicant=self.applicant,
@@ -173,20 +181,47 @@ class DeadlineEnforcementTest(TestCase):
         )
 
         # Run deadline task
-        result = process_acceptance_deadlines()
+        process_acceptance_deadlines()
 
         # Refresh from database
         application.refresh_from_db()
 
-        # Should be expired
-        self.assertEqual(application.status, 'expired')
-        self.assertFalse(application.accepted_by_applicant)
-        self.assertIn('AUTO-EXPIRED', application.resolution_comments)
+        # Untouched: same status, no response recorded, no comment written
+        self.assertEqual(application.status, 'accepted')
+        self.assertIsNone(application.accepted_by_applicant)
+        self.assertIsNone(application.accepted_at)
+        self.assertNotIn('EXPIRED', application.resolution_comments or '')
+
+    def test_deadline_task_writes_no_status_and_sends_no_applicant_mail(self):
+        """The task past the deadline is silent to the applicant too — the
+        old auto-expire mailed them `acceptance_expired`."""
+        application = Application.objects.create(
+            applicant=self.applicant,
+            call=self.call,
+            code='TEST-APP-005',
+            brief_description='Test application 5',
+            status='pending',
+            resolution='pending',
+            resolution_date=timezone.now() - timedelta(days=11),
+            acceptance_deadline=timezone.now() - timedelta(days=2),
+            accepted_by_applicant=None
+        )
+
+        process_acceptance_deadlines()
+        application.refresh_from_db()
+
+        self.assertEqual(application.status, 'pending')
+        self.assertFalse(
+            EmailLog.objects.filter(
+                template__template_type='acceptance_expired',
+                related_application_id=application.id,
+            ).exists()
+        )
 
     def test_deadline_task_runs_without_error(self):
-        """Test deadline enforcement task runs successfully."""
-        # Create application with deadline in 3 days
-        application = Application.objects.create(
+        """Test the reminder task runs successfully."""
+        # Create application with deadline in 3 days — a ladder checkpoint
+        Application.objects.create(
             applicant=self.applicant,
             call=self.call,
             code='TEST-APP-003',

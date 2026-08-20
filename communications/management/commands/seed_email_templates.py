@@ -949,7 +949,7 @@ Please do not reply to this email.
 
             <p><small>Or copy this link into your browser: {{ accept_url }}</small></p>
 
-            <p><em>If you do not respond by the deadline, your access will expire automatically.</em></p>
+            <p><em>If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</em></p>
             {% else %}
             <p>You have already accepted this access, so there is nothing further
             to confirm. Your node coordinator will be in touch to arrange dates —
@@ -984,7 +984,7 @@ You have until {{ acceptance_deadline|date:"F d, Y" }} to respond.
 Please visit the following link to accept or decline:
 {{ accept_url }}
 
-If you do not respond by the deadline, your access will expire automatically.
+If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.
 {% else %}You have already accepted this access, so there is nothing further to
 confirm. Your node coordinator will be in touch to arrange dates - see the
 separate hand-off email for the equipment and contact details.
@@ -1040,7 +1040,7 @@ ReDIB COA Team''',
             </p>
             {% endif %}
 
-            <p>If you do not respond by the deadline, your waitlist offer will expire automatically.</p>
+            <p>If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</p>
 
             <p>Best regards,<br>
             ReDIB COA Team</p>
@@ -1068,7 +1068,7 @@ Please confirm whether you would like to stay on the waitlist or decline. If you
 
 {% if accept_url %}Accept or Decline Waitlist Offer: {{ accept_url }}{% endif %}
 
-If you do not respond by the deadline, your waitlist offer will expire automatically.
+If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.
 
 Best regards,
 ReDIB COA Team
@@ -1238,7 +1238,7 @@ Please do not reply to this email.''',
             },
             {
                 'template_type': 'acceptance_expired',
-                'subject': 'ReDIB COA: Acceptance Deadline Expired for Application {{ application_code }}',
+                'subject': 'ReDIB COA: Application {{ application_code }} has been closed',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -1256,23 +1256,27 @@ Please do not reply to this email.''',
     <div class="container">
         <div class="header">
             <h1>ReDIB COA Portal</h1>
-            <p>Acceptance Deadline Expired</p>
+            <p>Application Closed</p>
         </div>
 
         <div class="content">
             <p>Dear {{ applicant_name }},</p>
 
-            <p>This is to inform you that the acceptance deadline for your approved COA application <strong>{{ application_code }}</strong> has expired.</p>
+            {% if is_waitlist %}
+            <p>Your COA application <strong>{{ application_code }}</strong> has been closed. It was on the waiting list, and we did not hear back from you before the response deadline.</p>
+            {% else %}
+            <p>Your COA application <strong>{{ application_code }}</strong> has been closed. Access was offered to you, and we did not hear back from you before the response deadline.</p>
+            {% endif %}
 
             <div class="warning-box">
                 <p><strong>Deadline was:</strong> {{ deadline }}</p>
             </div>
 
-            <p>Since we did not receive your acceptance or decline response within the required 10-day period, this application has been automatically marked as expired and the access grant is no longer available.</p>
+            <p>Your node coordinator has reviewed the application and marked it as expired. {% if is_waitlist %}You are no longer on the waiting list for this call.{% else %}The hours reserved for your project have been released.{% endif %}</p>
 
             <p>If you would like to request access in the future, please apply during the next open call period.</p>
 
-            <p>If you believe this is an error, please contact us at {{ contact_email }}.</p>
+            <p>If this is not what you expected &mdash; for instance if you did reply and it did not reach us &mdash; please get in touch at {{ contact_email }}. This can be put right.</p>
 
             <p>Best regards,<br>
             ReDIB COA Team</p>
@@ -1285,27 +1289,27 @@ Please do not reply to this email.''',
     </div>
 </body>
 </html>''',
-                'text_content': '''Acceptance Deadline Expired
+                'text_content': '''Application Closed - Response Deadline Passed
 
 Dear {{ applicant_name }},
 
-This is to inform you that the acceptance deadline for your approved COA application {{ application_code }} has expired.
+{% if is_waitlist %}Your COA application {{ application_code }} has been closed. It was on the waiting list, and we did not hear back from you before the response deadline.{% else %}Your COA application {{ application_code }} has been closed. Access was offered to you, and we did not hear back from you before the response deadline.{% endif %}
 
 Deadline was: {{ deadline }}
 
-Since we did not receive your acceptance or decline response within the required 10-day period, this application has been automatically marked as expired and the access grant is no longer available.
+Your node coordinator has reviewed the application and marked it as expired. {% if is_waitlist %}You are no longer on the waiting list for this call.{% else %}The hours reserved for your project have been released.{% endif %}
 
 If you would like to request access in the future, please apply during the next open call period.
 
-If you believe this is an error, please contact us at {{ contact_email }}.
+If this is not what you expected - for instance if you did reply and it did not reach us - please get in touch at {{ contact_email }}. This can be put right.
 
 Best regards,
 ReDIB COA Team
 
 ---
-This is an automated message from the ReDIB COA Portal.
+This message was sent from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: applicant_name, application_code, deadline'''
+                'available_variables': '''Variables: applicant_name, application_code, deadline, is_waitlist (True for a waitlisted 'pending' application)'''
             },
             {
                 'template_type': 'publication_followup',
@@ -1503,7 +1507,7 @@ Please do not reply to this email.''',
             },
             {
                 'template_type': 'acceptance_reminder',
-                'subject': 'ReDIB COA: Reminder to accept access for {{ application_code }}',
+                'subject': 'ReDIB COA: {% if is_waitlist %}Reminder to respond to your waiting-list offer for {{ application_code }}{% else %}Reminder to accept access for {{ application_code }}{% endif %}',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -1526,7 +1530,11 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ applicant_name }},</p>
-            <p>This is a reminder that your application has been approved and awaits your formal acceptance. You have <strong>{{ days_remaining }} days</strong> remaining to respond before the grant expires.</p>
+            {% if is_waitlist %}
+            <p>This is a reminder that your application has been placed on the <strong>waiting list</strong> and awaits your formal response. You have <strong>{{ days_remaining }} days</strong> remaining to tell us whether you would like to stay on it.</p>
+            {% else %}
+            <p>This is a reminder that your application has been approved and awaits your formal acceptance. You have <strong>{{ days_remaining }} days</strong> remaining to respond.</p>
+            {% endif %}
             <div class="info-box">
                 <p><strong>Application Code:</strong> {{ application_code }}</p>
                 <p><strong>Response deadline:</strong> {{ deadline }}</p>
@@ -1534,7 +1542,11 @@ Please do not reply to this email.''',
             <p style="text-align: center;">
                 <a href="{{ acceptance_url }}" class="button">Accept or Decline</a>
             </p>
-            <p>If you do not respond by the deadline the access grant will be automatically expired and offered to the next applicant on the waiting list.</p>
+            {% if is_waitlist %}
+            <p>Accepting keeps you on the waiting list; a node coordinator will contact you if a slot opens. If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</p>
+            {% else %}
+            <p>If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</p>
+            {% endif %}
             <p>Best regards,<br>
             The ReDIB COA Team</p>
         </div>
@@ -1547,7 +1559,7 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ applicant_name }},
 
-This is a reminder that your application has been approved and awaits your formal acceptance. You have {{ days_remaining }} days remaining to respond before the grant expires.
+{% if is_waitlist %}This is a reminder that your application has been placed on the waiting list and awaits your formal response. You have {{ days_remaining }} days remaining to tell us whether you would like to stay on it.{% else %}This is a reminder that your application has been approved and awaits your formal acceptance. You have {{ days_remaining }} days remaining to respond.{% endif %}
 
 Application Details:
 - Application Code: {{ application_code }}
@@ -1556,7 +1568,7 @@ Application Details:
 Accept or Decline:
 {{ acceptance_url }}
 
-If you do not respond by the deadline the access grant will be automatically expired and offered to the next applicant on the waiting list.
+{% if is_waitlist %}Accepting keeps you on the waiting list; a node coordinator will contact you if a slot opens. If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.{% else %}If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.{% endif %}
 
 Best regards,
 The ReDIB COA Team
@@ -1564,7 +1576,7 @@ The ReDIB COA Team
 ---
 This is an automated reminder from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: applicant_name, application_code, deadline, days_remaining, acceptance_url'''
+                'available_variables': '''Variables: applicant_name, application_code, deadline, days_remaining, acceptance_url, is_waitlist (True for a waitlisted 'pending' application)'''
             },
             {
                 'template_type': 'feasibility_consult_request',
@@ -2109,7 +2121,7 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
-            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}) at <strong>{{ node_name }}</strong> {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:</p>
+            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}) at <strong>{{ node_name }}</strong> {% if reason == 'expired' %}was expired by a coordinator after the applicant did not respond{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:</p>
             <div class="info-box">
                 {% for line in freed_lines %}
                 <p>&bull; {{ line.equipment_name }}: {{ line.hours_freed }} hours</p>
@@ -2131,7 +2143,7 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ coordinator_name }},
 
-Application {{ application_code }} ({{ applicant_name }}) at {{ node_name }} {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:
+Application {{ application_code }} ({{ applicant_name }}) at {{ node_name }} {% if reason == 'expired' %}was expired by a coordinator after the applicant did not respond{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:
 {% for line in freed_lines %}  - {{ line.equipment_name }}: {{ line.hours_freed }} hours
 {% endfor %}
 If you have waitlisted applicants for this equipment, consider promoting one from Access Tracking.
@@ -2264,6 +2276,194 @@ The ReDIB COA Team
 This is an automated reminder from the ReDIB COA Portal.
 Please do not reply to this email.''',
                 'available_variables': '''Variables: coordinator_name, application_code, applicant_name, call_code, node_name (comma-separated if the coordinator manages more than one of this application's nodes), application_url'''
+            },
+            {
+                'template_type': 'stalled_acceptance_reminder',
+                'subject': 'ReDIB COA: Reminder #{{ reminder_number }} - {{ application_code }} needs your decision',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #d35400; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .info-box { background-color: #fdf2e9; border-left: 4px solid #d35400; padding: 15px; margin: 15px 0; }
+        .option-box { background-color: #ffffff; border: 1px solid #ddd; padding: 15px; margin: 15px 0; }
+        .button { display: inline-block; padding: 10px 20px; color: white; text-decoration: none; border-radius: 5px; margin: 5px 0; }
+        .button-expire { background-color: #c0392b; }
+        .button-accept { background-color: #7f8c8d; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Unanswered Application - Reminder #{{ reminder_number }}</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+
+            <p>This is reminder #{{ reminder_number }}.</p>
+
+            <p>The applicant {{ applicant_name }} has not officially acknowledged their application's status of <strong>{{ status_label }}</strong>. The deadline for them to acknowledge and accept ({{ deadline }}) has passed. They were sent several reminders before it did.</p>
+
+            <div class="info-box">
+                <p><strong>Application:</strong> {{ application_code }} &ndash; {{ call_code }}</p>
+                <p><strong>Applicant:</strong> {{ applicant_name }} ({{ applicant_email }})</p>
+                <p><strong>Node(s):</strong> {{ node_name }}</p>
+            </div>
+
+            {% if no_node_coordinator %}
+            <p><strong>This application's node has no active coordinator who can be reached</strong>, so this is addressed to you directly rather than copied to you. Unless there are extenuating circumstances the application itself should be expired.</p>
+            {% else %}
+            <p>Unless there are extenuating circumstances the application itself should be expired. <strong>The node coordinator must act</strong> &mdash; the ReDIB coordinator is copied on this message for visibility, not to resolve it.</p>
+            {% endif %}
+
+            <p><strong>Resolution options:</strong></p>
+
+            <div class="option-box">
+                <p><strong>(1) Expire the application.</strong>{% if not is_waitlist %} Once expired, you may promote a waitlisted application to fill the space.{% endif %}</p>
+                <p><a href="{{ expire_url }}" class="button button-expire">Expire {{ application_code }}</a></p>
+            </div>
+
+            <div class="option-box">
+                <p><strong>(2) Override and force the acceptance on the applicant's behalf.</strong> Not recommended. You must be sure the applicant is prepared to start work within the execution window{% if is_waitlist %}. This records their acceptance of the waiting-list offer; the application stays on the waiting list until you promote it{% endif %}. A reason is required and the ReDIB coordinator is notified.</p>
+                <p><a href="{{ force_accept_url }}" class="button button-accept">Accept on their behalf</a></p>
+            </div>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This reminder repeats every 3 days until the application is resolved.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+This is reminder #{{ reminder_number }}.
+
+The applicant {{ applicant_name }} has not officially acknowledged their
+application's status of {{ status_label }}. The deadline for them to
+acknowledge and accept ({{ deadline }}) has passed. They were sent several
+reminders before it did.
+
+Application: {{ application_code }} - {{ call_code }}
+Applicant:   {{ applicant_name }} ({{ applicant_email }})
+Node(s):     {{ node_name }}
+
+{% if no_node_coordinator %}THIS APPLICATION'S NODE HAS NO ACTIVE COORDINATOR who can be
+reached, so this is addressed to you directly rather than copied to you.
+Unless there are extenuating circumstances the application itself should be
+expired.{% else %}Unless there are extenuating circumstances the application itself should be
+expired. THE NODE COORDINATOR MUST ACT - the ReDIB coordinator is copied
+on this message for visibility, not to resolve it.{% endif %}
+
+Resolution options:
+
+(1) Expire the application:
+    {{ expire_url }}
+{% if not is_waitlist %}    Once expired, you may promote a waitlisted application to fill the space.
+{% endif %}
+(2) Override and force the acceptance on the applicant's behalf:
+    {{ force_accept_url }}
+    Not recommended. You must be sure the applicant is prepared to start work
+    within the execution window{% if is_waitlist %}. This records their acceptance
+    of the waiting-list offer; the application stays on the waiting list until
+    you promote it{% endif %}. A reason is required and the ReDIB
+    coordinator is notified.
+
+Best regards,
+The ReDIB COA Team
+
+---
+This reminder repeats every 3 days until the application is resolved.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: coordinator_name, reminder_number (counted from EmailLog by distinct send day), applicant_name, applicant_email, status_label, deadline, application_code, call_code, node_name, is_waitlist, no_node_coordinator (True when the nag fell back to addressing the ReDIB coordinator directly), expire_url, force_accept_url, application_url'''
+            },
+            {
+                'template_type': 'stalled_acceptance_actioned',
+                'subject': 'ReDIB COA: {{ application_code }} was {{ action }} by {{ actioned_by }}',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .info-box { background-color: #ecf0f1; border-left: 4px solid #2c3e50; padding: 15px; margin: 15px 0; }
+        .reason-box { background-color: #ffffff; border: 1px solid #ddd; padding: 15px; margin: 15px 0; white-space: pre-wrap; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Coordinator Action Recorded</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ coordinator_name }},</p>
+
+            <p>Application <strong>{{ application_code }}</strong> was <strong>{{ action }}</strong> by {{ actioned_by }} on {{ actioned_on }}.</p>
+
+            <div class="info-box">
+                <p><strong>Application:</strong> {{ application_code }} &ndash; {{ call_code }}</p>
+                <p><strong>Applicant:</strong> {{ applicant_name }} ({{ applicant_email }})</p>
+                <p><strong>Node(s):</strong> {{ node_name }}</p>
+                <p><strong>Status now:</strong> {{ status_label }}</p>
+            </div>
+
+            <p>{{ change_line }}</p>
+
+            <p><strong>Reason given:</strong></p>
+            <div class="reason-box">{{ reason }}</div>
+
+            <p><a href="{{ application_url }}">View the application</a></p>
+
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>You receive this because you hold the ReDIB coordinator role. It is a record of what happened, not a request to act.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ coordinator_name }},
+
+Application {{ application_code }} was {{ action }} by {{ actioned_by }} on
+{{ actioned_on }}.
+
+Application: {{ application_code }} - {{ call_code }}
+Applicant:   {{ applicant_name }} ({{ applicant_email }})
+Node(s):     {{ node_name }}
+Status now:  {{ status_label }}
+
+{{ change_line }}
+
+Reason given:
+{{ reason }}
+
+View the application:
+{{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+You receive this because you hold the ReDIB coordinator role. It is a record
+of what happened, not a request to act.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: coordinator_name, action (expired / force-accepted / reinstated), actioned_by, actioned_on, reason, change_line, application_code, call_code, applicant_name, applicant_email, node_name, status_label, application_url'''
             }
         ]
 
