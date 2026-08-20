@@ -372,27 +372,124 @@ touch the same beat schedule and seed command. Nothing else is live.
 
 <!-- Keep this current as you work. -->
 
-- [ ] Baseline recorded (`test tests`, `test`, `check`, `makemigrations --check`)
-      before any change
-- [ ] 1. dead `access/tasks.py process_acceptance_deadlines` deleted
-- [ ] 2. #52 — acceptance templates reworded for waitlist + manual expiry
-- [ ] 3. pre-deadline reminder ladder: day 3 / 7 / 9
-- [ ] 4. expire + force-accept actions, with `_notify_freed_capacity` moved
-- [ ] 5. auto-expire branch deleted
-- [ ] 6. stalled-acceptance nag beat task, cc + counter
-- [ ] 7. #18 reinstate
-- [ ] `tests/test_phase7_acceptance.py` and
+- [x] Baseline recorded before any change: `test tests` **201 OK**, `test`
+      **11 OK**, `check` clean, `makemigrations --check` clean
+- [x] 1. dead `access/tasks.py process_acceptance_deadlines` deleted (the
+      now-unused `AccessGrant` import went with it; `send_publication_followups`
+      untouched)
+- [x] 2. #52 — acceptance templates reworded for waitlist + manual expiry,
+      branching on `{% if is_waitlist %}` inside the template as instructed
+- [x] 3. pre-deadline reminder ladder — **7 / 3 / 1 days before the
+      deadline**. See Deviations: anchored on `acceptance_deadline`, not
+      `resolution_date`.
+- [x] 4. expire + force-accept actions, with `_notify_freed_capacity`'s call
+      site moved out of the deleted branch and into the expire action
+- [x] 5. auto-expire branch deleted
+- [x] 6. stalled-acceptance nag beat task, cc + counter (10:15, after the
+      10:00 reminder task)
+- [x] 7. #18 reinstate
+- [x] `tests/test_phase7_acceptance.py` and
       `tests/test_closeout_waitlist_deadlines.py` rewritten, not deleted
-- [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [ ] Suite green — record both counts
+- [x] `/code-review` at **medium**, on this branch, before opening the PR
+- [x] Suite green — `test tests` **278 OK** (from 201), `test` **11 OK**;
+      `check` and `makemigrations --check` clean
 - [ ] PR opened
+
+### `/code-review` at medium — findings and disposition
+
+Ten findings, ordered by the reviewer's severity. Eight fixed on this branch,
+one message-only fix over a pre-existing hole, one reported rather than
+changed. Regression tests for the fixes live in
+`tests/test_acceptance_repair.py::ReviewFindingsTest`.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | `resolution_accepted` still promised "your access will expire automatically" | **Fixed.** Reworded to match the acceptance templates. This is the first email an accepted applicant gets; leaving it would have contradicted everything downstream. |
+| 2 | `resolution_pending` carried the identical false promise | **Fixed**, same wording. |
+| 3 | `freed_capacity_notice` said the application "auto-expired without a response" | **Fixed** → "was expired by a coordinator after the applicant did not respond". Its only `reason='expired'` caller is now the coordinator's own click, so it was telling them the system did what they had just done. |
+| 4 | The nag's option (2) told coordinators force-accept "moves them from the waiting list to accepted" | **Fixed.** It does not — `force_accept_stalled_application` deliberately leaves `status='pending'`. The wording came from this brief's draft copy but contradicted the brief's own spec, so I followed the spec. |
+| 5 | The nag could reach **nobody**, silently | **Fixed.** Node coordinators are the only `To`, and CC cannot exist without one — so a node with no active coordinator (or all with reminders off) sent zero mail while the task reported success. Now falls back to addressing the ReDIB coordinator directly, with a template line saying why, and logs a warning. This was the one finding that defeated the bucket's own purpose. |
+| 6 | `handoff_sent` could never be `False`, so the audit email could claim a handoff that never went out | **Fixed.** `send_email_from_template` catches everything and returns `False` rather than raising, so the mirrored `try/except` never fired. `_send_handoff_email` now returns its result and force-accept checks it; `handoff_email_sent_at` is stamped only on a real send. See Deviations 6. |
+| 7 | The 7/3/1 ladder had no catch-up — a beat outage on a rung lost it permanently | **Fixed.** Rungs are now counted owed-vs-sent within the acceptance window rather than matched to an exact day, so a missed rung is caught up on the next run. The nag asserts the applicant "was sent several reminders"; a silently skipped rung would have made that false. |
+| 8 | An `accepted`/`pending` application with a NULL `acceptance_deadline` is unreachable by every path | **Message fixed; hole reported.** Verified **pre-existing, not a regression** — the deleted auto-expire filtered on `acceptance_deadline__lt=now` and skipped these too. The refusal now says there is no deadline recorded instead of claiming one "has not passed yet". The underlying gap (such an application is invisible to the nag, both actions, and has a permanently open applicant link) belongs in the backlog. |
+| 9 | Node coordinators were not filtered on a non-empty email, unlike the CC list | **Fixed.** A blank address produced a failed `EmailLog` row that then satisfied the dedupe for every other blank-address user. |
+| 10 | All three actions send email synchronously inside `@transaction.atomic` | **Reported, not changed.** Real, but inherited verbatim from `close_out_waitlisted_application` — the pattern this brief explicitly named as the one to copy. Switching these three to `.delay()` while their sibling stays synchronous would be worse than either consistent choice. Worth a follow-up that converts the whole acceptance half at once. |
+
+### Acceptance criterion: no beat task writes an `Application.status`
+
+Every task in `redib/celery.py`'s beat schedule was walked with
+`inspect.getsource` and grepped for `.save(`, `.update(` and `status =`.
+The only remaining **writes** are in `calls.tasks.check_call_deadlines`,
+and both are on `Call`, not `Application`:
+
+| Task | Write | What it is |
+|---|---|---|
+| `calls.tasks.check_call_deadlines` | `open_announced_calls()` → `announced` → `open` | Date-driven, on `submission_start`. Public-page visibility, not an applicant-specific state change; has a view-level fallback. |
+| `calls.tasks.check_call_deadlines` | `expired_calls.update(status='closed')` | `open` → `closed` on `submission_end`. This is the one #54 flags as having no reopen path — filed, explicitly not this bucket. |
+
+Everything else the grep matched is a `status='...'` **filter** keyword, not
+an assignment. `process_acceptance_deadlines`,
+`send_stalled_acceptance_reminders` and `send_publication_followups` contain
+no writes of any kind. A regression test locks this in:
+`Step5NoBeatTaskWritesStatusTest.test_every_scheduled_application_task_leaves_statuses_alone`
+runs every scheduled `applications.*` / `access.*` task against three live
+applications and asserts none of their statuses moved.
+
+### Deviations from this brief
+
+1. **The reminder ladder is anchored on `acceptance_deadline`, not
+   `resolution_date`.** The brief gives "day 3 / 7 / 9 after
+   `resolution_date`" and "7 / 3 / 1 days before a 10-day deadline" as
+   equivalent, and for a normal application they are. They diverge after a
+   reinstate (step 7), which sets a fresh `acceptance_deadline` of now + 10
+   days while leaving `resolution_date` where it was: anchored on
+   `resolution_date` the ladder would never fire again on the new window.
+   Covered by `test_reinstated_application_runs_the_reminder_ladder_again`.
+2. **The "also email the applicant" checkbox on manual expire is
+   implemented as the handoff session proposed** — present, unchecked by
+   default, silent if left unticked. This was flagged in the brief as the
+   handoff session's judgement rather than Ryan's instruction. See Questions.
+3. `_notify_freed_capacity` itself stays in `applications/tasks.py`; only its
+   call site moved to `applications/views.py`. Its docstring was updated —
+   it no longer describes an auto-expire caller.
+4. `applications/views.py` gained module-level `from django.conf import
+   settings` and `from datetime import timedelta`; both were previously only
+   available via function-local imports.
+5. `application_detail`'s context gained `can_manage_application`, so the
+   detail template can offer the reinstate button on exactly the same terms
+   as the Access Tracking actions.
+6. **Force-accept does not mirror `application_acceptance` exactly**, despite
+   the brief's instruction to match it including the try/except. The mirrored
+   code stamps `handoff_email_sent_at` whenever no exception escapes — but
+   `send_email_from_template` never raises, it returns `False`. Copying it
+   faithfully would have made the new audit email tell the ReDIB coordinator a
+   handoff had gone out when it had not, which is precisely the kind of claim
+   this bucket exists to make trustworthy. `_send_handoff_email` now returns
+   its result and force-accept checks it. The two pre-existing callers
+   (`application_acceptance`, `promote_waitlisted_application`) are unchanged
+   and still ignore the return value — worth fixing on `main`, but not
+   this branch's to touch.
+7. Two email templates outside the brief's step 2 were reworded
+   (`resolution_accepted`, `resolution_pending`), plus `freed_capacity_notice`.
+   All three asserted that expiry was automatic, which this branch made false.
+   Review finding, see the table above.
 
 ## Questions for the handoff session
 
 <!-- Park anything needing the human or `main` here and continue with what does
      not depend on it. Do not guess on these. -->
 
--
+- **The "also email the applicant" checkbox on manual expire needs Ryan's
+  yes or no.** The brief marks it as the handoff session's judgement call,
+  not his instruction. It is built and defaulted off, so the system stays
+  silent unless a coordinator deliberately ticks it. If Ryan vetoes it,
+  removing it is small: drop the `notify_applicant` block from
+  `expire_stalled_application`, drop the `form-check` from
+  `templates/applications/expire_stalled_confirm.html`, and delete
+  `test_expire_emails_the_applicant_when_the_box_is_ticked`. The reworded
+  `acceptance_expired` template would then have no live caller — worth
+  deciding whether to keep it seeded for manual use or retire it.
+- **Nothing else was blocked.** Every scope item is complete.
 
 ## Review
 

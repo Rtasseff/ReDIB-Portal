@@ -1763,6 +1763,18 @@ def _stalled_action_refusal(application):
             f"Cannot act on application {application.code}: the applicant has "
             f"already {answer} it."
         )
+    if not application.acceptance_deadline:
+        # Pre-existing hole, not a #53 regression: the deleted auto-expire
+        # branch filtered on `acceptance_deadline__lt=now` and skipped these
+        # too. An accepted/pending application with no deadline is invisible
+        # to the nag as well, so say so plainly rather than claiming a
+        # deadline "has not passed yet". Filed for the backlog.
+        return (
+            f"Cannot act on application {application.code}: it has no "
+            "acceptance deadline recorded, so there is no window to close. "
+            "Please report this — the application needs a coordinator to set "
+            "its resolution date."
+        )
     if not application.acceptance_deadline_passed:
         return (
             f"Cannot act on application {application.code}: its acceptance "
@@ -1958,13 +1970,23 @@ def force_accept_stalled_application(request, pk):
         # Acceptance must succeed even if the email fails (missing template,
         # SMTP outage, etc.) — log it and leave handoff_email_sent_at unset
         # so coordinators can retry.
+        # NB: send_email_from_template catches everything and returns False
+        # rather than raising (communications/tasks.py), so the try/except
+        # alone would report success for a missing template or an SMTP
+        # outage. This notice is an audit record the ReDIB coordinator
+        # reads, so check the return value and only stamp
+        # handoff_email_sent_at on a real send — leaving it unset is what
+        # lets a coordinator retry.
         try:
-            _send_handoff_email(application)
+            handoff_sent = bool(_send_handoff_email(application))
+        except Exception:
+            handoff_sent = False
+            log.exception("Handoff email failed on force-accept of %s", application.code)
+        if handoff_sent:
             application.handoff_email_sent_at = timezone.now()
             application.save(update_fields=['handoff_email_sent_at'])
-            handoff_sent = True
-        except Exception:
-            log.exception("Handoff email failed on force-accept of %s", application.code)
+        else:
+            log.warning("Handoff email did not send on force-accept of %s", application.code)
 
     if is_waitlist:
         change_line = (
@@ -2181,7 +2203,7 @@ def _send_handoff_email(application):
     # the submitting User's account email.
     recipient_email = application.applicant_email or application.applicant.email
 
-    send_email_from_template(
+    return send_email_from_template(
         template_type='handoff_notification',
         recipient_email=recipient_email,
         context_data=context,

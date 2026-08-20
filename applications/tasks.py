@@ -3,6 +3,8 @@ Celery tasks for application workflow automation.
 Based on design document section 7.3 - Periodic Tasks.
 """
 
+import logging
+
 from celery import shared_task
 from django.conf import settings
 from django.urls import reverse
@@ -10,6 +12,15 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import FeasibilityReview
 from communications.tasks import send_email_from_template
+
+logger = logging.getLogger(__name__)
+
+# The applicant's accept/decline window, and the reminder rungs inside it,
+# expressed as "days remaining before acceptance_deadline". 7 / 3 / 1 spreads
+# three chances across a 10-day window instead of crowding two into the last
+# three days (#53 step 3).
+ACCEPTANCE_WINDOW_DAYS = 10
+ACCEPTANCE_REMINDER_RUNGS = (7, 3, 1)
 
 
 def _reminder_is_due(anchor_dt, first_days, repeat_days, now):
@@ -341,7 +352,7 @@ def process_acceptance_deadlines():
         status__in=['accepted', 'pending'],
         accepted_by_applicant__isnull=True,  # Not yet responded
         acceptance_deadline__gte=now,        # Deadline not yet passed
-        acceptance_deadline__lte=now + timedelta(days=8),
+        acceptance_deadline__lte=now + timedelta(days=max(ACCEPTANCE_REMINDER_RUNGS) + 1),
     ).select_related('applicant')
 
     from communications.models import EmailLog
@@ -353,14 +364,36 @@ def process_acceptance_deadlines():
         # calendar dates rather than raw timedeltas, which would make the
         # checkpoint depend on the time of day the resolution was recorded.
         days_remaining = (timezone.localtime(app.acceptance_deadline).date() - today).days
-        if days_remaining not in (7, 3, 1):
+
+        # Rungs already due — one send is owed per rung whose day has
+        # arrived. Counting owed-versus-sent instead of matching the exact
+        # day makes the ladder self-healing: if the beat is down on the
+        # day-7 rung (deploy, broker outage), day 6 still owes one reminder
+        # and sends it, rather than losing that rung permanently. The nag
+        # asserts the applicant "was sent several reminders", so a silently
+        # skipped rung would make that claim false.
+        rungs_due = sum(1 for rung in ACCEPTANCE_REMINDER_RUNGS if days_remaining <= rung)
+        if not rungs_due:
             continue
 
         applicant_email = app.applicant_email or app.applicant.email
 
+        # Sends already made in *this* acceptance window. Scoped to the
+        # window rather than all time so a reinstated application (#18),
+        # which gets a fresh deadline, runs the whole ladder again.
+        window_start = app.acceptance_deadline - timedelta(days=ACCEPTANCE_WINDOW_DAYS)
+        already_sent = EmailLog.objects.filter(
+            template__template_type='acceptance_reminder',
+            recipient_email=applicant_email,
+            related_application_id=app.id,
+            sent_at__isnull=False,
+            sent_at__gte=window_start,
+        ).count()
+        if already_sent >= rungs_due:
+            continue
+
         # Belt-and-braces against a same-day re-run (beat restart, manual
-        # invocation): the ladder above already fires at most once per
-        # checkpoint day.
+        # invocation).
         recent_reminder = EmailLog.objects.filter(
             template__template_type='acceptance_reminder',
             recipient_email=applicant_email,
@@ -783,10 +816,15 @@ def send_stalled_acceptance_reminders():
             continue
 
         # Reminder number counts distinct days this application has been
-        # nagged about, so every recipient of this send sees the same N.
+        # nagged about, so every recipient of this send sees the same N —
+        # a node with two active coordinators produces two rows per send.
+        # `sent_at__isnull=False` skips rows that never went out (a missing
+        # template logs a failed row with no sent_at, which would otherwise
+        # count as its own "day" and inflate N).
         reminder_number = EmailLog.objects.filter(
             template__template_type='stalled_acceptance_reminder',
             related_application_id=app.id,
+            sent_at__isnull=False,
         ).values('sent_at__date').distinct().count() + 1
 
         is_waitlist = app.status == 'pending'
@@ -812,41 +850,72 @@ def send_stalled_acceptance_reminders():
             ),
         }
 
+        # Collect the addressable node coordinators across every node on
+        # the application first. A coordinator covering two of them must be
+        # nagged once, and a blank address would otherwise become a failed
+        # EmailLog row that then satisfies the dedupe below for everyone
+        # else with a blank address.
+        recipients = {}
         for node in nodes:
-            node_coordinators = UserRole.objects.filter(
+            for coord_role in UserRole.objects.filter(
                 node=node, role='node_coordinator', is_active=True
-            ).select_related('user')
-
-            for coord_role in node_coordinators:
-                recipient = coord_role.user
-                if hasattr(recipient, 'notification_preferences'):
-                    prefs = recipient.notification_preferences
+            ).select_related('user'):
+                candidate = coord_role.user
+                if not candidate.email:
+                    continue
+                if hasattr(candidate, 'notification_preferences'):
+                    prefs = candidate.notification_preferences
                     if not prefs.notify_reminders or not prefs.notify_application_updates:
                         continue
+                recipients.setdefault(candidate.email, candidate)
 
-                # Dedupe per (recipient, application, day) so a same-day
-                # re-run cannot double-send, and so a coordinator covering
-                # two nodes on one application is nagged once.
-                already_sent = EmailLog.objects.filter(
-                    template__template_type='stalled_acceptance_reminder',
-                    recipient_email=recipient.email,
-                    related_application_id=app.id,
-                    sent_at__gte=now - timedelta(days=1),
-                ).exists()
-                if already_sent:
-                    continue
-
-                send_email_from_template(
-                    template_type='stalled_acceptance_reminder',
-                    recipient_email=recipient.email,
-                    context_data={
-                        **context_base,
-                        'coordinator_name': recipient.get_full_name() or recipient.email,
-                    },
-                    recipient_user_id=recipient.id,
-                    related_application_id=app.id,
-                    cc_emails=coordinator_emails,
+        # The whole point of #53 is that a stalled application cannot go
+        # unnoticed. The ReDIB coordinator normally rides in CC, which only
+        # exists alongside a To — so if the node has no reachable
+        # coordinator (role deactivated, person left, reminders switched
+        # off), fall back to addressing the ReDIB coordinator directly
+        # rather than sending nothing at all.
+        addressed_to_fallback = not recipients
+        if addressed_to_fallback:
+            for role in UserRole.objects.filter(
+                role='coordinator', is_active=True
+            ).select_related('user'):
+                if role.user.email:
+                    recipients.setdefault(role.user.email, role.user)
+            if recipients:
+                logger.warning(
+                    "Stalled application %s has no reachable node coordinator; "
+                    "nagging the ReDIB coordinator(s) instead.", app.code
                 )
-                reminders_sent += 1
+            else:
+                logger.error(
+                    "Stalled application %s has nobody to notify at all.", app.code
+                )
+
+        for recipient in recipients.values():
+            # Dedupe per (recipient, application, day) so a same-day re-run
+            # cannot double-send.
+            already_sent = EmailLog.objects.filter(
+                template__template_type='stalled_acceptance_reminder',
+                recipient_email=recipient.email,
+                related_application_id=app.id,
+                sent_at__gte=now - timedelta(days=1),
+            ).exists()
+            if already_sent:
+                continue
+
+            send_email_from_template(
+                template_type='stalled_acceptance_reminder',
+                recipient_email=recipient.email,
+                context_data={
+                    **context_base,
+                    'coordinator_name': recipient.get_full_name() or recipient.email,
+                    'no_node_coordinator': addressed_to_fallback,
+                },
+                recipient_user_id=recipient.id,
+                related_application_id=app.id,
+                cc_emails=[] if addressed_to_fallback else coordinator_emails,
+            )
+            reminders_sent += 1
 
     return f"Sent {reminders_sent} stalled-acceptance reminders"

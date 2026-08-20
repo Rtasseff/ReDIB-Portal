@@ -203,36 +203,88 @@ class Step2AcceptanceTemplateWordingTest(AcceptanceRepairTestCase):
 class Step3ReminderLadderTest(AcceptanceRepairTestCase):
     """Step 3: reminders at 7, 3 and 1 days before the deadline."""
 
-    def assert_reminder(self, deadline_days, expected):
-        app = self.make_application(status='accepted', deadline_days=deadline_days)
+    def walk_to(self, app, deadline_days):
+        """Advance the application to `deadline_days` before its deadline and
+        run the beat once, as the daily task would."""
+        app.acceptance_deadline = timezone.now() + timedelta(days=deadline_days)
+        app.save(update_fields=['acceptance_deadline'])
+        # Age any prior sends past the 24-hour same-day guard, the way the
+        # days between checkpoints would.
+        EmailLog.objects.filter(related_application_id=app.id).update(
+            sent_at=timezone.now() - timedelta(days=2))
         process_acceptance_deadlines()
+
+    def assert_sends(self, app, expected, note):
         self.assertEqual(
-            self.logs('acceptance_reminder', app).exists(), expected,
-            f"deadline in {deadline_days} days: expected reminder={expected}"
-        )
+            self.logs('acceptance_reminder', app).count(), expected, note)
+
+    def start_ladder(self):
+        """An application that has just had its day-7 rung."""
+        app = self.make_application(status='accepted', deadline_days=7)
+        process_acceptance_deadlines()
+        self.assert_sends(app, 1, "day-7 rung should send")
+        return app
 
     def test_fires_seven_days_out(self):
-        self.assert_reminder(7, True)
+        self.start_ladder()
 
     def test_fires_three_days_out(self):
-        self.assert_reminder(3, True)
+        app = self.start_ladder()
+        self.walk_to(app, 3)
+        self.assert_sends(app, 2, "day-3 rung should send")
 
     def test_fires_one_day_out(self):
-        self.assert_reminder(1, True)
+        app = self.start_ladder()
+        self.walk_to(app, 3)
+        self.walk_to(app, 1)
+        self.assert_sends(app, 3, "day-1 rung should send")
 
-    def test_silent_five_days_out(self):
-        self.assert_reminder(5, False)
+    def test_silent_between_rungs(self):
+        """Having sent the day-7 rung, days 6 and 5 owe nothing."""
+        app = self.start_ladder()
+        self.walk_to(app, 6)
+        self.walk_to(app, 5)
+        self.assert_sends(app, 1, "no rung is owed between 7 and 3")
 
-    def test_silent_two_days_out(self):
-        self.assert_reminder(2, False)
+    def test_silent_after_the_last_rung(self):
+        """All three rungs spent — further runs inside the window add nothing."""
+        app = self.start_ladder()
+        self.walk_to(app, 3)
+        self.walk_to(app, 1)
+        self.walk_to(app, 1)
+        self.assert_sends(app, 3, "the ladder has exactly three rungs")
 
-    def test_silent_nine_days_out(self):
-        self.assert_reminder(9, False)
+    def test_silent_before_the_first_rung(self):
+        app = self.make_application(status='accepted', deadline_days=9)
+        process_acceptance_deadlines()
+        self.assert_sends(app, 0, "nothing is owed 9 days out")
 
     def test_silent_after_the_deadline(self):
         """Past the deadline the applicant hears nothing further from the
         system; the node coordinator is nagged instead."""
-        self.assert_reminder(-1, False)
+        app = self.make_application(status='accepted', deadline_days=-1)
+        process_acceptance_deadlines()
+        self.assert_sends(app, 0, "the deadline has passed")
+
+    def test_a_missed_rung_is_caught_up_not_lost(self):
+        """If the beat is down on the day-7 rung, day 5 still owes it. The
+        nag asserts the applicant was chased repeatedly, so a silently
+        skipped rung would make that claim false."""
+        app = self.make_application(status='accepted', deadline_days=5)
+
+        process_acceptance_deadlines()
+
+        self.assert_sends(app, 1, "the missed day-7 rung should be caught up")
+
+    def test_catch_up_never_overshoots_the_ladder(self):
+        """An application first seen with one day left owes three rungs but
+        must not fire three emails at once."""
+        app = self.make_application(status='accepted', deadline_days=1)
+
+        process_acceptance_deadlines()
+        process_acceptance_deadlines()
+
+        self.assert_sends(app, 1, "at most one reminder per beat run")
 
     def test_ladder_gives_three_reminders_across_the_window(self):
         """The nag asserts the applicant 'was sent several reminders'."""
@@ -640,6 +692,115 @@ class Step6StalledNagTest(AcceptanceRepairTestCase):
 
         self.assertEqual(app.status, 'pending')
         self.assertIsNone(app.accepted_by_applicant)
+
+
+class ReviewFindingsTest(AcceptanceRepairTestCase):
+    """Regressions for the /code-review medium findings fixed on this branch."""
+
+    def render(self, template_type, **context):
+        template = EmailTemplate.objects.get(template_type=template_type)
+        context.setdefault('contact_email', 'coa@redib.net')
+        ctx = Context(context)
+        return (Template(template.text_content).render(ctx)
+                + '\n' + Template(template.html_content).render(ctx))
+
+    def test_no_seeded_template_still_promises_automatic_expiry(self):
+        """#53 removed auto-expire; resolution_accepted, resolution_pending
+        and freed_capacity_notice all carried the old promise."""
+        stale = ('expire automatically', 'auto-expire', 'automatically expired',
+                 'automatically marked as expired')
+        for template in EmailTemplate.objects.all():
+            haystack = (template.subject + template.text_content
+                        + template.html_content).lower()
+            for phrase in stale:
+                self.assertNotIn(
+                    phrase, haystack,
+                    f"{template.template_type} still says '{phrase}'"
+                )
+
+    def test_freed_capacity_notice_credits_the_coordinator_not_the_system(self):
+        body = self.render(
+            'freed_capacity_notice', coordinator_name='Ana', application_code='A-1',
+            applicant_name='X', node_name='N', reason='expired', freed_lines=[],
+            application_url='http://x/', access_tracking_url='http://x/t/')
+
+        self.assertIn('expired by a coordinator', body)
+
+    def test_nag_does_not_claim_force_accept_promotes_a_waitlist_application(self):
+        """force_accept_stalled_application deliberately leaves it 'pending'."""
+        app = self.make_application(status='pending', deadline_days=-1, hours_approved=None)
+
+        send_stalled_acceptance_reminders()
+
+        # Normalise the hard wrapping of the plain-text body before matching.
+        body = ' '.join(
+            self.logs('stalled_acceptance_reminder', app).first().text_content.split())
+        self.assertNotIn('moves them from the waiting list to accepted', body)
+        self.assertIn('stays on the waiting list until you promote it', body)
+
+    def test_nag_falls_back_to_the_redib_coordinator_when_the_node_has_none(self):
+        """The ReDIB coordinator normally rides in CC, which needs a To. With
+        no reachable node coordinator the nag would otherwise send nothing
+        and the application would stall unnoticed — the exact failure #53
+        exists to prevent."""
+        UserRole.objects.filter(user=self.node_coordinator).update(is_active=False)
+        app = self.make_application(deadline_days=-1)
+        mail.outbox.clear()
+
+        send_stalled_acceptance_reminders()
+
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, [self.redib_coordinator.email])
+        self.assertEqual(message.cc, [])
+        self.assertIn('no active coordinator', message.body.lower())
+
+    def test_nag_skips_a_node_coordinator_with_no_email(self):
+        blank = create_complete_user(email='blank@repair.test', organization=self.org)
+        UserRole.objects.create(
+            user=blank, role='node_coordinator', node=self.node, is_active=True)
+        blank.email = ''
+        blank.save(update_fields=['email'])
+        app = self.make_application(deadline_days=-1)
+
+        send_stalled_acceptance_reminders()
+
+        recipients = set(
+            self.logs('stalled_acceptance_reminder', app).values_list(
+                'recipient_email', flat=True))
+        self.assertEqual(recipients, {self.node_coordinator.email})
+
+    def test_force_accept_audit_does_not_claim_a_handoff_that_failed(self):
+        """send_email_from_template returns False instead of raising, so a
+        try/except alone would report success for a missing template."""
+        EmailTemplate.objects.filter(template_type='handoff_notification').delete()
+        app = self.make_application(status='accepted', deadline_days=-1)
+
+        self.node_client().post(
+            f'/applications/{app.pk}/force-accept/', {'reason': 'PI confirmed.'})
+        app.refresh_from_db()
+
+        # The acceptance still stands; only the handoff claim changes.
+        self.assertTrue(app.accepted_by_applicant)
+        self.assertIsNone(
+            app.handoff_email_sent_at,
+            "handoff_email_sent_at must stay unset so a coordinator can retry")
+        audit = self.logs('stalled_acceptance_actioned', app).first()
+        self.assertIsNotNone(audit)
+        self.assertIn('could not be sent', audit.text_content)
+
+    def test_action_refused_clearly_when_there_is_no_deadline_at_all(self):
+        """Pre-existing hole (the deleted auto-expire skipped these too):
+        say so instead of claiming the deadline has not passed."""
+        app = self.make_application(deadline_days=-1)
+        Application.objects.filter(pk=app.pk).update(acceptance_deadline=None)
+
+        response = self.node_client().post(
+            f'/applications/{app.pk}/expire/', {'reason': 'try it'}, follow=True)
+        app.refresh_from_db()
+
+        self.assertEqual(app.status, 'accepted')
+        self.assertContains(response, 'no acceptance deadline recorded')
 
 
 class Step7ReinstateTest(AcceptanceRepairTestCase):

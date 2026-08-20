@@ -949,7 +949,7 @@ Please do not reply to this email.
 
             <p><small>Or copy this link into your browser: {{ accept_url }}</small></p>
 
-            <p><em>If you do not respond by the deadline, your access will expire automatically.</em></p>
+            <p><em>If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</em></p>
             {% else %}
             <p>You have already accepted this access, so there is nothing further
             to confirm. Your node coordinator will be in touch to arrange dates —
@@ -984,7 +984,7 @@ You have until {{ acceptance_deadline|date:"F d, Y" }} to respond.
 Please visit the following link to accept or decline:
 {{ accept_url }}
 
-If you do not respond by the deadline, your access will expire automatically.
+If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.
 {% else %}You have already accepted this access, so there is nothing further to
 confirm. Your node coordinator will be in touch to arrange dates - see the
 separate hand-off email for the equipment and contact details.
@@ -1040,7 +1040,7 @@ ReDIB COA Team''',
             </p>
             {% endif %}
 
-            <p>If you do not respond by the deadline, your waitlist offer will expire automatically.</p>
+            <p>If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.</p>
 
             <p>Best regards,<br>
             ReDIB COA Team</p>
@@ -1068,7 +1068,7 @@ Please confirm whether you would like to stay on the waitlist or decline. If you
 
 {% if accept_url %}Accept or Decline Waitlist Offer: {{ accept_url }}{% endif %}
 
-If you do not respond by the deadline, your waitlist offer will expire automatically.
+If you do not respond by the deadline this link closes, and your node coordinator will be in touch to agree what happens next.
 
 Best regards,
 ReDIB COA Team
@@ -2121,7 +2121,7 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
-            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}) at <strong>{{ node_name }}</strong> {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:</p>
+            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}) at <strong>{{ node_name }}</strong> {% if reason == 'expired' %}was expired by a coordinator after the applicant did not respond{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:</p>
             <div class="info-box">
                 {% for line in freed_lines %}
                 <p>&bull; {{ line.equipment_name }}: {{ line.hours_freed }} hours</p>
@@ -2143,7 +2143,7 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ coordinator_name }},
 
-Application {{ application_code }} ({{ applicant_name }}) at {{ node_name }} {% if reason == 'expired' %}auto-expired without a response{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:
+Application {{ application_code }} ({{ applicant_name }}) at {{ node_name }} {% if reason == 'expired' %}was expired by a coordinator after the applicant did not respond{% else %}was declined by the applicant{% endif %}, freeing the following approved hours:
 {% for line in freed_lines %}  - {{ line.equipment_name }}: {{ line.hours_freed }} hours
 {% endfor %}
 If you have waitlisted applicants for this equipment, consider promoting one from Access Tracking.
@@ -2316,7 +2316,11 @@ Please do not reply to this email.''',
                 <p><strong>Node(s):</strong> {{ node_name }}</p>
             </div>
 
+            {% if no_node_coordinator %}
+            <p><strong>This application's node has no active coordinator who can be reached</strong>, so this is addressed to you directly rather than copied to you. Unless there are extenuating circumstances the application itself should be expired.</p>
+            {% else %}
             <p>Unless there are extenuating circumstances the application itself should be expired. <strong>The node coordinator must act</strong> &mdash; the ReDIB coordinator is copied on this message for visibility, not to resolve it.</p>
+            {% endif %}
 
             <p><strong>Resolution options:</strong></p>
 
@@ -2326,7 +2330,7 @@ Please do not reply to this email.''',
             </div>
 
             <div class="option-box">
-                <p><strong>(2) Override and force the acceptance on the applicant's behalf.</strong> Not recommended. You must be sure the applicant is prepared to start work within the execution window{% if is_waitlist %}, and this moves them from the waiting list to accepted{% endif %}. A reason is required and the ReDIB coordinator is notified.</p>
+                <p><strong>(2) Override and force the acceptance on the applicant's behalf.</strong> Not recommended. You must be sure the applicant is prepared to start work within the execution window{% if is_waitlist %}. This records their acceptance of the waiting-list offer; the application stays on the waiting list until you promote it{% endif %}. A reason is required and the ReDIB coordinator is notified.</p>
                 <p><a href="{{ force_accept_url }}" class="button button-accept">Accept on their behalf</a></p>
             </div>
 
@@ -2353,9 +2357,12 @@ Application: {{ application_code }} - {{ call_code }}
 Applicant:   {{ applicant_name }} ({{ applicant_email }})
 Node(s):     {{ node_name }}
 
+{% if no_node_coordinator %}THIS APPLICATION'S NODE HAS NO ACTIVE COORDINATOR who can be
+reached, so this is addressed to you directly rather than copied to you.
 Unless there are extenuating circumstances the application itself should be
+expired.{% else %}Unless there are extenuating circumstances the application itself should be
 expired. THE NODE COORDINATOR MUST ACT - the ReDIB coordinator is copied
-on this message for visibility, not to resolve it.
+on this message for visibility, not to resolve it.{% endif %}
 
 Resolution options:
 
@@ -2366,8 +2373,9 @@ Resolution options:
 (2) Override and force the acceptance on the applicant's behalf:
     {{ force_accept_url }}
     Not recommended. You must be sure the applicant is prepared to start work
-    within the execution window{% if is_waitlist %}, and this moves them from the
-    waiting list to accepted{% endif %}. A reason is required and the ReDIB
+    within the execution window{% if is_waitlist %}. This records their acceptance
+    of the waiting-list offer; the application stays on the waiting list until
+    you promote it{% endif %}. A reason is required and the ReDIB
     coordinator is notified.
 
 Best regards,
@@ -2376,7 +2384,7 @@ The ReDIB COA Team
 ---
 This reminder repeats every 3 days until the application is resolved.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: coordinator_name, reminder_number (counted from EmailLog by distinct send day), applicant_name, applicant_email, status_label, deadline, application_code, call_code, node_name, is_waitlist, expire_url, force_accept_url, application_url'''
+                'available_variables': '''Variables: coordinator_name, reminder_number (counted from EmailLog by distinct send day), applicant_name, applicant_email, status_label, deadline, application_code, call_code, node_name, is_waitlist, no_node_coordinator (True when the nag fell back to addressing the ReDIB coordinator directly), expire_url, force_accept_url, application_url'''
             },
             {
                 'template_type': 'stalled_acceptance_actioned',
