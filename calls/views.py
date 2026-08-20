@@ -658,6 +658,71 @@ def call_resolve(request, pk):
 
 
 @coordinator_required
+def remind_evaluators(request, pk):
+    """
+    #5: on-demand, per-call dispatch of the evaluator pending-evaluations
+    digest built for #32 — for a deadline approaching off-cycle, or after a
+    manual data fix, when the coordinator does not want to wait for the
+    daily cadence.
+
+    GET renders a preview naming exactly who would be mailed and who would
+    be skipped (already reminded today); nothing sends until POST. The
+    "send anyway" checkbox only bypasses the recently-reminded skip — it
+    never overrides a recipient's notification preferences.
+    """
+    from evaluations.tasks import preview_evaluation_reminders, send_evaluation_reminders_now
+
+    call = get_object_or_404(Call, pk=pk)
+
+    if request.method == 'POST':
+        include_recent = request.POST.get('include_recent') == 'on'
+        sent, skipped = send_evaluation_reminders_now(call, include_recent=include_recent)
+        messages.success(
+            request,
+            f"Sent {sent} evaluator reminder email(s) for {call.code}"
+            + (f" ({skipped} skipped)." if skipped else '.')
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    context = {
+        'call': call,
+        'action_title': 'Remind Evaluators with Unsubmitted Scores',
+        'action_url': reverse('calls:remind_evaluators', kwargs={'pk': call.pk}),
+        'rows': preview_evaluation_reminders(call),
+    }
+    return render(request, 'calls/remind_confirm.html', context)
+
+
+@coordinator_required
+def remind_feasibility(request, pk):
+    """
+    #5: on-demand, per-call dispatch of feasibility review reminders. Same
+    preview-then-send pattern as `remind_evaluators`.
+    """
+    from .services import preview_feasibility_reminders, send_feasibility_reminders_now
+
+    call = get_object_or_404(Call, pk=pk)
+
+    if request.method == 'POST':
+        include_recent = request.POST.get('include_recent') == 'on'
+        sent, skipped = send_feasibility_reminders_now(call, include_recent=include_recent)
+        messages.success(
+            request,
+            f"Sent {sent} feasibility reminder email(s) for {call.code}"
+            + (f" ({skipped} skipped)." if skipped else '.')
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    context = {
+        'call': call,
+        'action_title': 'Remind Open Feasibility Reviews',
+        'action_url': reverse('calls:remind_feasibility', kwargs={'pk': call.pk}),
+        'rows': preview_feasibility_reminders(call),
+    }
+    return render(request, 'calls/remind_confirm.html', context)
+
+
+@coordinator_required
 def call_delete(request, pk):
     """
     Delete a draft call.

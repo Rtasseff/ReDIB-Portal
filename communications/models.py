@@ -46,6 +46,7 @@ class EmailTemplate(models.Model):
         ('completion_reminder_coordinator', 'Completion Reminder (to Node Coordinator)'),
         ('stalled_acceptance_reminder', 'Stalled Acceptance Nag (to Node Coordinator)'),
         ('stalled_acceptance_actioned', 'Stalled Acceptance Actioned (to Coordinator)'),
+        ('draft_nudge', 'Draft Application Nudge (to Applicant)'),
     ]
 
     template_type = models.CharField(

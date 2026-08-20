@@ -5,6 +5,12 @@ Utility functions for evaluations app - Phase 5
 from django.db.models import Avg
 from django.utils import timezone
 
+# How long after `call.evaluation_deadline` an incomplete evaluation stays
+# submittable (see `is_evaluation_locked`). The reminder digest cadence in
+# `evaluations/tasks.py` derives its overdue cutoff from this same constant
+# rather than hard-coding a second copy of it.
+GRACE_PERIOD_DAYS = 7
+
 
 def check_and_transition_application(application):
     """
@@ -159,7 +165,7 @@ def is_evaluation_locked(evaluation):
     deadline = evaluation.application.call.evaluation_deadline
     if deadline and deadline < now:
         from datetime import timedelta
-        grace_end = deadline + timedelta(days=7)
+        grace_end = deadline + timedelta(days=GRACE_PERIOD_DAYS)
         if now > grace_end:
             return (True, 'grace_period_expired')
         # Within grace period - not locked, but overdue

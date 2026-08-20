@@ -253,14 +253,17 @@ Shared with `acceptance-repair` regardless — **rebase early and often**:
 
 <!-- Keep this current as you work. -->
 
-- [ ] Baseline recorded (`test tests`, `test`, `check`, `makemigrations --check`)
-      before any change
-- [ ] 1. #32 — per-evaluator digest, T−7/−3/−1 then every 2 days to lockout
-- [ ] 1b. `notify_overdue_evaluators` folded in; subject-text dedupe replaced
-- [ ] 2. #5 — per-call manual dispatch with preview + override
-- [ ] 3. #35 — draft nudge at T−7 / T−2, in `calls/tasks.py`
+- [x] Baseline recorded (`test tests`, `test`, `check`, `makemigrations --check`)
+      before any change — 201 + 11 tests green, `check` clean, no missing
+      migrations (2026-08-20)
+- [x] 1. #32 — per-evaluator digest, T−7/−3/−1 then every 2 days to lockout
+- [x] 1b. `notify_overdue_evaluators` folded in; subject-text dedupe replaced
+- [x] 2. #5 — per-call manual dispatch with preview + override
+- [x] 3. #35 — draft nudge at T−7 / T−2, in `calls/tasks.py`
 - [ ] 4. #49 — completion digest **(gated: rebase first, park if
-      `acceptance-repair` has not merged)**
+      `acceptance-repair` has not merged)** — checked 2026-08-20:
+      `acceptance-repair` has not merged (no `docs/handoffs/acceptance-repair.md`
+      on `origin/main`); will re-check before opening the PR
 - [ ] `/code-review` at **medium**, on this branch, before opening the PR
 - [ ] Suite green — record both counts
 - [ ] PR opened

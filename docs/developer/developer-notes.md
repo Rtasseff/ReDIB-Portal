@@ -91,9 +91,9 @@ the next check. Specifically:
   (`applications/views.py`).
 - Scheduled tasks filter on current values every run —
   `check_call_deadlines` (`calls/tasks.py:22`),
-  `send_evaluation_reminders` and `notify_overdue_evaluators` and
-  `notify_coordinator_overdue_evaluations` all join through
-  `application__call__evaluation_deadline` (`evaluations/tasks.py:29,87,145`).
+  `send_evaluation_reminders` (folded `notify_overdue_evaluators` in as of
+  `eval-reminders` #32) and `notify_coordinator_overdue_evaluations` all join
+  through `application__call__evaluation_deadline` (`evaluations/tasks.py`).
 - Assignment emails read `application.call.evaluation_deadline` live
   (`evaluations/tasks.py:345`).
 

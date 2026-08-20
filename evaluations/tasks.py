@@ -9,121 +9,238 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from .models import Evaluation
+from .utils import GRACE_PERIOD_DAYS
 from communications.tasks import send_email_from_template
+
+# Pre-deadline digest checkpoints, in days before `call.evaluation_deadline`.
+REMINDER_CHECKPOINT_DAYS = (7, 3, 1)
+
+
+def _evaluation_pending_item(evaluation, now):
+    """Build one digest row plus the day-count driving both display and cadence."""
+    deadline = evaluation.application.call.evaluation_deadline
+    days_to_deadline = (deadline.date() - now.date()).days if deadline else None
+    is_overdue = days_to_deadline is not None and days_to_deadline <= 0
+
+    if days_to_deadline is None:
+        days_display = 'No deadline set'
+    elif not is_overdue:
+        days_display = f"{days_to_deadline} day{'s' if days_to_deadline != 1 else ''} remaining"
+    else:
+        days_overdue = -days_to_deadline
+        days_display = (
+            'Due today' if days_overdue == 0
+            else f"Overdue by {days_overdue} day{'s' if days_overdue != 1 else ''}"
+        )
+
+    item = {
+        'application_code': evaluation.application.code,
+        'application_title': evaluation.application.brief_description,
+        'call_code': evaluation.application.call.code,
+        'days_display': days_display,
+        'is_overdue': is_overdue,
+        'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
+    }
+    return item, days_to_deadline
+
+
+def _evaluation_cadence_fires(days_to_deadline):
+    """True if `days_to_deadline` (days from today to the evaluation's call
+    deadline, negative once past it) is a digest checkpoint:
+
+    - Pre-deadline: exactly T-7, T-3, or T-1.
+    - Post-deadline: day 0 (deadline day), then every 2 days, through the
+      lockout at deadline + GRACE_PERIOD_DAYS (see
+      `evaluations.utils.is_evaluation_locked`) — the same day the
+      evaluator physically loses the ability to submit, so a digest after
+      that is pure noise.
+    """
+    if days_to_deadline is None:
+        return False
+    if days_to_deadline > 0:
+        return days_to_deadline in REMINDER_CHECKPOINT_DAYS
+    days_overdue = -days_to_deadline
+    if days_overdue > GRACE_PERIOD_DAYS:
+        return False
+    return days_overdue % 2 == 0
+
+
+def _group_pending_evaluations(now, call=None):
+    """Pending evaluations grouped by evaluator, optionally scoped to one
+    call. Shared by the daily digest task and #5's per-call manual dispatch
+    (`calls/views.py`) so both work from the same candidate set.
+
+    Returns {evaluator_id: {'user', 'items', 'cadence_due'}} — 'cadence_due'
+    is True if ANY evaluation in the group hits today's checkpoint (see
+    `_evaluation_cadence_fires`); the daily task gates sending on it, the
+    manual dispatch ignores it (that is the point of an off-cycle button).
+    """
+    qs = Evaluation.objects.filter(completed_at__isnull=True)
+    if call is not None:
+        qs = qs.filter(application__call=call)
+    qs = qs.select_related('application', 'application__call', 'evaluator')
+
+    by_evaluator = {}
+    for evaluation in qs:
+        item, days_to_deadline = _evaluation_pending_item(evaluation, now)
+        entry = by_evaluator.setdefault(
+            evaluation.evaluator_id,
+            {'user': evaluation.evaluator, 'items': [], 'cadence_due': False},
+        )
+        entry['items'].append(item)
+        if _evaluation_cadence_fires(days_to_deadline):
+            entry['cadence_due'] = True
+    return by_evaluator
+
+
+def _evaluator_digest_template(entry):
+    """'evaluation_overdue' if this evaluator holds any overdue evaluation,
+    else 'evaluation_reminder' — the whole point of a digest is one email,
+    so overdue urgency wins over a merely-upcoming sibling."""
+    return 'evaluation_overdue' if any(i['is_overdue'] for i in entry['items']) else 'evaluation_reminder'
+
+
+def _send_evaluator_digest(entry, now, force=False):
+    """Send one evaluator's pending-evaluations digest, unless they opted
+    out or (unless `force`) were already sent this template today. Returns
+    True if sent, False if skipped. Shared by the daily beat task and #5's
+    manual dispatch so both produce the identical email.
+    """
+    from communications.models import EmailLog
+
+    evaluator = entry['user']
+
+    if hasattr(evaluator, 'notification_preferences'):
+        prefs = evaluator.notification_preferences
+        if not prefs.notify_reminders or not prefs.notify_evaluation_assigned:
+            return False
+
+    template_type = _evaluator_digest_template(entry)
+
+    if not force:
+        already_sent = EmailLog.objects.filter(
+            template__template_type=template_type,
+            recipient_email=evaluator.email,
+            sent_at__gte=now - timedelta(days=1),
+        ).exists()
+        if already_sent:
+            return False
+
+    send_email_from_template(
+        template_type=template_type,
+        recipient_email=evaluator.email,
+        context_data={
+            'evaluator_name': evaluator.get_full_name(),
+            'pending_evaluations': entry['items'],
+            'pending_count': len(entry['items']),
+        },
+        recipient_user_id=evaluator.id,
+    )
+    return True
 
 
 @shared_task
 def send_evaluation_reminders():
     """
-    Daily task to send reminders for pending evaluations.
+    Daily per-evaluator digest of pending evaluations (#32).
     Runs at 9 AM daily (configured in redib/celery.py).
 
-    Sends reminder if:
-    - Evaluation is incomplete (completed_at is None)
-    - Less than 7 days until evaluation deadline
+    One email per evaluator per send — not one per pending evaluation —
+    listing every evaluation they currently hold, sent on a fixed cadence
+    (see `_evaluation_cadence_fires`) rather than daily-per-item. Folds in
+    the former `notify_overdue_evaluators` task, which had the same
+    one-email-per-evaluation problem: an evaluator with any evaluation past
+    its deadline gets the 'evaluation_overdue' digest instead of
+    'evaluation_reminder', still as a single email covering everything
+    they hold. Its old subject-text dedupe (`subject__icontains='overdue'`)
+    is replaced with the same `template__template_type` dedupe every other
+    reminder in the codebase uses — matching on rendered text silently
+    breaks if the template wording ever changes.
     """
-    # Find incomplete evaluations approaching deadline
     now = timezone.now()
-    seven_days = now + timedelta(days=7)
+    by_evaluator = _group_pending_evaluations(now)
 
-    pending_evaluations = Evaluation.objects.filter(
-        completed_at__isnull=True,
-        application__call__evaluation_deadline__lte=seven_days,
-        application__call__evaluation_deadline__gte=now
-    ).select_related('application', 'application__call', 'evaluator')
+    digests_sent = 0
+    for entry in by_evaluator.values():
+        if not entry['cadence_due']:
+            continue
+        if _send_evaluator_digest(entry, now):
+            digests_sent += 1
 
-    reminders_sent = 0
-
-    for evaluation in pending_evaluations:
-        # Check if user wants reminders
-        if hasattr(evaluation.evaluator, 'notification_preferences'):
-            prefs = evaluation.evaluator.notification_preferences
-            if not prefs.notify_reminders or not prefs.notify_evaluation_assigned:
-                continue
-
-        # Calculate days remaining
-        days_remaining = (evaluation.application.call.evaluation_deadline - now).days
-
-        # Send reminder email
-        context = {
-            'evaluator_name': evaluation.evaluator.get_full_name(),
-            'application_code': evaluation.application.code,
-            'application_title': evaluation.application.brief_description,
-            'call_code': evaluation.application.call.code,
-            'days_remaining': days_remaining,
-            'deadline': evaluation.application.call.evaluation_deadline,
-            'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
-        }
-
-        send_email_from_template(
-            template_type='evaluation_reminder',
-            recipient_email=evaluation.evaluator.email,
-            context_data=context,
-            recipient_user_id=evaluation.evaluator.id,
-            related_application_id=evaluation.application.id,
-            related_evaluation_id=evaluation.id
-        )
-
-        reminders_sent += 1
-
-    return f"Sent {reminders_sent} evaluation reminders"
+    return f"Sent {digests_sent} evaluation reminder digests"
 
 
-@shared_task
-def notify_overdue_evaluators():
+def preview_evaluation_reminders(call, include_recent=False):
+    """#5: dry run for the coordinator's per-call manual dispatch — who
+    would receive an evaluator pending-evaluations digest for `call` right
+    now, and who would be skipped, without sending anything.
+
+    `include_recent` mirrors the dispatch's "send anyway" override: when
+    True, a recipient already reminded today is reported as due to send
+    rather than skipped (it never overrides an opted-out preference).
+
+    Returns a list of dicts: {recipient_name, recipient_email, detail,
+    will_send, skip_reason}, sorted by recipient name.
     """
-    Daily task to notify evaluators whose evaluations are overdue.
-
-    Sends a notification on the first day past the evaluation deadline.
-    Only sends once per evaluation (checks if email was already sent via EmailLog).
-    """
-    import logging
     from communications.models import EmailLog
 
-    logger = logging.getLogger(__name__)
     now = timezone.now()
+    by_evaluator = _group_pending_evaluations(now, call=call)
 
-    # Find incomplete evaluations where deadline has just passed (within last 24 hours)
-    overdue_evaluations = Evaluation.objects.filter(
-        completed_at__isnull=True,
-        application__call__evaluation_deadline__lt=now,
-        application__call__evaluation_deadline__gte=now - timedelta(hours=25),
-    ).select_related('application', 'application__call', 'evaluator')
+    rows = []
+    for entry in by_evaluator.values():
+        evaluator = entry['user']
+        template_type = _evaluator_digest_template(entry)
 
-    notifications_sent = 0
+        skip_reason = None
+        if hasattr(evaluator, 'notification_preferences'):
+            prefs = evaluator.notification_preferences
+            if not prefs.notify_reminders or not prefs.notify_evaluation_assigned:
+                skip_reason = 'notifications disabled'
 
-    for evaluation in overdue_evaluations:
-        # Check if we already sent an overdue notice for this evaluation
-        already_sent = EmailLog.objects.filter(
-            related_evaluation_id=evaluation.id,
-            subject__icontains='overdue',
-            status='sent',
-        ).exists()
+        if skip_reason is None and not include_recent:
+            recently_sent = EmailLog.objects.filter(
+                template__template_type=template_type,
+                recipient_email=evaluator.email,
+                sent_at__gte=now - timedelta(days=1),
+            ).exists()
+            if recently_sent:
+                skip_reason = 'already reminded today'
 
-        if already_sent:
-            continue
+        pending_count = len(entry['items'])
+        rows.append({
+            'recipient_name': evaluator.get_full_name(),
+            'recipient_email': evaluator.email,
+            'detail': f"{pending_count} pending evaluation{'s' if pending_count != 1 else ''} "
+                      f"({'overdue notice' if template_type == 'evaluation_overdue' else 'reminder'})",
+            'will_send': skip_reason is None,
+            'skip_reason': skip_reason,
+        })
 
-        context = {
-            'evaluator_name': evaluation.evaluator.get_full_name(),
-            'application_code': evaluation.application.code,
-            'call_code': evaluation.application.call.code,
-            'deadline': evaluation.application.call.evaluation_deadline,
-            'evaluation_url': settings.SITE_URL + reverse('evaluations:evaluation_detail', kwargs={'pk': evaluation.id}),
-        }
+    return sorted(rows, key=lambda r: r['recipient_name'])
 
-        send_email_from_template(
-            template_type='evaluation_overdue',
-            recipient_email=evaluation.evaluator.email,
-            context_data=context,
-            recipient_user_id=evaluation.evaluator.id,
-            related_application_id=evaluation.application.id,
-            related_evaluation_id=evaluation.id
-        )
 
-        notifications_sent += 1
+def send_evaluation_reminders_now(call, include_recent=False):
+    """#5: actually send the coordinator's per-call manual dispatch.
 
-    logger.info("Sent %d overdue evaluation notifications to evaluators", notifications_sent)
-    return f"Sent {notifications_sent} overdue evaluator notifications"
+    Deliberately ignores the daily cadence gate (`cadence_due`) — that is
+    the entire point of an off-cycle button — but still uses
+    `_send_evaluator_digest`, the same helper the daily task calls, so the
+    email produced is identical.
+
+    Returns (sent_count, skipped_count).
+    """
+    now = timezone.now()
+    by_evaluator = _group_pending_evaluations(now, call=call)
+
+    sent = 0
+    skipped = 0
+    for entry in by_evaluator.values():
+        if _send_evaluator_digest(entry, now, force=include_recent):
+            sent += 1
+        else:
+            skipped += 1
+    return sent, skipped
 
 
 @shared_task

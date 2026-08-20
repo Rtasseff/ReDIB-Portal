@@ -2464,6 +2464,70 @@ You receive this because you hold the ReDIB coordinator role. It is a record
 of what happened, not a request to act.
 Please do not reply to this email.''',
                 'available_variables': '''Variables: coordinator_name, action (expired / force-accepted / reinstated), actioned_by, actioned_on, reason, change_line, application_code, call_code, applicant_name, applicant_email, node_name, status_label, application_url'''
+            },
+            {
+                'template_type': 'draft_nudge',
+                'subject': 'ReDIB COA: Your Application for {{ call_code }} is Still a Draft',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .warning-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Your Application Is Still a Draft</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+            <p>Your application <strong>{{ application_code }}</strong> for <strong>{{ call_code }}</strong> has not been submitted yet.</p>
+            <div class="warning-box">
+                <p><strong>Submission Deadline:</strong> {{ submission_deadline }}</p>
+                <p><strong>Days Remaining:</strong> {{ days_remaining }} days</p>
+            </div>
+            <p>Once the deadline passes, this call will no longer accept submissions and this draft will not be reviewed.</p>
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">Finish and Submit</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+Your application {{ application_code }} for {{ call_code }} has not been submitted yet.
+
+Submission Deadline: {{ submission_deadline }}
+Days Remaining: {{ days_remaining }} days
+
+Once the deadline passes, this call will no longer accept submissions and this draft will not be reviewed.
+
+Finish and submit:
+{{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, call_title, days_remaining, submission_deadline, application_url'''
             }
         ]
 
