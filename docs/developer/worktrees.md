@@ -176,6 +176,7 @@ live right now.
 
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
+| `acceptance-repair/` | `feature/acceptance-repair` | 8002 | 2026-08-20 | **Live.** No transition without a human: delete auto-expire, add the stalled-acceptance nag + coordinator expire / force-accept / reinstate (#53, #52, #18). Merge by 2026-09-10, deploys with `closeout` 2026-09-15. Owns `applications/tasks.py` and the acceptance half of `applications/views.py`. Handoff: `docs/handoffs/acceptance-repair.md` on the branch. |
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
