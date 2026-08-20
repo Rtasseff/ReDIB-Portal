@@ -1,10 +1,13 @@
 """
-Tests for closeout #29: execution-phase completion reminders.
+Tests for closeout #29 (execution-phase completion reminders) and its
+eval-reminders #49 reshape.
 
 Cadence: first at 60 days after handoff_email_sent_at, then every 30 days,
-plus one the day after call.execution_end; stops once is_completed=True.
-Both the applicant and the node coordinator(s) are notified, deduped
-independently.
+plus one the day after call.execution_end; stops once is_completed=True —
+unchanged by #49. The applicant is still notified one email per
+application. The node coordinator side is now a per-recipient digest
+across every application awaiting completion at their node(s) (#49),
+deduped per recipient rather than per (recipient, application).
 """
 from decimal import Decimal
 
@@ -89,7 +92,6 @@ class CompletionReminderTest(TestCase):
             EmailLog.objects.filter(
                 template__template_type='completion_reminder_coordinator',
                 recipient_email=self.coordinator.email,
-                related_application_id=app.id,
             ).exists()
         )
 
@@ -142,12 +144,29 @@ class CompletionReminderTest(TestCase):
         coordinator_emails = EmailLog.objects.filter(
             template__template_type='completion_reminder_coordinator',
             recipient_email=self.coordinator.email,
-            related_application_id=app.id,
         )
         self.assertEqual(coordinator_emails.count(), 1)
         content = coordinator_emails.first().html_content
         self.assertIn(self.node.name, content)
         self.assertIn(other_node.name, content)
+
+    def test_coordinator_digest_lists_every_application_awaiting_completion(self):
+        """A coordinator with two separate active applications at their
+        node gets ONE digest listing both, not one email per application —
+        the #49 reshape."""
+        app1 = self._make_active_application(timezone.now() - timedelta(days=60))
+        app2 = self._make_active_application(timezone.now() - timedelta(days=90))  # also a 60/90 checkpoint
+
+        send_completion_reminders()
+
+        coordinator_emails = EmailLog.objects.filter(
+            template__template_type='completion_reminder_coordinator',
+            recipient_email=self.coordinator.email,
+        )
+        self.assertEqual(coordinator_emails.count(), 1)
+        content = coordinator_emails.first().html_content
+        self.assertIn(app1.code, content)
+        self.assertIn(app2.code, content)
 
     def test_catch_up_after_missed_execution_end_day(self):
         """A handoff far outside the 60/90 cadence, but a few days past
@@ -167,7 +186,8 @@ class CompletionReminderTest(TestCase):
         )
         self.assertTrue(
             EmailLog.objects.filter(
-                template__template_type='completion_reminder_coordinator', related_application_id=app.id
+                template__template_type='completion_reminder_coordinator',
+                recipient_email=self.coordinator.email,
             ).exists()
         )
 
@@ -191,7 +211,6 @@ class CompletionReminderTest(TestCase):
             template=coordinator_template, recipient_email=self.coordinator.email,
             subject='x', status='sent',
             sent_at=self.call.execution_end + timedelta(days=1),
-            related_application_id=app.id,
         )
 
         send_completion_reminders()
@@ -204,7 +223,8 @@ class CompletionReminderTest(TestCase):
         )
         self.assertEqual(
             EmailLog.objects.filter(
-                template__template_type='completion_reminder_coordinator', related_application_id=app.id
+                template__template_type='completion_reminder_coordinator',
+                recipient_email=self.coordinator.email,
             ).count(),
             1,
         )

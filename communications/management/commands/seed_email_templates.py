@@ -2192,7 +2192,7 @@ Please do not reply to this email.''',
             },
             {
                 'template_type': 'completion_reminder_coordinator',
-                'subject': 'ReDIB COA: Check completion status for {{ application_code }}',
+                'subject': 'ReDIB COA: Applications Awaiting Completion',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -2215,13 +2215,15 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
-            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            <p>The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            {% for node in node_summaries %}
             <div class="info-box">
-                <p><strong>Node(s):</strong> {{ node_name }}</p>
+                <p><strong>{{ node.node_name }}</strong></p>
+                {% for app in node.applications %}
+                <p>&bull; <a href="{{ app.application_url }}">{{ app.application_code }}</a> &mdash; {{ app.applicant_name }} ({{ app.call_code }})</p>
+                {% endfor %}
             </div>
-            <p style="text-align: center;">
-                <a href="{{ application_url }}" class="button">Open Application</a>
-            </p>
+            {% endfor %}
             <p>Best regards,<br>
             The ReDIB COA Team</p>
         </div>
@@ -2234,20 +2236,19 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ coordinator_name }},
 
-Application {{ application_code }} ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
-
-Node(s): {{ node_name }}
-
-Open application:
-{{ application_url }}
-
+The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
+{% for node in node_summaries %}
+{{ node.node_name }}:
+{% for app in node.applications %}  - {{ app.application_code }} - {{ app.applicant_name }} ({{ app.call_code }})
+    {{ app.application_url }}
+{% endfor %}{% endfor %}
 Best regards,
 The ReDIB COA Team
 
 ---
 This is an automated reminder from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: coordinator_name, application_code, applicant_name, call_code, node_name (comma-separated if the coordinator manages more than one of this application's nodes), application_url'''
+                'available_variables': '''Variables: coordinator_name, node_summaries (list of {node_name, applications: [{application_code, applicant_name, call_code, application_url}]})'''
             },
             {
                 'template_type': 'stalled_acceptance_reminder',

@@ -260,10 +260,13 @@ Shared with `acceptance-repair` regardless — **rebase early and often**:
 - [x] 1b. `notify_overdue_evaluators` folded in; subject-text dedupe replaced
 - [x] 2. #5 — per-call manual dispatch with preview + override
 - [x] 3. #35 — draft nudge at T−7 / T−2, in `calls/tasks.py`
-- [ ] 4. #49 — completion digest **(gated: rebase first, park if
-      `acceptance-repair` has not merged)** — checked 2026-08-20:
-      `acceptance-repair` has not merged (no `docs/handoffs/acceptance-repair.md`
-      on `origin/main`); will re-check before opening the PR
+- [x] 4. #49 — completion digest **(gated: rebase first, park if
+      `acceptance-repair` has not merged)** — `acceptance-repair` merged to
+      `main` 2026-08-20 while this bucket was in progress; rebased
+      (resolved conflicts in `seed_email_templates.py`,
+      `communications/models.py`, the choices migration — regenerated
+      fresh per the conflict watchlist note; `redib/celery.py` auto-merged
+      cleanly) and implemented #49 on top
 - [ ] `/code-review` at **medium**, on this branch, before opening the PR
 - [ ] Suite green — record both counts
 - [ ] PR opened

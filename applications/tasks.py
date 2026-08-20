@@ -635,8 +635,9 @@ def send_waitlist_digest():
 @shared_task
 def send_completion_reminders():
     """
-    Daily task (#29): nudge applicants and node coordinators to log actual
-    equipment hours and mark an active grant's equipment lines done.
+    Daily task (#29, reshaped by #49): nudge applicants and node
+    coordinators to log actual equipment hours and mark an active grant's
+    equipment lines done.
 
     Applies to applications with status='accepted', accepted_by_applicant
     True, handoff_email_sent_at set, and is_completed=False.
@@ -644,12 +645,21 @@ def send_completion_reminders():
     Cadence per application: first at 60 days after `handoff_email_sent_at`,
     then every 30 days, plus one nudge in the week after `call.execution_end`
     (a bounded catch-up window — see `_milestone_window`); stops once
-    `is_completed=True`. Dedupe per (recipient, application, day) via
-    EmailLog for the recurring cadence, and per (recipient, application,
-    since-execution_end) for the milestone nudge — checked separately for
-    the applicant and for the node coordinators as a group (one recipient
-    covering two nodes on the same application gets one email, not two;
-    a shared EmailLog row for one node must not suppress the other).
+    `is_completed=True`. This cadence is unchanged by #49 — only the node
+    coordinator's email shape changes.
+
+    The applicant side stays one email per application — an applicant has
+    one project and the mail is about theirs specifically — deduped per
+    (recipient, application, day) exactly as before.
+
+    The node coordinator side is now a per-recipient digest across every
+    application currently awaiting completion at their node(s), grouped by
+    node exactly like `send_waitlist_digest`: REDIB-2601 had 22 running
+    projects handed off within days of each other, so every 60/30
+    checkpoint — and the one-time execution_end nudge — arrived as a burst
+    of near-identical mail on one morning. Dedupe is per recipient (no
+    `related_application_id`, since one digest spans several applications),
+    for both the recurring cadence and the milestone nudge.
     """
     from core.models import UserRole
     from communications.models import EmailLog
@@ -665,6 +675,7 @@ def send_completion_reminders():
     ).select_related('call', 'applicant').prefetch_related('requested_access__equipment__node')
 
     reminders_sent = 0
+    due_by_coordinator = {}
 
     for app in active_apps:
         cadence_due = _reminder_is_due(app.handoff_email_sent_at, 60, 30, now)
@@ -674,22 +685,7 @@ def send_completion_reminders():
 
         application_url = f'{settings.SITE_URL}/applications/{app.id}/'
 
-        def _should_send(template_type, recipient_email):
-            recently_sent = EmailLog.objects.filter(
-                template__template_type=template_type,
-                recipient_email=recipient_email,
-                related_application_id=app.id,
-                sent_at__gte=now - timedelta(days=1),
-            ).exists()
-            milestone_sent = milestone_due and EmailLog.objects.filter(
-                template__template_type=template_type,
-                recipient_email=recipient_email,
-                related_application_id=app.id,
-                sent_at__gte=app.call.execution_end,
-            ).exists()
-            return (cadence_due and not recently_sent) or (milestone_due and not milestone_sent)
-
-        # Applicant
+        # Applicant: one email per application, unchanged by #49.
         applicant = app.applicant
         applicant_email = app.applicant_email or applicant.email
         send_to_applicant = True
@@ -698,63 +694,107 @@ def send_completion_reminders():
             if not prefs.notify_reminders or not prefs.notify_application_updates:
                 send_to_applicant = False
 
-        if send_to_applicant and _should_send('completion_reminder', applicant_email):
-            send_email_from_template(
-                template_type='completion_reminder',
+        if send_to_applicant:
+            recently_sent = EmailLog.objects.filter(
+                template__template_type='completion_reminder',
                 recipient_email=applicant_email,
-                context_data={
-                    'applicant_name': applicant.get_full_name(),
-                    'application_code': app.code,
-                    'call_code': app.call.code,
-                    'application_url': application_url,
-                },
-                recipient_user_id=applicant.id,
                 related_application_id=app.id,
-            )
-            reminders_sent += 1
+                sent_at__gte=now - timedelta(days=1),
+            ).exists()
+            milestone_sent = milestone_due and EmailLog.objects.filter(
+                template__template_type='completion_reminder',
+                recipient_email=applicant_email,
+                related_application_id=app.id,
+                sent_at__gte=app.call.execution_end,
+            ).exists()
+            if (cadence_due and not recently_sent) or (milestone_due and not milestone_sent):
+                send_email_from_template(
+                    template_type='completion_reminder',
+                    recipient_email=applicant_email,
+                    context_data={
+                        'applicant_name': applicant.get_full_name(),
+                        'application_code': app.code,
+                        'call_code': app.call.code,
+                        'application_url': application_url,
+                    },
+                    recipient_user_id=applicant.id,
+                    related_application_id=app.id,
+                )
+                reminders_sent += 1
 
-        # Node coordinator(s) of every node with equipment on this
-        # application — grouped by recipient so a coordinator covering
-        # several of this application's nodes gets one email, not one per
-        # node (a per-node EmailLog dedupe check would otherwise make the
-        # first node's send suppress the rest).
+        # Node coordinator(s): collect into #49's cross-application digest
+        # rather than sending immediately — grouped by node, by recipient.
         nodes = {ra.equipment.node for ra in app.requested_access.all()}
-        coordinators_by_recipient = {}
         for node in nodes:
             node_coordinators = UserRole.objects.filter(
                 node=node, role='node_coordinator', is_active=True
             ).select_related('user')
             for coord_role in node_coordinators:
-                entry = coordinators_by_recipient.setdefault(
-                    coord_role.user.id, {'user': coord_role.user, 'node_names': []}
+                recipient = coord_role.user
+                entry = due_by_coordinator.setdefault(
+                    recipient.id,
+                    {'user': recipient, 'apps_by_node': {}, 'cadence_due': False, 'milestone_ends': []},
                 )
-                entry['node_names'].append(node.name)
+                entry['apps_by_node'].setdefault(node, []).append((app, application_url))
+                if cadence_due:
+                    entry['cadence_due'] = True
+                if milestone_due:
+                    entry['milestone_ends'].append(app.call.execution_end)
 
-        for entry in coordinators_by_recipient.values():
-            recipient = entry['user']
-            if hasattr(recipient, 'notification_preferences'):
-                prefs = recipient.notification_preferences
-                if not prefs.notify_reminders or not prefs.notify_application_updates:
-                    continue
+    for entry in due_by_coordinator.values():
+        recipient = entry['user']
 
-            if not _should_send('completion_reminder_coordinator', recipient.email):
+        if hasattr(recipient, 'notification_preferences'):
+            prefs = recipient.notification_preferences
+            if not prefs.notify_reminders or not prefs.notify_application_updates:
                 continue
 
-            send_email_from_template(
-                template_type='completion_reminder_coordinator',
+        recently_sent = EmailLog.objects.filter(
+            template__template_type='completion_reminder_coordinator',
+            recipient_email=recipient.email,
+            sent_at__gte=now - timedelta(days=1),
+        ).exists()
+
+        milestone_sent = False
+        if entry['milestone_ends']:
+            milestone_sent = EmailLog.objects.filter(
+                template__template_type='completion_reminder_coordinator',
                 recipient_email=recipient.email,
-                context_data={
-                    'coordinator_name': recipient.get_full_name(),
-                    'application_code': app.code,
-                    'applicant_name': app.applicant_name,
-                    'call_code': app.call.code,
-                    'node_name': ', '.join(sorted(entry['node_names'])),
-                    'application_url': application_url,
-                },
-                recipient_user_id=recipient.id,
-                related_application_id=app.id,
-            )
-            reminders_sent += 1
+                sent_at__gte=min(entry['milestone_ends']),
+            ).exists()
+
+        should_send = (
+            (entry['cadence_due'] and not recently_sent)
+            or (entry['milestone_ends'] and not milestone_sent)
+        )
+        if not should_send:
+            continue
+
+        node_summaries = []
+        for node, apps in entry['apps_by_node'].items():
+            node_summaries.append({
+                'node_name': node.name,
+                'applications': [
+                    {
+                        'application_code': a.code,
+                        'applicant_name': a.applicant_name,
+                        'call_code': a.call.code,
+                        'application_url': url,
+                    }
+                    for a, url in apps
+                ],
+            })
+
+        send_email_from_template(
+            template_type='completion_reminder_coordinator',
+            recipient_email=recipient.email,
+            context_data={
+                'coordinator_name': recipient.get_full_name(),
+                'node_summaries': node_summaries,
+            },
+            recipient_user_id=recipient.id,
+        )
+        reminders_sent += 1
 
     return f"Sent {reminders_sent} completion reminders"
 
