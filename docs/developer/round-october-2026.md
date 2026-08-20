@@ -338,7 +338,9 @@ stretch item) and **#49** (`send_completion_reminders` is per-application where
 it should be a per-coordinator digest — the same bug as #32, one call cycle
 later). #49 is cheap here because #32 builds the digest shape anyway.
 
-**Out:** #4 (auto-assign preview) — deferred this round.
+**Out:** #4 (auto-assign preview) — deferred this round. The evaluator lockout
+(`is_evaluation_locked`, deadline + 7) is **not** in scope: it writes nothing and
+is the one automatic behaviour Ryan wants kept.
 
 **Acceptance.** A day with N pending evaluations for one evaluator produces one
 email, not N. Backoff verifiable in a seeded sandbox. The coordinator's manual
@@ -459,7 +461,7 @@ Update on every merge, in the same commit as the registry change.
 | `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
 | `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
 | `acceptance-repair` | **2026-08-20** | | | #53, #52, #18. Replaces auto-expire with a repeating node-coordinator nag plus coordinator expire / force-accept. Worktree `acceptance-repair/` port 8002. **`closeout`'s deploy is held until this merges.** |
-| `eval-reminders` | | | | **Ready to cut** (`closeout` merged 2026-08-19). #32, #5, plus #35 and #49 inherited from `closeout`. Port 8002 is free. |
+| `eval-reminders` | **2026-08-20** | | | #32, #5, #35; **#49 gated** — it lives in `applications/tasks.py`, which `acceptance-repair` owns, so it is sequenced last and parked if that branch has not merged. Worktree `eval-reminders/` port 8003. |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
 | `resolution-report` | | | | cut once `eval-reminders` merges |
 
