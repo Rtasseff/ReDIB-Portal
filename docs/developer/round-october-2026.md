@@ -261,6 +261,11 @@ the bucket, not a nicety.
 
 ### 4.3b `acceptance-repair` — no transition without a human
 
+> **Merged 2026-08-20 (PR #37).** All three items shipped (#53, #52, #18).
+> Review added #55–#57. Kept below as the record of what was asked for; the
+> **principle** it establishes is not a record — it governs everything after
+> it.
+
 **Goal.** Delete the last beat task that writes an applicant-visible state
 change, and replace it with a nag plus two coordinator actions.
 
@@ -460,8 +465,8 @@ Update on every merge, in the same commit as the registry change.
 | `baseline` | 2026-08-18 | **2026-08-18** (PR #35) | **2026-08-19** | Suite green — but it takes **two commands**, because `tests/` has no `__init__.py` and default discovery skips it: `manage.py test tests` = **162**, `manage.py test` = **11** (`reports/tests.py`). 173 total; that pair is what later buckets measure against (see #46). Review caught one defect: `resolution_accepted` would have mailed promoted applicants a blank deadline and an empty accept link. Worktree removed. |
 | `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
 | `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
-| `acceptance-repair` | **2026-08-20** | | | #53, #52, #18. Replaces auto-expire with a repeating node-coordinator nag plus coordinator expire / force-accept. Worktree `acceptance-repair/` port 8002. **`closeout`'s deploy is held until this merges.** |
-| `eval-reminders` | **2026-08-20** | | | #32, #5, #35; **#49 gated** — it lives in `applications/tasks.py`, which `acceptance-repair` owns, so it is sequenced last and parked if that branch has not merged. Worktree `eval-reminders/` port 8003. |
+| `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
+| `eval-reminders` | **2026-08-20** | | | #32, #5, #35, #49. **The #49 gate opened 2026-08-20** when `acceptance-repair` merged — that session should rebase onto `main` before starting it (and will need to anyway: both buckets add beat entries and email templates). Worktree `eval-reminders/` port 8003. |
 | `release-gate` | | | | cut once `call-hardening` merges; abort 2026-12-05 |
 | `resolution-report` | | | | cut once `eval-reminders` merges |
 
@@ -472,24 +477,22 @@ Update on every merge, in the same commit as the registry change.
 the `resolution_accepted` template guard, and the announcement-email switch
 (`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`).
 
-**`closeout` is built but its deploy is HELD** (decision 2026-08-20) until
-`acceptance-repair` merges — the two ship together, target 2026-09-15. #17
-extended auto-expire to waitlisted applicants; `acceptance-repair` deletes
-auto-expire outright. Deploying `closeout` on its own would fire the retroactive
-expiry described below and then be half-reverted three weeks later.
+**`closeout` + `acceptance-repair` are both on `main` and both undeployed**,
+shipping together, target 2026-09-15. The hold is discharged: `acceptance-repair`
+merged 2026-08-20, so the auto-expire that `closeout`'s #17 extended is gone
+from the same deploy that would have introduced it.
 
 What `closeout` carries when it does go: two choices-only
 `AlterField` migrations (`applications.0014`, `communications.0008` — `sqlmigrate`
 confirms no-op DDL), five new `EmailTemplate` rows seeded by the entrypoint's
 `seed_email_templates`, and two new beat tasks at 08:00 and 08:15.
 
-**Pre-deploy check — run this on prod before the first beat cycle after the
-pull.** #17 adds `status='pending'` to the auto-expire branch of
-`process_acceptance_deadlines`. That branch is retroactive: it expires anything
-whose deadline has already passed. So on the first 09:00 run after deploy, every
-REDIB-2601 waitlist offer that was never answered gets auto-expired **and
-emailed** — months after the fact, using `acceptance_expired`, whose wording is
-wrong for a waitlisted applicant (#52).
+**Post-deploy check — no longer a hazard, now a heads-up.** The retroactive
+auto-expiry this section used to warn about cannot happen: `acceptance-repair`
+deleted the branch. What the same query now tells you is **who the first
+stalled-acceptance nag will name** on the morning after the deploy — the node
+coordinators of these applications get a reminder, with you cc'd, and nothing
+changes state until one of them clicks.
 
 ```python
 from django.utils import timezone
@@ -502,12 +505,10 @@ Application.objects.filter(
 ).values_list('code', 'acceptance_deadline')
 ```
 
-**`acceptance-repair` removes this check rather than defusing it** — with
-auto-expire gone, nothing retroactive fires and the stalled offers surface as a
-coordinator reminder instead. The query above is still worth running once on
-prod after the joint deploy, as the population the first nag will name. (The
-seven `pending` REDIB-2601 applications prod counted on 2026-08-19 are that
-population; whether any has an unanswered deadline is not knowable from dev.)
+(The seven `pending` REDIB-2601 applications prod counted on 2026-08-19 are the
+population to check; whether any has an unanswered deadline is not knowable from
+dev. Note #55: an application with a NULL `acceptance_deadline` is invisible to
+this query *and* to the nag.)
 
 Prod's post-deploy verification produced two findings, both in the backlog:
 **#43** (High, blocks the user load — see § 5) and **#44** (Low, answered

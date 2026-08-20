@@ -1,5 +1,11 @@
 # Handoff — `feature/acceptance-repair`
 
+> **Merged 2026-08-20 (PR #37).** Record only — the branch and its worktree
+> are gone. All three items shipped (#53, #52, #18). Review findings 8, 10 and
+> 6 became backlog #55, #56 and #57. The one open question — the "also email
+> the applicant" checkbox on manual expire — is answered in
+> [round-october-2026.md § 7](../developer/round-october-2026.md).
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/acceptance-repair.md on the branch. Keep "Status" current. -->
 
