@@ -324,7 +324,7 @@ resolution phase.
       `test_batch2_phase4.py` updated to set `resolutions_released=True`,
       since they exercise `apply_node_resolution` for unrelated behavior);
       `test`: 11 OK; new coverage in `tests/test_release_gate.py`
-- [ ] PR opened
+- [x] PR opened — [#39](https://github.com/Rtasseff/ReDIB-Portal/pull/39)
 
 ## Review findings (medium `/code-review`)
 
