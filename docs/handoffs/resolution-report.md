@@ -283,15 +283,17 @@ Genuinely short — this is the most isolated bucket of the round:
 
 ## Status
 
-- [ ] Baseline counts recorded (expect 351 + 11)
-- [ ] `build_resolution_table` + label/node maps
-- [ ] Page view, both languages, warnings
-- [ ] CSV export
-- [ ] Entry point from the reports dashboard
-- [ ] Tests, including multi-node and all four edge cases
-- [ ] Read-only assertion test
-- [ ] `check` + `makemigrations --check` + full suite
+- [x] Baseline counts recorded: `python manage.py test tests` = 351 OK, `python manage.py test` = 11 OK (both match expected baseline)
+- [x] `build_resolution_table` + label/node maps — `reports/resolution_table.py`
+- [x] Page view, both languages, warnings — `reports/views.py:resolution_report`, `templates/reports/resolution_report.html` + `_resolution_table_block.html`
+- [x] CSV export — `reports/views.py:resolution_report_csv`, one URL with a `lang` path segment (`en`/`es`); unknown lang 404s
+- [x] Entry point from the reports dashboard — new "Resolution Tables" card in `templates/reports/statistics_dashboard.html`, calls newest-first by `submission_start`
+- [x] Tests, including multi-node and all four edge cases — `tests/test_resolution_report.py` (22 tests)
+- [x] Read-only assertion test — `ResolutionReportReadOnlyTests`, counts `Application`/`NodeResolution`/`ReportGeneration`/`HistoricalApplication`/`HistoricalNodeResolution` before and after
+- [x] `check` + `makemigrations --check` + full suite — all clean; `python manage.py test tests` = 373 (351 + 22 new), `python manage.py test` = 11 (unchanged — new tests live in `tests/`, not `reports/tests.py`, so default discovery per #46 doesn't pick them up)
 - [ ] PR opened
+
+**Note:** the dev sqlite DB in this worktree hadn't had `calls.0004_call_resolutions_released_and_more` (release-gate) applied yet, even though `main` has it merged. Ran `python manage.py migrate` to catch it up before doing manual rendering checks — unrelated to this bucket, no migration was added here (`makemigrations --check` reports "No changes detected").
 
 ## Questions for the handoff session
 

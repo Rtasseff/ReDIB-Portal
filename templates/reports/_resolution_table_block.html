@@ -1,0 +1,24 @@
+<h2 class="h5 mt-4">{{ lang_label }} — {{ call.code }} — {{ call.title }}</h2>
+{% if table.rows %}
+<div class="table-responsive">
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr>
+                {% for header in table.headers %}<th>{{ header }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table.rows %}
+            <tr>
+                <td>{{ row.code }}</td>
+                <td>{{ row.organization }}</td>
+                <td>{% for n in row.nodes %}{{ n }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                <td>{% for r in row.resolutions %}{{ r }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No submitted applications for this call.</p>
+{% endif %}
