@@ -533,6 +533,32 @@ for c in Call.objects.all():
     print(c.code, c.status, 'released' if c.resolutions_released else 'GATED')
 ```
 
+**It also carries the #61 loader fix, and the beat schedule changes by exactly
+one line.** `notify-overdue-evaluators` (09:30) is *replaced* by
+`send-draft-nudges` (08:30) — #32 folded the evaluator flood into the 09:00
+digest, so the separate overdue task is gone. Still ten entries.
+
+**Nothing in this deploy sends a new email into a live population.** The draft
+nudge only looks at calls with `status='open'` and only at T-7/T-2 before
+`submission_end`; there is no open call. The evaluation digest needs pending
+evaluations; REDIB-2601's are done. `release-gate`'s one behavioural change to
+mail is a *suppression* — `notify_coordinator_evaluations_complete` is held
+until the call is released. The 10:15 stalled-acceptance nag was already live
+and prod confirmed an empty population on 2026-08-21.
+
+**The one thing prod must not do after this deploy is run
+`populate_redib_users` for real.** The dry-run is the verification; see below.
+
+**Prediction to check the #61 fix against, once the rebuild is done** (and only
+once it is done — `git pull` does not change what `manage.py` runs; that is
+#62). Re-running `populate_redib_users --dry-run` should still report 0 to
+update / 14 protected / 8 unchanged, and the **six** role lines of 2026-08-21
+should drop to **one**: the four `'clinical;preclinical' -> 'preclinical;clinical'`
+reorderings are no longer treated as changes, Arrate's `'preclinical' -> ''` is
+no longer written, and only `mangel.morcillo@ciemat.es`'s filled-cell narrowing
+survives — correctly, because a filled cell is authoritative. That last one is a
+**data** decision, not a code one, and is what #61 now tracks.
+
 **`closeout` + `acceptance-repair` shipped together on 2026-08-21**, three
 weeks ahead of the 2026-09-15 target. The hold worked as intended: the
 auto-expire that `closeout`'s #17 extended was deleted by `acceptance-repair`
