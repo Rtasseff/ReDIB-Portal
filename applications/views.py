@@ -2413,6 +2413,18 @@ def node_resolution_review(request, application_id, node_id):
         messages.error(request, f"Application {application.code} is not awaiting resolution (status: {application.status}).")
         return redirect('applications:node_resolution_queue')
 
+    # Verify ReDIB has released this call's resolutions to nodes. Redirect
+    # with a clear reason rather than 404 — a node coordinator arriving here
+    # from an old email deserves to know why, not just a dead link.
+    if not application.call.resolutions_released:
+        messages.error(
+            request,
+            f"ReDIB has not released {application.call.code}'s resolutions to "
+            "nodes yet. You'll be notified once the whole call's evaluations "
+            "are released."
+        )
+        return redirect('applications:node_resolution_queue')
+
     service = NodeResolutionService(node=node)
 
     # Get equipment requested from this node

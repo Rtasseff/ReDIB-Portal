@@ -23,6 +23,7 @@ urlpatterns = [
     path('<int:pk>/publish/', views.call_publish, name='publish'),
     path('<int:pk>/close/', views.call_close, name='close'),
     path('<int:pk>/resolve/', views.call_resolve, name='resolve'),
+    path('<int:pk>/release-resolutions/', views.call_release_resolutions, name='release_resolutions'),
     path('<int:pk>/remind/evaluators/', views.remind_evaluators, name='remind_evaluators'),
     path('<int:pk>/remind/feasibility/', views.remind_feasibility, name='remind_feasibility'),
     path('<int:pk>/delete/', views.call_delete, name='delete'),

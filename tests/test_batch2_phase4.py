@@ -84,6 +84,7 @@ class PendingWaitlistLifecycleTest(TestCase):
             evaluation_deadline=timezone.now() + timedelta(days=30),
             execution_start=timezone.now() + timedelta(days=40),
             execution_end=timezone.now() + timedelta(days=60),
+            resolutions_released=True,
         )
         self.application = Application.objects.create(
             applicant=self.applicant, call=self.call, code='APP-W1',

@@ -55,6 +55,16 @@ class Call(models.Model):
         help_text='Prevent resolution changes after finalization (Phase 6)'
     )
 
+    # Release gate: node coordinators cannot see or act on any 'evaluated'
+    # application until the whole call's evaluations are released to them at
+    # once, so resolutions happen against the full pool instead of trickling
+    # in as evaluations complete.
+    resolutions_released = models.BooleanField(
+        default=False,
+        help_text='Node coordinators can only resolve applications once this is set'
+    )
+    resolutions_released_at = models.DateTimeField(null=True, blank=True)
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -309,16 +309,20 @@ resolution phase.
 
 <!-- Keep this current as you work. -->
 
-- [ ] Baseline recorded (`test tests`, `test`, `check`, `makemigrations --check`)
-      before any change
-- [ ] 1. `resolutions_released` + timestamp + **backfill data migration**
-- [ ] 2. notification held in `check_and_transition_application`
-- [ ] 3. the four refusals (service layer first)
-- [ ] 4. "Release to nodes" action + confirm screen
-- [ ] 5. score spread on the release screen, ≥5 marked
+- [x] Baseline recorded (`test tests`, `test`, `check`, `makemigrations --check`)
+      before any change — `test tests`: 315 OK; `test`: 11 OK; `check`: clean
+- [x] 1. `resolutions_released` + timestamp + **backfill data migration**
+- [x] 2. notification held in `check_and_transition_application`
+- [x] 3. the four refusals (service layer first)
+- [x] 4. "Release to nodes" action + confirm screen
+- [x] 5. score spread on the release screen, ≥5 marked
 - [ ] *(stretch)* 6. #16 — badge adoption + the filter
 - [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [ ] Suite green — record both counts
+- [x] Suite green — record both counts — `test tests`: 315 OK (2 pre-existing
+      test setups in `test_batch2_phase1.py`/`test_batch2_phase4.py` updated to
+      set `resolutions_released=True`, since they exercise `apply_node_resolution`
+      for unrelated behavior); `test`: 11 OK; +20 new tests in
+      `tests/test_release_gate.py`
 - [ ] PR opened
 
 ## Questions for the handoff session
