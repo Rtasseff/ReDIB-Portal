@@ -291,7 +291,7 @@ Genuinely short — this is the most isolated bucket of the round:
 - [x] Tests, including multi-node and all four edge cases — `tests/test_resolution_report.py` (22 tests)
 - [x] Read-only assertion test — `ResolutionReportReadOnlyTests`, counts `Application`/`NodeResolution`/`ReportGeneration`/`HistoricalApplication`/`HistoricalNodeResolution` before and after
 - [x] `check` + `makemigrations --check` + full suite — all clean; `python manage.py test tests` = 373 (351 + 22 new), `python manage.py test` = 11 (unchanged — new tests live in `tests/`, not `reports/tests.py`, so default discovery per #46 doesn't pick them up)
-- [ ] PR opened
+- [x] PR opened — https://github.com/Rtasseff/ReDIB-Portal/pull/40
 
 **Note:** the dev sqlite DB in this worktree hadn't had `calls.0004_call_resolutions_released_and_more` (release-gate) applied yet, even though `main` has it merged. Ran `python manage.py migrate` to catch it up before doing manual rendering checks — unrelated to this bucket, no migration was added here (`makemigrations --check` reports "No changes detected").
 
