@@ -172,12 +172,7 @@ class NodeResolutionService:
         # get_applications_for_node_resolution keeps it out of the queue, but
         # that's not a guard — someone with a stale tab or a bookmarked URL
         # must be stopped here too.
-        if not application.call.resolutions_released:
-            raise ValidationError(
-                f"{application.call.code} has not released resolutions to "
-                "nodes yet. This application cannot be resolved until ReDIB "
-                "releases the call's evaluations."
-            )
+        application.call.ensure_resolutions_released()
 
         # Validate: user must be node coordinator for this node
         if not UserRole.objects.filter(

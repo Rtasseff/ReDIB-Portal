@@ -13,6 +13,9 @@ Covers:
 - The "Release to nodes" action: guards, batch email fan-out, idempotence,
   and the score-spread preview with the >=5 marker.
 - #16 (stretch): access_tracking's "node-accepted, awaiting applicant" filter.
+- The legacy centralized-coordinator ResolutionService (a second path to the
+  same evaluated -> resolved transition, found by /code-review to bypass the
+  gate entirely) is gated too, via Call.ensure_resolutions_released.
 """
 import importlib
 from datetime import timedelta
@@ -25,7 +28,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from applications.models import Application, NodeResolution, RequestedAccess
-from applications.services import NodeResolutionService
+from applications.services import NodeResolutionService, ResolutionService
 from calls.models import Call
 from communications.models import EmailLog, EmailTemplate
 from core.models import Equipment, Node, Organization, UserRole
@@ -464,3 +467,75 @@ class AwaitingApplicantFilterTest(TestCase):
         self.assertContains(response, self.awaiting.code)
         self.assertNotContains(response, self.confirmed.code)
         self.assertTrue(response.context['show_awaiting_applicant_only'])
+
+
+class LegacyResolutionServiceGateTest(TestCase):
+    """applications/services/resolution.py — the centralized-coordinator
+    ResolutionService is a second path to the evaluated -> resolved
+    transition (reachable via the "Resolution" sidebar link every
+    coordinator sees) and must respect the same gate as NodeResolutionService."""
+
+    def setUp(self):
+        self.applicant = create_complete_user(email='legacy-applicant@rg.test')
+
+    def _make_evaluated_app(self, call, code, score='7.0'):
+        return Application.objects.create(
+            applicant=self.applicant, call=call, code=code,
+            brief_description='legacy resolution test', status='evaluated',
+            final_score=Decimal(score),
+        )
+
+    def test_apply_resolution_refuses_when_unreleased(self):
+        call = _make_call('RG-LEGACY-UNRELEASED', resolutions_released=False)
+        app = self._make_evaluated_app(call, 'RG-LEGACY-UNRELEASED-001')
+
+        service = ResolutionService(call)
+        with self.assertRaises(ValidationError):
+            service.apply_resolution(app, 'accepted', comments='ok')
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'evaluated')
+        self.assertEqual(app.resolution, '')
+
+    def test_apply_resolution_succeeds_when_released(self):
+        call = _make_call('RG-LEGACY-RELEASED', resolutions_released=True)
+        app = self._make_evaluated_app(call, 'RG-LEGACY-RELEASED-001')
+
+        service = ResolutionService(call)
+        result = service.apply_resolution(app, 'accepted', comments='ok')
+        self.assertTrue(result['success'])
+        app.refresh_from_db()
+        self.assertEqual(app.status, 'accepted')
+
+    def test_bulk_auto_allocate_refuses_when_unreleased(self):
+        call = _make_call('RG-LEGACY-BULK-UNRELEASED', resolutions_released=False)
+        self._make_evaluated_app(call, 'RG-LEGACY-BULK-UNRELEASED-001')
+
+        service = ResolutionService(call)
+        with self.assertRaises(ValidationError):
+            service.bulk_auto_allocate()
+
+    def test_finalize_resolution_refuses_when_unreleased(self):
+        call = _make_call('RG-LEGACY-FINALIZE-UNRELEASED', resolutions_released=False)
+        self._make_evaluated_app(call, 'RG-LEGACY-FINALIZE-UNRELEASED-001')
+
+        service = ResolutionService(call)
+        with self.assertRaises(ValidationError):
+            service.finalize_resolution(user=None)
+        call.refresh_from_db()
+        self.assertFalse(call.is_resolution_locked)
+
+    def test_resolution_dashboard_excludes_unreleased_calls(self):
+        coordinator = create_complete_user(email='legacy-coord@rg.test')
+        UserRole.objects.create(user=coordinator, role='coordinator', is_active=True)
+
+        unreleased = _make_call('RG-LEGACY-DASH-UNRELEASED', resolutions_released=False)
+        self._make_evaluated_app(unreleased, 'RG-LEGACY-DASH-UNRELEASED-001')
+        released = _make_call('RG-LEGACY-DASH-RELEASED', resolutions_released=True)
+        self._make_evaluated_app(released, 'RG-LEGACY-DASH-RELEASED-001')
+
+        client = Client()
+        client.force_login(coordinator)
+        response = client.get(reverse('applications:resolution_dashboard'))
+        calls_shown = [row['call'] for row in response.context['calls_with_stats']]
+        self.assertNotIn(unreleased, calls_shown)
+        self.assertIn(released, calls_shown)

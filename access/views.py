@@ -134,13 +134,19 @@ def access_tracking(request):
         'requested_access__equipment__node'
     ).distinct().order_by('-submitted_at')
 
-    awaiting_applicant_count = applications.filter(
+    awaiting_applicant_queryset = applications.filter(
         status='accepted', accepted_by_applicant__isnull=True
-    ).count()
+    )
 
     show_awaiting_applicant_only = request.GET.get('filter') == 'awaiting_applicant'
     if show_awaiting_applicant_only:
-        applications = applications.filter(status='accepted', accepted_by_applicant__isnull=True)
+        # Reuse the already-filtered queryset instead of re-applying the
+        # same filter to `applications`, and get the count for free from
+        # the list we already need to render.
+        applications = list(awaiting_applicant_queryset)
+        awaiting_applicant_count = len(applications)
+    else:
+        awaiting_applicant_count = awaiting_applicant_queryset.count()
 
     context = {
         'applications': applications,

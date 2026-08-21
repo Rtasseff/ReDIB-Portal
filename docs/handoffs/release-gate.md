@@ -317,13 +317,52 @@ resolution phase.
 - [x] 4. "Release to nodes" action + confirm screen
 - [x] 5. score spread on the release screen, ≥5 marked
 - [x] *(stretch)* 6. #16 — badge adoption + the filter
-- [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [x] Suite green — record both counts — `test tests`: 337 OK (315 baseline +
-      22 new; 2 pre-existing test setups in `test_batch2_phase1.py`/
+- [x] `/code-review` at **medium**, on this branch, before opening the PR —
+      5 findings, all applied (see "Review findings" below)
+- [x] Suite green — record both counts — `test tests`: 342 OK (315 baseline +
+      27 new; 2 pre-existing test setups in `test_batch2_phase1.py`/
       `test_batch2_phase4.py` updated to set `resolutions_released=True`,
       since they exercise `apply_node_resolution` for unrelated behavior);
       `test`: 11 OK; new coverage in `tests/test_release_gate.py`
 - [ ] PR opened
+
+## Review findings (medium `/code-review`)
+
+All five findings applied before opening the PR:
+
+1. **Critical, out-of-brief scope gap — fixed.** `applications/services/resolution.py`'s
+   `ResolutionService` (`apply_resolution`, `bulk_auto_allocate`, `finalize_resolution`)
+   is a second, fully-wired path from `evaluated` to a resolved status —
+   reachable via the "Resolution" sidebar link every ReDIB coordinator sees
+   (`resolution_dashboard` → `call_resolution_detail` → per-application AJAX
+   resolve / bulk auto-allocate / finalize). It never checked
+   `resolutions_released` and so completely bypassed the gate this whole
+   bucket exists to build. **Not one of the brief's documented "four call
+   sites"** — the brief's Context section doesn't mention this service at
+   all, only `NodeResolutionService`. Gated all three entry points the same
+   way, plus excluded unreleased calls from `resolution_dashboard`'s list
+   (mirroring the node-coordinator queue's "empties the queue" behavior).
+   New tests: `LegacyResolutionServiceGateTest` in `tests/test_release_gate.py`.
+2. **Batch email loop resilience — fixed.** The release action's per-application
+   notify loop only caught `.delay()` failing, not the synchronous fallback
+   also failing — one bad application (missing template, malformed recipient
+   data) would 500 the whole batch after `resolutions_released` was already
+   committed True, with no way to retry via the same button. Now matches
+   `NodeResolutionService._trigger_resolution_notification`'s established
+   double-try/log-and-continue pattern; a partial failure surfaces as a
+   `messages.warning` with counts instead of crashing the request.
+3. **Duplicated gate check — fixed.** The `if not call.resolutions_released:
+   raise ValidationError(...)` guard was hand-copied across what became six
+   call sites once finding 1 added three more. Centralized as
+   `Call.ensure_resolutions_released()` (`calls/models.py`, beside the flag),
+   used by both services now — so a future resolution entry point has one
+   symbol to call instead of a pattern to remember, the same reasoning
+   CLAUDE.md gives for `Application.has_any_denied_evaluation`.
+4. **N+1 query — fixed.** The release action's `EmailLog` dedupe check ran
+   once per application instead of one query for the whole batch.
+5. **Redundant query — fixed.** `access_tracking`'s awaiting-applicant count
+   re-applied the same filter that had just been applied to build the list;
+   now reuses the one queryset for both.
 
 ## Questions for the handoff session
 

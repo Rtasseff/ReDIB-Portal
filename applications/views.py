@@ -1088,8 +1088,10 @@ def resolution_dashboard(request):
     from django.utils import timezone
     from calls.models import Call
 
-    # Get all calls with evaluated applications (ready for resolution)
-    # Note: Coordinator can start resolving before deadline if all evaluations are complete
+    # Get all calls with evaluated applications (ready for resolution).
+    # resolutions_released=True keeps this list consistent with the node-
+    # coordinator queue: a call isn't "ready for resolution" here either
+    # until ReDIB has released its evaluations (see docs/handoffs/release-gate.md).
     calls = (
         Call.objects
         .annotate(
@@ -1097,7 +1099,7 @@ def resolution_dashboard(request):
             evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
             avg_score=Avg('applications__final_score')
         )
-        .filter(evaluated_apps__gt=0)  # Only calls with apps to resolve
+        .filter(evaluated_apps__gt=0, resolutions_released=True)
         .order_by('-evaluation_deadline')
     )
 
