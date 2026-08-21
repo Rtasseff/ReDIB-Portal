@@ -409,11 +409,34 @@ and the node coordinator's resolution.
 Publication happens via this export until the marketing cutover decides where
 public pages live.
 
-**Acceptance.** Both language tables generate for REDIB-2601 and match the
-resolution data. Read-only: it must not mutate anything.
+**Acceptance.** Both language tables generate and match the resolution data.
+Read-only: it must not mutate anything — asserted by a test, not by inspection.
 
-**Watchlist.** `reports/` only — the most isolated bucket of the six. Depends on
-#33's hours fix being correct.
+**Watchlist.** `reports/` only — the most isolated bucket of the six.
+
+**Two corrections to this seed material, made when the bucket was cut
+(2026-08-21):**
+
+- It said the tables must "generate for REDIB-2601". **They can't be checked
+  against REDIB-2601 in dev** — that call exists only on production; the dev
+  sandbox holds `COA-LIVE-2026` and `COA-PAST-2025`. The branch builds fixtures
+  reproducing the *shape*; #20's real answer (24 rows, 16 accepted / 7 wait
+  list / 1 rejected) is a **production** check, which is safe to run precisely
+  because the report is read-only.
+- It said the bucket "depends on #33's hours fix being correct". **It does
+  not** — the resolution table has no hours column. Same mistake in the other
+  direction as #44 below: proximity in the backlog read as a dependency.
+
+**#44 is out of this bucket.** § 6 and the #44 entry both call this table "the
+natural moment" to fix the declined-vs-unfilled `hours_approved=0` ambiguity.
+On inspection it isn't: the table publishes application / organization / node /
+resolution and no hours at all, so there is nothing in it to disambiguate.
+Fixing #44 means a new explicit state on `RequestedAccess` — a migration, and a
+different bucket. Recorded here so the link isn't re-made later.
+
+**Cut 2026-08-21.** Brief: `docs/handoffs/resolution-report.md` on the branch —
+ten settled decisions, including the two #20 left open (multi-node shape, and
+where the node public-name map lives).
 
 ## 5. Unscheduled — inline on `main` if a window opens
 
@@ -482,7 +505,7 @@ Update on every merge, in the same commit as the registry change.
 | `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | **2026-08-21** | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
 | `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
 | `release-gate` | 2026-08-21 | **2026-08-21** (PR #39) | | #15 + #16 (stretch, done). Suite **342 + 11**. `/code-review` medium on the branch: 5 findings, all applied — including `ResolutionService`, a **second fully-wired path** from `evaluated` to resolved that this brief never mentioned and that bypassed the gate entirely. Handoff session ran the end-to-end walkthrough the PR left open, on a fresh sandbox: all five stages pass. Added #60. Worktree removed. **Undeployed — carries real DDL.** |
-| `resolution-report` | | | | **Ready to cut** (`eval-reminders` merged 2026-08-21). #20. |
+| `resolution-report` | 2026-08-21 | | | #20. Cut from `main` @ `0cae2d5`, port 8002, Sonnet. The brief settles the two things #20 left open — multi-node applications are **one row with stacked cells**, and the node public-name map (`BioImaC / biomaGUNE / TRIMA / IIS La Fe`) is homed in `reports/` rather than on `Node`, because a model field means a new column in the coordinator-owned `data/nodes.tsv` and that is #43's fight. Scope guards: no migration, no `ReportGeneration` row, no public surface, **#44 explicitly out** (see below). |
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
 2026-08-18.
