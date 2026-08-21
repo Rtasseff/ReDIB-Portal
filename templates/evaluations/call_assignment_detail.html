@@ -118,7 +118,7 @@
                             {% elif app.status == 'evaluated' %}
                                 <span class="badge bg-success">Evaluated</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ app.get_status_display }}</span>
+                                {% include "includes/status_badge.html" %}
                             {% endif %}
                         </td>
                         <td>

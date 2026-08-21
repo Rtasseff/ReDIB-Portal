@@ -55,6 +55,33 @@ class Call(models.Model):
         help_text='Prevent resolution changes after finalization (Phase 6)'
     )
 
+    # Release gate: node coordinators cannot see or act on any 'evaluated'
+    # application until the whole call's evaluations are released to them at
+    # once, so resolutions happen against the full pool instead of trickling
+    # in as evaluations complete.
+    resolutions_released = models.BooleanField(
+        default=False,
+        help_text='Node coordinators can only resolve applications once this is set'
+    )
+    resolutions_released_at = models.DateTimeField(null=True, blank=True)
+
+    def ensure_resolutions_released(self):
+        """Raise ValidationError unless this call's resolutions have been
+        released to nodes.
+
+        Every place that can move an application out of 'evaluated' must
+        call this first — centralized here (rather than each call site
+        hand-rolling the same `if not resolutions_released: raise ...`) so a
+        new resolution entry point can't silently forget the check the way
+        `applications/services/resolution.py`'s legacy centralized-coordinator
+        flow originally did. See docs/handoffs/release-gate.md.
+        """
+        if not self.resolutions_released:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(
+                f"{self.code} has not released resolutions to nodes yet."
+            )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

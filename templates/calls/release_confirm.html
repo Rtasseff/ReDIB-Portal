@@ -1,0 +1,90 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Release Resolutions: {{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:detail' call.pk %}">{{ call.code }}</a></li>
+            <li class="breadcrumb-item active">Release Resolutions</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Release {{ call.code }}'s Resolutions to Nodes</h1>
+
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>This unlocks resolution for every application below, all at once.</strong>
+        Each application's node coordinator(s) will be emailed immediately and can
+        start resolving it. This cannot be undone or re-run — once released, the
+        emails have gone out.
+    </div>
+
+    <p class="text-muted">
+        {{ rows|length }} evaluated application{{ rows|length|pluralize }} will be released.
+        A visible marker flags a spread of 5 or more points between evaluators —
+        whether a divergent pair warrants a closer look is a network policy
+        question, not something this screen decides for you.
+    </p>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Code</th>
+                    <th>Applicant</th>
+                    <th>Node(s)</th>
+                    <th>Final score</th>
+                    <th>Evaluator scores</th>
+                    <th>Spread</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr{% if row.high_spread %} class="table-danger"{% endif %}>
+                    <td><strong>{{ row.application.code }}</strong></td>
+                    <td>{{ row.application.applicant.get_full_name }}</td>
+                    <td>{{ row.node_codes|join:", " }}</td>
+                    <td>{{ row.application.final_score|default:"—" }}</td>
+                    <td>
+                        {% if row.evaluations %}
+                            {% for evaluation in row.evaluations %}
+                                <span class="badge bg-secondary">
+                                    {{ evaluation.evaluator.get_full_name }}:
+                                    {{ evaluation.total_score|default:"—" }}
+                                    ({{ evaluation.get_recommendation_display }})
+                                </span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">No completed evaluations</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.spread is not None %}
+                            {{ row.spread }}
+                            {% if row.high_spread %}
+                                <i class="bi bi-exclamation-triangle-fill text-danger" title="Spread of 5 or more"></i>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" action="{% url 'calls:release_resolutions' call.pk %}">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Release {{ call.code }}\'s resolutions to nodes? This emails every node coordinator for {{ rows|length }} application(s) now and cannot be undone.');">
+                <i class="bi bi-send-check"></i> Confirm &amp; Release to Nodes
+            </button>
+            <a href="{% url 'calls:detail' call.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

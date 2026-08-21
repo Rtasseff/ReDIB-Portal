@@ -128,7 +128,8 @@ def dashboard(request):
 
         context['pending_resolution'] = Application.objects.filter(
             status='evaluated',
-            resolution=''
+            resolution='',
+            call__resolutions_released=True,
         ).count()
 
     return render(request, 'core/dashboard.html', context)

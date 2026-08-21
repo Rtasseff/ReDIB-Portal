@@ -94,6 +94,15 @@ class ResolutionService:
         Raises:
             ValidationError if validation fails
         """
+        # Refuse outright if the call hasn't released this evaluation round
+        # to nodes yet. This legacy centralized-coordinator flow is a second
+        # path to the same 'evaluated' -> resolved transition the distributed
+        # NodeResolutionService gates (see docs/handoffs/release-gate.md) —
+        # without this check a coordinator could resolve applications one at
+        # a time here, exactly the piecemeal pattern the release gate exists
+        # to prevent.
+        application.call.ensure_resolutions_released()
+
         # Validate: competitive funding cannot be rejected unless at least one
         # evaluator independently recommended denial.
         if (
@@ -159,7 +168,12 @@ class ResolutionService:
 
         Returns:
             dict with allocation summary
+
+        Raises:
+            ValidationError if the call hasn't released resolutions to nodes yet
         """
+        self.call.ensure_resolutions_released()
+
         threshold_score = Decimal(str(threshold_score))
         applications = self.get_prioritized_applications()
 
@@ -246,6 +260,13 @@ class ResolutionService:
         # Check if already locked
         if self.call.is_resolution_locked:
             raise ValidationError("Call resolution is already finalized and locked.")
+
+        # Defense in depth: by the time every evaluated application has a
+        # resolution (checked below), the call must already have been
+        # released — evaluated applications cannot leave that status any
+        # other way. Checked explicitly anyway since this method fires the
+        # call-wide resolution email to every applicant.
+        self.call.ensure_resolutions_released()
 
         # Validate: all evaluated apps have resolution
         evaluated_apps = self.call.applications.filter(status='evaluated')

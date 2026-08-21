@@ -33,7 +33,7 @@
         <dt class="col-sm-3">Call</dt>
         <dd class="col-sm-9">{{ application.call.code }}</dd>
         <dt class="col-sm-3">Current status</dt>
-        <dd class="col-sm-9">{{ application.get_status_display }}</dd>
+        <dd class="col-sm-9">{% include "includes/status_badge.html" with app=application %}</dd>
         <dt class="col-sm-3">Deadline passed</dt>
         <dd class="col-sm-9">{{ application.acceptance_deadline|date:"M d, Y" }}</dd>
     </dl>

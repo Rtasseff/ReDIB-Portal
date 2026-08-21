@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import Sum, Count, Q
 from core.decorators import coordinator_required, role_required
 from .models import Call, CallEquipmentAllocation, ConsultRequest
@@ -655,6 +656,152 @@ def call_resolve(request, pk):
         f"Call {call.code} marked resolved. Resolution is now locked; no emails were sent."
     )
     return redirect('calls:detail', pk=call.pk)
+
+
+@coordinator_required
+def call_release_resolutions(request, pk):
+    """
+    Release a call's evaluated applications to node coordinators as a single
+    batch, instead of one node-coordinator email per application as each
+    evaluation happens to finish. GET previews the whole batch with each
+    evaluator's score and the spread between them; POST sets the release
+    flag and sends the held `evaluations_complete` email for every
+    `evaluated` application on the call at once.
+
+    Deliberately does not require every application on the call to be
+    `evaluated` — some will be `rejected_feasibility` or still `draft`, and a
+    call with one stuck application must not become un-releasable. Same
+    reasoning as `call_resolve`'s guard; see docs/handoffs/closeout.md.
+    """
+    from applications.models import Application
+    from evaluations.tasks import notify_coordinator_evaluations_complete
+    from communications.models import EmailLog
+
+    call = get_object_or_404(Call, pk=pk)
+
+    if call.resolutions_released:
+        messages.error(
+            request,
+            f"{call.code}'s resolutions have already been released to nodes."
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    evaluated_applications = call.applications.filter(
+        status='evaluated'
+    ).select_related('applicant').prefetch_related(
+        'evaluations__evaluator',
+        'requested_access__equipment__node',
+    ).order_by('-final_score', 'code')
+
+    if not evaluated_applications.exists():
+        messages.error(
+            request,
+            f"{call.code} has no evaluated applications to release yet."
+        )
+        return redirect('calls:detail', pk=call.pk)
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            locked_call = Call.objects.select_for_update().get(pk=call.pk)
+            if locked_call.resolutions_released:
+                messages.error(
+                    request,
+                    f"{locked_call.code}'s resolutions have already been released to nodes."
+                )
+                return redirect('calls:detail', pk=call.pk)
+            locked_call.resolutions_released = True
+            locked_call.resolutions_released_at = timezone.now()
+            locked_call.save()
+
+        # Secondary idempotence check: the `already released` guard above is
+        # the primary defence against a double-press, this catches a
+        # concurrent double-POST that both passed the guard before either
+        # commit landed. One query for the whole batch rather than one per
+        # application.
+        already_notified_ids = set(
+            EmailLog.objects.filter(
+                template__template_type='evaluations_complete',
+                related_application_id__in=[a.id for a in evaluated_applications],
+            ).values_list('related_application_id', flat=True)
+        )
+
+        notified = 0
+        failed = 0
+        for application in evaluated_applications:
+            if application.id in already_notified_ids:
+                continue
+            average_score = float(application.final_score) if application.final_score else 0.0
+            try:
+                notify_coordinator_evaluations_complete.delay(
+                    application_id=application.id,
+                    average_score=average_score,
+                )
+            except Exception:
+                # Celery/Redis not available (e.g., dev, testing) - call synchronously.
+                logger.exception(
+                    "Celery dispatch failed for evaluations_complete on %s "
+                    "during release of %s; falling back to synchronous send",
+                    application.code, call.code,
+                )
+                try:
+                    notify_coordinator_evaluations_complete(
+                        application_id=application.id,
+                        average_score=average_score,
+                    )
+                except Exception:
+                    # One bad application (missing template, malformed
+                    # recipient data, ...) must not abort the whole batch —
+                    # log it and keep notifying the rest.
+                    logger.exception(
+                        "Synchronous fallback also failed for "
+                        "evaluations_complete on %s during release of %s",
+                        application.code, call.code,
+                    )
+                    failed += 1
+                    continue
+            notified += 1
+
+        if failed:
+            messages.warning(
+                request,
+                f"Released {call.code}'s resolutions to nodes, but {failed} "
+                f"notification(s) failed to send (see logs) and {notified} "
+                f"succeeded, out of {evaluated_applications.count()} evaluated "
+                "application(s)."
+            )
+        else:
+            messages.success(
+                request,
+                f"Released {call.code}'s resolutions to nodes. Notified node "
+                f"coordinators for {notified} of {evaluated_applications.count()} "
+                "evaluated application(s)."
+            )
+        return redirect('calls:detail', pk=call.pk)
+
+    # GET: build the score-spread preview, one row per application.
+    rows = []
+    for application in evaluated_applications:
+        evaluations = [
+            e for e in application.evaluations.all() if e.completed_at
+        ]
+        scores = [e.total_score for e in evaluations if e.total_score is not None]
+        spread = (max(scores) - min(scores)) if len(scores) >= 2 else None
+        node_codes = sorted({
+            ra.equipment.node.code for ra in application.requested_access.all()
+        })
+        rows.append({
+            'application': application,
+            'evaluations': evaluations,
+            'node_codes': node_codes,
+            'spread': spread,
+            'high_spread': spread is not None and spread >= 5,
+        })
+
+    context = {
+        'call': call,
+        'rows': rows,
+    }
+    return render(request, 'calls/release_confirm.html', context)
 
 
 @coordinator_required

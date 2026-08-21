@@ -55,9 +55,13 @@ class NodeResolutionService:
         """
         from applications.models import Application
 
-        # Get applications with evaluated status
+        # Get applications with evaluated status. `call__resolutions_released`
+        # is the release gate: a node coordinator cannot see any application
+        # to resolve until ReDIB has released the whole call's evaluations at
+        # once (see docs/handoffs/release-gate.md).
         queryset = Application.objects.filter(
-            status='evaluated'
+            status='evaluated',
+            call__resolutions_released=True,
         ).select_related('applicant', 'call').prefetch_related(
             'requested_access__equipment__node',
             'node_resolutions',
@@ -162,6 +166,13 @@ class NodeResolutionService:
         """
         from applications.models import NodeResolution
         from core.models import UserRole
+
+        # Refuse outright if the call hasn't released this application's
+        # evaluations yet. The queryset filter in
+        # get_applications_for_node_resolution keeps it out of the queue, but
+        # that's not a guard — someone with a stale tab or a bookmarked URL
+        # must be stopped here too.
+        application.call.ensure_resolutions_released()
 
         # Validate: user must be node coordinator for this node
         if not UserRole.objects.filter(

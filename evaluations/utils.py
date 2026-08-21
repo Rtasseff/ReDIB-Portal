@@ -61,19 +61,25 @@ def check_and_transition_application(application):
         if application.status == 'evaluated':
             result['transitioned'] = True
 
-            # Trigger notification to coordinator (async)
-            from evaluations.tasks import notify_coordinator_evaluations_complete
-            try:
-                notify_coordinator_evaluations_complete.delay(
-                    application_id=application.id,
-                    average_score=float(average_score) if average_score else 0.0
-                )
-            except Exception as e:
-                # If Celery/Redis not available (e.g., testing), call synchronously
-                notify_coordinator_evaluations_complete(
-                    application_id=application.id,
-                    average_score=float(average_score) if average_score else 0.0
-                )
+            # Hold the notification until ReDIB releases the call's
+            # resolutions to the nodes as a batch (see Call.resolutions_released).
+            # The transition to 'evaluated' still happens unconditionally above
+            # — this only gates the email that puts the application in front
+            # of a node coordinator.
+            if application.call.resolutions_released:
+                # Trigger notification to coordinator (async)
+                from evaluations.tasks import notify_coordinator_evaluations_complete
+                try:
+                    notify_coordinator_evaluations_complete.delay(
+                        application_id=application.id,
+                        average_score=float(average_score) if average_score else 0.0
+                    )
+                except Exception as e:
+                    # If Celery/Redis not available (e.g., testing), call synchronously
+                    notify_coordinator_evaluations_complete(
+                        application_id=application.id,
+                        average_score=float(average_score) if average_score else 0.0
+                    )
 
     return result
 

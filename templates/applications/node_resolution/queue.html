@@ -181,17 +181,7 @@
                                 <span class="badge bg-secondary">Awaiting Other Nodes</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if app.status == 'resolved_accepted' or app.status == 'accepted' %}
-                                <span class="badge bg-success">{{ app.get_status_display }}</span>
-                            {% elif app.status == 'resolved_rejected' or app.status == 'rejected' %}
-                                <span class="badge bg-danger">{{ app.get_status_display }}</span>
-                            {% elif app.status == 'resolved_pending' or app.status == 'waitlisted' %}
-                                <span class="badge bg-warning text-dark">{{ app.get_status_display }}</span>
-                            {% else %}
-                                <span class="badge bg-info">{{ app.get_status_display }}</span>
-                            {% endif %}
-                        </td>
+                        <td>{% include "includes/status_badge.html" %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

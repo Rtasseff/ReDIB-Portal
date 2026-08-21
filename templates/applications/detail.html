@@ -31,14 +31,8 @@
                 <span class="badge bg-info fs-5">Being Evaluated</span>
             {% elif application.status == 'evaluated' %}
                 <span class="badge bg-primary fs-5">Evaluated</span>
-            {% elif application.status == 'accepted' %}
-                <span class="badge bg-success fs-5">Accepted</span>
-            {% elif application.status == 'pending' %}
-                <span class="badge bg-warning fs-5">Pending (Waitlist)</span>
-            {% elif application.status == 'rejected' %}
-                <span class="badge bg-danger fs-5">Rejected</span>
             {% else %}
-                <span class="badge bg-secondary fs-5">{{ application.get_status_display }}</span>
+                <span class="fs-5">{% include "includes/status_badge.html" with app=application %}</span>
             {% endif %}
         </div>
     </div>
