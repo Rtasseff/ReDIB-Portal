@@ -553,11 +553,17 @@ and prod confirmed an empty population on 2026-08-21.
 once it is done — `git pull` does not change what `manage.py` runs; that is
 #62). Re-running `populate_redib_users --dry-run` should still report 0 to
 update / 14 protected / 8 unchanged, and the **six** role lines of 2026-08-21
-should drop to **one**: the four `'clinical;preclinical' -> 'preclinical;clinical'`
-reorderings are no longer treated as changes, Arrate's `'preclinical' -> ''` is
-no longer written, and only `mangel.morcillo@ciemat.es`'s filled-cell narrowing
-survives — correctly, because a filled cell is authoritative. That last one is a
-**data** decision, not a code one, and is what #61 now tracks.
+should drop to **zero**:
+
+| 2026-08-21 role line | Why it is gone |
+|---|---|
+| 4 × `'clinical;preclinical' -> 'preclinical;clinical'` | Areas compare as a set; a reorder is not a change. |
+| `mamunozb@` `areas: 'preclinical' -> ''` | A blank TSV cell is no longer written. |
+| `mangel.morcillo@` `'preclinical;radiochemistry' -> 'radiochemistry'` | The TSV was stale, not the DB. Corrected 2026-08-21 (Ryan: he should have both). |
+
+A dry-run that reports **anything** under Roles is a signal to stop and read it,
+not to proceed. #61 is closed; the drift check plus the dry-run are now the
+standing gate on any load, per `data/README.md`.
 
 **`closeout` + `acceptance-repair` shipped together on 2026-08-21**, three
 weeks ahead of the 2026-09-15 target. The hold worked as intended: the
