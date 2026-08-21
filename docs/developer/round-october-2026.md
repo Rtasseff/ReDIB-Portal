@@ -387,6 +387,12 @@ evaluation completes, since that is the transition it gates.
 **Watchlist.** `applications/services/resolution.py` and `calls/models.py` —
 both touched by `closeout`'s #36; read what #36 did before starting.
 
+**Backfill rule (settled 2026-08-21).** The migration grandfathers a call only
+if it **already has at least one application with a non-blank `resolution`** —
+not "every existing call". The October call may already exist as a `draft` when
+this deploys, and grandfathering it would silently defeat the bucket on the one
+call it was built for.
+
 ### 4.6 `resolution-report` — bilingual results table
 
 **Goal.** Produce the per-call resolution table ReDIB publishes, in English and
@@ -471,7 +477,7 @@ Update on every merge, in the same commit as the registry change.
 | `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | **2026-08-21** | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
 | `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | **2026-08-21** | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
 | `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
-| `release-gate` | | | | **Ready to cut** — has been since `call-hardening` merged 2026-08-18. #15 (#16 stretch). Abort date **2026-12-05**; Opus, not Sonnet. |
+| `release-gate` | **2026-08-21** | | | #15 (#16 stretch). Worktree `release-gate/` port 8002, **Opus**. Abort date **2026-12-05**. Research for the brief found #16 is mostly done already — `templates/includes/status_badge.html` computes the node-accepted vs applicant-accepted distinction correctly but is included in only 2 of 11 templates, so the stretch is badge adoption plus the filter, not new logic. |
 | `resolution-report` | | | | **Ready to cut** (`eval-reminders` merged 2026-08-21). #20. |
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
