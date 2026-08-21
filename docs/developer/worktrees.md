@@ -176,7 +176,6 @@ live right now.
 
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
-| `eval-reminders/` | `feature/eval-reminders` | 8003 | 2026-08-20 | **Live.** One email per person, not one per item (#32, #5, #35; #49 gated on `acceptance-repair`). Merge by 2026-10-09, prod by 2026-10-13 — before evaluator assignments. Owns `evaluations/tasks.py`. Handoff: `docs/handoffs/eval-reminders.md` on the branch. |
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree

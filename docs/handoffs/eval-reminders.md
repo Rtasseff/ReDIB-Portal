@@ -1,5 +1,11 @@
 # Handoff — `feature/eval-reminders`
 
+> **Merged 2026-08-21 (PR #38).** Record only — the branch and its worktree
+> are gone. All four items shipped (#32, #5, #35, #49); the #49 gate opened
+> mid-session when `acceptance-repair` merged. Review findings became backlog
+> #58 and #59, and a hand-edited migration was corrected on `main` — see
+> [round-october-2026.md § 7](../developer/round-october-2026.md).
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/eval-reminders.md on the branch. Keep "Status" current. -->
 
