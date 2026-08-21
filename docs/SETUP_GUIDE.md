@@ -121,6 +121,8 @@ python manage.py populate_redib_nodes
 python manage.py populate_redib_organizations
 
 # 4. Users (requires nodes and organizations)
+# Create-only by default: existing users keep the profile fields they edited
+# in the portal. Use --update-existing to overwrite them, and --dry-run first.
 python manage.py populate_redib_users
 
 # 5. Equipment (requires nodes)

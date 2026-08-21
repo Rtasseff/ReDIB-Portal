@@ -94,8 +94,27 @@ organization dropdown on `/profile/`, all model fields except `iso2` are require
 ---
 
 ### `users.tsv`
-**Loader:** `python manage.py populate_redib_users [--tsv data/users.tsv] [--sync]`
+**Loader:** `python manage.py populate_redib_users [--tsv data/users.tsv] [--sync] [--update-existing]`
 **Model:** `core.User` + `core.UserRole`
+
+> **This TSV is not authoritative for an existing user's profile.** Unlike every
+> other file in `data/`, the rows here describe people who can edit their own
+> record through the portal — `phone`, `position`, `orcid`, `organization` and
+> `auto_data_consent` are all on the profile form. A blank cell would be written
+> as a deliberate empty value and silently revert whatever they typed.
+>
+> So the loader runs **create-only by default**: new users are created, roles are
+> applied to everyone, and an existing user's profile fields are left alone. The
+> old overwrite-everything behaviour is still there behind `--update-existing`;
+> pair it with `--dry-run` first, always.
+>
+> `is_active` is held back the same way. It is ReDIB's field, not the user's, but
+> a blank cell reads as "not filled in" rather than "deactivate this person" — a
+> plain load against production on 2026-08-19 would have switched off a serving
+> evaluator whose cell happened to be empty.
+>
+> Roles are applied in both modes: `UserRole` has no portal editor, so there is
+> no user-authored value to lose. See backlog #43 for the durable fix.
 
 | Column | Required | Notes |
 |---|---|---|
@@ -107,10 +126,17 @@ organization dropdown on `/profile/`, all model fields except `iso2` are require
 | `phone` | No | Digits, spaces, and `+ - . ( )` only. **No underscores** (the loader does not accept extension suffixes like `+34 91 ... _5404` — strip them in the source data). |
 | `position` | No | Job title |
 | `is_staff` | No | `TRUE` / `1` / `YES` enables; **anything else (including blank) is False**. |
-| `is_active` | No | Same rule as `is_staff`. **Default is False** — be explicit (`TRUE`) for accounts that should be able to log in. |
+| `is_active` | No | Same rule as `is_staff` **on create**. **Default is False** — be explicit (`TRUE`) for accounts that should be able to log in. On an existing user this column is ignored unless `--update-existing` is passed. |
 | `roles` | No | Semicolon `;`-separated role names. See syntax below. |
 | `areas` | No | Semicolon `;`-separated specialization areas. Only meaningful for evaluators. **Invalid values abort the import** — see conventions below. |
-| `auto_data_consent` | No | Same rule as `is_staff`. Default False. |
+| `auto_data_consent` | No | Same rule as `is_staff` **on create**. Default False. User-editable on the profile form, so ignored on an existing user unless `--update-existing` is passed. |
+
+> **Roles are the TSV's to own — keep it that way.** `UserRole` has no portal
+> editor, but a superuser can change roles in Django admin. The loader only ever
+> adds or reactivates roles, never removes one, so an admin change is not lost by
+> a later load — but this file quietly stops being the record of who holds what.
+> Prefer editing `users.tsv` and running the loader. If an admin change does
+> happen, **mirror it into this file and commit it** in the same sitting.
 
 **Roles syntax** (semicolon `;`-separated):
 - Simple: `coordinator`, `applicant`, `evaluator`

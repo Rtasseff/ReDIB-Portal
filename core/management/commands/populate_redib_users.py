@@ -41,6 +41,17 @@ class Command(BaseCommand):
             action='store_true',
             help='Print the per-field diff this run would apply, without writing anything'
         )
+        parser.add_argument(
+            '--update-existing',
+            action='store_true',
+            help=(
+                'Also overwrite the profile fields of users who already exist. '
+                'OFF by default: the TSV is not authoritative for fields users '
+                'maintain themselves through the portal (phone, position, orcid, '
+                'organization, auto_data_consent) and a blank cell would clear '
+                'them. Roles are applied either way. See backlog #43.'
+            )
+        )
 
     def load_users_from_csv(self, csv_path):
         """Load user data from TSV file."""
@@ -173,10 +184,21 @@ class Command(BaseCommand):
         csv_path = options['tsv']
         sync_mode = options['sync']
         dry_run = options['dry_run']
+        update_existing = options['update_existing']
 
         self.stdout.write(f'Loading user data from: {csv_path}')
         if dry_run:
             self.stdout.write(self.style.WARNING('Dry run: no changes will be written.'))
+        if update_existing:
+            self.stdout.write(self.style.WARNING(
+                'Update mode: profile fields of EXISTING users will be overwritten '
+                'from the TSV, including blanks. See backlog #43.'
+            ))
+        else:
+            self.stdout.write(
+                'Create-only mode (default): existing users keep their profile '
+                'fields; new users are created and roles are applied to everyone.'
+            )
         if sync_mode:
             self.stdout.write(self.style.WARNING('Sync mode enabled: Will mark orphaned users as inactive'))
 
@@ -187,6 +209,7 @@ class Command(BaseCommand):
         created_count = 0
         updated_count = 0
         unchanged_count = 0
+        protected_count = 0
         roles_created_count = 0
         roles_changed_count = 0
 
@@ -231,7 +254,19 @@ class Command(BaseCommand):
                     self.stdout.write('      password: set to default (new user)')
                 else:
                     diffs = self._diff_fields(user, new_field_values)
-                    if diffs:
+                    if diffs and not update_existing:
+                        # Create-only: show what the TSV *would* have written, so
+                        # the drift is visible, but make clear nothing is applied.
+                        protected_count += 1
+                        self.stdout.write(self.style.SUCCESS(
+                            f'  · Exists, profile protected: {email}'
+                        ))
+                        for field, (old, new) in diffs.items():
+                            self.stdout.write(
+                                f'      {field}: {old!r} would have become {new!r} '
+                                f'— not applied'
+                            )
+                    elif diffs:
                         updated_count += 1
                         self.stdout.write(self.style.WARNING(f'  ~ Would update: {email}'))
                         for field, (old, new) in diffs.items():
@@ -241,11 +276,26 @@ class Command(BaseCommand):
                         self.stdout.write(f'  = Unchanged: {email}')
                     self.stdout.write('      password: left unchanged (existing user)')
             else:
-                # Get or create user
-                user, user_created = User.objects.update_or_create(
-                    email=email,
-                    defaults=new_field_values,
-                )
+                existing = User.objects.filter(email=email).first()
+
+                if existing is not None and not update_existing:
+                    # Create-only (default). The TSV is not authoritative for
+                    # fields the user maintains through their own profile —
+                    # phone, position, orcid, organization, auto_data_consent —
+                    # and a blank cell here would clear them. `is_active` is
+                    # ReDIB's to set, but a blank cell reads as "not filled in",
+                    # not "deactivate this person", so it is held back too.
+                    # Roles are still applied below: they are admin-only, so
+                    # there is no portal-authored value to lose. Backlog #43
+                    # carries the durable fix.
+                    user, user_created = existing, False
+                    protected_count += 1
+                else:
+                    # Get or create user
+                    user, user_created = User.objects.update_or_create(
+                        email=email,
+                        defaults=new_field_values,
+                    )
 
                 # Only set the default password for brand-new users — an
                 # existing user keeps whatever password they set themselves.
@@ -267,12 +317,17 @@ class Command(BaseCommand):
                             f'  ✓ Created: {email} ({user.get_full_name()})'
                         )
                     )
-                else:
+                elif update_existing:
                     updated_count += 1
                     self.stdout.write(
                         self.style.WARNING(
                             f'  ↻ Updated: {email} ({user.get_full_name()})'
                         )
+                    )
+                else:
+                    self.stdout.write(
+                        f'  · Exists, profile untouched: {email} '
+                        f'({user.get_full_name()})'
                     )
 
             # Validate areas from the separate `areas` column.
@@ -382,10 +437,22 @@ class Command(BaseCommand):
         self.stdout.write(f'  Users to update: {updated_count}' if dry_run else f'  Users updated: {updated_count}')
         if dry_run:
             self.stdout.write(f'  Users unchanged: {unchanged_count}')
+        if protected_count:
+            label = (
+                'Existing users whose profile would be protected'
+                if dry_run else 'Existing users left untouched'
+            )
+            self.stdout.write(f'  {label}: {protected_count}')
+            self.stdout.write(
+                '    (re-run with --update-existing to overwrite them from the TSV)'
+            )
         if sync_mode and deactivated_count > 0:
             label = 'Users that would be deactivated' if dry_run else 'Users deactivated'
             self.stdout.write(f'  {label}: {deactivated_count}')
-        self.stdout.write(f'  Total users in TSV: {created_count + updated_count + unchanged_count}')
+        self.stdout.write(
+            f'  Total users in TSV: '
+            f'{created_count + updated_count + unchanged_count + protected_count}'
+        )
         if dry_run:
             self.stdout.write(f'  Roles that would change: {roles_changed_count}')
         else:

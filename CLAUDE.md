@@ -145,6 +145,12 @@ fall back to `Application.applicant.email`.
 All five `populate_redib_*` commands now share these rules — match them in any new loader:
 - UTF-8 read; hard-error on missing FK target or unknown enum value.
 - Booleans: blank → False; only `TRUE`/`1`/`YES` (case-insensitive) flips to True.
+  **One exception, and it matters:** `populate_redib_users` is **create-only by
+  default** (`--update-existing` opts back in). The blank→False rule is right for
+  reference data nobody edits in the portal, and wrong for the user table, where
+  `phone`, `position`, `orcid`, `organization` and `auto_data_consent` are all on
+  the profile form. Roles are applied in both modes. See `data/README.md` and
+  backlog #43.
 - Human-readable enum labels in the TSV map to short codes via a static label-map dict
   (see `populate_redib_organizations.ORG_TYPE_LABEL_MAP` and
   `populate_redib_funding_agencies.ORIGIN_LABEL_MAP`).

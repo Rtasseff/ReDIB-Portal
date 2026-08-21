@@ -112,7 +112,7 @@ python manage.py populate_redib_nodes
 python manage.py populate_redib_organizations
 
 # 4. Users (requires nodes + organizations)
-python manage.py populate_redib_users
+python manage.py populate_redib_users   # create-only; --update-existing to overwrite profiles
 
 # 5. Equipment (requires nodes)
 python manage.py populate_redib_equipment
