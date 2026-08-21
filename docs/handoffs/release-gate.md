@@ -1,5 +1,10 @@
 # Handoff — `feature/release-gate`
 
+> **Merged 2026-08-21 (PR #39).** Record only — the branch and its worktree
+> are gone. #15 and #16 both shipped. This brief listed four refusal points;
+> there were five — `/code-review` found `ResolutionService` bypassing the
+> gate entirely. See [round-october-2026.md § 7](../developer/round-october-2026.md).
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/release-gate.md on the branch. Keep "Status" current. -->
 

@@ -360,6 +360,10 @@ dispatch respects the same dedupe.
 
 ### 4.5 `release-gate` — hold resolutions until ReDIB releases them
 
+> **Merged 2026-08-21 (PR #39).** #15 and #16 both shipped, well inside the
+> 2026-12-05 abort date. Review found a second resolution path this brief did
+> not know about — see § 7. Added #60.
+
 **Goal.** Stop evaluated applications from independently becoming actionable;
 let the ReDIB coordinator release a call's resolutions as a batch.
 
@@ -477,7 +481,7 @@ Update on every merge, in the same commit as the registry change.
 | `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | **2026-08-21** | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
 | `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | **2026-08-21** | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
 | `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
-| `release-gate` | **2026-08-21** | | | #15 (#16 stretch). Worktree `release-gate/` port 8002, **Opus**. Abort date **2026-12-05**. Research for the brief found #16 is mostly done already — `templates/includes/status_badge.html` computes the node-accepted vs applicant-accepted distinction correctly but is included in only 2 of 11 templates, so the stretch is badge adoption plus the filter, not new logic. |
+| `release-gate` | 2026-08-21 | **2026-08-21** (PR #39) | | #15 + #16 (stretch, done). Suite **342 + 11**. `/code-review` medium on the branch: 5 findings, all applied — including `ResolutionService`, a **second fully-wired path** from `evaluated` to resolved that this brief never mentioned and that bypassed the gate entirely. Handoff session ran the end-to-end walkthrough the PR left open, on a fresh sandbox: all five stages pass. Added #60. Worktree removed. **Undeployed — carries real DDL.** |
 | `resolution-report` | | | | **Ready to cut** (`eval-reminders` merged 2026-08-21). #20. |
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
@@ -486,6 +490,25 @@ Update on every merge, in the same commit as the registry change.
 **Deployed 2026-08-19** (prod pulled `0971e16`): #27, #31, #33, #13-min, #9,
 the `resolution_accepted` template guard, and the announcement-email switch
 (`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`).
+
+**`eval-reminders` + `release-gate` are on `main` and undeployed.** They are
+the next deploy, and it is a different shape from the last one: `release-gate`
+adds **real DDL** (`calls/0004`, two new columns on `Call` and `HistoricalCall`)
+where the last three deploys were choices-only no-ops. So: `scripts/backup-db.sh`
+**before** the pull, and watch the three-container `migrate` race (#37) on this
+one specifically — prod's own forensics show it has been firing harmlessly since
+day one, and this is the first migration in a while where "harmlessly" is an
+assumption rather than a fact about no-op SQL.
+
+The backfill grandfathers only calls that already have at least one application
+with a non-blank `resolution`, so REDIB-2601 comes out released and anything
+drafted for October stays gated. Confirm that on prod after the deploy:
+
+```python
+from calls.models import Call
+for c in Call.objects.all():
+    print(c.code, c.status, 'released' if c.resolutions_released else 'GATED')
+```
 
 **`closeout` + `acceptance-repair` shipped together on 2026-08-21**, three
 weeks ahead of the 2026-09-15 target. The hold worked as intended: the
@@ -496,6 +519,27 @@ What `closeout` carries when it does go: two choices-only
 `AlterField` migrations (`applications.0014`, `communications.0008` — `sqlmigrate`
 confirms no-op DDL), five new `EmailTemplate` rows seeded by the entrypoint's
 `seed_email_templates`, and two new beat tasks at 08:00 and 08:15.
+
+### `release-gate`: the brief had a hole, and the review found it
+
+The brief named four places that must refuse while a call is unreleased. There
+were **five**. `applications/services/resolution.py`'s `ResolutionService` is a
+second, fully-wired path from `evaluated` to a resolved status — reachable from
+the "Resolution" sidebar link every ReDIB coordinator sees, via
+`resolution_dashboard → call_resolution_detail →` per-application resolve /
+bulk auto-allocate / finalize. It never checked the flag, so a coordinator could
+have resolved applications one at a time through it: exactly the piecemeal
+pattern the bucket exists to prevent, through a door the brief did not know was
+there.
+
+The branch's `/code-review` caught it, gated all three entry points, and
+excluded unreleased calls from `resolution_dashboard`. It also pulled the
+repeated check into `Call.ensure_resolutions_released()` so the next entry point
+cannot quietly skip it.
+
+**Lesson for future briefs:** "here are the call sites" is a claim that needs
+checking, not a list to work from. When a brief gates a transition, the branch
+should grep for every writer of that transition before trusting the enumeration.
 
 ### `eval-reminders`: a migration was hand-edited, and corrected on `main`
 

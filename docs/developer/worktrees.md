@@ -176,7 +176,6 @@ live right now.
 
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
-| `release-gate/` | `feature/release-gate` | 8002 | 2026-08-21 | **Live.** Hold resolutions until ReDIB releases them as a batch (#15; #16 stretch). **Opus**, not Sonnet — only workflow-touching item this round. Abort date **2026-12-05**; in prod before the first October evaluation completes. Migration into a live call: back up first. Handoff: `docs/handoffs/release-gate.md` on the branch. |
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
