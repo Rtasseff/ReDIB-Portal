@@ -2,8 +2,10 @@
 Views for reports app - Phase 10: Reporting & Statistics.
 """
 
+import csv
+
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.db.models import Count, Avg, Sum, Q
 from tempfile import NamedTemporaryFile
 
@@ -14,6 +16,7 @@ from access.models import Publication
 from evaluations.models import Evaluation
 from .models import ReportGeneration
 from .utils import generate_call_report_excel
+from .resolution_table import build_resolution_table, RESOLUTION_LABELS
 
 
 @coordinator_required
@@ -71,6 +74,9 @@ def statistics_dashboard(request):
         'application', 'application__call', 'reported_by'
     ).order_by('-reported_at')[:5]
 
+    # Call picker for the resolution table (backlog #20) — newest first.
+    all_calls = Call.objects.order_by('-submission_start')
+
     context = {
         'total_calls': total_calls,
         'total_applications': total_applications,
@@ -81,6 +87,7 @@ def statistics_dashboard(request):
         'pending_evaluations': pending_evaluations,
         'pub_stats': pub_stats,
         'recent_publications': recent_publications,
+        'all_calls': all_calls,
     }
 
     return render(request, 'reports/statistics_dashboard.html', context)
@@ -118,6 +125,57 @@ def export_call_report(request, call_id):
         )
 
         return response
+
+
+@coordinator_required
+def resolution_report(request, call_id):
+    """
+    Bilingual per-call resolution table (backlog #20). Coordinator-only,
+    read-only: renders both the EN and ES tables plus the on-page warnings.
+    Writes nothing — no ReportGeneration row, no other side effect.
+    """
+    call = get_object_or_404(Call, pk=call_id)
+
+    en = build_resolution_table(call, 'en')
+    es = build_resolution_table(call, 'es')
+
+    context = {
+        'call': call,
+        'en': en,
+        'es': es,
+    }
+
+    return render(request, 'reports/resolution_report.html', context)
+
+
+@coordinator_required
+def resolution_report_csv(request, call_id, lang):
+    """
+    CSV download of one language's resolution table. Read-only, same as
+    the page — no ReportGeneration row.
+    """
+    if lang not in RESOLUTION_LABELS:
+        raise Http404(f"Unknown language: {lang}")
+
+    call = get_object_or_404(Call, pk=call_id)
+    table = build_resolution_table(call, lang)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="resolution_table_{call.code}_{lang}.csv"'
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(table['headers'])
+    for row in table['rows']:
+        writer.writerow([
+            row['code'],
+            row['organization'],
+            '\n'.join(row['nodes']),
+            '\n'.join(row['resolutions']),
+        ])
+
+    return response
 
 
 @coordinator_required

@@ -96,6 +96,47 @@
 </div>
 {% endif %}
 
+<!-- Resolution Tables (backlog #20) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Resolution Tables</h5>
+            </div>
+            <div class="card-body">
+                {% if all_calls %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Call</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for call in all_calls %}
+                        <tr>
+                            <td>{{ call.code }}</td>
+                            <td>{{ call.title }}</td>
+                            <td><span class="badge bg-secondary">{{ call.get_status_display }}</span></td>
+                            <td>
+                                <a href="{% url 'reports:resolution_report' call.id %}" class="btn btn-sm btn-outline-primary">
+                                    View Resolution Table
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">No calls yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Publication Statistics -->
 <div class="row mb-4">
     <div class="col-12">

@@ -1,0 +1,50 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Resolution Table - {{ call.code }} - ReDIB{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-table"></i> Resolution Table: {{ call.code }}</h1>
+    <a href="{% url 'reports:statistics' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+</div>
+
+<div class="mb-3">
+    <a href="{% url 'reports:resolution_report_csv' call.id 'en' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-download"></i> Download CSV (English)
+    </a>
+    <a href="{% url 'reports:resolution_report_csv' call.id 'es' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-download"></i> Download CSV (Español)
+    </a>
+</div>
+
+{% if not en.warnings.resolutions_released %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{ call.code }} has not released resolutions to nodes yet — this table is <strong>provisional</strong>.
+</div>
+{% endif %}
+
+{% if en.warnings.missing_resolution_codes %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    No recorded node resolution for: {{ en.warnings.missing_resolution_codes|join:", " }}
+</div>
+{% endif %}
+
+{% if en.warnings.missing_organization_codes %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    Applicant has no profile organization for: {{ en.warnings.missing_organization_codes|join:", " }}
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        {% include 'reports/_resolution_table_block.html' with table=en lang_label='English' %}
+        {% include 'reports/_resolution_table_block.html' with table=es lang_label='Español' %}
+    </div>
+</div>
+
+{% endblock %}
