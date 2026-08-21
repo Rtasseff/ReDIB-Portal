@@ -434,9 +434,15 @@ resolution and no hours at all, so there is nothing in it to disambiguate.
 Fixing #44 means a new explicit state on `RequestedAccess` — a migration, and a
 different bucket. Recorded here so the link isn't re-made later.
 
-**Cut 2026-08-21.** Brief: `docs/handoffs/resolution-report.md` on the branch —
-ten settled decisions, including the two #20 left open (multi-node shape, and
-where the node public-name map lives).
+**Merged 2026-08-21 (PR #40)**, with no deviations from the brief. Brief:
+`docs/handoffs/resolution-report.md`. Still open: the Spanish column headers in
+`reports/resolution_table.py`'s `COLUMN_HEADERS` are the brief's proposal, not
+wording ReDIB has published — Ryan confirms or corrects, one dict entry.
+
+**With this, all six buckets of the round are merged.** Five are deployed;
+`resolution-report` is not, and does not need to be until results are published
+(~2027-01/02). It carries no migration, no beat task and no email, so its deploy
+is the cheapest of the round — it can ride along with whatever ships next.
 
 ## 5. Unscheduled — inline on `main` if a window opens
 
@@ -505,7 +511,7 @@ Update on every merge, in the same commit as the registry change.
 | `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | **2026-08-21** | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
 | `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | **2026-08-21** | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
 | `release-gate` | 2026-08-21 | **2026-08-21** (PR #39) | **2026-08-21** | #15 + #16 (stretch, done). Suite **342 + 11**. `/code-review` medium on the branch: 5 findings, all applied — including `ResolutionService`, a **second fully-wired path** from `evaluated` to resolved that this brief never mentioned and that bypassed the gate entirely. Handoff session ran the end-to-end walkthrough the PR left open, on a fresh sandbox: all five stages pass. Added #60. Worktree removed. Its DDL deploy is what finally made #37 crash — see below. |
-| `resolution-report` | 2026-08-21 | | | #20. Cut from `main` @ `0cae2d5`, port 8002, Sonnet. The brief settles the two things #20 left open — multi-node applications are **one row with stacked cells**, and the node public-name map (`BioImaC / biomaGUNE / TRIMA / IIS La Fe`) is homed in `reports/` rather than on `Node`, because a model field means a new column in the coordinator-owned `data/nodes.tsv` and that is #43's fight. Scope guards: no migration, no `ReportGeneration` row, no public surface, **#44 explicitly out** (see below). |
+| `resolution-report` | 2026-08-21 | **2026-08-21** (PR #40) | | #20. Suite **382 + 11** on merged `main` (branch was 373 + 11 against a 351 baseline; `main` had moved to 360 meanwhile). Targeted read + suite per this bucket's tier — no `/code-review`. **The only bucket of six whose brief had no hole:** zero deviations, and the two things #20 left open shipped as decided — multi-node applications render as one row with stacked cells, kept parallel by a single ordered prefetch, and `NODE_PUBLIC_NAMES` lives in `reports/` with a three-step defensive fallback. Warnings sit in the page chrome, never in a table or a CSV. Worktree removed. **One item open:** the Spanish column headers are the brief's proposal, not published ReDIB wording — one dict entry to confirm or correct. |
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
 2026-08-18.

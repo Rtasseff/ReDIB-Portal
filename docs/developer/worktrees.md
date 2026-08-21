@@ -177,7 +177,6 @@ live right now.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
-| `resolution-report/` | `feature/resolution-report` | 8002 | 2026-08-21 | **Active.** Bucket 6, the last of the round: bilingual per-call resolution table (#20). Read-only, `reports/` only, no migration. Handoff: `docs/handoffs/resolution-report.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 

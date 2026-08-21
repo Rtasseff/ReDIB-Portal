@@ -1,5 +1,12 @@
 # Handoff — `feature/resolution-report`
 
+> **Merged 2026-08-21 (PR #40).** Record only — the branch and its worktree are
+> gone. #20 shipped with no deviations from this brief, which makes it the one
+> bucket of six where the brief's claims all held. **One item still open:** the
+> Spanish column headers in `COLUMN_HEADERS` are this brief's proposal
+> (Question 1), not something ReDIB has published — Ryan confirms or corrects.
+
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/resolution-report.md on the branch. Keep "Status" current. -->
 
