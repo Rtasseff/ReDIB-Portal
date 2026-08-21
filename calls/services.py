@@ -5,6 +5,7 @@ Email fan-out lives here so the request cycle (`calls/views.py`) and the
 Celery beat task (`calls/tasks.py`) share one implementation.
 """
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.urls import reverse
@@ -230,6 +231,146 @@ def _alert_redib_coordinators(consult, nodes, call_url, consult_requests_url):
                 "Consult request %s: fallback email to ReDIB coordinator %s failed",
                 consult.pk, role.user.email,
             )
+
+
+def _feasibility_reminder_candidates(call):
+    """Every (review, recipient) pair eligible for a feasibility reminder on
+    `call`: each currently pending, not-yet-reviewed `FeasibilityReview`,
+    fanned out to every active node coordinator of its node — the same
+    audience `applications.tasks.send_feasibility_reminders` uses.
+
+    Deliberately a fresh query rather than calling into that function:
+    `send_feasibility_reminders` is explicitly out of scope for this bucket
+    (see docs/handoffs/eval-reminders.md), owned by a branch live in
+    parallel. This renders through the same 'feasibility_reminder' template
+    with the same context shape below, so the email is identical; only the
+    "which reviews are eligible" query is duplicated. Also ignores that
+    task's 5-day-since-submission age cutoff — a manual dispatch is for
+    reminding right now, not waiting for the cutoff to pass.
+    """
+    from applications.models import FeasibilityReview
+    from core.models import UserRole
+
+    pending_reviews = FeasibilityReview.objects.filter(
+        status='pending',
+        reviewed_at__isnull=True,
+        application__call=call,
+    ).select_related('application', 'application__call', 'node')
+
+    for review in pending_reviews:
+        node_coordinators = UserRole.objects.filter(
+            node=review.node, role='node_coordinator', is_active=True
+        ).select_related('user').order_by('pk')
+        for coord_role in node_coordinators:
+            yield review, coord_role.user
+
+
+def _recently_reminded_feasibility_pairs(now):
+    """Snapshot of (recipient_email, application_id) pairs already sent a
+    'feasibility_reminder' in the last 24h, taken once per preview/send
+    call rather than re-queried per review.
+
+    `EmailLog` has no per-node column, only `related_application_id` — and
+    one application can have several simultaneously-pending
+    `FeasibilityReview`s, one per requested node (`unique_together =
+    ['application', 'node']`). Re-querying live after each send would let
+    the *first* node's freshly-created row make a *second* node's review
+    for the same application and recipient look "already reminded" within
+    the very same run, even though no email ever mentioned that node.
+    Taking the snapshot up front — before this run sends anything — closes
+    that hole. A residual, narrower gap remains across separate runs
+    (e.g. two manual dispatches minutes apart): the second run's snapshot
+    would legitimately include the first run's row and could still
+    conflate two different nodes on the same application. That is the same
+    structural limitation as backlog #50 (per-application, not per-node,
+    dedupe), deliberately deferred there as low-priority/latent for the
+    same reason.
+    """
+    from communications.models import EmailLog
+
+    return set(
+        EmailLog.objects.filter(
+            template__template_type='feasibility_reminder',
+            sent_at__gte=now - timedelta(days=1),
+            related_application_id__isnull=False,
+        ).values_list('recipient_email', 'related_application_id')
+    )
+
+
+def _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent):
+    """None if `recipient` should be reminded about `review` now; otherwise
+    why not. `recently_reminded` is the snapshot from
+    `_recently_reminded_feasibility_pairs`. `include_recent` mirrors the
+    dispatch's "send anyway" override — it never bypasses an opted-out
+    notification preference."""
+    if hasattr(recipient, 'notification_preferences'):
+        prefs = recipient.notification_preferences
+        if not prefs.notify_reminders or not prefs.notify_feasibility_requests:
+            return 'notifications disabled'
+
+    if not include_recent and (recipient.email, review.application_id) in recently_reminded:
+        return 'already reminded today'
+
+    return None
+
+
+def preview_feasibility_reminders(call, include_recent=False):
+    """#5: dry run for the coordinator's per-call manual dispatch of
+    feasibility review reminders — who would be mailed and who would be
+    skipped, without sending anything.
+
+    Returns a list of dicts: {recipient_name, recipient_email, detail,
+    will_send, skip_reason}, sorted by recipient name then detail.
+    """
+    now = timezone.now()
+    recently_reminded = _recently_reminded_feasibility_pairs(now)
+    rows = []
+    for review, recipient in _feasibility_reminder_candidates(call):
+        skip_reason = _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent)
+        rows.append({
+            'recipient_name': recipient.get_full_name(),
+            'recipient_email': recipient.email,
+            'detail': f"{review.application.code} at {review.node.name}",
+            'will_send': skip_reason is None,
+            'skip_reason': skip_reason,
+        })
+    return sorted(rows, key=lambda r: (r['recipient_name'], r['detail']))
+
+
+def send_feasibility_reminders_now(call, include_recent=False):
+    """#5: actually send the coordinator's per-call manual dispatch of
+    feasibility review reminders. Returns (sent_count, skipped_count)."""
+    from communications.tasks import send_email_from_template
+
+    now = timezone.now()
+    recently_reminded = _recently_reminded_feasibility_pairs(now)
+    sent = 0
+    skipped = 0
+
+    for review, recipient in _feasibility_reminder_candidates(call):
+        skip_reason = _feasibility_reminder_skip_reason(review, recipient, recently_reminded, include_recent)
+        if skip_reason is not None:
+            skipped += 1
+            continue
+
+        context = {
+            'reviewer_name': recipient.get_full_name(),
+            'application_code': review.application.code,
+            'application_title': review.application.brief_description,
+            'node_name': review.node.name,
+            'days_pending': (now - review.application.submitted_at).days,
+            'deadline': timezone.localtime(review.application.call.evaluation_deadline).strftime('%B %d, %Y'),
+        }
+        send_email_from_template(
+            template_type='feasibility_reminder',
+            recipient_email=recipient.email,
+            context_data=context,
+            recipient_user_id=recipient.id,
+            related_application_id=review.application.id,
+        )
+        sent += 1
+
+    return sent, skipped
 
 
 def send_consult_confirmation_email(consult, call_url):

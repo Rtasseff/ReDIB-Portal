@@ -1,0 +1,71 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}{{ action_title }}: {{ call.code }} - ReDIB COA Portal{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calls:detail' call.pk %}">{{ call.code }}</a></li>
+            <li class="breadcrumb-item active">{{ action_title }}</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">{{ action_title }}</h1>
+    <p class="text-muted">{{ call.code }} &mdash; {{ call.title }}</p>
+
+    {% if rows %}
+    <div class="table-responsive mb-4">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Recipient</th>
+                    <th>Details</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>
+                        {{ row.recipient_name }}<br>
+                        <small class="text-muted">{{ row.recipient_email }}</small>
+                    </td>
+                    <td>{{ row.detail }}</td>
+                    <td>
+                        {% if row.will_send %}
+                        <span class="badge bg-success">Will send</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Skipped &mdash; {{ row.skip_reason }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" action="{{ action_url }}">
+        {% csrf_token %}
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="include_recent" id="include_recent">
+            <label class="form-check-label" for="include_recent">
+                Send anyway, including people reminded today
+            </label>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Send these reminder emails now?');">
+                <i class="bi bi-envelope"></i> Send Reminders
+            </button>
+            <a href="{% url 'calls:detail' call.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Nobody is currently due a reminder for this call.
+    </div>
+    <a href="{% url 'calls:detail' call.pk %}" class="btn btn-outline-secondary">Back</a>
+    {% endif %}
+</div>
+{% endblock %}

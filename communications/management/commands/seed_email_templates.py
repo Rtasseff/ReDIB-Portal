@@ -460,7 +460,7 @@ Please do not reply to this email.
             },
             {
                 'template_type': 'evaluation_reminder',
-                'subject': 'ReDIB COA: Evaluation Reminder for {{ application_code }}',
+                'subject': 'ReDIB COA: Evaluation Reminder ({{ pending_count }} Pending)',
                 'html_content': '''
 <!DOCTYPE html>
 <html>
@@ -471,9 +471,9 @@ Please do not reply to this email.
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #e74c3c; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background-color: #f9f9f9; }
-        .button { display: inline-block; padding: 12px 24px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; margin: 8px 0; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
-        .warning-box { background-color: #fef5e7; border-left: 4px solid: #f39c12; padding: 15px; margin: 15px 0; }
+        .warning-box { background-color: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -486,20 +486,15 @@ Please do not reply to this email.
         <div class="content">
             <p>Dear {{ evaluator_name }},</p>
 
-            <p>This is a friendly reminder that your evaluation for application <strong>{{ application_code }}</strong> is due soon.</p>
+            <p>This is a friendly reminder that you have <strong>{{ pending_count }}</strong> pending evaluation{{ pending_count|pluralize }} due soon:</p>
 
+            {% for item in pending_evaluations %}
             <div class="warning-box">
-                <p><strong>Application:</strong> {{ application_code }} - {{ application_title }}</p>
-                <p><strong>Call:</strong> {{ call_code }}</p>
-                <p><strong>Days Remaining:</strong> {{ days_remaining }} days</p>
-                <p><strong>Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
+                <p><strong>{{ item.application_code }}</strong> &mdash; {{ item.application_title }}</p>
+                <p><strong>Call:</strong> {{ item.call_code }} &bull; <strong>{{ item.days_display }}</strong></p>
+                <p><a href="{{ item.evaluation_url }}" class="button">Complete Evaluation</a></p>
             </div>
-
-            <p>Please submit your evaluation as soon as possible:</p>
-
-            <p style="text-align: center;">
-                <a href="{{ evaluation_url }}" class="button">Complete Evaluation</a>
-            </p>
+            {% endfor %}
 
             <p>Thank you for your timely participation.</p>
 
@@ -517,17 +512,12 @@ Please do not reply to this email.
                 'text_content': '''
 Dear {{ evaluator_name }},
 
-This is a friendly reminder that your evaluation for application {{ application_code }} is due soon.
-
-Application Details:
-- Application: {{ application_code }} - {{ application_title }}
-- Call: {{ call_code }}
-- Days Remaining: {{ days_remaining }} days
-- Deadline: {{ deadline|date:"F d, Y" }}
-
-Please submit your evaluation as soon as possible:
-{{ evaluation_url }}
-
+This is a friendly reminder that you have {{ pending_count }} pending evaluation{{ pending_count|pluralize }} due soon:
+{% for item in pending_evaluations %}
+- {{ item.application_code }} - {{ item.application_title }}
+  Call: {{ item.call_code }} - {{ item.days_display }}
+  {{ item.evaluation_url }}
+{% endfor %}
 Thank you for your timely participation.
 
 Best regards,
@@ -536,22 +526,12 @@ The ReDIB COA Team
 ---
 This is an automated reminder from the ReDIB COA Portal.
                 ''',
-                'available_variables': '''
-{
-    "evaluator_name": "Full name of the evaluator",
-    "application_code": "Application unique code",
-    "application_title": "Brief description of the application",
-    "call_code": "Call code",
-    "days_remaining": "Number of days until deadline",
-    "deadline": "Evaluation deadline (datetime object)",
-    "evaluation_url": "URL to the evaluation form"
-}
-                '''
+                'available_variables': '''Variables: evaluator_name, pending_count, pending_evaluations (list of {application_code, application_title, call_code, days_display, is_overdue, evaluation_url})'''
             },
             # Overdue evaluation notifications (Issue #11)
             {
                 'template_type': 'evaluation_overdue',
-                'subject': 'ReDIB COA: Your Evaluation for {{ application_code }} is Overdue',
+                'subject': 'ReDIB COA: {{ pending_count }} Evaluation{{ pending_count|pluralize }} Overdue',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -561,7 +541,7 @@ This is an automated reminder from the ReDIB COA Portal.
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #c0392b; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background-color: #f9f9f9; }
-        .button { display: inline-block; padding: 12px 24px; background-color: #c0392b; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #c0392b; color: white; text-decoration: none; border-radius: 5px; margin: 8px 0; }
         .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
         .warning-box { background-color: #fdedec; border-left: 4px solid #c0392b; padding: 15px; margin: 15px 0; }
     </style>
@@ -570,20 +550,20 @@ This is an automated reminder from the ReDIB COA Portal.
     <div class="container">
         <div class="header">
             <h1>ReDIB COA Portal</h1>
-            <p>Evaluation Overdue</p>
+            <p>Evaluation{{ pending_count|pluralize }} Overdue</p>
         </div>
         <div class="content">
             <p>Dear {{ evaluator_name }},</p>
-            <p>Your evaluation for application <strong>{{ application_code }}</strong> (call {{ call_code }}) is now <strong>overdue</strong>.</p>
+            <p>You have <strong>{{ pending_count }}</strong> pending evaluation{{ pending_count|pluralize }}, including at least one now <strong>overdue</strong>:</p>
+            {% for item in pending_evaluations %}
             <div class="warning-box">
-                <p><strong>Evaluation Deadline:</strong> {{ deadline|date:"F d, Y" }}</p>
-                <p><strong>Grace Period:</strong> You have <strong>1 week</strong> from the deadline to submit your evaluation before the form is locked.</p>
+                <p><strong>{{ item.application_code }}</strong> &mdash; {{ item.application_title }}</p>
+                <p><strong>Call:</strong> {{ item.call_code }} &bull; <strong>{{ item.days_display }}</strong></p>
+                <p><a href="{{ item.evaluation_url }}" class="button">Submit Evaluation Now</a></p>
             </div>
-            <p>Please submit your evaluation as soon as possible:</p>
-            <p style="text-align: center;">
-                <a href="{{ evaluation_url }}" class="button">Submit Evaluation Now</a>
-            </p>
-            <p>If you are unable to complete the evaluation, please contact the ReDIB coordinator immediately.</p>
+            {% endfor %}
+            <p><strong>Grace period:</strong> each evaluation has 1 week from its own deadline to be submitted before the form locks.</p>
+            <p>If you are unable to complete an evaluation, please contact the ReDIB coordinator immediately.</p>
             <p>Best regards,<br>The ReDIB COA Team</p>
         </div>
         <div class="footer">
@@ -594,30 +574,22 @@ This is an automated reminder from the ReDIB COA Portal.
 </html>''',
                 'text_content': '''Dear {{ evaluator_name }},
 
-Your evaluation for application {{ application_code }} (call {{ call_code }}) is now OVERDUE.
+You have {{ pending_count }} pending evaluation{{ pending_count|pluralize }}, including at least one now OVERDUE:
+{% for item in pending_evaluations %}
+- {{ item.application_code }} - {{ item.application_title }}
+  Call: {{ item.call_code }} - {{ item.days_display }}
+  {{ item.evaluation_url }}
+{% endfor %}
+Grace period: each evaluation has 1 week from its own deadline to be submitted before the form locks.
 
-Evaluation Deadline: {{ deadline|date:"F d, Y" }}
-Grace Period: You have 1 week from the deadline to submit your evaluation before the form is locked.
-
-Please submit your evaluation as soon as possible:
-{{ evaluation_url }}
-
-If you are unable to complete the evaluation, please contact the ReDIB coordinator immediately.
+If you are unable to complete an evaluation, please contact the ReDIB coordinator immediately.
 
 Best regards,
 The ReDIB COA Team
 
 ---
 This is an automated message from the ReDIB COA Portal.''',
-                'available_variables': '''
-{
-    "evaluator_name": "Full name of the evaluator",
-    "application_code": "Application unique code",
-    "call_code": "Call code",
-    "deadline": "Evaluation deadline (datetime object)",
-    "evaluation_url": "URL to the evaluation form"
-}
-                '''
+                'available_variables': '''Variables: evaluator_name, pending_count, pending_evaluations (list of {application_code, application_title, call_code, days_display, is_overdue, evaluation_url})'''
             },
             {
                 'template_type': 'coordinator_overdue_evaluations',
@@ -2220,7 +2192,7 @@ Please do not reply to this email.''',
             },
             {
                 'template_type': 'completion_reminder_coordinator',
-                'subject': 'ReDIB COA: Check completion status for {{ application_code }}',
+                'subject': 'ReDIB COA: Applications Awaiting Completion',
                 'html_content': '''<!DOCTYPE html>
 <html>
 <head>
@@ -2243,13 +2215,15 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
-            <p>Application <strong>{{ application_code }}</strong> ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            <p>The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            {% for node in node_summaries %}
             <div class="info-box">
-                <p><strong>Node(s):</strong> {{ node_name }}</p>
+                <p><strong>{{ node.node_name }}</strong></p>
+                {% for app in node.applications %}
+                <p>&bull; <a href="{{ app.application_url }}">{{ app.application_code }}</a> &mdash; {{ app.applicant_name }} ({{ app.call_code }})</p>
+                {% endfor %}
             </div>
-            <p style="text-align: center;">
-                <a href="{{ application_url }}" class="button">Open Application</a>
-            </p>
+            {% endfor %}
             <p>Best regards,<br>
             The ReDIB COA Team</p>
         </div>
@@ -2262,20 +2236,19 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ coordinator_name }},
 
-Application {{ application_code }} ({{ applicant_name }}, {{ call_code }}) at your node is still open. Once the applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
-
-Node(s): {{ node_name }}
-
-Open application:
-{{ application_url }}
-
+The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
+{% for node in node_summaries %}
+{{ node.node_name }}:
+{% for app in node.applications %}  - {{ app.application_code }} - {{ app.applicant_name }} ({{ app.call_code }})
+    {{ app.application_url }}
+{% endfor %}{% endfor %}
 Best regards,
 The ReDIB COA Team
 
 ---
 This is an automated reminder from the ReDIB COA Portal.
 Please do not reply to this email.''',
-                'available_variables': '''Variables: coordinator_name, application_code, applicant_name, call_code, node_name (comma-separated if the coordinator manages more than one of this application's nodes), application_url'''
+                'available_variables': '''Variables: coordinator_name, node_summaries (list of {node_name, applications: [{application_code, applicant_name, call_code, application_url}]})'''
             },
             {
                 'template_type': 'stalled_acceptance_reminder',
@@ -2464,6 +2437,70 @@ You receive this because you hold the ReDIB coordinator role. It is a record
 of what happened, not a request to act.
 Please do not reply to this email.''',
                 'available_variables': '''Variables: coordinator_name, action (expired / force-accepted / reinstated), actioned_by, actioned_on, reason, change_line, application_code, call_code, applicant_name, applicant_email, node_name, status_label, application_url'''
+            },
+            {
+                'template_type': 'draft_nudge',
+                'subject': 'ReDIB COA: Your Application for {{ call_code }} is Still a Draft',
+                'html_content': '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #e67e22; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .warning-box { background-color: #fef3e6; border-left: 4px solid #e67e22; padding: 15px; margin: 15px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ReDIB COA Portal</h1>
+            <p>Your Application Is Still a Draft</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ applicant_name }},</p>
+            <p>Your application <strong>{{ application_code }}</strong> for <strong>{{ call_code }}</strong> has not been submitted yet.</p>
+            <div class="warning-box">
+                <p><strong>Submission Deadline:</strong> {{ submission_deadline }}</p>
+                <p><strong>Days Remaining:</strong> {{ days_remaining }} days</p>
+            </div>
+            <p>Once the deadline passes, this call will no longer accept submissions and this draft will not be reviewed.</p>
+            <p style="text-align: center;">
+                <a href="{{ application_url }}" class="button">Finish and Submit</a>
+            </p>
+            <p>Best regards,<br>
+            The ReDIB COA Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated reminder from the ReDIB COA Portal.</p>
+            <p>Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>''',
+                'text_content': '''Dear {{ applicant_name }},
+
+Your application {{ application_code }} for {{ call_code }} has not been submitted yet.
+
+Submission Deadline: {{ submission_deadline }}
+Days Remaining: {{ days_remaining }} days
+
+Once the deadline passes, this call will no longer accept submissions and this draft will not be reviewed.
+
+Finish and submit:
+{{ application_url }}
+
+Best regards,
+The ReDIB COA Team
+
+---
+This is an automated reminder from the ReDIB COA Portal.
+Please do not reply to this email.''',
+                'available_variables': '''Variables: applicant_name, application_code, call_code, call_title, days_remaining, submission_deadline, application_url'''
             }
         ]
 

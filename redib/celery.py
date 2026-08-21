@@ -48,9 +48,9 @@ app.conf.beat_schedule = {
         'task': 'calls.tasks.check_call_deadlines',
         'schedule': crontab(hour=0, minute=15),  # Daily at 00:15
     },
-    'notify-overdue-evaluators': {
-        'task': 'evaluations.tasks.notify_overdue_evaluators',
-        'schedule': crontab(hour=9, minute=30),  # Daily at 9:30 AM
+    'send-draft-nudges': {
+        'task': 'calls.tasks.send_draft_nudges',
+        'schedule': crontab(hour=8, minute=30),  # Daily at 8:30 AM
     },
     'notify-coordinator-overdue-evaluations': {
         'task': 'evaluations.tasks.notify_coordinator_overdue_evaluations',

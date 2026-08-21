@@ -229,6 +229,29 @@
 </div>
 
 <div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-envelope"></i> Reminders</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle"></i>
+            Send the same reminder emails the daily scheduled tasks send, right now,
+            scoped to this call &mdash; useful when a deadline is approaching off-cycle
+            or after a manual data fix. Each shows a preview of who will be mailed
+            before anything sends.
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'calls:remind_evaluators' call.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-envelope"></i> Remind Evaluators with Unsubmitted Scores
+            </a>
+            <a href="{% url 'calls:remind_feasibility' call.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-envelope"></i> Remind Open Feasibility Reviews
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-chat-left-dots"></i> Consult Requests</h5>
         <div>
