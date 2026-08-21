@@ -162,3 +162,134 @@ class UserLoaderCreateOnlyTest(TestCase):
                 self.assertTrue(self.existing.is_active)
                 self.assertEqual(self.existing.phone, '+34 600 000 000')
                 self.assertFalse(self.existing.roles.exists())
+
+
+class UserLoaderEvaluatorAreasTest(TestCase):
+    """A blank `areas` cell must not strip a serving evaluator (backlog #61).
+
+    Create-only closed half the 2026-08-19 hazard. Roles are still applied in
+    both modes by design — and `areas` rides on `UserRole`, written through the
+    same `update_or_create`. So a blank cell was still an authoritative empty
+    string: prod's 2026-08-21 run held back `is_active: True -> False` for a
+    serving evaluator and then, on the next line, would have set her
+    `areas: 'preclinical' -> ''`. `UserRole.has_area()` is False for every area
+    when `areas` is blank, and area-matched assignment skips such a role
+    entirely, so for the question that finding was about — can she be assigned
+    a preclinical application — that is the same outcome as deactivating her.
+
+    The rule now: a blank cell means "the TSV isn't saying" and is not written;
+    a filled cell is authoritative and still wins.
+    """
+
+    def setUp(self):
+        self.org = Organization.objects.create(name='Test Org', short_name='TO')
+        self.node = Node.objects.create(
+            code='TEST-NODE', organization=self.org, location='Testville'
+        )
+        self.evaluator = User.objects.create_user(
+            email='serving@example.org',
+            password='pw',
+            first_name='Serving',
+            last_name='Evaluator',
+        )
+        self.role = UserRole.objects.create(
+            user=self.evaluator, role='evaluator', areas='preclinical', is_active=True
+        )
+
+    def _row(self, areas='', roles='evaluator'):
+        return (
+            f'serving@example.org\tServing\tEvaluator\t\t\t\t\t'
+            f'\t\t{roles}\t{areas}\t'
+        )
+
+    def _run(self, *rows, **options):
+        path = _tsv(*rows)
+        out = io.StringIO()
+        try:
+            call_command('populate_redib_users', tsv=path, stdout=out, **options)
+        finally:
+            Path(path).unlink(missing_ok=True)
+        return out.getvalue()
+
+    def test_blank_areas_does_not_strip_a_serving_evaluator(self):
+        """The 2026-08-21 prod finding, as a regression test."""
+        self._run(self._row(areas=''))
+        self.role.refresh_from_db()
+        self.assertEqual(self.role.areas, 'preclinical')
+        self.assertTrue(self.role.has_area('preclinical'))
+
+    def test_blank_areas_is_protected_in_update_existing_mode_too(self):
+        """`--update-existing` opts back into overwriting *profile* fields. It
+        is not a licence to blank an evaluator's specialization — that value
+        was never in the TSV to begin with."""
+        self._run(self._row(areas=''), update_existing=True)
+        self.role.refresh_from_db()
+        self.assertEqual(self.role.areas, 'preclinical')
+
+    def test_a_filled_areas_cell_still_wins(self):
+        """The TSV is the reference for who evaluates what. `mangel.morcillo@`
+        on prod has 'preclinical;radiochemistry' in the DB and only
+        'radiochemistry' in the TSV — that narrowing still applies, and the
+        pre-load drift check is what makes it visible in time to fix the TSV."""
+        self._run(self._row(areas='radiochemistry'))
+        self.role.refresh_from_db()
+        self.assertEqual(self.role.areas, 'radiochemistry')
+
+    def test_reordering_is_not_a_change(self):
+        """'clinical;preclinical' and 'preclinical;clinical' are the same grant.
+        Four of prod's six role lines were reorderings, and reporting them as
+        changes buried the two that actually lost an area."""
+        self.role.areas = 'clinical;preclinical'
+        self.role.save()
+
+        output = self._run(self._row(areas='preclinical;clinical'), dry_run=True)
+        self.assertNotIn('areas:', output)
+
+    def test_dry_run_does_not_report_a_phantom_change_for_a_blank_cell(self):
+        """The dry-run and the write share `_role_defaults`, so a dry-run can
+        never describe something the real run would not do."""
+        output = self._run(self._row(areas=''), dry_run=True)
+        self.assertNotIn('areas:', output)
+
+        self.role.refresh_from_db()
+        self.assertEqual(self.role.areas, 'preclinical')
+
+    def test_a_new_evaluator_with_a_blank_cell_is_created_with_no_areas(self):
+        row = (
+            'fresh@example.org\tFresh\tEvaluator\t\t\t\t\t'
+            '\t\tevaluator\t\t'
+        )
+        self._run(row)
+        role = User.objects.get(email='fresh@example.org').roles.get(role='evaluator')
+        self.assertEqual(role.areas, '')
+        self.assertTrue(role.is_active)
+
+    def test_a_new_evaluator_with_a_filled_cell_gets_them(self):
+        row = (
+            'fresh@example.org\tFresh\tEvaluator\t\t\t\t\t'
+            '\t\tevaluator\tclinical;radiochemistry\t'
+        )
+        self._run(row)
+        role = User.objects.get(email='fresh@example.org').roles.get(role='evaluator')
+        self.assertEqual(set(role.area_list), {'clinical', 'radiochemistry'})
+
+    def test_non_evaluator_rows_still_carry_no_areas(self):
+        """Areas apply only to the evaluator role; that convention is unchanged."""
+        stray = UserRole.objects.create(
+            user=self.evaluator, role='node_coordinator', node=self.node,
+            areas='clinical', is_active=True,
+        )
+        self._run(self._row(areas='', roles='node_coordinator:TEST-NODE'))
+        stray.refresh_from_db()
+        self.assertEqual(stray.areas, '')
+
+    def test_an_inactive_role_is_still_reactivated(self):
+        """Blank-areas protection must not also stop the loader reactivating a
+        role — granting authorization is what the October load is for."""
+        self.role.is_active = False
+        self.role.save()
+
+        self._run(self._row(areas=''))
+        self.role.refresh_from_db()
+        self.assertTrue(self.role.is_active)
+        self.assertEqual(self.role.areas, 'preclinical')

@@ -149,8 +149,12 @@ All five `populate_redib_*` commands now share these rules — match them in any
   default** (`--update-existing` opts back in). The blank→False rule is right for
   reference data nobody edits in the portal, and wrong for the user table, where
   `phone`, `position`, `orcid`, `organization` and `auto_data_consent` are all on
-  the profile form. Roles are applied in both modes. See `data/README.md` and
-  backlog #43.
+  the profile form. Roles are applied in both modes — but a blank `areas` cell is
+  **never written**, since blanking an evaluator's specialization takes them out
+  of area-matched assignment just as surely as deactivating them (#61). A filled
+  `areas` cell still wins. See `data/README.md` and backlog #43.
+- Before any load against production: `python manage.py shell <
+  scripts/check_role_drift.py` (read-only), then `--dry-run`, then the real run.
 - Human-readable enum labels in the TSV map to short codes via a static label-map dict
   (see `populate_redib_organizations.ORG_TYPE_LABEL_MAP` and
   `populate_redib_funding_agencies.ORIGIN_LABEL_MAP`).

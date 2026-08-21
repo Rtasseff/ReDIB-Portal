@@ -118,10 +118,44 @@ class Command(BaseCommand):
         return diffs
 
     @staticmethod
-    def _describe_role_change(user, role_name, node, role_areas):
+    def _areas_set(value):
+        """'clinical;preclinical' -> {'clinical', 'preclinical'}. Order is not data."""
+        return {a.strip() for a in (value or '').split(';') if a.strip()}
+
+    @staticmethod
+    def _role_defaults(role_name, role_areas):
+        """The field values a UserRole write would apply.
+
+        Single source of truth for both `_describe_role_change` and the write
+        itself, so a dry-run can never describe something different from what
+        the real run does.
+
+        **A blank `areas` cell means "the TSV isn't saying", not "no areas"**
+        (backlog #61). Writing `''` would strip a serving evaluator's
+        specialization on every re-run — the same failure mode the create-only
+        default fixed for profile fields, and one the create-only default did
+        *not* cover, because roles are applied in both modes by design. An
+        evaluator with `areas=''` is skipped by area-matched assignment
+        entirely, so a blanked area and a deactivated account come to the same
+        thing in October. A filled cell still wins: the TSV is the reference
+        for who evaluates what, and a stale cell is fixed in the TSV.
+        """
+        defaults = {'is_active': True}
+        if role_name != 'evaluator':
+            # Convention: non-evaluator rows carry no areas, always.
+            defaults['areas'] = ''
+        elif role_areas:
+            defaults['areas'] = role_areas
+        # evaluator + blank cell: `areas` deliberately absent from defaults, so
+        # update_or_create leaves an existing value alone (and a new row takes
+        # the field default, which is '').
+        return defaults
+
+    @classmethod
+    def _describe_role_change(cls, user, role_name, node, defaults):
         """Describe what a UserRole write would do, without writing it.
 
-        Returns None if the role already exists with matching areas/is_active.
+        Returns None if the role already exists and the write would be a no-op.
         """
         if user is None:
             return 'would create (new user)'
@@ -129,8 +163,12 @@ class Command(BaseCommand):
         if existing is None:
             return 'would create'
         changes = []
-        if existing.areas != role_areas:
-            changes.append(f'areas: {existing.areas!r} -> {role_areas!r}')
+        if 'areas' in defaults:
+            # Compared as a set: 'clinical;preclinical' and 'preclinical;clinical'
+            # are the same grant, and reporting the reorder as a change buries
+            # the ones that actually lose an area.
+            if cls._areas_set(existing.areas) != cls._areas_set(defaults['areas']):
+                changes.append(f'areas: {existing.areas!r} -> {defaults["areas"]!r}')
         if not existing.is_active:
             changes.append('is_active: False -> True')
         return f"would update ({', '.join(changes)})" if changes else None
@@ -371,8 +409,10 @@ class Command(BaseCommand):
                 node_info = f" at {node.code}" if node else ""
                 area_info = f" ({role_areas})" if role_areas else ""
 
+                role_defaults = self._role_defaults(role_name, role_areas)
+
                 if dry_run:
-                    change = self._describe_role_change(user, role_name, node, role_areas)
+                    change = self._describe_role_change(user, role_name, node, role_defaults)
                     if change:
                         roles_changed_count += 1
                         self.stdout.write(
@@ -384,10 +424,7 @@ class Command(BaseCommand):
                         user=user,
                         role=role_name,
                         node=node,
-                        defaults={
-                            'areas': role_areas,
-                            'is_active': True,
-                        }
+                        defaults=role_defaults,
                     )
 
                     if role_created:

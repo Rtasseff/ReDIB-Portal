@@ -115,6 +115,15 @@ organization dropdown on `/profile/`, all model fields except `iso2` are require
 >
 > Roles are applied in both modes: `UserRole` has no portal editor, so there is
 > no user-authored value to lose. See backlog #43 for the durable fix.
+>
+> **One field on the role row is held back too: `areas`.** A blank `areas` cell
+> means "the TSV isn't saying", not "no areas", and is never written (backlog
+> #61). Writing it would strip a serving evaluator's specialization on any
+> re-run — and an evaluator with no areas is skipped by area-matched assignment
+> entirely, which for the October load is the same outcome as deactivating them.
+> A **filled** cell is still authoritative and still wins, so narrowing or
+> changing someone's areas works exactly as before; run the drift check below
+> first so a stale cell doesn't do it by accident.
 
 | Column | Required | Notes |
 |---|---|---|
@@ -133,10 +142,26 @@ organization dropdown on `/profile/`, all model fields except `iso2` are require
 
 > **Roles are the TSV's to own — keep it that way.** `UserRole` has no portal
 > editor, but a superuser can change roles in Django admin. The loader only ever
-> adds or reactivates roles, never removes one, so an admin change is not lost by
-> a later load — but this file quietly stops being the record of who holds what.
-> Prefer editing `users.tsv` and running the loader. If an admin change does
-> happen, **mirror it into this file and commit it** in the same sitting.
+> adds or reactivates roles, never removes one, so an admin *grant* is not lost
+> by a later load — but this file quietly stops being the record of who holds
+> what. Prefer editing `users.tsv` and running the loader. If an admin change
+> does happen, **mirror it into this file and commit it** in the same sitting.
+>
+> **"Never removes" was true of the role row and false of the areas on it** —
+> that is #61, found on production 2026-08-21, and it is fixed above. Note the
+> asymmetry that remains: the loader can *widen* authorization but never revoke
+> it, so a role granted by mistake has to be removed by hand.
+>
+> **Before any load against production, run the drift check:**
+>
+> ```bash
+> python manage.py shell < scripts/check_role_drift.py    # writes nothing
+> ```
+>
+> It compares roles *and* evaluator areas against this file in both directions,
+> and summarises self-registered applicants rather than listing them (they are
+> not part of the reference set and never need mirroring here). Then
+> `populate_redib_users --dry-run`, and only then the real run.
 
 **Roles syntax** (semicolon `;`-separated):
 - Simple: `coordinator`, `applicant`, `evaluator`

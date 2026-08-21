@@ -603,6 +603,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 The entrypoint script runs migrations and collectstatic automatically on every restart.
 
+> **`git pull` alone changes nothing that runs.** The `web`, `worker` and `beat`
+> services all `build: .` with **no source bind mount**, so the code is baked
+> into the image. Between the pull and the `--build`, the checkout on disk and
+> the code in the containers are different versions — `manage.py` still runs the
+> old one. Found the hard way on 2026-08-21: a management command re-run after a
+> pull, to verify a fix that had just been merged, reported the pre-fix
+> behaviour and looked exactly like the fix having failed.
+>
+> So: **never verify a code change with a management command until after the
+> rebuild.** If you need to check new logic against live data before deploying
+> it, pipe the *new source* into `manage.py shell` — and audit first that every
+> write in it sits behind a `--dry-run` branch.
+
 After the rebuild, spot-check the app plus the user guide (the guide is read
 from `docs/USER_GUIDE.md` inside the image, so it catches a broken build
 context):
@@ -617,6 +630,28 @@ context):
 ```bash
 docker compose -f docker-compose.prod.yml exec web python manage.py <command>
 ```
+
+> This runs the code **in the image**, not the code in `~/ReDIB-Portal`. See the
+> warning under *Deploying Code Updates*.
+
+**`populate_redib_users` is never run by a deploy** — the entrypoint runs
+`migrate`, `collectstatic` and `seed_email_templates` only. Loading users is a
+deliberate, separate act, and it has a required order:
+
+```bash
+# 1. read-only: what do the DB and data/users.tsv disagree about?
+docker compose -f docker-compose.prod.yml exec web \
+  python manage.py shell < scripts/check_role_drift.py
+# 2. write-free: exactly what would this load change?
+docker compose -f docker-compose.prod.yml exec web \
+  python manage.py populate_redib_users --dry-run
+# 3. only then, and only if step 2 says what you expect
+docker compose -f docker-compose.prod.yml exec web \
+  python manage.py populate_redib_users
+```
+
+Do not skip step 1. See `data/README.md` § `users.tsv` for why the TSV is not
+authoritative for an existing user's profile, or for a blank `areas` cell.
 
 Examples:
 
