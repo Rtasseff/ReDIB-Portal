@@ -12,6 +12,7 @@ Covers:
   dashboard's pending_resolution count.
 - The "Release to nodes" action: guards, batch email fan-out, idempotence,
   and the score-spread preview with the >=5 marker.
+- #16 (stretch): access_tracking's "node-accepted, awaiting applicant" filter.
 """
 import importlib
 from datetime import timedelta
@@ -423,3 +424,43 @@ class ReleaseActionTest(TestCase):
         self.call.save()
         response = self.client.get(reverse('calls:detail', kwargs={'pk': self.call.pk}))
         self.assertNotContains(response, 'Release to Nodes')
+
+
+class AwaitingApplicantFilterTest(TestCase):
+    """#16 stretch — access_tracking's node-accepted-awaiting-applicant filter."""
+
+    def setUp(self):
+        self.node = _make_node('RG-FILTER')
+        self.equipment = Equipment.objects.create(node=self.node, name='Scanner', category='mri')
+        self.nc = create_complete_user(email='filter-nc@rg.test')
+        UserRole.objects.create(user=self.nc, role='node_coordinator', node=self.node, is_active=True)
+        self.applicant = create_complete_user(email='filter-applicant@rg.test')
+        self.call = _make_call('RG-FILTER-CALL', resolutions_released=True)
+
+        self.awaiting = Application.objects.create(
+            applicant=self.applicant, call=self.call, code='RG-FILTER-CALL-001',
+            brief_description='awaiting', status='accepted', accepted_by_applicant=None,
+        )
+        RequestedAccess.objects.create(application=self.awaiting, equipment=self.equipment, hours_requested=Decimal('5'))
+
+        self.confirmed = Application.objects.create(
+            applicant=self.applicant, call=self.call, code='RG-FILTER-CALL-002',
+            brief_description='confirmed', status='accepted', accepted_by_applicant=True,
+        )
+        RequestedAccess.objects.create(application=self.confirmed, equipment=self.equipment, hours_requested=Decimal('5'))
+
+        self.client = Client()
+        self.client.force_login(self.nc)
+
+    def test_unfiltered_shows_both_with_distinguishing_badges(self):
+        response = self.client.get(reverse('access:access_tracking'))
+        self.assertContains(response, self.awaiting.code)
+        self.assertContains(response, self.confirmed.code)
+        self.assertEqual(response.context['awaiting_applicant_count'], 1)
+        self.assertContains(response, 'Accepted &mdash; Awaiting Applicant')
+
+    def test_filter_shows_only_awaiting(self):
+        response = self.client.get(reverse('access:access_tracking'), {'filter': 'awaiting_applicant'})
+        self.assertContains(response, self.awaiting.code)
+        self.assertNotContains(response, self.confirmed.code)
+        self.assertTrue(response.context['show_awaiting_applicant_only'])

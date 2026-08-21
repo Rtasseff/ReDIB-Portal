@@ -47,29 +47,7 @@
                     <tr>
                         <td><strong>{{ app.code|default:"DRAFT" }}</strong></td>
                         <td>{{ app.call.code }}</td>
-                        <td>
-                            {% if app.status == 'draft' %}
-                            <span class="badge bg-secondary">Draft</span>
-                            {% elif app.status == 'submitted' %}
-                            <span class="badge bg-info">Submitted</span>
-                            {% elif app.status == 'under_feasibility_review' %}
-                            <span class="badge bg-warning">Under Review</span>
-                            {% elif app.status == 'pending_evaluation' %}
-                            <span class="badge bg-primary">Pending Evaluation</span>
-                            {% elif app.status == 'under_evaluation' %}
-                            <span class="badge bg-info">Being Evaluated</span>
-                            {% elif app.status == 'evaluated' %}
-                            <span class="badge bg-primary">Evaluated</span>
-                            {% elif app.status == 'accepted' %}
-                            <span class="badge bg-success">Accepted</span>
-                            {% elif app.status == 'pending' %}
-                            <span class="badge bg-warning">Pending (Waitlist)</span>
-                            {% elif app.status == 'rejected' %}
-                            <span class="badge bg-danger">Rejected</span>
-                            {% else %}
-                            <span class="badge bg-secondary">{{ app.get_status_display }}</span>
-                            {% endif %}
-                        </td>
+                        <td>{% include "includes/status_badge.html" %}</td>
                         <td>{{ app.submitted_at|date:"M d, Y"|default:"—" }}</td>
                         <td>
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary">View</a>
@@ -322,7 +300,7 @@
                         <td><strong>{{ app.code }}</strong></td>
                         <td>{{ app.applicant.get_full_name }}</td>
                         <td>{{ app.call.code }}</td>
-                        <td><span class="badge bg-secondary">{{ app.get_status_display }}</span></td>
+                        <td>{% include "includes/status_badge.html" %}</td>
                         <td>{{ app.submitted_at|date:"M d, Y" }}</td>
                     </tr>
                     {% endfor %}

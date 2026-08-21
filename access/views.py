@@ -105,6 +105,14 @@ def access_tracking(request):
     Node coordinator view for tracking access completion status.
 
     Shows all applications involving coordinator's nodes, regardless of status.
+
+    #16: an application accepted by the node coordinator sits in
+    status='accepted' whether or not the applicant has actually confirmed
+    within their 10-day window — the badge distinguishes the two
+    (status_badge.html), but a coordinator scanning for applicants who
+    haven't responded yet had no way to isolate just those rows. The
+    `?filter=awaiting_applicant` link below does that; it changes nothing
+    about the query when absent.
     """
     from core.models import UserRole
 
@@ -126,8 +134,18 @@ def access_tracking(request):
         'requested_access__equipment__node'
     ).distinct().order_by('-submitted_at')
 
+    awaiting_applicant_count = applications.filter(
+        status='accepted', accepted_by_applicant__isnull=True
+    ).count()
+
+    show_awaiting_applicant_only = request.GET.get('filter') == 'awaiting_applicant'
+    if show_awaiting_applicant_only:
+        applications = applications.filter(status='accepted', accepted_by_applicant__isnull=True)
+
     context = {
         'applications': applications,
+        'awaiting_applicant_count': awaiting_applicant_count,
+        'show_awaiting_applicant_only': show_awaiting_applicant_only,
     }
     return render(request, 'access/access_tracking.html', context)
 

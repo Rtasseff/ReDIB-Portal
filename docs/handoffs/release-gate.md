@@ -316,13 +316,13 @@ resolution phase.
 - [x] 3. the four refusals (service layer first)
 - [x] 4. "Release to nodes" action + confirm screen
 - [x] 5. score spread on the release screen, ≥5 marked
-- [ ] *(stretch)* 6. #16 — badge adoption + the filter
+- [x] *(stretch)* 6. #16 — badge adoption + the filter
 - [ ] `/code-review` at **medium**, on this branch, before opening the PR
-- [x] Suite green — record both counts — `test tests`: 315 OK (2 pre-existing
-      test setups in `test_batch2_phase1.py`/`test_batch2_phase4.py` updated to
-      set `resolutions_released=True`, since they exercise `apply_node_resolution`
-      for unrelated behavior); `test`: 11 OK; +20 new tests in
-      `tests/test_release_gate.py`
+- [x] Suite green — record both counts — `test tests`: 337 OK (315 baseline +
+      22 new; 2 pre-existing test setups in `test_batch2_phase1.py`/
+      `test_batch2_phase4.py` updated to set `resolutions_released=True`,
+      since they exercise `apply_node_resolution` for unrelated behavior);
+      `test`: 11 OK; new coverage in `tests/test_release_gate.py`
 - [ ] PR opened
 
 ## Questions for the handoff session

@@ -31,29 +31,7 @@
             <tr>
                 <td><strong>{{ app.code|default:"DRAFT" }}</strong></td>
                 <td>{{ app.call.code }}</td>
-                <td>
-                    {% if app.status == 'draft' %}
-                    <span class="badge bg-secondary">Draft</span>
-                    {% elif app.status == 'submitted' %}
-                    <span class="badge bg-info">Submitted</span>
-                    {% elif app.status == 'under_feasibility_review' %}
-                    <span class="badge bg-warning text-dark">Under Review</span>
-                    {% elif app.status == 'pending_evaluation' %}
-                    <span class="badge bg-primary">Pending Evaluation</span>
-                    {% elif app.status == 'under_evaluation' %}
-                    <span class="badge bg-info">Being Evaluated</span>
-                    {% elif app.status == 'evaluated' %}
-                    <span class="badge bg-primary">Evaluated</span>
-                    {% elif app.status == 'accepted' %}
-                    <span class="badge bg-success">Accepted</span>
-                    {% elif app.status == 'pending' %}
-                    <span class="badge bg-warning">Pending (Waitlist)</span>
-                    {% elif app.status == 'rejected' %}
-                    <span class="badge bg-danger">Rejected</span>
-                    {% else %}
-                    <span class="badge bg-secondary">{{ app.get_status_display }}</span>
-                    {% endif %}
-                </td>
+                <td>{% include "includes/status_badge.html" %}</td>
                 <td>{{ app.submitted_at|date:"M d, Y H:i"|default:"—" }}</td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">

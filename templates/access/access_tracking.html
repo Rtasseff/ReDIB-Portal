@@ -14,6 +14,19 @@
     Track all applications involving your node's equipment, including hours requested, approved, and used.
 </div>
 
+<div class="mb-3">
+    {% if show_awaiting_applicant_only %}
+    <a href="{% url 'access:access_tracking' %}" class="btn btn-sm btn-warning text-dark">
+        <i class="bi bi-funnel-fill"></i> Node-accepted, awaiting applicant ({{ awaiting_applicant_count }})
+        &mdash; showing filtered, click to clear
+    </a>
+    {% else %}
+    <a href="?filter=awaiting_applicant" class="btn btn-sm btn-outline-warning">
+        <i class="bi bi-funnel"></i> Node-accepted, awaiting applicant ({{ awaiting_applicant_count }})
+    </a>
+    {% endif %}
+</div>
+
 {% if applications %}
 <div class="card">
     <div class="card-header">
@@ -84,7 +97,11 @@
 {% else %}
 <div class="alert alert-info">
     <h5><i class="bi bi-info-circle"></i> No Applications</h5>
+    {% if show_awaiting_applicant_only %}
+    <p class="mb-0">No node-accepted applications are currently awaiting the applicant.</p>
+    {% else %}
     <p class="mb-0">There are no applications involving your node's equipment.</p>
+    {% endif %}
 </div>
 {% endif %}
 
