@@ -503,8 +503,8 @@ Update on every merge, in the same commit as the registry change.
 | `call-hardening` | 2026-08-18 | **2026-08-18** (PR #34) | **2026-08-19** | #27, #33, #13-min, #9. Review added the regression tests for #27 and #33. Worktree removed. Left for `closeout`, now #45: `feasibility_reminder` still emails only the original assignee — and has no dedupe at all. |
 | `closeout` | 2026-08-19 | **2026-08-19** (PR #36) | **2026-08-21** | All six shipped: #45, #17, #28, #36, #30, #29. Suite **201 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium ran on the branch: 6 findings, 5 fixed in the PR, 1 answered here (keep `call_resolve`'s narrow `evaluated`-only guard — a wider "is this call done" test could permanently block closing a call with one stuck application, which is the exact problem this bucket exists to fix; the broader concept stays with #40). Handoff review added #49–#52. #35 dropped → `eval-reminders`. Worktree removed. **Has a pre-deploy check — see below.** |
 | `acceptance-repair` | 2026-08-20 | **2026-08-20** (PR #37) | **2026-08-21** | #53, #52, #18. Suite **278 + 11**, verified in the handoff session on the branch and again on merged `main`. `/code-review` medium on the branch: 10 findings, 8 fixed, 1 message-only fix over a pre-existing hole (#55), 1 reported (#56). Finding 5 was the one that mattered — the nag could reach **nobody** when a node had no active coordinator, since CC cannot exist without a To; it now falls back to addressing the ReDIB coordinator directly. Review also added #57. Worktree removed. **Ships with `closeout`.** |
-| `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
-| `release-gate` | 2026-08-21 | **2026-08-21** (PR #39) | | #15 + #16 (stretch, done). Suite **342 + 11**. `/code-review` medium on the branch: 5 findings, all applied — including `ResolutionService`, a **second fully-wired path** from `evaluated` to resolved that this brief never mentioned and that bypassed the gate entirely. Handoff session ran the end-to-end walkthrough the PR left open, on a fresh sandbox: all five stages pass. Added #60. Worktree removed. **Undeployed — carries real DDL.** |
+| `eval-reminders` | 2026-08-20 | **2026-08-21** (PR #38) | **2026-08-21** | #32, #5, #35, #49 — #49's gate opened mid-session when `acceptance-repair` merged, so the branch rebased and did it. Suite **315 + 11**. `/code-review` medium on the branch: 5 findings, 4 fixed, 1 parked (#58). Review here added #59 and caught a **hand-edited migration** — see below. Worktree removed. |
+| `release-gate` | 2026-08-21 | **2026-08-21** (PR #39) | **2026-08-21** | #15 + #16 (stretch, done). Suite **342 + 11**. `/code-review` medium on the branch: 5 findings, all applied — including `ResolutionService`, a **second fully-wired path** from `evaluated` to resolved that this brief never mentioned and that bypassed the gate entirely. Handoff session ran the end-to-end walkthrough the PR left open, on a fresh sandbox: all five stages pass. Added #60. Worktree removed. Its DDL deploy is what finally made #37 crash — see below. |
 | `resolution-report` | 2026-08-21 | | | #20. Cut from `main` @ `0cae2d5`, port 8002, Sonnet. The brief settles the two things #20 left open — multi-node applications are **one row with stacked cells**, and the node public-name map (`BioImaC / biomaGUNE / TRIMA / IIS La Fe`) is homed in `reports/` rather than on `Node`, because a model field means a new column in the coordinator-owned `data/nodes.tsv` and that is #43's fight. Scope guards: no migration, no `ReportGeneration` row, no public surface, **#44 explicitly out** (see below). |
 
 **Deployed to prod so far:** help-guide (PR #32) and public-calls (PR #33),
@@ -514,8 +514,8 @@ Update on every merge, in the same commit as the registry change.
 the `resolution_accepted` template guard, and the announcement-email switch
 (`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`).
 
-**`eval-reminders` + `release-gate` are on `main` and undeployed.** They are
-the next deploy, and it is a different shape from the last one: `release-gate`
+**`eval-reminders` + `release-gate` shipped 2026-08-21** (prod pulled
+`2aa0a0c`, backup `redib_db_20260821_130515.sql.gz` validated first). It was a different shape from the last one: `release-gate`
 adds **real DDL** (`calls/0004`, two new columns on `Call` and `HistoricalCall`)
 where the last three deploys were choices-only no-ops. So: `scripts/backup-db.sh`
 **before** the pull, and watch the three-container `migrate` race (#37) on this
@@ -564,6 +564,47 @@ should drop to **zero**:
 A dry-run that reports **anything** under Roles is a signal to stop and read it,
 not to proceed. #61 is closed; the drift check plus the dry-run are now the
 standing gate on any load, per `data/README.md`.
+
+### Outcome, 2026-08-21 — everything predicted held, and #37 finally crashed
+
+Every check came back as forecast. The dry-run reported 0 to create / 0 to
+update / 14 protected / 8 unchanged and **zero** role lines; prod confirmed in
+the DB that this is the fix working rather than the check going quiet — Arrate
+still holds `areas='preclinical'` against a blank TSV cell, Morcillo holds both
+areas. The backfill released REDIB-2601 (24 resolved applications) and left
+REDIB-2602 **GATED**, which is the case the migration was written for. Beat came
+up with ten entries, `send-draft-nudges` 08:30 in place of
+`notify-overdue-evaluators` 09:30. One template created (`draft_nudge`), 31
+total. `migrate --check` exits 0.
+
+**But the deploy did not go cleanly: #37 fired and this time it crashed.**
+`celery-beat` won and applied both migrations; `web` and `celery` died with
+`psycopg.errors.DuplicateColumn: column "resolutions_released" of relation
+"calls_call" already exists`, then `restart: unless-stopped` returned them to
+"No migrations to apply". ~40 s lost, no damage, schema correct on both tables,
+backfill committed exactly once. #37 said its verification could only come from
+a real deploy; it came on the deploy the entry itself named as its deadline.
+
+The detail worth keeping is prod's: **the symptom inverts with the DDL.** A
+choices-only migration leaves three duplicate `django_migrations` rows and no
+crash; real DDL leaves one row and two tracebacks. Duplicate rows mean the
+migration was a no-op, a crash means it was real — and neither can be told from
+a genuine failure by reading the log. `DEPLOYMENT.md` now carries that table
+plus the two commands that actually settle it (`migrate --check`, then query the
+field the migration added). #37 stays open for the advisory lock; what changed
+is that it is no longer theoretical.
+
+Prod also corrected two things in the instructions it was given: the compose
+services are `web` / `celery` / `celery-beat` (not `worker` / `beat`), and the
+container that wins the race — and therefore the only one whose log shows "N
+templates created" — moved between deploys, so seeding checks must grep all
+three. Both fixed in `DEPLOYMENT.md`.
+
+Two findings raised while verifying, neither a deploy problem: **#63** (only 10
+of 15 active evaluator roles sit on active accounts; effective coverage is
+preclinical 10 / clinical 4 / radiochemistry 3, and clinical is thin for
+October) and confirmation that `gonzalo.pizarro@cnic.es`'s extra `applicant`
+role is self-acquired and needs no action.
 
 **`closeout` + `acceptance-repair` shipped together on 2026-08-21**, three
 weeks ahead of the 2026-09-15 target. The hold worked as intended: the

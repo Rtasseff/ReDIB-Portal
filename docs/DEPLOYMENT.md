@@ -603,8 +603,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 The entrypoint script runs migrations and collectstatic automatically on every restart.
 
-> **`git pull` alone changes nothing that runs.** The `web`, `worker` and `beat`
-> services all `build: .` with **no source bind mount**, so the code is baked
+> **`git pull` alone changes nothing that runs.** The `web`, `celery` and
+> `celery-beat` services all `build: .` with **no source bind mount**, so the code is baked
 > into the image. Between the pull and the `--build`, the checkout on disk and
 > the code in the containers are different versions — `manage.py` still runs the
 > old one. Found the hard way on 2026-08-21: a management command re-run after a
@@ -615,6 +615,38 @@ The entrypoint script runs migrations and collectstatic automatically on every r
 > rebuild.** If you need to check new logic against live data before deploying
 > it, pipe the *new source* into `manage.py shell` — and audit first that every
 > write in it sits behind a `--dry-run` branch.
+
+> **A migration-bearing deploy will look like it failed. Check, don't read.**
+> All three app containers run `migrate` from the same entrypoint at the same
+> moment (#37), and the symptom **inverts** with the kind of migration:
+>
+> | Migration kind | What the race leaves behind |
+> |---|---|
+> | Choices-only `AlterField` (no-op SQL) | All three "succeed"; `django_migrations` ends up with **three rows** for it |
+> | Real DDL (new column or table) | One wins; the losers crash with `DuplicateColumn` / `already exists` and a full traceback, then `restart: unless-stopped` returns them to "No migrations to apply" |
+>
+> Duplicate rows mean the migration was a no-op; a crash means it was real.
+> Neither can be told apart from a genuine failure by reading the log, so
+> confirm with these two — they are the actual evidence:
+>
+> ```bash
+> # 1. anything still unapplied?  exit 0 = nothing pending
+> docker compose -f docker-compose.prod.yml exec web python manage.py migrate --check
+> # 2. did the schema actually change?  query the field the migration added
+> docker compose -f docker-compose.prod.yml exec web python manage.py shell -c \
+>   "from calls.models import Call; print(list(Call.objects.values_list('code', 'resolutions_released')))"
+> ```
+>
+> Seen both ways: 2026-08-20 (no-op, three duplicate rows, no crash) and
+> 2026-08-21 (`calls/0004`, real DDL — `celery-beat` won, `web` and `celery`
+> died with `DuplicateColumn`, ~40 s of downtime, self-healed, schema correct
+> and the backfill committed exactly once). Until #37's advisory lock lands,
+> this is expected rather than a fault.
+>
+> **Which container wins varies, so grep all three.** `seed_email_templates`
+> runs from the same entrypoint in every container, so "N templates created"
+> appears only in whichever one got there first — `celery` on 2026-08-20,
+> `celery-beat` on 2026-08-21. The services are `web`, `celery`, `celery-beat`.
 
 After the rebuild, spot-check the app plus the user guide (the guide is read
 from `docs/USER_GUIDE.md` inside the image, so it catches a broken build
