@@ -472,6 +472,45 @@ indistinguishable from N days passing. The exception, documented in both files:
 `advance` moves the **call**, not applications, so application-anchored
 reminders must be set directly.
 
+## 4.8 What the portal will email, unattended, Sept–Nov 2026
+
+Audited 2026-09-01 against all ten beat tasks. Four will fire in this window,
+six will not. Two of the four reach **applicants** with no human clicking
+anything, so they belong on the calendar rather than in a backlog nobody reads.
+
+| Date | Task | Who | Why |
+|---|---|---|---|
+| ~Oct 20 onward | `send_feasibility_reminders` | Node coordinators | A `FeasibilityReview` still pending 5 days after submission. Rows are created **at submit**, so this starts as soon as applications arrive. |
+| **Oct 31 – Nov 6** | `send_completion_reminders` | **Applicants** + node coordinators | REDIB-2601's `execution_end` is **2026-10-30**, and `_milestone_window` fires a catch-up nudge in the week after. Every still-open accepted grant (up to 15) gets one, on one morning. |
+| Oct 31 – Nov 6 | `send_waitlist_digest` | Node coordinators | Same milestone window; REDIB-2601's 7 waitlisted applications. Digested per recipient, so one mail each, not seven. |
+| ~Nov 23 and ~Nov 28 | `send_draft_nudges` | **Applicants** | T-7 and T-2 before `submission_end`. Purpose-built for this call; deduped; stops at close. |
+
+**The one to know about is Oct 31 – Nov 6.** It is correct, designed, already
+deployed and already approved — but it lands mid-submission-window, so the same
+people may be applying to the new call the same week they are asked whether
+they have finished the old one. Nothing to fix; the burst is bounded by how
+many REDIB-2601 grants are still `is_completed=False`, so **nodes marking
+finished projects complete before 2026-10-30 is what shrinks it.** Worth an
+ask to the nodes in October.
+
+Silent for the window, with the reason: `send_evaluation_reminders` and
+`notify_coordinator_overdue_evaluations` (no `Evaluation` rows until ~Dec, and
+REDIB-2601's are complete); `process_acceptance_deadlines` and
+`send_stalled_acceptance_reminders` (no application in `accepted`/`pending`
+with an open deadline — prod confirmed the population empty on 2026-08-19);
+`check_call_deadlines` (moves `Call.status` on ~Oct 15 but its fan-out is
+suppressed by `CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`).
+
+**`send_publication_followups` is the one to watch just past the window.** It is
+not scoped to a call — it queries every application on `handoff_email_sent_at`
+6 months back — so REDIB-2601's June/July handoffs start maturing in
+**December**. And it carries **#42**: it emails applicants in `accepted` *or*
+`completed`, while `PublicationForm` only offers `completed` applications, so a
+recipient still mid-execution clicks into a form with nothing to select. That
+raises #42 from "Medium, someday" to **wanted before December** — it is the
+next unattended applicant email after this window, and it currently lands them
+on a dead end.
+
 ## 5. Unscheduled — inline on `main` if a window opens
 
 Not in any bucket, but still wanted this round. Tagged `T3 inline` in the
