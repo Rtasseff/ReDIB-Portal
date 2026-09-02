@@ -40,6 +40,37 @@ class Command(BaseCommand):
         <div class="content">
             <p>Dear {{ reviewer_name }},</p>
 
+{% if no_node_coordinator %}
+            <p>A new application has been submitted requesting equipment at
+            <strong>{{ node_name }}</strong> &mdash; but that node has
+            <strong>no active coordinator on file</strong>, so nobody was
+            notified and nobody can review it. You are receiving this as the
+            ReDIB coordinator.</p>
+
+            <div class="info-box">
+                <p><strong>Application Code:</strong> {{ application_code }}</p>
+                <p><strong>Node with no coordinator:</strong> {{ node_name }}</p>
+            </div>
+
+            <p>The application is <strong>held at feasibility review</strong> and
+            will not advance until this node's review is completed. That is
+            deliberate: without it, the node's equipment would go unassessed and
+            the application would move on regardless.</p>
+
+            <p style="text-align: center;">
+                <a href="{{ review_url }}" class="button">View Application</a>
+            </p>
+
+            <p><strong>To unblock it:</strong></p>
+            <ul>
+                <li>Assign an active node coordinator to {{ node_name }}</li>
+                <li>They will then see the review in their feasibility queue</li>
+            </ul>
+
+            <p>Note that this link goes to the application, not the review
+            itself &mdash; feasibility reviews can only be opened by a
+            coordinator of that node.</p>
+{% else %}
             <p>A new application has been submitted requesting equipment at <strong>{{ node_name }}</strong>.</p>
 
             <div class="info-box">
@@ -61,6 +92,7 @@ class Command(BaseCommand):
             </ul>
 
             <p>Your timely response helps ensure applications progress smoothly through the evaluation process.</p>
+{% endif %}
 
             <p>Best regards,<br>
             The ReDIB COA Team</p>
@@ -77,7 +109,22 @@ class Command(BaseCommand):
                 'text_content': '''
 Dear {{ reviewer_name }},
 
-A new application has been submitted requesting equipment at {{ node_name }}.
+{% if no_node_coordinator %}A new application has been submitted requesting equipment at {{ node_name }} - but that node has NO ACTIVE COORDINATOR on file, so nobody was notified and nobody can review it. You are receiving this as the ReDIB coordinator.
+
+Application Details:
+- Application Code: {{ application_code }}
+- Node with no coordinator: {{ node_name }}
+
+The application is HELD at feasibility review and will not advance until this node's review is completed. That is deliberate: without it, the node's equipment would go unassessed and the application would move on regardless.
+
+View Application:
+{{ review_url }}
+
+To unblock it:
+- Assign an active node coordinator to {{ node_name }}
+- They will then see the review in their feasibility queue
+
+Note that this link goes to the application, not the review itself - feasibility reviews can only be opened by a coordinator of that node.{% else %}A new application has been submitted requesting equipment at {{ node_name }}.
 
 Application Details:
 - Application Code: {{ application_code }}
@@ -93,7 +140,7 @@ Next Steps:
 - Assess technical feasibility at your node
 - Approve or reject the feasibility request with comments
 
-Your timely response helps ensure applications progress smoothly through the evaluation process.
+Your timely response helps ensure applications progress smoothly through the evaluation process.{% endif %}
 
 Best regards,
 The ReDIB COA Team
@@ -107,7 +154,8 @@ Please do not reply to this email.
     "reviewer_name": "Full name of the node coordinator",
     "application_code": "Application unique code (e.g., COA-2025-01-APP-001)",
     "node_name": "Name of the node (e.g., CIC biomaGUNE)",
-    "review_url": "URL to the feasibility review page"
+    "review_url": "URL to the feasibility review page - or to the application itself when no_node_coordinator is set, since the review page refuses anyone without a node_coordinator role for that node",
+    "no_node_coordinator": "True when sent to a ReDIB coordinator because the node has no active coordinator (#48)"
 }
                 '''
             },

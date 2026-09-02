@@ -793,7 +793,19 @@ def application_submit(request, pk):
     # `reviewer` is just the deterministic default assignee (first by pk) —
     # any active node coordinator for the node can act on the review; see
     # feasibility_review()'s node-role authorization check below.
-    for node in current_nodes:
+    # A node with no active coordinator must still get a review row (#48).
+    # Skipping it meant the node's equipment was never assessed *and* the
+    # application advanced anyway: the completion check at the bottom of
+    # `feasibility_review` counts pending rows, and a row that does not exist
+    # contributes nothing to that count. Creating it is what holds the
+    # application at `under_feasibility_review` until a human fixes the real
+    # problem, which is that the node needs a coordinator.
+    nodes_without_coordinator = []
+    fallback_reviewer = None
+
+    # Sorted so the fallback and the alert below list nodes in a stable order;
+    # `current_nodes` is a set.
+    for node in sorted(current_nodes, key=lambda n: n.pk):
         node_coordinators = list(UserRole.objects.filter(
             node=node,
             role='node_coordinator',
@@ -801,11 +813,44 @@ def application_submit(request, pk):
         ).select_related('user').order_by('pk'))
 
         if node_coordinators:
-            FeasibilityReview.objects.get_or_create(
-                application=application,
-                node=node,
-                defaults={'reviewer': node_coordinators[0].user}
-            )
+            default_reviewer = node_coordinators[0].user
+        else:
+            # `reviewer` is only the deterministic default assignee — the right
+            # to act on a review is checked by node role in `feasibility_review`
+            # itself, so parking the FK on a ReDIB coordinator grants them
+            # nothing. It satisfies the non-nullable FK and records who is on
+            # the hook for getting the node a coordinator.
+            if fallback_reviewer is None:
+                fallback_role = (
+                    UserRole.objects
+                    .filter(role='coordinator', is_active=True)
+                    .select_related('user')
+                    .order_by('pk')
+                    .first()
+                )
+                fallback_reviewer = fallback_role.user if fallback_role else None
+
+            if fallback_reviewer is None:
+                # Degenerate: the node has no coordinator and ReDIB has none
+                # either, so there is nobody to hold the FK and nobody to tell.
+                # Log it rather than 500 on the applicant's submit.
+                import logging
+                logging.getLogger(__name__).error(
+                    "Application %s: node %s has no active coordinator and no "
+                    "active ReDIB coordinator exists to fall back on — no "
+                    "feasibility review created for this node.",
+                    application.code, node.code,
+                )
+                continue
+
+            default_reviewer = fallback_reviewer
+            nodes_without_coordinator.append(node)
+
+        FeasibilityReview.objects.get_or_create(
+            application=application,
+            node=node,
+            defaults={'reviewer': default_reviewer}
+        )
 
     # Reset all reviews to pending (covers both new reviews and any from a prior submission cycle)
     application.feasibility_reviews.update(
@@ -858,6 +903,40 @@ def application_submit(request, pk):
                     recipient_user_id=coord_role.user.id,
                     related_application_id=application.id
                 )
+
+        # #48: a node with no active coordinator got no `feasibility_request`
+        # above, because the loop above has nobody to send one to. Tell the
+        # ReDIB coordinator(s) instead — the same fallback the public consult
+        # path uses (`calls/services.py:_alert_redib_coordinators`), reusing
+        # this template with the `no_node_coordinator` flag rather than adding
+        # a template type. The link goes to the application, not the review:
+        # `feasibility_review` refuses anyone without a node_coordinator role
+        # for that node, so a ReDIB coordinator cannot open it. The action this
+        # email is asking for is to give the node a coordinator.
+        if nodes_without_coordinator:
+            application_url = request.build_absolute_uri(
+                reverse('applications:detail', kwargs={'pk': application.pk})
+            )
+            node_names = ', '.join(n.name for n in nodes_without_coordinator)
+            for coord_role in UserRole.objects.filter(
+                role='coordinator', is_active=True
+            ).select_related('user'):
+                send_email_from_template.delay(
+                    template_type='feasibility_request',
+                    recipient_email=coord_role.user.email,
+                    context_data={
+                        'reviewer_name': (
+                            coord_role.user.get_full_name() or coord_role.user.email
+                        ),
+                        'application_code': application.code,
+                        'node_name': node_names,
+                        'review_url': application_url,
+                        'no_node_coordinator': True,
+                    },
+                    recipient_user_id=coord_role.user.id,
+                    related_application_id=application.id
+                )
+
         email_status = "You will receive confirmation by email."
     except Exception as e:
         # Celery/Redis not available - log and continue

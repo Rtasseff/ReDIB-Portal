@@ -21,6 +21,54 @@ mark it there and in the worktrees registry in the same commit.
 
 ---
 
+## 0. Checking back in? Start here
+
+**Last updated 2026-09-01.** All six buckets are merged; five are deployed.
+Suite **393 + 11**. The round is in **verification, not construction** — the
+build is done and the remaining risk is things nobody has looked at yet, not
+things nobody has written yet.
+
+### Do these, in this order
+
+| # | What | By | Who |
+|---|---|---|---|
+| 1 | **Run the dress rehearsal, Part A.** ~90 min, local sandbox. [dress-rehearsal.md](dress-rehearsal.md) | before 09-15 | Ryan |
+| 2 | **Deploy `main` to prod.** Docs, the resolution report, and #48. **No migrations** — the cheapest deploy of the round. | before 09-15 | prod |
+| 3 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
+| 4 | **Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8) | October | Ryan |
+| 5 | **#37**, the migrate advisory lock | pre-open batch, 10-13 | dev |
+| 6 | **#42**, the publication follow-up dead end | before December | dev |
+| 7 | **#63**, clinical evaluator capacity — recruit or reactivate | before December | Ryan |
+
+### Only you can decide these
+
+- **The Spanish column headers** in `reports/resolution_table.py`'s
+  `COLUMN_HEADERS` are a proposal, not published ReDIB wording. One dict entry.
+- **#63**: whether the five deactivated accounts holding live evaluator roles
+  get reactivated or their roles retired. Effective coverage is preclinical 10,
+  clinical 4, radiochemistry 3.
+- **#64**: whether a coordinator should be *warned* when editing an open call
+  leaves `status` and `is_open` disagreeing, or whether that waits for #40.
+
+### Change-control posture from here
+
+Because the risk now is breaking something, not missing something:
+
+- **now → 09-15:** rehearsal findings only. No new features.
+- **09-15 → 10-13:** fix what the rehearsal turned up, plus #37. Deploy freely —
+  no live application exists yet.
+- **10-13 → 10-15:** freeze. Nothing deploys.
+- **after 10-15:** only what is actively broken in the live call.
+
+### What is already verified, so you needn't re-derive it
+
+§ 4.7b (the announce → submit path traced clean, including that a Celery outage
+cannot let a late submission through), § 4.8 (every unattended email between now
+and 30 November, with dates), § 4.9 (#48, fixed). The dates that matter are in
+§ 1 and the email calendar in § 4.8.
+
+---
+
 ## 1. The two dates everything hangs off
 
 | Date | Event |
@@ -544,6 +592,49 @@ recipient still mid-execution clicks into a form with nothing to select. That
 raises #42 from "Medium, someday" to **wanted before December** — it is the
 next unattended applicant email after this window, and it currently lands them
 on a dead end.
+
+## 4.9 #48 fixed — a node with no coordinator no longer vanishes
+
+Shipped inline on `main`, 2026-09-01. It was the one High item left on the
+October critical path, and it was silent, which is what made it worth doing
+before the rehearsal rather than after.
+
+**What it was.** `applications/views.py` built a `FeasibilityReview` per node
+under `if node_coordinators:`. A node with zero active `node_coordinator` roles
+got no row and nothing warned — and because the completion check counts pending
+rows over `application.feasibility_reviews.all()`, a row that does not exist
+contributes nothing. So the node's equipment went unassessed **and** the
+application advanced to `pending_evaluation` anyway, past a review that never
+happened, with no screen showing the gap.
+
+**What it does now.** The review is created regardless. `reviewer` is
+non-nullable, so it is parked on the first active ReDIB coordinator, and the
+ReDIB coordinator(s) are emailed. The row is what holds the application at
+`under_feasibility_review` until a human fixes the actual problem, which is
+that the node needs a coordinator.
+
+**The part worth knowing before trusting it.** The fallback grants nobody the
+right to review, and that is deliberate — two gates stand in the way and they
+fail *differently*: `@node_coordinator_required` redirects a ReDIB coordinator
+(no node_coordinator role at all), while `feasibility_review`'s own node-scoped
+check raises `Http404` for a node coordinator of a different node. So the
+orphaned review is reachable by exactly nobody until someone is given the role.
+The alert email says so in as many words and links to the **application**, not
+the review. Naming the FK is bookkeeping, not authorization.
+
+**No migration, no new template type.** It reuses `feasibility_request` with a
+`no_node_coordinator` flag — the same pattern `calls/services.py
+_alert_redib_coordinators` already uses for the public consult path, and the
+stalled-acceptance nag for its own fallback. Both branches of the seeded body
+were rendered and checked for leftover tags.
+
+**Degenerate case handled:** no node coordinator *and* no active ReDIB
+coordinator means nobody can hold the FK and nobody can be told. The submission
+still succeeds — an applicant must not eat a 500 for an administrative gap —
+and the missing review is logged at ERROR.
+
+11 tests in `tests/test_feasibility_no_coordinator.py`; **7 fail against the
+old code**. Suite **393 + 11**.
 
 ## 5. Unscheduled — inline on `main` if a window opens
 
