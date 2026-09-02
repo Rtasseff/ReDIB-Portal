@@ -472,6 +472,40 @@ indistinguishable from N days passing. The exception, documented in both files:
 `advance` moves the **call**, not applications, so application-anchored
 reminders must be set directly.
 
+## 4.7b Pre-launch audit of the announce → submit path (2026-09-01)
+
+Traced the literal October sequence — announce, consult, auto-open, register,
+draft, submit, nudge, auto-close — against `main` at `105739b`. **The sequence
+is sound.** Two findings, both filed and neither blocking: **#64** (editing an
+open call's dates can leave `status` and `is_open` disagreeing) and **#65**
+(`published_at` relabelled but not restamped on auto-open).
+
+What the audit **cleared**, which is the part worth keeping, because these are
+the assumptions the whole window rests on:
+
+- **A Celery outage cannot let a late submission through.** `application_submit`
+  (`applications/views.py:761`) compares against `call.submission_end`
+  **directly**, never `call.status`. So even with beat completely down and the
+  call still reading `open`, the deadline holds.
+- **Both date-driven transitions have working view-level fallbacks.**
+  `open_announced_calls` and `_auto_close_expired_calls` are re-checked on
+  `public_call_list` / `public_call_detail`, so a missed beat run self-corrects
+  on the next page view rather than waiting 24 hours.
+- **Timezones line up.** `CELERY_TIMEZONE = TIME_ZONE = 'Europe/Madrid'`
+  (`redib/settings.py:135, 221`) is the same zone `CallForm.clean()` normalizes
+  into, so the 00:15 beat lands ~15 minutes after a true midnight boundary — not
+  a day late.
+- **No dead ends and no redirect loop.** Every wizard step has a back link and a
+  cancel path; `ProfileCompletionMiddleware`'s required fields are exactly what
+  `ProfileForm` collects, and `/profile/` is excluded from its own redirect.
+- **No null surprises.** All `Call` lifecycle dates are non-nullable, and the
+  applicant contact fields the nudge and submit paths read are already forced
+  non-blank by the profile gate before the wizard is reachable.
+
+Not covered by this audit, and verified separately by hand: **#48**, confirmed
+real at `applications/views.py:803` — `if node_coordinators:` with no `else`, so
+a node with no active coordinator gets no `FeasibilityReview` and no warning.
+
 ## 4.8 What the portal will email, unattended, Sept–Nov 2026
 
 Audited 2026-09-01 against all ten beat tasks. Four will fire in this window,
