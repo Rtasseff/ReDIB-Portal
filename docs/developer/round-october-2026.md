@@ -444,6 +444,34 @@ wording ReDIB has published — Ryan confirms or corrects, one dict entry.
 (~2027-01/02). It carries no migration, no beat task and no email, so its deploy
 is the cheapest of the round — it can ride along with whatever ships next.
 
+## 4.7 Pre-launch verification — the dress rehearsal
+
+Merging and deploying is not the same as knowing it works. Six buckets shipped
+in three weeks, the suite is green at **382 + 11**, and prod is healthy — but
+**no human has walked a call from announce to close in one sitting**, and the
+defects that survive a green suite are exactly the ones a rehearsal catches:
+wording that reads wrong, a button nobody would look for, a screen that is
+blank where it should explain itself.
+
+- **The click-through**: [dress-rehearsal.md](dress-rehearsal.md). Part A (six
+  stages, ~90 min) covers announce → consult → open → apply → nudge → close,
+  which is everything between now and the first submitted application. Part B
+  is the December half.
+- **The harness**: `scripts/rehearsal.py` — `seed` / `status` / `advance N` /
+  `beat` / `inbox`. It simulates time passing so a ten-week sequence fits in an
+  afternoon, and `beat` answers "what would the portal email today?" without
+  waiting for tomorrow.
+- **Safety**: dev only, three independent guards — console email backend,
+  `CELERY_TASK_ALWAYS_EAGER` under `DEBUG`, and the script refusing to run
+  unless `DEBUG` is on *and* the database is SQLite.
+
+Time simulation works because nothing in this system stores "now": call
+transitions compare dates against the clock and reminder ladders measure
+elapsed days from an anchor, so moving a call's dates back N days is
+indistinguishable from N days passing. The exception, documented in both files:
+`advance` moves the **call**, not applications, so application-anchored
+reminders must be set directly.
+
 ## 5. Unscheduled — inline on `main` if a window opens
 
 Not in any bucket, but still wanted this round. Tagged `T3 inline` in the
