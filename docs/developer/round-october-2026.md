@@ -23,22 +23,30 @@ mark it there and in the worktrees registry in the same commit.
 
 ## 0. Checking back in? Start here
 
-**Last updated 2026-09-01.** All six buckets are merged; five are deployed.
+**Last updated 2026-09-08.** All six buckets are merged; five are deployed.
 Suite **393 + 11**. The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
+
+**The dress rehearsal has now been run, both parts** (2026-09-08, § 4.7a and
+§ 4.7c). All eleven stages passed; **nothing found blocks the call.** It
+produced backlog items **#66–#79**, and the three that have a date attached are
+rows 2, 6 and 7 below.
 
 ### Do these, in this order
 
 | # | What | By | Who |
 |---|---|---|---|
-| 1 | **Run the dress rehearsal, Part A.** ~90 min, local sandbox. [dress-rehearsal.md](dress-rehearsal.md) | before 09-15 | Ryan |
-| 2 | **Deploy `main` to prod.** Docs, the resolution report, and #48. **No migrations** — the cheapest deploy of the round. | before 09-15 | prod |
-| 3 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
-| 4 | **Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8) | October | Ryan |
-| 5 | **#37**, the migrate advisory lock | pre-open batch, 10-13 | dev |
-| 6 | **#42**, the publication follow-up dead end | before December | dev |
-| 7 | **#63**, clinical evaluator capacity — recruit or reactivate | before December | Ryan |
+| 1 | ~~**Run the dress rehearsal.**~~ **Done 2026-09-08 — Parts A *and* B**, all eleven stages walked; 14 findings filed (#66–#79), none blocking. See § 4.7a and § 4.7c. | before 09-15 | Ryan |
+| 2 | **#68** — Announce/Publish and the Call Status Guide promise notification emails that are switched off. Text-only fix, four templates. **Do this before you announce**, or you may believe applicants were mailed and skip the manual announcement. | **before 09-15** | dev |
+| 3 | **Deploy `main` to prod.** Docs, the resolution report, and #48. **No migrations** — the cheapest deploy of the round. | before 09-15 | prod |
+| 4 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
+| 5 | **Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8) | October | Ryan |
+| 6 | **#73** — Auto-Assign Evaluators force-closes an open call (one click, no warning, no UI way back). Latent until assignment in December, but guard it before then. | before evaluator assignment, ~12 | dev |
+| 7 | **#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted. Wanted before results are published. | before ~2027-01 | dev |
+| 8 | **#37**, the migrate advisory lock | pre-open batch, 10-13 | dev |
+| 9 | **#42**, the publication follow-up dead end | before December | dev |
+| 10 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**) | before December | Ryan |
 
 ### Only you can decide these
 
@@ -62,10 +70,19 @@ Because the risk now is breaking something, not missing something:
 
 ### What is already verified, so you needn't re-derive it
 
+§ 4.7a and § 4.7c (**the whole lifecycle, walked in the UI 2026-09-08** —
+announce → consult → auto-open → register → apply → nudge → close → feasibility
+→ evaluation → release gate → resolution → acceptance → published table),
 § 4.7b (the announce → submit path traced clean, including that a Celery outage
 cannot let a late submission through), § 4.8 (every unattended email between now
-and 30 November, with dates), § 4.9 (#48, fixed). The dates that matter are in
-§ 1 and the email calendar in § 4.8.
+and 30 November, with dates), § 4.9 (#48, fixed — and confirmed by hand in the
+rehearsal). The dates that matter are in § 1 and the email calendar in § 4.8.
+
+Specifically **do not re-test** these; they were exercised and passed: the
+competitive-funding reject rule in both directions, the release gate's four
+checks and its once-only batch, the waitlist hand-off firing only on *Promote to
+Accepted* (with `hours_approved` set, #31), and the stalled-acceptance nag,
+which had never fired on prod because the population there is empty.
 
 ---
 
@@ -504,7 +521,7 @@ blank where it should explain itself.
 - **The click-through**: [dress-rehearsal.md](dress-rehearsal.md). Part A (six
   stages, ~90 min) covers announce → consult → open → apply → nudge → close,
   which is everything between now and the first submitted application. Part B
-  is the December half.
+  is the December half. **Both were run on 2026-09-08 — see § 4.7a and § 4.7c.**
 - **The harness**: `scripts/rehearsal.py` — `seed` / `status` / `advance N` /
   `beat` / `inbox`. It simulates time passing so a ten-week sequence fits in an
   afternoon, and `beat` answers "what would the portal email today?" without
@@ -519,6 +536,115 @@ elapsed days from an anchor, so moving a call's dates back N days is
 indistinguishable from N days passing. The exception, documented in both files:
 `advance` moves the **call**, not applications, so application-anchored
 reminders must be set directly.
+
+## 4.7a Part A was run, 2026-09-08 — the sequence holds, seven findings
+
+All six stages of Part A were walked end to end in the local sandbox against
+`main` at `9375247`, driving the real UI in a browser. **Nothing blocks the
+call.** The announce → consult → auto-open → register → apply → nudge → close
+sequence works, and the two applicant-facing emails that matter (consult
+confirmation, draft nudge) read well and go to the right people.
+
+What was verified by clicking rather than by reading:
+
+- **Publish is refused on a not-yet-open call**, with a message that explains
+  the announce/publish distinction unprompted (#27's guard, from the UI).
+- **A draft call is invisible on `/calls/`**; announcing lists it under
+  *Upcoming*, and auto-open moves it to *Currently Open* with **zero emails**.
+- **`beat` is idempotent** — re-running it immediately produced no second
+  nudge and no second transition.
+- **Submit fans out correctly**: two nodes requested → two `FeasibilityReview`
+  rows, both node coordinators emailed, applicant sent `application_received`.
+- **The PDF renders** — 4 pages, bilingual, every section present.
+- **#48's fix works, seen directly.** With CNIC's only coordinator
+  deactivated, the review row was still created, parked on the ReDIB
+  coordinator, the application was held at `under_feasibility_review`, and the
+  alert email said in as many words that the node has no coordinator, that the
+  application is deliberately held, and how to unblock it.
+
+The findings, none of them structural: **#66** (the call title renders blank
+in seven templates, including the applicant's PDF), **#67** (a closed call
+leaves the wizard open and checks the deadline last, so the applicant is asked
+to finish a form that can never be submitted), **#68** (Announce/Publish
+confirm dialogs and the Call Status Guide promise emails that
+`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False` suppresses — the one on the 09-15
+critical path), **#69** (`check_call_deadlines` reports "0" on the run that
+opens a call), **#70** (Apple Silicon needs `DYLD_FALLBACK_LIBRARY_PATH` for
+the PDF step, undocumented), **#71** (three rehearsal-harness artefacts that
+read as portal bugs, including a sandbox BioImaC with no coordinator, which
+contradicts Stage 4's note), **#72** (the public footer still says 2025).
+
+Sorted the way [dress-rehearsal.md](dress-rehearsal.md) asks: **nothing blocks
+the call.** #68 is the one to fix before announcing, because it can cause a
+human to skip the manual announcement; #66 and #67 are embarrassing-but-
+survivable and cheap; the rest can wait.
+
+## 4.7c Part B was run too, 2026-09-08 — the winter half holds, seven more findings
+
+Run in the same sitting and the same sandbox, immediately after Part A, so the
+December machinery is no longer unexercised. Stages 7–11 all completed:
+feasibility (approve, request edits, applicant resubmits), evaluation
+(auto-assign, four scored evaluations), the release gate, resolution
+(accept, waitlist, applicant acceptance, waitlist promotion, the stalled
+nag), and the bilingual resolution table with both CSVs.
+
+**The machinery works.** What was proved rather than assumed:
+
+- **The critical funding rule holds in both directions.** With no evaluator
+  denial the form offered only accept/waitlist and a forced `reject` POST was
+  refused; once one evaluation was set to `denied`, reject became available.
+- **The release gate is sound on all four checks** — the node queue is empty
+  while gated, a direct resolution URL is refused *with an explanation* rather
+  than a 404, the call is absent from the coordinator's dashboard, and the
+  release fires exactly once (3 node-coordinator emails; the second press was
+  refused with "already been released").
+- **The waitlist rule holds**: the applicant accepting a waitlist place fired
+  **no** hand-off; the node coordinator's *Promote to Accepted* did, and set
+  `hours_approved` to 18 rather than leaving it 0 (#31's fix, confirmed).
+- **The stalled-acceptance nag** — never yet fired on prod, whose population is
+  empty — works: one email per node coordinator, numbered "reminder #1", ReDIB
+  coordinator cc'd, and it states in as many words that the *node coordinator*
+  must act. It expires nothing by itself. Its cadence is exact-day (day 1, then
+  every 3), so a day 11 deadline produces nothing and a day 10 one produces the
+  mail.
+- **Multi-node coordination**: the first node's resolution waits for the second,
+  and the final status is computed only once both have decided.
+- **Edits-requested is survivable despite #12.** The applicant's detail page
+  carries an explicit "Edits Requested" banner with the node, reviewer name and
+  comments, plus an Edit button — so although the application sits in the shared
+  `draft` status, the applicant is told exactly what is being asked. The gap is
+  the **list** view, which shows it as an ordinary "Draft" with no marker; worth
+  adding to #12 rather than a new item.
+
+The findings, **#73–#79**. Two matter before the winter:
+
+- **#73 (High)** — **Auto-Assign Evaluators force-closes an open call.** One
+  click on a call with 20 days left closed it, removed it from `/calls/`
+  entirely and started bouncing new applicants, with no warning and, per #54, no
+  UI way back. Latent in the planned sequence (assignment is December, after
+  close) but cheap to trigger and expensive to undo.
+- **#74 (High)** — **the published resolution table says "Wait List" for an
+  application the node promoted to accepted.** `NodeResolution` is never updated
+  on promotion, and the table reads it by design (decision 1). That decision's
+  rationale covers the *applicant's* later actions, not the *node's* — and
+  REDIB-2601 never promoted anyone, so it has never shown. The October round is
+  built to promote.
+
+Then **#75** (the funding banner still says "cannot reject" once a denial has
+re-enabled it — the UI contradicts the rule exactly when the exception
+applies), **#76** (auto-assign filled two preclinical applications entirely
+with non-preclinical evaluators and reported plain success — #63's silent
+quality loss, reproduced), **#77** (the feasibility queue's "Your Nodes" badge
+renders empty), **#78** (the blind evaluation form shows an always-empty
+"Project Title: —"), **#79** (the resolution dashboard's empty state hides a
+call that is merely gated).
+
+**Nothing found in either part blocks the call.** Ranked for the window:
+**#68** before announcing, **#73** and **#74** before the winter resolution,
+**#66/#67/#75** whenever a window opens.
+
+One doc correction: Stage 10 calls the promotion control *"Mark as Accepted"*;
+it is labelled **"Promote to Accepted"** on Access Tracking.
 
 ## 4.7b Pre-launch audit of the announce → submit path (2026-09-01)
 

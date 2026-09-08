@@ -16,6 +16,28 @@ Budget **about 90 minutes for Part A**, which covers everything between now and
 the first submitted application. Part B is the rest of the cycle and can wait
 until December — it is written down so it exists, not because it is due.
 
+> **Both parts were run on 2026-09-08**, all eleven stages. Nothing found blocks
+> the call; the findings are backlog **#66–#79** and the write-up is
+> [round-october-2026.md](round-october-2026.md) § 4.7a (Part A) and § 4.7c
+> (Part B). Re-running is still useful after any change to the wizard, the
+> resolution path or the emails — but read those two sections first, so you are
+> looking for something new rather than rediscovering #66–#79.
+>
+> **Three corrections this run turned up in the instructions below**, left in
+> place here so the next reader hits them with a warning rather than a surprise:
+>
+> - **Stage 4's `brew install` line is not sufficient on Apple Silicon.** The
+>   libraries land in `/opt/homebrew/lib`, which the dynamic loader does not
+>   search, so *Download PDF* fails until you run the server as
+>   `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib python manage.py runserver`
+>   (backlog #70).
+> - **Stage 4's note that "every node has a coordinator today" is wrong for the
+>   sandbox.** `seed` creates coordinators for CICBIO and CNIC only, so
+>   **BioImaC has none** — request BioImaC equipment and you will hit the #48
+>   orphaned-node path without meaning to (backlog #71a).
+> - **Stage 10's "Mark as Accepted"** is labelled **"Promote to Accepted"** on
+>   the Access Tracking screen.
+
 ## Before you start
 
 If you already have a working dev checkout:
