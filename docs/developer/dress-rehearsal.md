@@ -18,13 +18,48 @@ until December — it is written down so it exists, not because it is due.
 
 ## Before you start
 
+If you already have a working dev checkout:
+
 ```bash
 cd ~/projects/ReDIB-Portal
+git pull origin main
 source venv/bin/activate
 python manage.py migrate            # the local db may be behind
 python scripts/rehearsal.py seed    # wipes the sandbox, creates one draft call
 python manage.py runserver
 ```
+
+### Cold start on another machine
+
+`venv/`, `.env` and `db.sqlite3` are all gitignored, so a fresh clone has none
+of them. From nothing:
+
+```bash
+git clone git@github.com:Rtasseff/ReDIB-Portal.git
+cd ReDIB-Portal
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env                # SQLite, DEBUG=True, console email — nothing to edit
+python manage.py migrate
+python scripts/rehearsal.py seed
+python manage.py runserver
+```
+
+`.env.example` already sets exactly what the rehearsal needs — `DEBUG=True`,
+`DATABASE_URL=sqlite:///db.sqlite3`, the console email backend and
+`USE_REDIS=False`. Copy it and leave it alone; no superuser is needed, because
+`seed` creates the accounts below.
+
+**On macOS, one extra step for Stage 4's PDF download:**
+
+```bash
+brew install pango cairo gdk-pixbuf libffi
+```
+
+WeasyPrint is imported lazily (`applications/views.py:2772`), so everything
+else — the server, the harness, all five commands — works without it. Only
+"download the PDF" in Stage 4 will fail if it is missing. Full dependency notes:
+[../DEVELOPMENT.md](../DEVELOPMENT.md#system-dependencies-for-pdf-generation).
 
 Then open <http://127.0.0.1:8000/>.
 
