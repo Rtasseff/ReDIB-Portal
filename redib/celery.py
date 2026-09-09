@@ -60,10 +60,28 @@ app.conf.beat_schedule = {
         'task': 'applications.tasks.send_waitlist_digest',
         'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
     },
-    'send-completion-reminders': {
-        'task': 'applications.tasks.send_completion_reminders',
-        'schedule': crontab(hour=8, minute=15),  # Daily at 8:15 AM
-    },
+    # PAUSED 2026-09-09 (prod): the completion reminders are chasing people
+    # against REDIB-2601's execution_end of 2026-10-30, which isn't a date the
+    # running projects can actually hit, and the complaints are piling up. The
+    # 15 open applications were handed off 63-92 days apart, so a different one
+    # crosses its 60/30 checkpoint nearly every day and node coordinators get
+    # the digest every second morning (the per-recipient dedupe is only 24h).
+    # Commenting out the beat entry silences both the applicant email
+    # ('completion_reminder') and the coordinator digest
+    # ('completion_reminder_coordinator') without touching the task, which is
+    # still correct and still covered by tests.
+    #
+    # Nothing queues up while this is off: _reminder_is_due fires only on exact
+    # cadence days, so re-enabling resumes at the next checkpoint rather than
+    # flushing a backlog. The one-shot post-execution_end nudge (2026-10-31 to
+    # 11-06) is skipped entirely while paused.
+    #
+    # Restore by uncommenting once the deadline policy is fixed and the
+    # cadence/dedupe rework lands. See backlog #80.
+    # 'send-completion-reminders': {
+    #     'task': 'applications.tasks.send_completion_reminders',
+    #     'schedule': crontab(hour=8, minute=15),  # Daily at 8:15 AM
+    # },
 }
 
 @app.task(bind=True, ignore_result=True)
