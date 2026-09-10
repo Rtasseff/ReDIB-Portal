@@ -23,30 +23,37 @@ mark it there and in the worktrees registry in the same commit.
 
 ## 0. Checking back in? Start here
 
-**Last updated 2026-09-08.** All six buckets are merged; five are deployed.
+**Last updated 2026-09-10.** All six buckets of the build are merged; five are
+deployed. **The rehearsal findings are now assigned:** three fixed inline on
+`main` (`53c4fae`: #66, #68, #72), the rest cut into two new buckets —
+`rehearsal-polish` (nine small display/harness fixes, Sonnet) and
+`rehearsal-guards` (#73, #74 and the code halves of #80, Opus). Registry in
+`worktrees.md`; each brief is `docs/handoffs/<slug>.md` on its branch.
 Suite **393 + 11**. The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
 
 **The dress rehearsal has now been run, both parts** (2026-09-08, § 4.7a and
 § 4.7c). All eleven stages passed; **nothing found blocks the call.** It
-produced backlog items **#66–#79**, and the three that have a date attached are
-rows 2, 6 and 7 below.
+produced backlog items **#66–#79** (prod added **#80** on 09-09, pausing the
+completion reminders); the three that have a date attached are rows 2, 6 and 7
+below.
 
 ### Do these, in this order
 
 | # | What | By | Who |
 |---|---|---|---|
 | 1 | ~~**Run the dress rehearsal.**~~ **Done 2026-09-08 — Parts A *and* B**, all eleven stages walked; 14 findings filed (#66–#79), none blocking. See § 4.7a and § 4.7c. | before 09-15 | Ryan |
-| 2 | **#68** — Announce/Publish and the Call Status Guide promise notification emails that are switched off. Text-only fix, four templates. **Do this before you announce**, or you may believe applicants were mailed and skip the manual announcement. | **before 09-15** | dev |
-| 3 | **Deploy `main` to prod.** Docs, the resolution report, and #48. **No migrations** — the cheapest deploy of the round. | before 09-15 | prod |
+| 2 | ~~**#68** — Announce/Publish and the Call Status Guide promise notification emails that are switched off.~~ **Done 2026-09-10 on `main` (`53c4fae`)**, together with #66 (blank call title, incl. the applicant's PDF) and #72 (footer year). Text only; the wording now follows `CALL_ANNOUNCEMENT_EMAILS_ENABLED`, so it stays right whichever way #41 goes. Reaches prod with row 3. | ~~before 09-15~~ | dev |
+| 3 | **Deploy `main` to prod.** Docs, the resolution report, #48, and the three pre-announce text fixes (#66/#68/#72). **No migrations** — the cheapest deploy of the round. Do it **before** announcing, so the Announce dialog tells the truth. | before 09-15 | prod |
 | 4 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
-| 5 | **Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8) | October | Ryan |
-| 6 | **#73** — Auto-Assign Evaluators force-closes an open call (one click, no warning, no UI way back). Latent until assignment in December, but guard it before then. | before evaluator assignment, ~12 | dev |
-| 7 | **#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted. Wanted before results are published. | before ~2027-01 | dev |
-| 8 | **#37**, the migrate advisory lock | pre-open batch, 10-13 | dev |
-| 9 | **#42**, the publication follow-up dead end | before December | dev |
-| 10 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**) | before December | Ryan |
+| 5 | ~~**Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8)~~ **The burst will not happen:** prod paused `send_completion_reminders` on 09-09 (#80). Closing finished projects is now data hygiene, still worth doing, no date. | — | Ryan |
+| 6 | **#73** — Auto-Assign Evaluators force-closes an open call (one click, no warning, no UI way back). → `rehearsal-guards` G1 (cut 09-10): the close only happens once the deadline has actually passed. | deploy 09-15 → 10-13 | dev |
+| 7 | **#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted. → `rehearsal-guards` G2 (cut 09-10): promotion writes `accept` on the node's resolution; the table stays as it is. | deploy 09-15 → 10-13 | dev |
+| 8 | **`rehearsal-polish`** — the other nine findings (#67, #69, #70, #71, #75–#79): closed-call wording in the wizard, the competitive-funding banner, the gated-call empty state, area-match marks on assignment, harness and doc fixes. Nothing in it is dated; it is one batch. | deploy 09-15 → 10-13 | dev |
+| 9 | **#80(b)(c)** — the 7-day floor on the coordinator completion digest and the seed's `is_active`-on-create-only change ride in `rehearsal-guards` G3/G4. **Re-enabling the reminders is a prod action after row "#80(a)" below is decided.** | with row 7 | dev / prod || 10 | **#37**, the migrate advisory lock — not a rehearsal finding; still owed, still inline-sized | pre-open batch, 10-13 | dev |
+| 11 | **#42**, the publication follow-up dead end | before December | dev |
+| 12 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**, whose fix makes the shortfall visible on the assignment page) | before December | Ryan |
 
 ### Only you can decide these
 
@@ -57,14 +64,22 @@ rows 2, 6 and 7 below.
   clinical 4, radiochemistry 3.
 - **#64**: whether a coordinator should be *warned* when editing an open call
   leaves `status` and `is_open` disagreeing, or whether that waits for #40.
+- **#80(a)**: what deadline the fifteen running REDIB-2601 projects are actually
+  held to. The reminders are paused in prod and nothing accumulates while they
+  are. Cheapest honest answer: when the nodes know the real end date, set
+  REDIB-2601's `execution_end` to it on the call edit form (no code) and have
+  prod uncomment the beat entry. A per-application deadline field is a
+  migration plus a form plus a task change — only if the one-date answer
+  proves wrong in practice. REDIB-2602's own projects will not reach a 60-day
+  checkpoint before ~March 2027, so this does not touch the October call.
 
 ### Change-control posture from here
 
 Because the risk now is breaking something, not missing something:
 
 - **now → 09-15:** rehearsal findings only. No new features.
-- **09-15 → 10-13:** fix what the rehearsal turned up, plus #37. Deploy freely —
-  no live application exists yet.
+- **09-15 → 10-13:** fix what the rehearsal turned up (the two `rehearsal-*`
+  buckets), plus #37. Deploy freely — no live application exists yet.
 - **10-13 → 10-15:** freeze. Nothing deploys.
 - **after 10-15:** only what is actively broken in the live call.
 
@@ -689,9 +704,16 @@ anything, so they belong on the calendar rather than in a backlog nobody reads.
 | Date | Task | Who | Why |
 |---|---|---|---|
 | ~Oct 20 onward | `send_feasibility_reminders` | Node coordinators | A `FeasibilityReview` still pending 5 days after submission. Rows are created **at submit**, so this starts as soon as applications arrive. |
-| **Oct 31 – Nov 6** | `send_completion_reminders` | **Applicants** + node coordinators | REDIB-2601's `execution_end` is **2026-10-30**, and `_milestone_window` fires a catch-up nudge in the week after. Every still-open accepted grant (up to 15) gets one, on one morning. |
+| ~~**Oct 31 – Nov 6**~~ | `send_completion_reminders` | ~~**Applicants** + node coordinators~~ | **Paused in prod 2026-09-09 (#80) — will not fire while the beat entry stays commented out.** Was: REDIB-2601's `execution_end` is **2026-10-30**, and `_milestone_window` fires a catch-up nudge in the week after. Every still-open accepted grant (up to 15) gets one, on one morning. |
 | Oct 31 – Nov 6 | `send_waitlist_digest` | Node coordinators | Same milestone window; REDIB-2601's 7 waitlisted applications. Digested per recipient, so one mail each, not seven. |
 | ~Nov 23 and ~Nov 28 | `send_draft_nudges` | **Applicants** | T-7 and T-2 before `submission_end`. Purpose-built for this call; deduped; stops at close. |
+
+**Update 2026-09-10 — the row above will not fire.** Prod commented out the
+`send-completion-reminders` beat entry on 09-09 (#80): the cadence was chasing
+people against a 2026-10-30 date nobody believes, and the 24-hour digest dedupe
+turned REDIB-2601's staggered handoffs into a mail every second morning. The
+paragraph below was written before that and is kept as the record of what was
+planned; nothing here needs doing while the pause holds.
 
 **The one to know about is Oct 31 – Nov 6.** It is correct, designed, already
 deployed and already approved — but it lands mid-submission-window, so the same

@@ -177,6 +177,8 @@ live right now.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
+| `rehearsal-polish/` | `feature/rehearsal-polish` | 8002 | 2026-09-10 | **Active.** The nine small dress-rehearsal findings — display, wording, harness (#67, #69, #70, #71, #75–#79). Sonnet. Deploys in the 09-15 → 10-13 window. Handoff: `docs/handoffs/rehearsal-polish.md` on the branch. |
+| `rehearsal-guards/` | `feature/rehearsal-guards` | 8003 | 2026-09-10 | **Active.** The two state-writing findings (#73 auto-assign force-close, #74 promotion never reaching `NodeResolution`) plus the code halves of #80. Opus. Deploys in the 09-15 → 10-13 window. Handoff: `docs/handoffs/rehearsal-guards.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 
