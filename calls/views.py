@@ -319,6 +319,7 @@ def coordinator_dashboard(request):
 
     context = {
         'calls': calls,
+        'announcement_emails_enabled': settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED,
     }
     return render(request, 'calls/coordinator_dashboard.html', context)
 
@@ -428,6 +429,7 @@ def call_detail(request, pk):
         'equipment_allocations': equipment_allocations,
         'applications': applications,
         'consult_requests': consult_requests,
+        'announcement_emails_enabled': settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED,
     }
     return render(request, 'calls/detail.html', context)
 

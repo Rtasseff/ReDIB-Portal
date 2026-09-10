@@ -76,7 +76,7 @@
                             <i class="bi bi-megaphone"></i>
                         </a>
                         <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
-                           onclick="return confirm('Publish this call? This opens it for submissions now and notifies users.')" title="Publish (open now)">
+                           onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')" title="Publish (open now)">
                             <i class="bi bi-send"></i>
                         </a>
                         <a href="{% url 'calls:delete' call.pk %}" class="btn btn-outline-danger"
@@ -130,7 +130,7 @@
             </li>
             <li class="mb-2">
                 <span class="badge bg-primary">Announced</span> - Advertised publicly as upcoming; no applications yet.
-                Opens by itself on the submission start date, when the "Now Open" email goes out.
+                Opens by itself on the submission start date{% if announcement_emails_enabled %}, when the "Now Open" email goes out{% else %} &mdash; no email is sent, so announce it yourself and link people to the public call page{% endif %}.
                 Visitors can already request a consult about the listed equipment.
             </li>
             <li class="mb-2">

@@ -94,8 +94,9 @@ def check_call_deadlines():
     Move calls through the date-driven parts of their lifecycle.
 
     Runs daily via Celery Beat:
-    - `announced` calls whose `submission_start` has arrived become `open`
-      and the "Now Open" notification goes out.
+    - `announced` calls whose `submission_start` has arrived become `open`;
+      the "Now Open" notification goes out only when
+      CALL_ANNOUNCEMENT_EMAILS_ENABLED is on (it is off by default).
     - `open` calls whose `submission_end` has passed become `closed`.
 
     Returns the number of calls closed (kept for backwards compatibility);

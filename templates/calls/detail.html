@@ -29,16 +29,16 @@
 
         {% if call.status == 'draft' %}
         <a href="{% url 'calls:announce' call.pk %}" class="btn btn-sm btn-primary me-2"
-           onclick="return confirm('Announce this call? It will be listed publicly as upcoming, notification emails go out now, and it opens automatically on the submission start date.')">
+           onclick="return confirm('Announce this call? It will be listed publicly as upcoming and opens automatically on the submission start date.{% if announcement_emails_enabled %} Notification emails go out now.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')">
             <i class="bi bi-megaphone"></i> Announce
         </a>
         <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
-           onclick="return confirm('Publish this call? This opens it for submissions now and sends notification emails to users.')">
+           onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')">
             <i class="bi bi-send"></i> Publish
         </a>
         {% elif call.status == 'announced' %}
         <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
-           onclick="return confirm('Open this call for submissions now? This sends the &quot;Now Open&quot; email.')">
+           onclick="return confirm('Open this call for submissions now?{% if announcement_emails_enabled %} This sends the &quot;Now Open&quot; email.{% else %} No email is sent — tell applicants yourself.{% endif %}')">
             <i class="bi bi-send"></i> Open Now
         </a>
         {% elif call.status == 'open' %}
