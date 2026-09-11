@@ -285,6 +285,12 @@ sudo apt-get install -y \
 brew install pango cairo gdk-pixbuf libffi
 ```
 
+On Apple Silicon, Homebrew installs to `/opt/homebrew/lib`, which the dynamic
+loader does not search, so `import weasyprint` still fails until the server is
+started as
+`DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib python manage.py runserver`
+(verified 2026-09-08, WeasyPrint 67.0).
+
 ### Windows (WSL recommended)
 
 For Windows development, we recommend using WSL2 with Ubuntu. Install the Ubuntu dependencies listed above within WSL.

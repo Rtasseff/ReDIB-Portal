@@ -313,7 +313,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render resolution form
     function renderResolutionForm(app) {
         const hasCompetitiveFunding = app.has_competitive_funding;
-        const canReject = !hasCompetitiveFunding;
+        const hasAnyDeniedEvaluation = app.has_any_denied_evaluation;
+        const canReject = !hasCompetitiveFunding || hasAnyDeniedEvaluation;
+
+        let competitiveFundingNotice = '';
+        if (hasCompetitiveFunding && !hasAnyDeniedEvaluation) {
+            competitiveFundingNotice = '<p class="alert alert-info mb-2"><i class="bi bi-info-circle"></i> This application has competitive funding and cannot be rejected.</p>';
+        } else if (hasCompetitiveFunding) {
+            competitiveFundingNotice = '<p class="alert alert-warning mb-2"><i class="bi bi-info-circle"></i> This application has competitive funding, but an evaluator recommended denial, so rejection is available here.</p>';
+        }
 
         let html = `
             <div class="mb-3">
@@ -321,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>Applicant:</strong> ${app.applicant_name}</p>
                 <p><strong>Description:</strong> ${app.brief_description}</p>
                 <p><strong>Final Score:</strong> <strong class="${app.final_score >= 9 ? 'text-success' : app.final_score >= 6 ? 'text-warning' : 'text-danger'}">${app.final_score}</strong>/12</p>
-                ${hasCompetitiveFunding ? '<p class="alert alert-info mb-2"><i class="bi bi-info-circle"></i> This application has competitive funding and cannot be rejected.</p>' : ''}
+                ${competitiveFundingNotice}
             </div>
 
             <form id="resolutionForm">

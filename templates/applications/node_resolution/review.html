@@ -16,10 +16,15 @@
         <span class="badge bg-info fs-5">Node: {{ node.code }}</span>
     </div>
 
-    {% if application.has_competitive_funding %}
+    {% if application.has_competitive_funding and not application.has_any_denied_evaluation %}
     <div class="alert alert-success mb-4">
         <i class="bi bi-award"></i>
         <strong>Competitive Funding:</strong> This application has competitive funding. You may accept or waitlist, but cannot reject.
+    </div>
+    {% elif application.has_competitive_funding %}
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-award"></i>
+        <strong>Competitive Funding:</strong> This application has competitive funding, but an evaluator recommended denial, so rejection is available to you here.
     </div>
     {% endif %}
 

@@ -14,6 +14,18 @@
     <strong>Your Role:</strong> As a coordinator, you review evaluated applications and make final decisions on acceptance, pending, or rejection.
 </div>
 
+{% if gated_calls %}
+<div class="alert alert-warning">
+    <h5><i class="bi bi-exclamation-triangle"></i> {{ gated_calls|length }} call(s) are waiting on you to release resolutions:</h5>
+    <ul class="mb-2">
+        {% for call in gated_calls %}
+        <li><a href="{% url 'calls:detail' call.id %}">{{ call.code }} — {{ call.title }}</a></li>
+        {% endfor %}
+    </ul>
+    <p class="mb-0">Evaluations are complete but the results have not been released to the node coordinators. <strong>Release Resolutions</strong> is on the call page.</p>
+</div>
+{% endif %}
+
 {% if calls_with_stats %}
 <div class="card">
     <div class="card-header bg-primary text-white">

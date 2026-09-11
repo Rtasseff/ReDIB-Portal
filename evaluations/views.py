@@ -224,6 +224,19 @@ def call_assignment_detail(request, call_id):
                         seen.add(a)
                         ev.combined_areas.append(a)
 
+    # Annotate each rendered evaluation with whether the evaluator's areas
+    # match the application's specialization — an evaluator with no active
+    # evaluator role (the #63 case) has no entry and reads as no match.
+    evaluator_areas = {ev.pk: ev.combined_areas for ev in active_evaluators}
+    for app in applications:
+        for evaluation in app.evaluations.all():
+            if not app.specialization_area:
+                evaluation.area_match = None
+            else:
+                evaluation.area_match = app.specialization_area in evaluator_areas.get(
+                    evaluation.evaluator_id, []
+                )
+
     context = {
         'call': call,
         'applications': applications,
@@ -264,6 +277,42 @@ def auto_assign_call(request, call_id):
             request,
             f"Successfully assigned evaluators to {result['total_applications']} applications "
             f"(cap: {result.get('max_per_evaluator', '?')} per evaluator, pool: {result.get('pool_size', '?')})."
+        )
+
+    # Surface area mismatches: an application filled entirely with evaluators
+    # whose areas don't cover its specialization is a silent quality loss the
+    # 'unfilled' count (which only tracks quantity) never catches.
+    assignments = result.get('assignments') or []
+    evaluator_ids = {
+        uid for a in assignments for uid in (a.get('assigned_evaluators') or [])
+    }
+    areas_by_evaluator = {}
+    for role in UserRole.objects.filter(
+        user_id__in=evaluator_ids, role='evaluator', is_active=True
+    ):
+        areas_by_evaluator.setdefault(role.user_id, set()).update(role.area_list)
+
+    spec_by_application = dict(
+        Application.objects.filter(
+            id__in=[a['application_id'] for a in assignments]
+        ).values_list('id', 'specialization_area')
+    )
+
+    mismatched = 0
+    for a in assignments:
+        assigned_ids = a.get('assigned_evaluators') or []
+        spec = spec_by_application.get(a['application_id'])
+        if not spec or not assigned_ids:
+            continue
+        if not any(spec in areas_by_evaluator.get(uid, set()) for uid in assigned_ids):
+            mismatched += 1
+
+    if mismatched:
+        messages.warning(
+            request,
+            f"{mismatched} application(s) were filled with evaluators outside their "
+            "specialization area — look for the 'no area match' marks below. Use "
+            "manual assignment to swap them if a matching evaluator is available."
         )
 
     # Surface partial-fill warnings so the coordinator knows which apps still need help.

@@ -715,6 +715,12 @@ def application_submit(request, pk):
         status='draft'
     )
 
+    # Check call deadline first — an applicant on a closed call should learn
+    # that before being sent around every incomplete-field check.
+    if timezone.now() > application.call.submission_end:
+        messages.error(request, "Submission deadline has passed.")
+        return redirect('applications:detail', pk=application.pk)
+
     # Validate application is complete. We check the model fields directly
     # so a user who POSTs to /submit/ without walking the wizard still gets
     # bounced back to the first incomplete step instead of submitting a
@@ -756,11 +762,6 @@ def application_submit(request, pk):
     if not application.data_consent:
         messages.error(request, "You must consent to data processing.")
         return redirect('applications:edit_step5', pk=application.pk)
-
-    # Check call deadline
-    if timezone.now() > application.call.submission_end:
-        messages.error(request, "Submission deadline has passed.")
-        return redirect('applications:detail', pk=application.pk)
 
     # Generate application code if not already set (resubmissions reuse the original code)
     if not application.code:
@@ -979,7 +980,7 @@ def feasibility_queue(request):
     Shows all applications requiring feasibility review for nodes
     where the current user is a node coordinator (via UserRole).
     """
-    from core.models import UserRole
+    from core.models import UserRole, Node
 
     # Get nodes where user is coordinator (via UserRole)
     my_nodes = UserRole.objects.filter(
@@ -1000,7 +1001,7 @@ def feasibility_queue(request):
 
     context = {
         'pending_reviews': pending_reviews,
-        'user_nodes': my_nodes,
+        'user_nodes': Node.objects.filter(pk__in=my_nodes).select_related('organization'),
     }
     return render(request, 'applications/feasibility_queue.html', context)
 
@@ -1182,6 +1183,17 @@ def resolution_dashboard(request):
         .order_by('-evaluation_deadline')
     )
 
+    # Calls that are fully evaluated but not yet released — the dashboard's
+    # empty state should name these rather than imply nothing is waiting.
+    gated_calls = (
+        Call.objects
+        .annotate(
+            evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
+        )
+        .filter(evaluated_apps__gt=0, resolutions_released=False)
+        .order_by('-evaluation_deadline')
+    )
+
     # Add resolution summary for each call
     from applications.services import ResolutionService
     calls_with_stats = []
@@ -1195,6 +1207,7 @@ def resolution_dashboard(request):
 
     context = {
         'calls_with_stats': calls_with_stats,
+        'gated_calls': gated_calls,
     }
     return render(request, 'applications/resolution/dashboard.html', context)
 
@@ -1258,6 +1271,7 @@ def application_resolution(request, application_id):
             'brief_description': application.brief_description,
             'final_score': float(application.final_score) if application.final_score else None,
             'has_competitive_funding': application.has_competitive_funding,
+            'has_any_denied_evaluation': application.has_any_denied_evaluation,
             'current_resolution': application.resolution,
             'resolution_comments': application.resolution_comments,
             'can_accept': can_accept,
