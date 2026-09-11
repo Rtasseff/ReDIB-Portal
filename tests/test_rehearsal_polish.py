@@ -77,3 +77,44 @@ class BlindEvaluationFormProjectTitleTests(TestCase):
         resp = self.client.get(reverse('evaluations:evaluation_detail', kwargs={'pk': self.evaluation.pk}))
         self.assertContains(resp, 'withheld for blind review')
         self.assertNotContains(resp, 'A Secret Project Title')
+
+
+class CompetitiveFundingBannerTests(TestCase):
+    """P4 — #75: banner wording must match the actual reject-availability rule."""
+
+    def setUp(self):
+        org = Organization.objects.create(
+            name='Node Host Org', country='ES', organization_type='university'
+        )
+        self.node = Node.objects.create(code='CICBIO', organization=org, location='San Sebastián')
+        self.coordinator = create_complete_user('nc-rp4@test.com')
+        UserRole.objects.create(user=self.coordinator, role='node_coordinator', node=self.node, is_active=True)
+        self.applicant = create_complete_user('applicant-rp4@test.com')
+        self.evaluator = create_complete_user('evaluator-rp4@test.com')
+        self.call = _make_call(code='CALL-RP4', resolutions_released=True)
+        self.app = Application.objects.create(
+            applicant=self.applicant, call=self.call, code='APP-RP4-1',
+            status='evaluated', has_competitive_funding=True,
+            brief_description='Summary text',
+        )
+        self.client = Client()
+        self.client.force_login(self.coordinator)
+
+    def _get(self):
+        return self.client.get(reverse('applications:node_resolution_review', kwargs={
+            'application_id': self.app.pk, 'node_id': self.node.pk,
+        }))
+
+    def test_no_denied_evaluation_says_cannot_reject(self):
+        resp = self._get()
+        self.assertContains(resp, 'cannot reject')
+        self.assertNotContains(resp, 'rejection is available')
+
+    def test_denied_evaluation_says_rejection_available(self):
+        Evaluation.objects.create(
+            application=self.app, evaluator=self.evaluator,
+            recommendation='denied', completed_at=timezone.now(),
+        )
+        resp = self._get()
+        self.assertContains(resp, 'rejection is available')
+        self.assertNotContains(resp, 'cannot reject')

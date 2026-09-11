@@ -1258,6 +1258,7 @@ def application_resolution(request, application_id):
             'brief_description': application.brief_description,
             'final_score': float(application.final_score) if application.final_score else None,
             'has_competitive_funding': application.has_competitive_funding,
+            'has_any_denied_evaluation': application.has_any_denied_evaluation,
             'current_resolution': application.resolution,
             'resolution_comments': application.resolution_comments,
             'can_accept': can_accept,
