@@ -140,3 +140,60 @@ class ResolutionDashboardGatedCallsTests(TestCase):
         self.assertContains(resp, 'waiting on you to release resolutions')
         self.assertContains(resp, self.call.code)
         self.assertContains(resp, reverse('calls:detail', kwargs={'pk': self.call.pk}))
+
+
+class ClosedCallWizardTests(TestCase):
+    """P6 — #67: a closed call's leftover draft should say so, not hide it."""
+
+    def setUp(self):
+        org = Organization.objects.create(
+            name='Org RP6', country='ES', organization_type='university'
+        )
+        self.applicant = create_complete_user('applicant-rp6@test.com', organization=org)
+        self.closed_call = _make_call(
+            code='CALL-RP6-CLOSED', status='closed',
+            submission_start=timezone.now() - timedelta(days=30),
+            submission_end=timezone.now() - timedelta(days=1),
+        )
+        self.open_call = _make_call(
+            code='CALL-RP6-OPEN', status='open',
+            submission_start=timezone.now() - timedelta(days=1),
+            submission_end=timezone.now() + timedelta(days=30),
+        )
+        self.closed_draft = Application.objects.create(
+            applicant=self.applicant, call=self.closed_call, code='',
+            status='draft',
+        )
+        self.open_draft = Application.objects.create(
+            applicant=self.applicant, call=self.open_call, code='',
+            status='draft',
+        )
+        self.client = Client()
+        self.client.force_login(self.applicant)
+
+    def test_submit_on_closed_call_checks_deadline_before_completeness(self):
+        resp = self.client.post(
+            reverse('applications:submit', kwargs={'pk': self.closed_draft.pk})
+        )
+        self.assertRedirects(
+            resp, reverse('applications:detail', kwargs={'pk': self.closed_draft.pk}),
+        )
+        messages = [m.message for m in resp.wsgi_request._messages]
+        self.assertIn('Submission deadline has passed.', messages)
+
+    def test_wizard_step_shows_banner_for_closed_call_only(self):
+        resp_closed = self.client.get(
+            reverse('applications:edit_step2', kwargs={'pk': self.closed_draft.pk})
+        )
+        self.assertContains(resp_closed, 'This call closed on')
+
+        resp_open = self.client.get(
+            reverse('applications:edit_step2', kwargs={'pk': self.open_draft.pk})
+        )
+        self.assertNotContains(resp_open, 'This call closed on')
+
+    def test_my_applications_shows_call_closed_not_continue(self):
+        resp = self.client.get(reverse('applications:my_applications'))
+        self.assertContains(resp, 'Call closed')
+        # The open draft's row should still offer Continue.
+        self.assertContains(resp, 'Continue')

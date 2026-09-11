@@ -1,0 +1,6 @@
+{% if not application.call.is_open %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    This call closed on {{ application.call.submission_end|date:"j F Y, H:i" }}. You can still read and edit this draft, but it can no longer be submitted.
+</div>
+{% endif %}

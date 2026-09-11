@@ -38,7 +38,11 @@
                         <a href="{% url 'applications:detail' app.pk %}" class="btn btn-outline-primary" title="View">
                             <i class="bi bi-eye"></i> View
                         </a>
-                        {% if app.status == 'draft' %}
+                        {% if app.status == 'draft' and not app.call.is_open %}
+                        <span class="btn btn-outline-secondary disabled" title="This call closed on {{ app.call.submission_end|date:'j F Y, H:i' }}">
+                            Call closed
+                        </span>
+                        {% elif app.status == 'draft' %}
                         <a href="{% url 'applications:edit_step2' app.pk %}" class="btn btn-outline-secondary" title="Continue Editing">
                             <i class="bi bi-pencil"></i> Continue
                         </a>

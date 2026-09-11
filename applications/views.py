@@ -715,6 +715,12 @@ def application_submit(request, pk):
         status='draft'
     )
 
+    # Check call deadline first — an applicant on a closed call should learn
+    # that before being sent around every incomplete-field check.
+    if timezone.now() > application.call.submission_end:
+        messages.error(request, "Submission deadline has passed.")
+        return redirect('applications:detail', pk=application.pk)
+
     # Validate application is complete. We check the model fields directly
     # so a user who POSTs to /submit/ without walking the wizard still gets
     # bounced back to the first incomplete step instead of submitting a
@@ -756,11 +762,6 @@ def application_submit(request, pk):
     if not application.data_consent:
         messages.error(request, "You must consent to data processing.")
         return redirect('applications:edit_step5', pk=application.pk)
-
-    # Check call deadline
-    if timezone.now() > application.call.submission_end:
-        messages.error(request, "Submission deadline has passed.")
-        return redirect('applications:detail', pk=application.pk)
 
     # Generate application code if not already set (resubmissions reuse the original code)
     if not application.code:
