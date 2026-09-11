@@ -10,10 +10,16 @@ nothing in the suite had caught them:
 - #74: Promote to Accepted left the node's NodeResolution on 'waitlist', so
   the published resolution table printed Wait List for someone granted
   access. Promotion now records 'accept' on every waitlisted node row.
+
+And the seed half of #80: `seed_email_templates` runs on every container
+start, so it sets `is_active` on create only — the admin's per-template off
+switch has to survive a deploy.
 """
+import io
 from datetime import timedelta
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -21,6 +27,7 @@ from django.utils import timezone
 from applications.models import Application, NodeResolution, RequestedAccess
 from applications.services import NodeResolutionService
 from calls.models import Call
+from communications.models import EmailTemplate
 from core.models import Equipment, Node, Organization, UserRole
 from core.test_utils import create_complete_user
 from evaluations.models import Evaluation
@@ -241,3 +248,35 @@ class PromotionRecordsNodeDecisionTest(TestCase):
             NodeResolution.objects.get(application=self.application, node=node_b).resolution,
             'accept',
         )
+
+
+class SeedKeepsAdminOffSwitchTest(TestCase):
+    """#80(c) — reseeding refreshes content but never reactivates a template."""
+
+    def _seed(self):
+        call_command('seed_email_templates', stdout=io.StringIO())
+
+    def test_deactivated_template_stays_off_and_content_refreshes(self):
+        self._seed()
+        template = EmailTemplate.objects.get(template_type='completion_reminder_coordinator')
+        seeded_subject = template.subject
+        template.is_active = False
+        template.subject = 'edited in the admin'
+        template.save()
+
+        self._seed()
+
+        template.refresh_from_db()
+        self.assertFalse(template.is_active)
+        self.assertEqual(template.subject, seeded_subject)
+
+    def test_missing_template_is_created_active(self):
+        self._seed()
+        EmailTemplate.objects.filter(template_type='completion_reminder_coordinator').delete()
+
+        self._seed()
+
+        template = EmailTemplate.objects.get(template_type='completion_reminder_coordinator')
+        self.assertTrue(template.is_active)
+        self.assertTrue(template.subject)
+        self.assertTrue(template.html_content)

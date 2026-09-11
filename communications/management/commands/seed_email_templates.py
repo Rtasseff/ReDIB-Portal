@@ -2556,15 +2556,19 @@ Please do not reply to this email.''',
         updated_count = 0
 
         for template_data in templates_data:
+            content = {
+                'subject': template_data['subject'],
+                'html_content': template_data['html_content'],
+                'text_content': template_data['text_content'],
+                'available_variables': template_data['available_variables'],
+            }
+            # is_active is set on create only, so deactivating a template in the
+            # admin survives the reseed every deploy runs (#80). Content fields
+            # are still overwritten on every run.
             template, created = EmailTemplate.objects.update_or_create(
                 template_type=template_data['template_type'],
-                defaults={
-                    'subject': template_data['subject'],
-                    'html_content': template_data['html_content'],
-                    'text_content': template_data['text_content'],
-                    'available_variables': template_data['available_variables'],
-                    'is_active': True
-                }
+                defaults=content,
+                create_defaults={**content, 'is_active': True},
             )
 
             if created:

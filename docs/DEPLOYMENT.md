@@ -602,6 +602,9 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 The entrypoint script runs migrations and collectstatic automatically on every restart.
+It also reruns `seed_email_templates`: a template switched off with the Django admin's
+**Is active** toggle stays off across deploys, but subject and body edits made in the
+admin do **not** survive — the seed overwrites them, deliberately (the seed is the source).
 
 > **`git pull` alone changes nothing that runs.** The `web`, `celery` and
 > `celery-beat` services all `build: .` with **no source bind mount**, so the code is baked
