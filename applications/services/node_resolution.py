@@ -147,7 +147,8 @@ class NodeResolutionService:
         ).select_related('equipment')
 
     @transaction.atomic
-    def apply_node_resolution(self, application, resolution, comments, approved_hours_dict, user):
+    def apply_node_resolution(self, application, resolution, comments, approved_hours_dict, user,
+                              execution_end_date=None):
         """
         Apply node coordinator's resolution for an application.
 
@@ -157,6 +158,10 @@ class NodeResolutionService:
             comments: str (resolution comments)
             approved_hours_dict: dict {equipment_id: hours_approved}
             user: User instance (node coordinator)
+            execution_end_date: optional date, the project's execution end
+                (#80a). Applied only on 'accept' — a waitlisted application
+                gets its date at promotion, a rejected one has none. Already
+                validated by the caller.
 
         Returns:
             dict with success status and aggregation result
@@ -234,6 +239,14 @@ class NodeResolutionService:
             req_access = application.requested_access.get(equipment_id=equipment_id)
             req_access.hours_approved = 0 if resolution == 'reject' else hours
             req_access.save()
+
+        # #80a: saved on its own, before aggregation — aggregation re-reads
+        # the row and saves only once every node has decided, and a
+        # multi-node application's first accept must not lose its date.
+        # Last edit wins across nodes.
+        if resolution == 'accept' and execution_end_date is not None:
+            application.set_execution_end(execution_end_date)
+            application.save(update_fields=['execution_end'])
 
         # Attempt to aggregate resolution (check if all nodes have decided)
         aggregation_result = self.aggregate_application_resolution(application)

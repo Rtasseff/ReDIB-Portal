@@ -259,6 +259,11 @@ class Application(models.Model):
         blank=True,
         help_text='When handoff email was sent to applicant + coordinators'
     )
+    execution_end = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Node-set end of this project's execution period. "
+                  "Empty means the call's execution_end applies.",
+    )
 
     # Step-5 pre-submission feasibility consult request (latest only;
     # overwritten if the applicant repeats the request).
@@ -443,6 +448,30 @@ class Application(models.Model):
             from datetime import timedelta
             return self.resolution_date + timedelta(days=10)
         return None
+
+    @property
+    def effective_execution_end(self):
+        """This project's execution end: the node's override, else the call's."""
+        return self.execution_end or self.call.execution_end
+
+    def set_execution_end(self, date_value):
+        """date_value: a date. Stores 23:59:59 local on that day, or None when it
+        equals the call's own date (so the call-level date stays the default).
+
+        Does not save and does not validate — callers do both. Normalised the
+        same way as the call's own end fields in calls/forms.py.
+        """
+        from datetime import datetime, time
+        from django.utils import timezone
+
+        call_end = self.call.execution_end
+        if call_end and timezone.localtime(call_end).date() == date_value:
+            self.execution_end = None
+            return
+        self.execution_end = timezone.make_aware(
+            datetime.combine(date_value, time(23, 59, 59)),
+            timezone.get_current_timezone(),
+        )
 
     def get_next_valid_states(self):
         """

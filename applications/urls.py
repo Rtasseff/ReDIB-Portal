@@ -50,6 +50,8 @@ urlpatterns = [
 
     # Node-coordinator promotion of a waitlisted (pending) application
     path('<int:pk>/promote-waitlist/', views.promote_waitlisted_application, name='promote_waitlisted'),
+    # #80a: node-set end of an accepted project's execution period
+    path('<int:pk>/execution-end/', views.set_execution_end, name='set_execution_end'),
     # Node-coordinator close-out of a waitlisted (pending) application ("not reached this call")
     path('<int:pk>/waitlist-close-out/', views.close_out_waitlisted_application, name='waitlist_close_out'),
 

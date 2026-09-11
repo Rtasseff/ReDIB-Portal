@@ -224,6 +224,26 @@
             {% else %}
             <p class="text-muted">No equipment requested</p>
             {% endif %}
+
+            {% if application.status == 'accepted' or application.status == 'completed' %}
+            {# #80a: this project's execution end — the node's date, else the call's. #}
+            <dl class="row mb-0 mt-3" id="execution-period">
+                <dt class="col-sm-3">Execution period ends</dt>
+                <dd class="col-sm-9">
+                    {{ application.effective_execution_end|date:"M d, Y" }}
+                    {% if application.execution_end %}<small class="text-muted">(set by node)</small>{% endif %}
+                    {% if can_manage_application and application.status == 'accepted' and not application.is_completed %}
+                    <form method="post" action="{% url 'applications:set_execution_end' application.pk %}" class="mt-2">
+                        {% csrf_token %}
+                        {% include "applications/_execution_end_input.html" with value=application.effective_execution_end|date:"Y-m-d" label_class="visually-hidden" %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2">
+                            <i class="bi bi-calendar-check"></i> Update
+                        </button>
+                    </form>
+                    {% endif %}
+                </dd>
+            </dl>
+            {% endif %}
         </div>
     </div>
 

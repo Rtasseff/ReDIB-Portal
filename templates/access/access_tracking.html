@@ -52,7 +52,12 @@
                             {{ app.applicant.get_full_name }}<br>
                             <small class="text-muted">{{ app.applicant_entity }}</small>
                         </td>
-                        <td>{% include "includes/status_badge.html" %}</td>
+                        <td>
+                            {% include "includes/status_badge.html" %}
+                            {% if app.status == 'accepted' and not app.is_completed %}
+                            <br><small class="text-muted">ends {{ app.effective_execution_end|date:"M d, Y" }}</small>
+                            {% endif %}
+                        </td>
                         <td>{{ app.submitted_at|date:"M d, Y" }}</td>
                         <td>
                             <a href="{% url 'applications:detail' app.pk %}" class="btn btn-sm btn-outline-primary" title="View application">

@@ -1,0 +1,7 @@
+{# #80a: the node-set end of this project's execution period — the same input on #}
+{# node resolution, promotion and the application detail page. `value` is Y-m-d. #}
+<label for="id_execution_end" class="{{ label_class|default:'form-label' }}"><strong>Execution period ends</strong></label>
+<input type="date" name="execution_end" id="id_execution_end" value="{{ value }}"
+       min="{{ application.call.execution_start|date:'Y-m-d' }}"
+       class="form-control" style="max-width: 12rem;">
+<small class="form-text text-muted d-block">Defaults to the call's date. Change it if this project's access will run to a different date.</small>
