@@ -99,14 +99,14 @@ def check_call_deadlines():
       CALL_ANNOUNCEMENT_EMAILS_ENABLED is on (it is off by default).
     - `open` calls whose `submission_end` has passed become `closed`.
 
-    Returns the number of calls closed (kept for backwards compatibility);
-    the number opened is logged. Beat runs daily, so a view-level fallback in
-    `calls/views.py` handles the same transitions between runs.
+    Returns "Opened N, closed M", the style used by the neighbouring beat
+    tasks. Beat runs daily, so a view-level fallback in `calls/views.py`
+    handles the same transitions between runs.
     """
     from .models import Call
     from .services import open_announced_calls
 
-    open_announced_calls()
+    opened, _emails_sent = open_announced_calls()
 
     now = timezone.now()
     expired_calls = Call.objects.filter(
@@ -122,4 +122,4 @@ def check_call_deadlines():
             "Auto-closed %d call(s) past submission deadline: %s",
             count, ', '.join(codes)
         )
-    return count
+    return f"Opened {len(opened)}, closed {count}"

@@ -318,8 +318,9 @@ class AutoOpenTests(TestCase):
         )
         mail.outbox = []
 
-        check_call_deadlines()
+        result = check_call_deadlines()
 
+        self.assertTrue(result.startswith('Opened 1'))
         call.refresh_from_db()
         self.assertEqual(call.status, 'open')
         now_open = [

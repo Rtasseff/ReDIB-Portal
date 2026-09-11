@@ -191,8 +191,9 @@ python scripts/rehearsal.py beat
 python scripts/rehearsal.py status
 ```
 
-**Expect.** `status=OPEN`. The `call deadlines` line in the `beat` output is
-what promoted it. **Zero emails** — announcement mail is deliberately off
+**Expect.** `status=OPEN`. The `call deadlines` line in the `beat` output
+reads `Opened 1, closed 0` — that is what promoted it. **Zero emails** —
+announcement mail is deliberately off
 (`CALL_ANNOUNCEMENT_EMAILS_ENABLED=False`); you and the node coordinators
 announce by hand.
 
