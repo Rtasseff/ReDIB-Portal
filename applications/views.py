@@ -979,7 +979,7 @@ def feasibility_queue(request):
     Shows all applications requiring feasibility review for nodes
     where the current user is a node coordinator (via UserRole).
     """
-    from core.models import UserRole
+    from core.models import UserRole, Node
 
     # Get nodes where user is coordinator (via UserRole)
     my_nodes = UserRole.objects.filter(
@@ -1000,7 +1000,7 @@ def feasibility_queue(request):
 
     context = {
         'pending_reviews': pending_reviews,
-        'user_nodes': my_nodes,
+        'user_nodes': Node.objects.filter(pk__in=my_nodes).select_related('organization'),
     }
     return render(request, 'applications/feasibility_queue.html', context)
 
