@@ -274,7 +274,8 @@ action.
   every awaiting application now goes into the recipient's digest, and only
   a due one makes it fire. Visible effect: a coordinator's digest lists all
   of their node's running projects, not just the one or two that hit a
-  checkpoint that day. It's in its own commit, so it can be dropped alone.
+  checkpoint that day. **Approved by Ryan 2026-09-11** — listing every
+  running project is the intended behaviour, not just a means to the floor.
 - **G2 fixtures**: `tests/test_backfill_waitlist_hours_approved.py` doesn't
   drive `promote_waitlisted_application` (it tests the backfill command);
   `tests/test_batch2_phase4.py` does, and the new tests follow that one.
