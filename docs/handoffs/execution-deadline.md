@@ -7,7 +7,7 @@
 |---|---|
 | Branch | `feature/execution-deadline` |
 | Worktree dir | `/home/rtasseff/projects/ReDIB-Portal-wt/execution-deadline` |
-| Base | `main` @ `4c0e6be` |
+| Base | `main` @ `f1db1f8` — rebased 2026-09-11 onto the merged `rehearsal-polish` + `rehearsal-guards` |
 | Created | 2026-09-11 |
 | Runserver port | 8004 |
 | Handoff session | `main` checkout at `~/projects/ReDIB-Portal/` |
@@ -129,8 +129,8 @@ date.*
   under the hours table (`~:32–63`); view `promote_waitlisted_application`
   (`applications/views.py:1543`) applies it right after the hours loop
   (`~:1629`), before `application.save()`. Keep it a **separate block** —
-  `rehearsal-guards` G2 is adding its own block after that `save()` (the
-  `NodeResolution` update), and you will rebase over it.
+  `rehearsal-guards` G2's `NodeResolution` update already sits right *after*
+  that `save()`; leave it alone.
 - (c) **Later edits** — on the **application detail page**
   (`templates/applications/detail.html`), in the access section (`~:218`,
   where `hours_requested / hours_approved` are listed): for users where
@@ -147,9 +147,10 @@ date.*
   accepted, not-completed rows. Read-only; the edit is on the detail page.
 
 **D4 — Who reads it.** `applications/tasks.py`, five sites, each
-`app.call.execution_end` → `app.effective_execution_end`: `send_waitlist_digest`
-`:553`, `:572`; `send_completion_reminders` `:682`, `:708`, `:742`. Nothing
-else reads the date (checked at cut: no email template, no other view).
+`app.call.execution_end` → `app.effective_execution_end`: two in
+`send_waitlist_digest`, three in `send_completion_reminders` (grep for the
+expression — line numbers moved when guards' G4 restructured that loop).
+Nothing else reads the date (checked at cut: no email template, no other view).
 
 **D5 — Multi-node.** Any node coordinator with equipment on the application
 (that is what `_can_manage_application` already grants) may set or change it;
@@ -186,10 +187,9 @@ untouched; it remains the default and the interim lever for REDIB-2601.
 - `python manage.py makemigrations` produced exactly one migration, `0015_…`,
   touching `Application` and `HistoricalApplication` only; afterwards
   `makemigrations --check` is clean and `python manage.py check` passes.
-- `python manage.py test tests reports` — baseline at cut **404 OK** (393 in
-  `tests/` + 11 in `reports/`); by the time you merge, `main` will carry
-  `rehearsal-polish` and probably `rehearsal-guards` too, so re-baseline after
-  each rebase. Not worse, plus the new tests.
+- `python manage.py test tests reports` — baseline **428 OK** (417 in `tests/`
+  + 11 in `reports/`; `main` already carries `rehearsal-polish` and
+  `rehearsal-guards`). Not worse, plus the new tests.
 - Click-through (runserver 8004; `python scripts/rehearsal.py seed`, then Part
   B of `docs/developer/dress-rehearsal.md` from Stage 9): accept an
   application at node resolution with a changed date → the detail page shows
@@ -228,23 +228,23 @@ when the nodes enter hours. Put this paragraph in the PR body.
 
 ## Conflict watchlist
 
-- **`applications/views.py`** — `rehearsal-guards` G2 edits
-  `promote_waitlisted_application` (a block *after* `application.save()`);
-  you edit the same function (a block *before* it). `rehearsal-polish` edits
-  709–763, 985–1003, 1158–1195. Expect a conflict on promote; keep both.
-- **`applications/tasks.py`** — guards G4 changes the coordinator dedupe
-  window at ~`:741`; you change `:682`, `:708`, `:742`. Adjacent; rebase and
-  keep both.
-- `templates/applications/node_resolution/review.html` — polish P4 edits the
-  banner at `:19`; you edit ~`:233–297`. Different regions.
-- `applications/models.py`, `templates/applications/detail.html`,
-  `templates/access/access_tracking.html`, `templates/applications/promote_waitlist_confirm.html`
-  — only you.
+`rehearsal-polish` (PR #42) and `rehearsal-guards` (PR #41) are **already on
+`main`**, and this branch was rebased onto the merged result (`f1db1f8`)
+before you started — there is no other active code bucket to collide with.
+Two places where their work sits exactly where yours goes:
 
-**Suggested order** to keep the overlap late: model + migration + method +
-tasks + tests 1, 2, 6 first (no overlap with anyone); then the three
-surfaces; then `git fetch && git rebase origin/main` — by then
-`rehearsal-guards` may have merged — and only then the PR.
+- `applications/views.py` `promote_waitlisted_application` — guards G2's
+  `NodeResolution` block is *after* `application.save()`; your D3(b) block
+  goes *before* it.
+- `applications/tasks.py` `send_completion_reminders` — guards G4 restructured
+  the coordinator loop and added `COMPLETION_DIGEST_FLOOR_DAYS`; your D4 edits
+  are the `app.call.execution_end` reads inside that same function.
+
+Still `git fetch && git rebase origin/main` before opening the PR — `main`
+takes small doc commits often.
+
+**Suggested order:** model + migration + method + tasks + tests 1, 2, 6 first;
+then the three surfaces; then the `/code-review`; then the PR.
 
 ## Status
 
