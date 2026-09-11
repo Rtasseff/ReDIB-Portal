@@ -5,7 +5,8 @@ One test class per item; see docs/handoffs/rehearsal-polish.md for the
 rehearsal evidence and decisions behind each fix.
 """
 
-from datetime import timedelta
+import argparse
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client, override_settings
@@ -197,3 +198,29 @@ class ClosedCallWizardTests(TestCase):
         self.assertContains(resp, 'Call closed')
         # The open draft's row should still offer Continue.
         self.assertContains(resp, 'Continue')
+
+
+class RehearsalAdvanceDSTTests(TestCase):
+    """P8c — #71c: `advance` must keep the wall-clock time across a DST change."""
+
+    def test_advance_keeps_wall_clock_time_across_dst(self):
+        import scripts.rehearsal as rehearsal
+
+        tz = timezone.get_current_timezone()
+        # 2026-10-25 is the Europe/Madrid autumn DST change; start after it
+        # and advance back across it.
+        end = timezone.make_aware(datetime(2026, 11, 3, 23, 59), tz)
+        call = Call.objects.create(
+            code=rehearsal.REHEARSAL_CODE, title='DST Test',
+            submission_start=end - timedelta(days=60),
+            submission_end=end,
+            evaluation_deadline=end + timedelta(days=30),
+            execution_start=end + timedelta(days=40),
+            execution_end=end + timedelta(days=70),
+        )
+
+        rehearsal.cmd_advance(argparse.Namespace(days=14))
+
+        call.refresh_from_db()
+        local = call.submission_end.astimezone(tz)
+        self.assertEqual((local.hour, local.minute), (23, 59))

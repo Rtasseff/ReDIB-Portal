@@ -30,11 +30,12 @@ until December — it is written down so it exists, not because it is due.
 >   libraries land in `/opt/homebrew/lib`, which the dynamic loader does not
 >   search, so *Download PDF* fails until you run the server as
 >   `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib python manage.py runserver`
->   (backlog #70).
-> - **Stage 4's note that "every node has a coordinator today" is wrong for the
->   sandbox.** `seed` creates coordinators for CICBIO and CNIC only, so
->   **BioImaC has none** — request BioImaC equipment and you will hit the #48
->   orphaned-node path without meaning to (backlog #71a).
+>   (backlog #70 — now documented at the Stage 4 macOS step below).
+> - **Stage 4's note that "every node has a coordinator today" was wrong for the
+>   sandbox as of this run.** `seed` created coordinators for CICBIO and CNIC
+>   only, so **BioImaC had none** — requesting BioImaC equipment hit the #48
+>   orphaned-node path without meaning to (backlog #71a — `seed` now creates a
+>   BIOIMAC coordinator too, so this no longer happens).
 > - **Stage 10's "Mark as Accepted"** is labelled **"Promote to Accepted"** on
 >   the Access Tracking screen.
 
@@ -115,6 +116,11 @@ Reminders anchored to an application's own timestamps — the acceptance ladder,
 the stalled-acceptance nag, the 6-month publication follow-up — will not come
 due just because the call moved. Stage 10 sets those directly.
 
+Another caveat, this one about the emails themselves: sandbox emails render
+absolute links against `SITE_URL`, which in a `.env` copied from production is
+the production domain — so a link clicked from the console inbox goes to
+`portal.redib.net`, not your local server.
+
 ### Accounts
 
 All passwords are `testpass123`, all addresses pre-verified so allauth lets you
@@ -125,6 +131,7 @@ straight in.
 | `coordinator@test.redib.net` | ReDIB coordinator — this is you |
 | `nc.cicbio@test.redib.net` | Node coordinator, CICBIO |
 | `nc.cnic@test.redib.net` | Node coordinator, CNIC |
+| `nc.bioimac@test.redib.net` | Node coordinator, BIOIMAC (created by `seed`, not localtest3 itself) |
 | `eval.preclinical@test.redib.net` | Evaluator, preclinical |
 | `eval.clinical@test.redib.net` | Evaluator, clinical |
 | `eval.radio@test.redib.net` | Evaluator, radiochemistry + clinical |
@@ -227,9 +234,10 @@ section you filled in. Submitting silently doing nothing.
 
 > Note for this stage: watch for **#48**. If a node has no active coordinator,
 > the submit path builds no feasibility review for it and says nothing — the
-> application advances with a hole in it. Every node has a coordinator today,
-> so you will not hit it in the sandbox unless you deactivate one on purpose.
-> Worth doing once, in Django admin, to see the failure with your own eyes.
+> application advances with a hole in it. `seed` guarantees every node has a
+> coordinator, so you will not hit it in the sandbox unless you deactivate one
+> on purpose. Worth doing once, in Django admin, to see the failure with your
+> own eyes.
 
 ## Stage 5 — The draft nudge
 

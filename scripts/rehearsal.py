@@ -95,10 +95,39 @@ def cmd_seed(args):
     from calls.models import Call, CallEquipmentAllocation
     from applications.models import Application
     from communications.models import EmailLog
-    from core.models import Equipment
+    from core.models import Equipment, Node, UserRole
+    from django.contrib.auth import get_user_model
+    from allauth.account.models import EmailAddress
+    from core.management.commands.setup_localtest3_database import TEST_PASSWORD
 
     print('Seeding the base sandbox (users, nodes, equipment, organizations)...')
     call_command('setup_localtest3_database', reset=True, yes=True, verbosity=0)
+
+    # localtest3 only staffs CICBIO and CNIC with a node coordinator; the
+    # dress-rehearsal doc's Stage 4 note says every node has one, so give
+    # BIOIMAC one too, named like the others. Do not edit localtest3 itself.
+    User = get_user_model()
+    bioimac = Node.objects.get(code='BIOIMAC')
+    nc_bioimac, _ = User.objects.get_or_create(
+        email='nc.bioimac@test.redib.net',
+        defaults={
+            'first_name': 'Marta', 'last_name': 'Iglesias',
+            'position': 'Node Coordinator',
+            'phone': '+34 900 000 003',
+            'organization': bioimac.organization,
+            'is_active': True,
+        }
+    )
+    nc_bioimac.set_password(TEST_PASSWORD)
+    nc_bioimac.save()
+    EmailAddress.objects.update_or_create(
+        user=nc_bioimac, email=nc_bioimac.email,
+        defaults={'verified': True, 'primary': True}
+    )
+    UserRole.objects.get_or_create(
+        user=nc_bioimac, role='node_coordinator', node=bioimac,
+        defaults={'is_active': True, 'areas': ''}
+    )
 
     # localtest3 ships two calls and 16 applications so every screen has
     # something on it. A rehearsal has to start from nothing, or we are
@@ -126,7 +155,7 @@ def cmd_seed(args):
         execution_start=at(140, hour=9, minute=0),
         execution_end=at(320),
         description='<p>Rehearsal call. Not real. Safe to break.</p>',
-        guidelines='<p>Rehearsal guidelines.</p>',
+        guidelines='Rehearsal guidelines.',
     )
 
     equipment = list(Equipment.objects.all())
@@ -135,6 +164,8 @@ def cmd_seed(args):
 
     print(f'\n  {REHEARSAL_CODE} created as DRAFT with {len(equipment)} instruments.')
     print(f'  Opens in 14 days, closes in 60. No applications yet — that is the point.')
+    print(f'  Node coordinator for BIOIMAC: {nc_bioimac.email} / {TEST_PASSWORD} '
+          f'(every node now has one — see localtest3\'s own login table above for the rest).')
     print('\nNext:  python manage.py runserver')
     print('       then follow docs/developer/dress-rehearsal.md from Stage 1.')
     cmd_status(args)
@@ -191,7 +222,12 @@ def cmd_advance(args):
     days = args.days
     call = get_call()
     for f in DATE_FIELDS:
-        setattr(call, f, getattr(call, f) - timedelta(days=days))
+        # Do the subtraction in local time so a wall-clock deadline (e.g.
+        # 23:59) stays put across a DST transition — subtracting the
+        # timedelta from the UTC-aware value directly would shift it by an
+        # hour whenever `days` crosses the Europe/Madrid changeover.
+        local = getattr(call, f).astimezone(timezone.get_current_timezone())
+        setattr(call, f, local - timedelta(days=days))
     call.save()
     print(f'Simulated {days} day(s) passing for {call.code}.')
     print('(Call dates only — application-anchored reminders are unaffected; '
