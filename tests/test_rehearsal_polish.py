@@ -199,6 +199,19 @@ class ClosedCallWizardTests(TestCase):
         # The open draft's row should still offer Continue.
         self.assertContains(resp, 'Continue')
 
+    def test_create_page_for_open_call_has_no_banner(self):
+        # application_create renders wizard_step1 with no `application` in
+        # context (there is no draft yet); the partial must not misread that
+        # missing variable as "call closed".
+        fresh_call = _make_call(
+            code='CALL-RP6-FRESH', status='open',
+            submission_start=timezone.now() - timedelta(days=1),
+            submission_end=timezone.now() + timedelta(days=30),
+        )  # no draft yet, so the view renders step 1 instead of redirecting
+        resp = self.client.get(reverse('applications:create', args=[fresh_call.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'This call closed on')
+
 
 class RehearsalAdvanceDSTTests(TestCase):
     """P8c — #71c: `advance` must keep the wall-clock time across a DST change."""
