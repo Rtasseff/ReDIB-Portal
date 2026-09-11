@@ -315,18 +315,43 @@ Fixtures: `tests/test_phase4_evaluator_assignment.py`.
 
 ## Status
 
-- [ ] Baseline taken (suite count before any change)
-- [ ] P1 #77
-- [ ] P2 #78
-- [ ] P3 #70
-- [ ] P4 #75
-- [ ] P5 #79
-- [ ] P6 #67
-- [ ] P7 #69
-- [ ] P8 #71
-- [ ] P9 #76
-- [ ] Backlog rows #67, #69, #70, #71, #75, #76, #77, #78, #79 removed (retired rows are deleted; the commit and this doc are the record)
-- [ ] PR opened against `main`
+- [x] Baseline taken (suite count before any change) — 404 tests, `tests/` + `reports/`, all passing
+- [x] P1 #77
+- [x] P2 #78
+- [x] P3 #70
+- [x] P4 #75
+- [x] P5 #79
+- [x] P6 #67
+- [x] P7 #69
+- [x] P8 #71
+- [x] P9 #76
+- [x] Backlog rows #67, #69, #70, #71, #75, #76, #77, #78, #79 removed (retired rows are deleted; the commit and this doc are the record)
+- [x] PR opened against `main`
+
+**Final suite:** `python manage.py test tests reports` → **415 tests, OK** (404
+baseline + 11 new, in `tests/test_rehearsal_polish.py` plus one assertion added
+to `tests/test_public_calls.py` for P7). `python manage.py check` and
+`makemigrations --check` both clean — no migration, as scoped.
+
+**Deviation from the brief on P4:** the brief described `call_detail.html`'s
+JS `canReject` gate as a wording-only issue, but reading the code showed
+`canReject = !hasCompetitiveFunding` also controls whether the Reject radio
+option is rendered at all in that modal — not just the message text next to
+it. Branching only the message and leaving `canReject` unfixed would have
+left the coordinator reading "rejection is available" with no way to select
+it. Fixed both together (`applications/views.py`'s `application_resolution`
+JSON endpoint now also sends `has_any_denied_evaluation`); did not touch any
+form or service, per the brief's constraint.
+
+**Verification beyond the automated suite:** P8's seed change was checked by
+actually running `python scripts/rehearsal.py seed` (BIOIMAC coordinator
+created, all three nodes covered; `guidelines` renders plain, `description`
+still renders as safe HTML) and P9's warning was checked end-to-end against
+the real `assign_evaluators_to_call` task (including its COI exclusion) using
+the seeded sandbox data, not just the unit fixtures. Did not do a full manual
+browser click-through of all nine items; the new tests assert on the exact
+strings each fix introduces, which covers the wording/display nature of this
+batch.
 
 ## Questions for the handoff session
 
