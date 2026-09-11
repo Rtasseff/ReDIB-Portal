@@ -234,17 +234,58 @@ almost every day → a digest every second morning; see backlog #80).
 
 ## Status
 
-- [ ] Baseline taken (suite count before any change)
-- [ ] G1 #73
-- [ ] G2 #74
-- [ ] G3 #80(c)
-- [ ] G4 #80(b)
-- [ ] Backlog rows #73, #74 removed; #80 trimmed to what is still open — (a) the policy decision, and re-enabling the beat entry (retired rows are deleted; the commit and this doc are the record)
-- [ ] PR opened against `main`
+- [x] Baseline taken — `python manage.py test tests reports`: **404 OK**, as at cut
+- [x] G1 #73 — `d610882`. Both close sites guarded; notice on the assignment page.
+- [x] G2 #74 — `52e52bd`. Per-row `save()`, so the promotion is in `simple_history` too.
+- [x] G3 #80(c) — `27faf14`. DEPLOYMENT.md note under *Deploying Code Updates*.
+- [x] G4 #80(b) — `f89ad75`. **Deviates from the brief — see below.**
+- [x] Backlog rows #73, #74 removed; #80 trimmed to (a) the policy decision and re-enabling the beat entry
+- [x] PR opened against `main`
+
+Final: `check` clean, `makemigrations --check` → no changes, suite **416 OK**
+(404 + 12 new: 10 in `tests/test_rehearsal_guards.py`, 2 in
+`tests/test_closeout_completion_reminders.py`). Every new state test was run
+against the pre-fix code and fails there.
+
+Click-through (2026-09-11, headless: `rehearsal.py seed`, then the real views
+driven as coordinator / `nc.cicbio` / applicant with the Django test client,
+not a browser): Auto-Assign on the open REHEARSAL-2701 made 5 assignments, the
+call stayed `open` and stayed listed on `/calls/`, and the page showed the
+notice; a waitlisted application, accepted by the applicant and promoted by
+`nc.cicbio`, reads **Accepted** / **Aceptada** on the Stage 11 page and in both
+CSVs, with no *Wait List* / *En espera* left anywhere.
+
+`redib/celery.py` is untouched: the completion-reminder beat entry stays
+commented out on prod until Ryan decides #80(a). Re-enabling it is a prod
+action.
+
+### Deviations
+
+- **G4 needed one more line of change than the brief said.** The brief took
+  it that a coordinator digest already lists every application awaiting
+  completion at the recipient's nodes. The docstring, the test name and the
+  template intro ("The following applications at your node(s) are still
+  open") all say it does — but the code dropped any application not at a
+  checkpoint that day *before* it reached the digest, and the pinning test
+  only passed because both its applications were due on the same day. With
+  just the window widened to 7 days, an application whose checkpoint fell
+  inside the floor would get no coordinator mention for another 30 days, and
+  the brief's own "eight days after → listing both" test fails (checked). So
+  every awaiting application now goes into the recipient's digest, and only
+  a due one makes it fire. Visible effect: a coordinator's digest lists all
+  of their node's running projects, not just the one or two that hit a
+  checkpoint that day. It's in its own commit, so it can be dropped alone.
+- **G2 fixtures**: `tests/test_backfill_waitlist_hours_approved.py` doesn't
+  drive `promote_waitlisted_application` (it tests the backfill command);
+  `tests/test_batch2_phase4.py` does, and the new tests follow that one.
 
 ## Questions for the handoff session
 
 - (none at cut)
+- The round plan's "Do these" rows 6, 7 and 9 (#73, #74, #80(b)(c)) are live
+  status for you to update on merge; this branch doesn't touch
+  `round-october-2026.md`. Row 9 describes G4 as "the 7-day floor" — it also
+  now lists every awaiting application (see Deviations).
 
 ## Return protocol
 
