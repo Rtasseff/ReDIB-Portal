@@ -248,16 +248,73 @@ then the three surfaces; then the `/code-review`; then the PR.
 
 ## Status
 
-- [ ] Baseline taken (suite count before any change)
-- [ ] D1 field + property, migration 0015, `makemigrations --check` clean
-- [ ] D2 `set_execution_end`
-- [ ] D4 tasks read the effective date
-- [ ] D3(a) node resolution form
-- [ ] D3(b) promote confirmation
-- [ ] D3(c) detail page edit + `set_execution_end` view; Access Tracking text
-- [ ] Tests 1–6
-- [ ] `/code-review` medium on this branch; findings fixed
-- [ ] Backlog #80 trimmed: (a) is this branch; what remains is "re-enable in prod after deploy + REDIB-2601 date fixed"
+- [x] Baseline taken (suite count before any change) — **428 OK**, as the brief said
+- [x] D1 field + property, migration 0015, `makemigrations --check` clean —
+  `0015_application_execution_end_and_more`: two `AddField`s, `application`
+  and `historicalapplication`, nothing else
+- [x] D2 `set_execution_end`
+- [x] D4 tasks read the effective date — five reads, plus the two docstrings
+  that named `call.execution_end`
+- [x] D3(a) node resolution form
+- [x] D3(b) promote confirmation
+- [x] D3(c) detail page edit + `set_execution_end` view; Access Tracking text
+- [x] Tests 1–6 — `tests/test_execution_deadline.py`, 38 tests (35 + one per
+  review finding + the hidden-field render); full suite **466 OK** (428 + 38).
+  Mutation-checked: with the five task reads reverted to
+  `app.call.execution_end`, all four reminder tests fail; each review fix's
+  test fails with that fix reverted.
+- [x] Click-through against runserver 8004 (rehearsal seed, fast-forwarded by
+  ORM past Stages 1–9, then driven over HTTP): too-early date re-renders with
+  the error and saves nothing; accept with 2027-09-30 → detail shows
+  *Sep 30, 2027 (set by node)*; waitlist ignores the date; promote with
+  2027-11-20 → same; detail-page Update to 2027-12-10 → success message;
+  applicant sees the date read-only and is refused on POST; Access Tracking
+  shows `ends …` on both; with -001's own date moved 2 days into the past
+  (call's still 2027-07-28) `rehearsal.py beat` sent the milestone pair for
+  -001 only, and a second `beat` sent nothing.
+
+**Deviations / interpretations** (none changes a decision):
+
+- *"Missing input → error"* read as a **present-but-blank** field. An
+  **absent** `execution_end` key (a scripted/bare POST, or a tab opened before
+  the deploy) keeps the date as it is on node resolution and promotion — the
+  same contract the promote view already has for absent hours fields, and it
+  keeps every existing test that POSTs without the field valid. On the
+  detail-page edit, the date is the only field, so blank is an error there.
+- At node resolution the date is read and validated **only on accept**, so a
+  junk date can't block a waitlist or reject — and, after review finding 1,
+  only when it differs from the date the page showed.
+- The service saves the date itself with `update_fields=['execution_end']`,
+  *before* aggregation: `aggregate_application_resolution` re-reads the row
+  under `select_for_update` and saves only once every node has decided, so
+  setting it on the passed-in instance would lose a multi-node application's
+  first accept. Existing save order untouched.
+- The three inputs share one include, `templates/applications/_execution_end_input.html`
+  (label, help text and a `min=` of the call's execution start, so the browser
+  refuses a too-early date as well). The review page adds one line under it:
+  *Used only if you accept — a waitlisted project gets its date when it is
+  promoted.*
+- Re-renders after an error keep the **hours just entered** (promote and node
+  resolution). Node resolution used to reset them to the stored values on any
+  form error; it now keeps the submitted ones on every POST re-render.
+- Detail page: the *Execution period ends* line shows for `accepted` and
+  `completed`; the *(set by node)* marker is shown to everyone, applicant
+  included. The edit view's errors are a message + redirect to the detail page
+  (the form lives there); an unauthorised POST redirects to Access Tracking,
+  like promote.
+- [x] `/code-review` medium on this branch; findings fixed — two, both fixed:
+  1. *Medium* — multi-node: node B's review page, loaded before node A set a
+     date, posts back the stale prefill on accept and erases A's date (or
+     overwrites it) though B never touched the field. Fix: the review page
+     also posts `execution_end_shown`, the date as of that render; a
+     submitted value equal to it is treated as untouched (like an absent
+     field). A real edit still wins, per D5. Promotion has no second writer
+     (the detail-page edit only exists once `accepted`), so it is unchanged.
+  2. *Low* — `send_waitlist_digest` deduped the milestone nudge on
+     `min(milestone_ends)`; with per-application dates, a digest sent in one
+     project's window hid a later-opening one's. Now `max()`, as the
+     completion digest already was.
+- [x] Backlog #80 trimmed: (a) is this branch; what remains is "re-enable in prod after deploy + REDIB-2601 date fixed"
 - [ ] PR opened against `main`, Deploy paragraph in the body
 
 ## Questions for the handoff session
