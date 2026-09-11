@@ -58,6 +58,11 @@
             <li>Balance workload across evaluators</li>
             <li>Send email notifications to assigned evaluators</li>
         </ul>
+        {% if call.is_open %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> This call is still accepting applications until {{ call.submission_end|date:"j F Y, H:i" }}. Assigning now is fine; anything submitted after today will need evaluators assigned on a later run.
+        </div>
+        {% endif %}
         <form method="post" action="{% url 'evaluations:auto_assign_call' call.id %}" class="mt-3">
             {% csrf_token %}
             <div class="row align-items-end">

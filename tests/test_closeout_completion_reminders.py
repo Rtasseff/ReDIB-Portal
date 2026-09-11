@@ -295,3 +295,53 @@ class CompletionReminderTest(TestCase):
         )
         self.assertEqual(coordinator_emails.count(), 1)
         self.assertIn(app_b.code, coordinator_emails.first().html_content)
+
+    def _log_coordinator_digest(self, days_ago):
+        EmailLog.objects.create(
+            template=EmailTemplate.objects.get(template_type='completion_reminder_coordinator'),
+            recipient_email=self.coordinator.email, subject='x', status='sent',
+            sent_at=timezone.now() - timedelta(days=days_ago),
+        )
+
+    def test_coordinator_digest_floored_at_seven_days(self):
+        """#80(b): staggered handoffs put a different application on a
+        checkpoint almost every day. A checkpoint three days after the last
+        digest must not produce another one — the applicant still hears."""
+        self._log_coordinator_digest(days_ago=3)
+        self._make_active_application(timezone.now() - timedelta(days=63))  # digested 3 days ago
+        app2 = self._make_active_application(timezone.now() - timedelta(days=60))  # due today
+
+        send_completion_reminders()
+
+        self.assertEqual(
+            EmailLog.objects.filter(
+                template__template_type='completion_reminder_coordinator',
+                recipient_email=self.coordinator.email,
+            ).count(),
+            1,
+        )
+        self.assertTrue(
+            EmailLog.objects.filter(
+                template__template_type='completion_reminder', related_application_id=app2.id
+            ).exists()
+        )
+
+    def test_coordinator_digest_after_floor_lists_every_open_application(self):
+        """Past the floor the next checkpoint digests again, and the digest
+        lists every application awaiting completion — including one not on a
+        checkpoint today — so nothing the floor skipped is lost."""
+        self._log_coordinator_digest(days_ago=8)
+        app1 = self._make_active_application(timezone.now() - timedelta(days=68))  # not due today
+        app2 = self._make_active_application(timezone.now() - timedelta(days=60))  # due today
+
+        send_completion_reminders()
+
+        new_digests = EmailLog.objects.filter(
+            template__template_type='completion_reminder_coordinator',
+            recipient_email=self.coordinator.email,
+            sent_at__gte=timezone.now() - timedelta(hours=1),
+        )
+        self.assertEqual(new_digests.count(), 1)
+        content = new_digests.first().html_content
+        self.assertIn(app1.code, content)
+        self.assertIn(app2.code, content)

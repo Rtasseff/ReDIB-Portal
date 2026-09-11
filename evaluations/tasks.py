@@ -527,6 +527,13 @@ def assign_evaluators_to_call(call_id, num_evaluators=2):
     evaluator transition to UNDER_EVALUATION; apps that get zero remain pending so the
     coordinator can intervene.
 
+    Assigning while the call is still open is allowed: applications submitted later
+    stay pending_evaluation and are picked up on the next run. The call is closed
+    here only when it is 'open' and its submission_end has already passed — the
+    same condition as calls.tasks.check_call_deadlines, covering the gap until that
+    daily beat task runs. Closing a call inside its window would hide it from
+    /calls/ and bounce new applicants (#73).
+
     Args:
         call_id: ID of the call
         num_evaluators: Number of evaluators per application (default: 2)
@@ -586,7 +593,7 @@ def assign_evaluators_to_call(call_id, num_evaluators=2):
                 'warning': f'Assigned 0 of {num_evaluators} requested evaluators',
                 'error': 'No eligible evaluators available' if pool_size == 0 else None,
             })
-        if call.status == 'open':
+        if call.status == 'open' and call.submission_end < timezone.now():
             call.status = 'closed'
             call.save()
         return results
@@ -729,8 +736,8 @@ def assign_evaluators_to_call(call_id, num_evaluators=2):
                 'shortfall': num_evaluators - total_for_app,
             })
 
-    # Transition call to 'closed' status if not already.
-    if call.status == 'open':
+    # Close the call only if its deadline has passed (see docstring, #73).
+    if call.status == 'open' and call.submission_end < timezone.now():
         call.status = 'closed'
         call.save()
 
