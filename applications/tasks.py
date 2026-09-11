@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 ACCEPTANCE_WINDOW_DAYS = 10
 ACCEPTANCE_REMINDER_RUNGS = (7, 3, 1)
 
+# At most one completion digest per node coordinator per this many days (#80):
+# staggered handoffs put some application on a 60/30 checkpoint almost daily.
+COMPLETION_DIGEST_FLOOR_DAYS = 7
+
 
 def _reminder_is_due(anchor_dt, first_days, repeat_days, now):
     """True on the day `anchor_dt` hits a recurring reminder checkpoint.
@@ -660,6 +664,14 @@ def send_completion_reminders():
     of near-identical mail on one morning. Dedupe is per recipient (no
     `related_application_id`, since one digest spans several applications),
     for both the recurring cadence and the milestone nudge.
+
+    #80 fixed the trickle that followed: staggered handoffs put a different
+    application on a checkpoint almost every day. The cadence digest now
+    fires at most once per recipient per COMPLETION_DIGEST_FLOOR_DAYS, and
+    whenever it fires it lists every application awaiting completion at the
+    recipient's node(s), not only those at a checkpoint that day — so a
+    checkpoint the floor swallows is carried by the next digest. The
+    milestone dedupe is unchanged.
     """
     from core.models import UserRole
     from communications.models import EmailLog
@@ -680,10 +692,33 @@ def send_completion_reminders():
     for app in active_apps:
         cadence_due = _reminder_is_due(app.handoff_email_sent_at, 60, 30, now)
         milestone_due = _milestone_window(app.call.execution_end, now)
+        application_url = f'{settings.SITE_URL}/applications/{app.id}/'
+
+        # Node coordinator(s): collect into #49's cross-application digest
+        # rather than sending immediately — grouped by node, by recipient.
+        # Every application awaiting completion is listed; only a due one
+        # makes the digest fire. Listing them all is what lets the
+        # COMPLETION_DIGEST_FLOOR_DAYS floor skip a day without losing an
+        # application: the next digest carries everything still open (#80).
+        nodes = {ra.equipment.node for ra in app.requested_access.all()}
+        for node in nodes:
+            node_coordinators = UserRole.objects.filter(
+                node=node, role='node_coordinator', is_active=True
+            ).select_related('user')
+            for coord_role in node_coordinators:
+                recipient = coord_role.user
+                entry = due_by_coordinator.setdefault(
+                    recipient.id,
+                    {'user': recipient, 'apps_by_node': {}, 'cadence_due': False, 'milestone_ends': []},
+                )
+                entry['apps_by_node'].setdefault(node, []).append((app, application_url))
+                if cadence_due:
+                    entry['cadence_due'] = True
+                if milestone_due:
+                    entry['milestone_ends'].append(app.call.execution_end)
+
         if not cadence_due and not milestone_due:
             continue
-
-        application_url = f'{settings.SITE_URL}/applications/{app.id}/'
 
         # Applicant: one email per application, unchanged by #49.
         applicant = app.applicant
@@ -722,25 +757,6 @@ def send_completion_reminders():
                 )
                 reminders_sent += 1
 
-        # Node coordinator(s): collect into #49's cross-application digest
-        # rather than sending immediately — grouped by node, by recipient.
-        nodes = {ra.equipment.node for ra in app.requested_access.all()}
-        for node in nodes:
-            node_coordinators = UserRole.objects.filter(
-                node=node, role='node_coordinator', is_active=True
-            ).select_related('user')
-            for coord_role in node_coordinators:
-                recipient = coord_role.user
-                entry = due_by_coordinator.setdefault(
-                    recipient.id,
-                    {'user': recipient, 'apps_by_node': {}, 'cadence_due': False, 'milestone_ends': []},
-                )
-                entry['apps_by_node'].setdefault(node, []).append((app, application_url))
-                if cadence_due:
-                    entry['cadence_due'] = True
-                if milestone_due:
-                    entry['milestone_ends'].append(app.call.execution_end)
-
     for entry in due_by_coordinator.values():
         recipient = entry['user']
 
@@ -752,7 +768,7 @@ def send_completion_reminders():
         recently_sent = EmailLog.objects.filter(
             template__template_type='completion_reminder_coordinator',
             recipient_email=recipient.email,
-            sent_at__gte=now - timedelta(days=1),
+            sent_at__gte=now - timedelta(days=COMPLETION_DIGEST_FLOOR_DAYS),
         ).exists()
 
         milestone_sent = False
