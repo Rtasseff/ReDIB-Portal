@@ -166,6 +166,11 @@
                                     <li class="mb-2">
                                         <i class="bi bi-person-circle"></i>
                                         <strong>{{ evaluation.evaluator.get_full_name }}</strong>
+                                        {% if evaluation.area_match == True %}
+                                            <span title="Areas match this application">✓</span>
+                                        {% elif evaluation.area_match == False %}
+                                            <span class="badge bg-warning text-dark">no area match</span>
+                                        {% endif %}
                                         {% if evaluation.evaluator.organization %}
                                             ({{ evaluation.evaluator.organization.name }})
                                         {% endif %}

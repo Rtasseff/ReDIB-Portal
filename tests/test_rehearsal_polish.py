@@ -224,3 +224,51 @@ class RehearsalAdvanceDSTTests(TestCase):
         call.refresh_from_db()
         local = call.submission_end.astimezone(tz)
         self.assertEqual((local.hour, local.minute), (23, 59))
+
+
+class AreaMatchVisibilityTests(TestCase):
+    """P9 — #76: auto-assign must surface evaluators outside the application's area."""
+
+    def setUp(self):
+        applicant_org = Organization.objects.create(
+            name='Applicant Org RP9', country='ES', organization_type='university'
+        )
+        evaluator_org = Organization.objects.create(
+            name='Evaluator Org RP9', country='ES', organization_type='university'
+        )
+        self.coordinator = create_complete_user('coord-rp9@test.com')
+        UserRole.objects.create(user=self.coordinator, role='coordinator', is_active=True)
+        self.applicant = create_complete_user('applicant-rp9@test.com', organization=applicant_org)
+        self.evaluator = create_complete_user('evaluator-rp9@test.com', organization=evaluator_org)
+        self.call = _make_call(code='CALL-RP9', status='open')
+        self.app = Application.objects.create(
+            applicant=self.applicant, call=self.call, code='APP-RP9-1',
+            status='pending_evaluation', specialization_area='preclinical',
+            brief_description='Summary text',
+        )
+        self.client = Client()
+        self.client.force_login(self.coordinator)
+
+    def _auto_assign(self):
+        return self.client.post(
+            reverse('evaluations:auto_assign_call', kwargs={'call_id': self.call.pk}),
+            {'num_evaluators': 1},
+            follow=True,
+        )
+
+    def test_mismatched_area_shows_badge_and_warning(self):
+        UserRole.objects.create(
+            user=self.evaluator, role='evaluator', is_active=True, areas='clinical'
+        )
+        resp = self._auto_assign()
+        self.assertContains(resp, 'no area match')
+        self.assertContains(resp, 'outside their specialization area')
+
+    def test_matching_area_shows_checkmark_and_no_warning(self):
+        UserRole.objects.create(
+            user=self.evaluator, role='evaluator', is_active=True, areas='preclinical'
+        )
+        resp = self._auto_assign()
+        self.assertNotContains(resp, 'no area match')
+        self.assertNotContains(resp, 'outside their specialization area')
+        self.assertContains(resp, 'Areas match this application')
