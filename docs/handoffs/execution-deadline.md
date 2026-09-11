@@ -315,7 +315,7 @@ then the three surfaces; then the `/code-review`; then the PR.
      project's window hid a later-opening one's. Now `max()`, as the
      completion digest already was.
 - [x] Backlog #80 trimmed: (a) is this branch; what remains is "re-enable in prod after deploy + REDIB-2601 date fixed"
-- [ ] PR opened against `main`, Deploy paragraph in the body
+- [x] PR opened against `main`, Deploy paragraph in the body — **PR #43**
 
 ## Questions for the handoff session
 
