@@ -1,5 +1,8 @@
 # Handoff — `feature/rehearsal-guards`
 
+> **Merged 2026-09-11 (PR #41).** Record only — the branch and its worktree are
+> gone. G1–G3 shipped as briefed. G4 deviated, and the brief was wrong: the coordinator digest did *not* already list every application awaiting completion (only those at a checkpoint that day), so the 7-day floor alone would have silently dropped applications; the branch made the digest list every running project, which Ryan approved 2026-09-11 as the intended behaviour. The beat entry in `redib/celery.py` stays commented out on prod until #80(a) — now the `execution-deadline` bucket — is deployed and REDIB-2601's date is corrected.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/rehearsal-guards.md on the branch. Keep "Status" current. -->
 

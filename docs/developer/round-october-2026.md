@@ -23,13 +23,14 @@ mark it there and in the worktrees registry in the same commit.
 
 ## 0. Checking back in? Start here
 
-**Last updated 2026-09-10.** All six buckets of the build are merged; five are
-deployed. **The rehearsal findings are now assigned:** three fixed inline on
-`main` (`53c4fae`: #66, #68, #72), the rest cut into two new buckets —
-`rehearsal-polish` (nine small display/harness fixes, Sonnet) and
-`rehearsal-guards` (#73, #74 and the code halves of #80, Opus). Registry in
-`worktrees.md`; each brief is `docs/handoffs/<slug>.md` on its branch.
-Suite **393 + 11**. The round is in **verification, not construction** — the
+**Last updated 2026-09-11.** All six buckets of the build are merged; five are
+deployed. **Every rehearsal finding is now fixed on `main`:** three inline
+(`53c4fae`: #66, #68, #72), nine in `rehearsal-polish` (PR #42) and the two
+state-writing ones plus #80(b)(c) in `rehearsal-guards` (PR #41), both merged
+2026-09-11 — **none of it is deployed yet** (row 3). One bucket is open:
+`execution-deadline` (#80(a), Ryan's design of 09-11; a migration, so after
+#37). Registry in `worktrees.md`; each brief is `docs/handoffs/<slug>.md`.
+Suite **417 + 11** (428 on merged `main`, 2026-09-11). The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
 
@@ -48,10 +49,11 @@ below.
 | 3 | **Deploy `main` to prod.** Docs, the resolution report, #48, and the three pre-announce text fixes (#66/#68/#72). **No migrations** — the cheapest deploy of the round. Do it **before** announcing, so the Announce dialog tells the truth. | before 09-15 | prod |
 | 4 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
 | 5 | ~~**Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8)~~ **The burst will not happen:** prod paused `send_completion_reminders` on 09-09 (#80). Closing finished projects is now data hygiene, still worth doing, no date. | — | Ryan |
-| 6 | **#73** — Auto-Assign Evaluators force-closes an open call (one click, no warning, no UI way back). → `rehearsal-guards` G1 (cut 09-10): the close only happens once the deadline has actually passed. | deploy 09-15 → 10-13 | dev |
-| 7 | **#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted. → `rehearsal-guards` G2 (cut 09-10): promotion writes `accept` on the node's resolution; the table stays as it is. | deploy 09-15 → 10-13 | dev |
-| 8 | **`rehearsal-polish`** — the other nine findings (#67, #69, #70, #71, #75–#79): closed-call wording in the wizard, the competitive-funding banner, the gated-call empty state, area-match marks on assignment, harness and doc fixes. Nothing in it is dated; it is one batch. | deploy 09-15 → 10-13 | dev |
-| 9 | **#80(b)(c)** — the 7-day floor on the coordinator completion digest and the seed's `is_active`-on-create-only change ride in `rehearsal-guards` G3/G4. **Re-enabling the reminders is a prod action after row "#80(a)" below is decided.** | with row 7 | dev / prod || 10 | **#37**, the migrate advisory lock — not a rehearsal finding; still owed, still inline-sized | pre-open batch, 10-13 | dev |
+| 6 | ~~**#73** — Auto-Assign Evaluators force-closes an open call.~~ **Merged 2026-09-11 (PR #41):** the close only happens once the deadline has actually passed; assigning early is allowed and the page says so. | deploy 09-15 → 10-13 | prod |
+| 7 | ~~**#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted.~~ **Merged 2026-09-11 (PR #41):** promotion writes `accept` on every waitlisted node resolution; the table is unchanged. | deploy 09-15 → 10-13 | prod |
+| 8 | ~~**`rehearsal-polish`** — the other nine findings (#67, #69, #70, #71, #75–#79).~~ **Merged 2026-09-11 (PR #42).** | deploy 09-15 → 10-13 | prod |
+| 9 | ~~**#80(b)(c)**~~ **Merged 2026-09-11 (PR #41):** the coordinator completion digest fires at most weekly per recipient and lists *every* running project at their nodes (not just the ones at a checkpoint that day — the brief had that wrong, the branch fixed it, Ryan approved); the admin's per-template **Is active** toggle now survives deploys. **The beat entry stays commented out** until row 9b is deployed and REDIB-2601's date is corrected; re-enabling is a prod action. | with row 7 | prod |
+| 9b | **`execution-deadline`** — #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev || 10 | **#37**, the migrate advisory lock — not a rehearsal finding; still owed, still inline-sized | pre-open batch, 10-13 | dev |
 | 11 | **#42**, the publication follow-up dead end | before December | dev |
 | 12 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**, whose fix makes the shortfall visible on the assignment page) | before December | Ryan |
 
@@ -64,14 +66,13 @@ below.
   clinical 4, radiochemistry 3.
 - **#64**: whether a coordinator should be *warned* when editing an open call
   leaves `status` and `is_open` disagreeing, or whether that waits for #40.
-- **#80(a)**: what deadline the fifteen running REDIB-2601 projects are actually
-  held to. The reminders are paused in prod and nothing accumulates while they
-  are. Cheapest honest answer: when the nodes know the real end date, set
-  REDIB-2601's `execution_end` to it on the call edit form (no code) and have
-  prod uncomment the beat entry. A per-application deadline field is a
-  migration plus a form plus a task change — only if the one-date answer
-  proves wrong in practice. REDIB-2602's own projects will not reach a 60-day
-  checkpoint before ~March 2027, so this does not touch the October call.
+- ~~**#80(a)**~~ **Decided 2026-09-11** — both halves: (1) for REDIB-2601, set
+  the call's `execution_end` to the real date on the call edit form once the
+  nodes know it (no code), then prod uncomments the beat entry; (2) for every
+  future call, the node sets a per-application execution end where it sets
+  approved hours — bucket `execution-deadline`, row 9b. REDIB-2602's own
+  projects will not reach a 60-day checkpoint before ~March 2027, so neither
+  half touches the October call.
 
 ### Change-control posture from here
 

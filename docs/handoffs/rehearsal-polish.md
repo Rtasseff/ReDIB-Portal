@@ -1,5 +1,8 @@
 # Handoff — `feature/rehearsal-polish`
 
+> **Merged 2026-09-11 (PR #42).** Record only — the branch and its worktree are
+> gone. The nine items shipped as briefed, one commit each, with one deviation the branch made correctly: P4's modal gate (`canReject`) also had to change, not just its wording, or the coordinator would have read "rejection is available" with no Reject option to pick. The handoff review caught one regression the branch's tests missed — the shared closed-call banner fired on the *create* page, which has no `application` in context — fixed on the branch (`9a1e1ad`) with a regression test before merge.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/rehearsal-polish.md on the branch. Keep "Status" current. -->
 
