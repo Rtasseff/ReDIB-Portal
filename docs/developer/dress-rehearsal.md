@@ -78,6 +78,12 @@ python manage.py runserver
 brew install pango cairo gdk-pixbuf libffi
 ```
 
+On Apple Silicon, Homebrew installs to `/opt/homebrew/lib`, which the dynamic
+loader does not search, so `import weasyprint` still fails until the server is
+started as
+`DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib python manage.py runserver`
+(verified 2026-09-08, WeasyPrint 67.0).
+
 WeasyPrint is imported lazily (`applications/views.py:2772`), so everything
 else — the server, the harness, all five commands — works without it. Only
 "download the PDF" in Stage 4 will fail if it is missing. Full dependency notes:
