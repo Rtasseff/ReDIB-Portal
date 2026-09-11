@@ -2667,11 +2667,18 @@ def node_resolution_review(request, application_id, node_id):
         # #80a: the execution end rides with the hours, and only on accept —
         # a waitlisted application gets its date at promotion, a rejected one
         # has none. A bad date submits nothing (hours included); the page
-        # re-renders. A POST without the field keeps the date as it is.
+        # re-renders. A POST without the field keeps the date as it is, and so
+        # does one that sends back unchanged the date the page showed: on a
+        # multi-node application another node may have set a date since this
+        # page loaded, and an untouched prefill is not an edit.
         execution_end_date = None
         execution_end_error = None
+        execution_end_untouched = (
+            'execution_end_shown' in request.POST
+            and request.POST.get('execution_end') == request.POST['execution_end_shown']
+        )
         if (form.is_valid() and form.cleaned_data['resolution'] == 'accept'
-                and 'execution_end' in request.POST):
+                and 'execution_end' in request.POST and not execution_end_untouched):
             execution_end_date, execution_end_error = _parse_execution_end(request, application)
 
         if execution_end_error:
@@ -2748,6 +2755,11 @@ def node_resolution_review(request, application_id, node_id):
     # Get evaluations for display
     evaluations = application.evaluations.select_related('evaluator').all()
 
+    # The stored date as of this render, sent back as `execution_end_shown`
+    # so the POST can tell an edit from an untouched prefill.
+    application.refresh_from_db(fields=['execution_end'])
+    execution_end_shown = timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d')
+
     # Get other nodes' resolutions (for multi-node visibility)
     other_node_resolutions = application.node_resolutions.exclude(
         node=node
@@ -2767,8 +2779,9 @@ def node_resolution_review(request, application_id, node_id):
         'execution_end_value': (
             request.POST.get('execution_end')
             if request.method == 'POST' and 'execution_end' in request.POST
-            else timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d')
+            else execution_end_shown
         ),
+        'execution_end_shown': execution_end_shown,
     }
     return render(request, 'applications/node_resolution/review.html', context)
 

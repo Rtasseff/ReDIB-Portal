@@ -145,7 +145,8 @@ class NodeResolutionExecutionEndTest(ExecutionEndTestBase):
             'application_id': self.application.id, 'node_id': (node or self.node).id,
         })
 
-    def _post(self, resolution, execution_end, hours='7', client=None, node=None, equipment=None):
+    def _post(self, resolution, execution_end, hours='7', client=None, node=None, equipment=None,
+              shown=None):
         data = {
             'resolution': resolution,
             'comments': 'decided',
@@ -153,6 +154,8 @@ class NodeResolutionExecutionEndTest(ExecutionEndTestBase):
         }
         if execution_end is not None:
             data['execution_end'] = execution_end
+        if shown is not None:
+            data['execution_end_shown'] = shown
         return (client or self.client).post(self._url(node), data)
 
     def test_review_page_prefills_the_calls_date(self):
@@ -236,6 +239,33 @@ class NodeResolutionExecutionEndTest(ExecutionEndTestBase):
         self.application.refresh_from_db()
         self.assertEqual(self.application.status, 'accepted')
         self.assertEqual(_local_date(self.application.execution_end), second)
+
+    def test_review_page_sends_back_the_date_it_showed(self):
+        resp = self.client.get(self._url())
+        self.assertContains(
+            resp, f'name="execution_end_shown" value="{self.call_end_date.isoformat()}"'
+        )
+
+    def test_untouched_stale_prefill_does_not_erase_another_nodes_date(self):
+        """/code-review finding: node B's page loaded showing the call's date;
+        node A then set its own; B accepts without touching the field. B sent
+        back exactly what it was shown, which is not an edit — A's date stays."""
+        node_b, equipment_b, nc_b = _make_node('EX-B')
+        RequestedAccess.objects.create(
+            application=self.application, equipment=equipment_b, hours_requested=Decimal('4'),
+        )
+        call_date = self.call_end_date.isoformat()
+        a_date = self.call_end_date + timedelta(days=20)
+        self._post('accept', a_date.isoformat(), shown=call_date)  # A edits the field
+
+        client_b = Client()
+        client_b.force_login(nc_b)
+        self._post('accept', call_date, shown=call_date, hours='4',
+                   client=client_b, node=node_b, equipment=equipment_b)
+
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'accepted')
+        self.assertEqual(_local_date(self.application.execution_end), a_date)
 
 
 class PromotionExecutionEndTest(ExecutionEndTestBase):
@@ -449,6 +479,38 @@ class RemindersReadEffectiveEndTest(ExecutionEndTestBase):
         send_waitlist_digest()
 
         self.assertFalse(EmailLog.objects.filter(template__template_type='waitlist_digest').exists())
+
+    def test_waitlist_digest_for_an_earlier_window_does_not_cover_a_later_one(self):
+        """/code-review finding: with per-application dates, one call's
+        waitlisted projects can have different milestone windows. A digest
+        sent in X's window, before Y's opened, must not count as Y's nudge."""
+        from communications.models import EmailTemplate
+
+        self._move_call_end(-43)
+        today = timezone.localdate()
+        x = self._waitlisted_application()
+        x.set_execution_end(today - timedelta(days=5))
+        x.save()
+        y = self._make_application(
+            'pending', code='EXEC-2026-002', resolution='pending', accepted_by_applicant=True,
+            accepted_at=timezone.now() - timedelta(days=10),
+        )
+        y.set_execution_end(today - timedelta(days=1))
+        y.save()
+        EmailLog.objects.create(
+            template=EmailTemplate.objects.get(template_type='waitlist_digest'),
+            recipient_email=self.nc.email, subject='x', status='sent',
+            sent_at=x.execution_end + timedelta(days=1),  # in X's window, before Y's opened
+        )
+
+        send_waitlist_digest()
+
+        self.assertEqual(
+            EmailLog.objects.filter(
+                template__template_type='waitlist_digest', recipient_email=self.nc.email,
+            ).count(),
+            2,
+        )
 
     def test_waitlist_digest_nudge_in_the_projects_own_window(self):
         self._move_call_end(-43)

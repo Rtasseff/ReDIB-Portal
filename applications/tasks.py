@@ -594,10 +594,15 @@ def send_waitlist_digest():
 
         milestone_sent = False
         if entry['milestone_ends']:
+            # max(), not min() — same reasoning as send_completion_reminders.
+            # With per-application execution ends (#80a) two waitlisted
+            # applications in one call can have different milestone windows,
+            # and a digest sent for the earlier one must not count as covering
+            # the later one.
             milestone_sent = EmailLog.objects.filter(
                 template__template_type='waitlist_digest',
                 recipient_email=recipient.email,
-                sent_at__gte=min(entry['milestone_ends']),
+                sent_at__gte=max(entry['milestone_ends']),
             ).exists()
 
         should_send = (
