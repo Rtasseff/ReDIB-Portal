@@ -1564,6 +1564,9 @@ def promote_waitlisted_application(request, pk):
     - resolution: pending -> accepted
     - resolution_date refreshed to now; acceptance_deadline is cleared
       (applicant has already accepted — no second clock needed)
+    - every NodeResolution still on 'waitlist' becomes 'accept', with the
+      promotion noted in its comments (the published resolution table reads
+      NodeResolution, not Application.status)
     - resolution_accepted notification + handoff email dispatched to
       applicant and node coordinators.
     """
@@ -1639,6 +1642,25 @@ def promote_waitlisted_application(request, pk):
     ).strip()
     application.acceptance_deadline = None  # applicant has already accepted
     application.save()
+
+    # Promotion is the node's later decision, so record it where the published
+    # resolution reads it: every node still on 'waitlist' now reads 'accept'
+    # (status 'accepted' means every node accepted). `reviewer` keeps the
+    # original decision-maker; the promotion lives in `comments` and history.
+    # 'accept' and 'reject' rows are left alone (#74).
+    promoted_at = timezone.now()
+    promotion_note = (
+        f"Promoted from the waitlist by {user.get_full_name() or user.email} "
+        f"on {promoted_at.date().isoformat()}."
+    )
+    for node_resolution in application.node_resolutions.filter(resolution='waitlist'):
+        node_resolution.resolution = 'accept'
+        node_resolution.reviewed_at = promoted_at
+        node_resolution.comments = (
+            f"{node_resolution.comments}\n\n{promotion_note}"
+            if node_resolution.comments else promotion_note
+        )
+        node_resolution.save()
 
     # The applicant accepted the original resolution_pending offer, but
     # promotion is the moment this application's resolution actually becomes
