@@ -1182,6 +1182,17 @@ def resolution_dashboard(request):
         .order_by('-evaluation_deadline')
     )
 
+    # Calls that are fully evaluated but not yet released — the dashboard's
+    # empty state should name these rather than imply nothing is waiting.
+    gated_calls = (
+        Call.objects
+        .annotate(
+            evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
+        )
+        .filter(evaluated_apps__gt=0, resolutions_released=False)
+        .order_by('-evaluation_deadline')
+    )
+
     # Add resolution summary for each call
     from applications.services import ResolutionService
     calls_with_stats = []
@@ -1195,6 +1206,7 @@ def resolution_dashboard(request):
 
     context = {
         'calls_with_stats': calls_with_stats,
+        'gated_calls': gated_calls,
     }
     return render(request, 'applications/resolution/dashboard.html', context)
 

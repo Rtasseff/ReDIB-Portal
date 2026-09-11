@@ -118,3 +118,25 @@ class CompetitiveFundingBannerTests(TestCase):
         resp = self._get()
         self.assertContains(resp, 'rejection is available')
         self.assertNotContains(resp, 'cannot reject')
+
+
+class ResolutionDashboardGatedCallsTests(TestCase):
+    """P5 — #79: a gated (unreleased) call should be named, not hidden as if resolved."""
+
+    def setUp(self):
+        self.coordinator = create_complete_user('coord-rp5@test.com')
+        UserRole.objects.create(user=self.coordinator, role='coordinator', is_active=True)
+        self.applicant = create_complete_user('applicant-rp5@test.com')
+        self.call = _make_call(code='CALL-RP5', resolutions_released=False)
+        Application.objects.create(
+            applicant=self.applicant, call=self.call, code='APP-RP5-1',
+            status='evaluated', brief_description='Summary text',
+        )
+        self.client = Client()
+        self.client.force_login(self.coordinator)
+
+    def test_gated_call_named_and_linked(self):
+        resp = self.client.get(reverse('applications:resolution_dashboard'))
+        self.assertContains(resp, 'waiting on you to release resolutions')
+        self.assertContains(resp, self.call.code)
+        self.assertContains(resp, reverse('calls:detail', kwargs={'pk': self.call.pk}))
