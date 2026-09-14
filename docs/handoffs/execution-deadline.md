@@ -1,5 +1,13 @@
 # Handoff — `feature/execution-deadline`
 
+> **Merged 2026-09-14 (PR #43).** Record only — the branch and its worktree are
+> gone. Built as briefed; the branch's `/code-review` found the one thing worth
+> remembering — a second node's review page, loaded before the first node set a
+> date, would have posted its stale prefill back and erased the date — and fixed
+> it with a "date as shown" hidden field. Deploys with the pre-open batch
+> (round plan row 10a), after #37; the reminders stay paused until REDIB-2601's
+> date is corrected on the call form and prod re-enables the beat entry.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/execution-deadline.md on the branch. Keep "Status" current. -->
 

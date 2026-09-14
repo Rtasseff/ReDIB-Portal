@@ -23,13 +23,13 @@ mark it there and in the worktrees registry in the same commit.
 
 ## 0. Checking back in? Start here
 
-**Last updated 2026-09-11.** All six buckets of the build are merged; five are
-deployed. **Every rehearsal finding is now fixed on `main`:** three inline
-(`53c4fae`: #66, #68, #72), nine in `rehearsal-polish` (PR #42) and the two
-state-writing ones plus #80(b)(c) in `rehearsal-guards` (PR #41), both merged
-2026-09-11 — **none of it is deployed yet** (row 3). One bucket is open:
-`execution-deadline` (#80(a), Ryan's design of 09-11; a migration, so after
-#37). Registry in `worktrees.md`; each brief is `docs/handoffs/<slug>.md`.
+**Last updated 2026-09-14.** Every rehearsal finding is fixed **and deployed**
+(prod pulled `d4a2d47` on 09-14 — row 3). Since then `main` has gained two
+things prod has **not** pulled yet: **#37** (the migrate advisory lock,
+`bebbc80`) and **PR #43** `execution-deadline` (#80(a), migration `0015`).
+They ship together as the **pre-open batch (≤ 10-13)** — the first
+migration-bearing deploy since 08-21, and the one that proves #37. No bucket
+is open; the round is back to *verification, not construction*.
 Suite **417 + 11** (428 on merged `main`, 2026-09-11). The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
@@ -46,14 +46,15 @@ below.
 |---|---|---|---|
 | 1 | ~~**Run the dress rehearsal.**~~ **Done 2026-09-08 — Parts A *and* B**, all eleven stages walked; 14 findings filed (#66–#79), none blocking. See § 4.7a and § 4.7c. | before 09-15 | Ryan |
 | 2 | ~~**#68** — Announce/Publish and the Call Status Guide promise notification emails that are switched off.~~ **Done 2026-09-10 on `main` (`53c4fae`)**, together with #66 (blank call title, incl. the applicant's PDF) and #72 (footer year). Text only; the wording now follows `CALL_ANNOUNCEMENT_EMAILS_ENABLED`, so it stays right whichever way #41 goes. Reaches prod with row 3. | ~~before 09-15~~ | dev |
-| 3 | **Deploy `main` to prod.** Docs, the resolution report, #48, and the three pre-announce text fixes (#66/#68/#72). **No migrations** — the cheapest deploy of the round. Do it **before** announcing, so the Announce dialog tells the truth. | before 09-15 | prod |
+| 3 | ~~**Deploy `main` to prod.**~~ **Done 2026-09-14** — prod pulled `f4a2b4e → d4a2d47` (27 commits: the three text fixes, PR #41, PR #42), backup `redib_db_20260914_123713.sql.gz` first, rebuilt web/celery/celery-beat only, seconds of downtime, no migrations, all checks green. Completion reminders confirmed still paused. | ~~before 09-15~~ | prod |
 | 4 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
 | 5 | ~~**Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8)~~ **The burst will not happen:** prod paused `send_completion_reminders` on 09-09 (#80). Closing finished projects is now data hygiene, still worth doing, no date. | — | Ryan |
 | 6 | ~~**#73** — Auto-Assign Evaluators force-closes an open call.~~ **Merged 2026-09-11 (PR #41):** the close only happens once the deadline has actually passed; assigning early is allowed and the page says so. | deploy 09-15 → 10-13 | prod |
 | 7 | ~~**#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted.~~ **Merged 2026-09-11 (PR #41):** promotion writes `accept` on every waitlisted node resolution; the table is unchanged. | deploy 09-15 → 10-13 | prod |
 | 8 | ~~**`rehearsal-polish`** — the other nine findings (#67, #69, #70, #71, #75–#79).~~ **Merged 2026-09-11 (PR #42).** | deploy 09-15 → 10-13 | prod |
 | 9 | ~~**#80(b)(c)**~~ **Merged 2026-09-11 (PR #41):** the coordinator completion digest fires at most weekly per recipient and lists *every* running project at their nodes (not just the ones at a checkpoint that day — the brief had that wrong, the branch fixed it, Ryan approved); the admin's per-template **Is active** toggle now survives deploys. **The beat entry stays commented out** until row 9b is deployed and REDIB-2601's date is corrected; re-enabling is a prod action. | with row 7 | prod |
-| 9b | **`execution-deadline`** — **reviewed and approved 2026-09-14 (PR #43, suite 466 OK), merge deliberately held:** it carries migration 0015 and prod deploys by `git pull origin main`, so it cannot land on `main` until (1) row 3's no-migration deploy is done and (2) #37 is on `main`; then it merges and ships with the pre-open batch. #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev || 10 | **#37**, the migrate advisory lock — not a rehearsal finding; still owed, still inline-sized | pre-open batch, 10-13 | dev |
+| 9b | **`execution-deadline`** — **merged 2026-09-14 (PR #43)**, once row 3 was deployed and #37 was on `main`; ships with the pre-open batch (row 10a). #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev || 10 | ~~**#37**, the migrate advisory lock~~ **Done 2026-09-14 (`bebbc80`):** `manage.py run_locked` wraps `migrate` and `seed_email_templates` in the entrypoint. Verified only against SQLite here; **the next deploy is its real test** (DEPLOYMENT.md says what the logs should show). | with 10a | dev |
+| 10a | **Pre-open batch deploy** — `main` from `d4a2d47` onward: #37 and migration `0015` (`execution-deadline`). Backup first as always; expect *one* container to log `Applying applications.0015… OK` and the other two `No migrations to apply`, no traceback. Then the two `migrate --check` / schema commands in DEPLOYMENT.md. | **before 10-13** | prod |
 | 11 | **#42**, the publication follow-up dead end | before December | dev |
 | 12 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**, whose fix makes the shortfall visible on the assignment page) | before December | Ryan |
 
