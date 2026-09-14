@@ -530,7 +530,7 @@ def send_waitlist_digest():
 
     Cadence per application: first at 30 days after the applicant's
     acceptance (`accepted_at`), then every 30 days, plus one nudge in the
-    week after `call.execution_end` (a bounded catch-up window, not an
+    week after `app.effective_execution_end` (a bounded catch-up window, not an
     exact-day check, so a beat outage on the exact day does not lose the
     nudge permanently — see `_milestone_window` below). Dedupe per
     (recipient, day) via EmailLog for the recurring cadence, and per
@@ -554,7 +554,7 @@ def send_waitlist_digest():
 
     for app in pending_apps:
         cadence_due = _reminder_is_due(app.accepted_at, 30, 30, now)
-        milestone_due = _milestone_window(app.call.execution_end, now)
+        milestone_due = _milestone_window(app.effective_execution_end, now)
         if not cadence_due and not milestone_due:
             continue
 
@@ -573,7 +573,7 @@ def send_waitlist_digest():
                 if cadence_due:
                     entry['cadence_due'] = True
                 if milestone_due:
-                    entry['milestone_ends'].append(app.call.execution_end)
+                    entry['milestone_ends'].append(app.effective_execution_end)
 
     digests_sent = 0
     access_tracking_url = settings.SITE_URL + reverse('access:access_tracking')
@@ -594,10 +594,15 @@ def send_waitlist_digest():
 
         milestone_sent = False
         if entry['milestone_ends']:
+            # max(), not min() — same reasoning as send_completion_reminders.
+            # With per-application execution ends (#80a) two waitlisted
+            # applications in one call can have different milestone windows,
+            # and a digest sent for the earlier one must not count as covering
+            # the later one.
             milestone_sent = EmailLog.objects.filter(
                 template__template_type='waitlist_digest',
                 recipient_email=recipient.email,
-                sent_at__gte=min(entry['milestone_ends']),
+                sent_at__gte=max(entry['milestone_ends']),
             ).exists()
 
         should_send = (
@@ -647,7 +652,7 @@ def send_completion_reminders():
     True, handoff_email_sent_at set, and is_completed=False.
 
     Cadence per application: first at 60 days after `handoff_email_sent_at`,
-    then every 30 days, plus one nudge in the week after `call.execution_end`
+    then every 30 days, plus one nudge in the week after `app.effective_execution_end`
     (a bounded catch-up window — see `_milestone_window`); stops once
     `is_completed=True`. This cadence is unchanged by #49 — only the node
     coordinator's email shape changes.
@@ -691,7 +696,7 @@ def send_completion_reminders():
 
     for app in active_apps:
         cadence_due = _reminder_is_due(app.handoff_email_sent_at, 60, 30, now)
-        milestone_due = _milestone_window(app.call.execution_end, now)
+        milestone_due = _milestone_window(app.effective_execution_end, now)
         application_url = f'{settings.SITE_URL}/applications/{app.id}/'
 
         # Node coordinator(s): collect into #49's cross-application digest
@@ -715,7 +720,7 @@ def send_completion_reminders():
                 if cadence_due:
                     entry['cadence_due'] = True
                 if milestone_due:
-                    entry['milestone_ends'].append(app.call.execution_end)
+                    entry['milestone_ends'].append(app.effective_execution_end)
 
         if not cadence_due and not milestone_due:
             continue
@@ -740,7 +745,7 @@ def send_completion_reminders():
                 template__template_type='completion_reminder',
                 recipient_email=applicant_email,
                 related_application_id=app.id,
-                sent_at__gte=app.call.execution_end,
+                sent_at__gte=app.effective_execution_end,
             ).exists()
             if (cadence_due and not recently_sent) or (milestone_due and not milestone_sent):
                 send_email_from_template(

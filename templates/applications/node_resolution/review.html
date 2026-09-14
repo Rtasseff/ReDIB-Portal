@@ -273,6 +273,13 @@
                     </div>
                 </div>
 
+                <!-- Execution period end (#80a) -->
+                <div class="mb-4">
+                    {% include "applications/_execution_end_input.html" with value=execution_end_value %}
+                    <input type="hidden" name="execution_end_shown" value="{{ execution_end_shown }}">
+                    <small class="form-text text-muted d-block">Used only if you accept — a waitlisted project gets its date when it is promoted.</small>
+                </div>
+
                 <!-- Resolution Choice -->
                 <div class="mb-4">
                     <label class="form-label"><strong>Resolution Decision *</strong></label>

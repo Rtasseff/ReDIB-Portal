@@ -1552,6 +1552,70 @@ def _can_manage_application(user, application):
     return bool(requested_node_ids & nc_node_ids)
 
 
+def _parse_execution_end(request, application):
+    """Read the node-set `execution_end` date from POST (#80a).
+
+    Returns (date, None) on success or (None, error message). The one rule:
+    the date may not fall before the call's execution start (local date).
+    Shared by node resolution, promotion and the detail-page edit.
+    """
+    from datetime import date
+
+    raw = (request.POST.get('execution_end') or '').strip()
+    if not raw:
+        return None, "Enter the date this project's execution period ends."
+    try:
+        value = date.fromisoformat(raw)
+    except ValueError:
+        return None, f"'{raw}' is not a valid date for the end of the execution period."
+    start = timezone.localtime(application.call.execution_start).date()
+    if value < start:
+        return None, (
+            f"The execution period cannot end before the call's execution "
+            f"start ({start.strftime('%b %d, %Y')})."
+        )
+    return value, None
+
+
+@login_required
+@require_POST
+def set_execution_end(request, pk):
+    """A node coordinator changes an accepted project's execution end (#80a).
+
+    Same authorisation as the other Access Tracking actions
+    (`_can_manage_application`); with several nodes on one application the
+    last edit wins. Only an accepted, not-yet-completed application has a
+    live execution period to move.
+    """
+    application = get_object_or_404(Application.objects.select_related('call'), pk=pk)
+
+    if not _can_manage_application(request.user, application):
+        messages.error(request, "You are not authorised to change this application's execution period.")
+        return redirect('access:access_tracking')
+
+    if application.status != 'accepted' or application.is_completed:
+        messages.error(
+            request,
+            f"{application.code} has no running execution period to change "
+            f"(status: {application.get_status_display()})."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    value, error = _parse_execution_end(request, application)
+    if error:
+        messages.error(request, error)
+        return redirect('applications:detail', pk=application.pk)
+
+    application.set_execution_end(value)
+    application.save(update_fields=['execution_end'])
+    messages.success(
+        request,
+        f"The execution period of {application.code} now ends on "
+        f"{timezone.localtime(application.effective_execution_end).strftime('%b %d, %Y')}."
+    )
+    return redirect('applications:detail', pk=application.pk)
+
+
 @login_required
 @transaction.atomic
 def promote_waitlisted_application(request, pk):
@@ -1615,12 +1679,14 @@ def promote_waitlisted_application(request, pk):
                 'equipment_id': ra.equipment.id,
                 'equipment_name': ra.equipment.name,
                 'hours_requested': ra.hours_requested,
+                'hours_approved': ra.hours_requested,
             }
             for ra in requested_access
         ]
         return render(request, 'applications/promote_waitlist_confirm.html', {
             'application': application,
             'equipment_forms': equipment_forms,
+            'execution_end_value': timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d'),
         })
 
     from decimal import Decimal, InvalidOperation
@@ -1642,9 +1708,35 @@ def promote_waitlisted_application(request, pk):
         )
         return redirect('applications:detail', pk=application.pk)
 
+    # #80a: the node sets the project's execution end as it confirms the
+    # hours. A bad date saves nothing — hours included — and re-renders the
+    # page with what was entered. A POST without the field (the bare
+    # "Promote" submit above) keeps the date as it is.
+    execution_end_date = None
+    if 'execution_end' in request.POST:
+        execution_end_date, error = _parse_execution_end(request, application)
+        if error:
+            messages.error(request, error)
+            return render(request, 'applications/promote_waitlist_confirm.html', {
+                'application': application,
+                'equipment_forms': [
+                    {
+                        'equipment_id': ra.equipment.id,
+                        'equipment_name': ra.equipment.name,
+                        'hours_requested': ra.hours_requested,
+                        'hours_approved': approved_hours[ra.equipment_id],
+                    }
+                    for ra in requested_access
+                ],
+                'execution_end_value': request.POST.get('execution_end', ''),
+            })
+
     for ra in requested_access:
         ra.hours_approved = approved_hours[ra.equipment_id]
         ra.save(update_fields=['hours_approved'])
+
+    if execution_end_date is not None:
+        application.set_execution_end(execution_end_date)
 
     application.status = 'accepted'
     application.resolution = 'accepted'
@@ -2572,14 +2664,37 @@ def node_resolution_review(request, application_id, node_id):
             except (ValueError, TypeError):
                 approved_hours[ra.equipment.id] = ra.hours_requested
 
-        if form.is_valid():
+        # #80a: the execution end rides with the hours, and only on accept —
+        # a waitlisted application gets its date at promotion, a rejected one
+        # has none. A bad date submits nothing (hours included); the page
+        # re-renders. A POST without the field keeps the date as it is, and so
+        # does one that sends back unchanged the date the page showed: on a
+        # multi-node application another node may have set a date since this
+        # page loaded, and an untouched prefill is not an edit.
+        execution_end_date = None
+        execution_end_error = None
+        execution_end_untouched = (
+            'execution_end_shown' in request.POST
+            and request.POST.get('execution_end') == request.POST['execution_end_shown']
+        )
+        if (form.is_valid() and form.cleaned_data['resolution'] == 'accept'
+                and 'execution_end' in request.POST and not execution_end_untouched):
+            execution_end_date, execution_end_error = _parse_execution_end(request, application)
+
+        if execution_end_error:
+            messages.error(
+                request,
+                f"Your resolution was NOT submitted. {execution_end_error}"
+            )
+        elif form.is_valid():
             try:
                 result = service.apply_node_resolution(
                     application=application,
                     resolution=form.cleaned_data['resolution'],
                     comments=form.cleaned_data['comments'],
                     approved_hours_dict=approved_hours,
-                    user=request.user
+                    user=request.user,
+                    execution_end_date=execution_end_date,
                 )
 
                 # Success message
@@ -2630,11 +2745,20 @@ def node_resolution_review(request, application_id, node_id):
             'equipment_name': ra.equipment.name,
             'equipment_id': ra.equipment.id,
             'hours_requested': ra.hours_requested,
-            'hours_approved': ra.hours_approved or ra.hours_requested,
+            # A re-render after an error keeps the hours just entered.
+            'hours_approved': (
+                approved_hours[ra.equipment.id] if request.method == 'POST'
+                else ra.hours_approved or ra.hours_requested
+            ),
         })
 
     # Get evaluations for display
     evaluations = application.evaluations.select_related('evaluator').all()
+
+    # The stored date as of this render, sent back as `execution_end_shown`
+    # so the POST can tell an edit from an untouched prefill.
+    application.refresh_from_db(fields=['execution_end'])
+    execution_end_shown = timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d')
 
     # Get other nodes' resolutions (for multi-node visibility)
     other_node_resolutions = application.node_resolutions.exclude(
@@ -2652,6 +2776,12 @@ def node_resolution_review(request, application_id, node_id):
         'evaluations': evaluations,
         'existing_resolution': existing_resolution,
         'other_node_resolutions': other_node_resolutions,
+        'execution_end_value': (
+            request.POST.get('execution_end')
+            if request.method == 'POST' and 'execution_end' in request.POST
+            else execution_end_shown
+        ),
+        'execution_end_shown': execution_end_shown,
     }
     return render(request, 'applications/node_resolution/review.html', context)
 
