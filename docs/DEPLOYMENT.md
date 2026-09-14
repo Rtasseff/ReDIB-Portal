@@ -619,37 +619,38 @@ admin do **not** survive — the seed overwrites them, deliberately (the seed is
 > it, pipe the *new source* into `manage.py shell` — and audit first that every
 > write in it sits behind a `--dry-run` branch.
 
-> **A migration-bearing deploy will look like it failed. Check, don't read.**
-> All three app containers run `migrate` from the same entrypoint at the same
-> moment (#37), and the symptom **inverts** with the kind of migration:
+> **Migrations and the template seed run one container at a time (#37, fixed
+> 2026-09-14).** All three app containers still run the same entrypoint at the
+> same moment, but `migrate` and `seed_email_templates` are now wrapped in
+> `manage.py run_locked`, which holds a Postgres advisory lock for the duration.
+> What the logs should show on a migration-bearing deploy: **one** container
+> logs `Applying <app>.<nnnn>... OK`, the other two wait on the lock (silently —
+> there is no "waiting" line) and then log `No migrations to apply`. No
+> `DuplicateColumn` traceback, no restart, and `django_migrations` gains one row
+> per migration, not three. If you see a traceback in that step it is a real
+> failure now, not the race.
 >
-> | Migration kind | What the race leaves behind |
-> |---|---|
-> | Choices-only `AlterField` (no-op SQL) | All three "succeed"; `django_migrations` ends up with **three rows** for it |
-> | Real DDL (new column or table) | One wins; the losers crash with `DuplicateColumn` / `already exists` and a full traceback, then `restart: unless-stopped` returns them to "No migrations to apply" |
->
-> Duplicate rows mean the migration was a no-op; a crash means it was real.
-> Neither can be told apart from a genuine failure by reading the log, so
-> confirm with these two — they are the actual evidence:
+> Confirm the schema the same way as before — these are the actual evidence:
 >
 > ```bash
 > # 1. anything still unapplied?  exit 0 = nothing pending
 > docker compose -f docker-compose.prod.yml exec web python manage.py migrate --check
 > # 2. did the schema actually change?  query the field the migration added
 > docker compose -f docker-compose.prod.yml exec web python manage.py shell -c \
->   "from calls.models import Call; print(list(Call.objects.values_list('code', 'resolutions_released')))"
+>   "from applications.models import Application; print(Application.objects.filter(execution_end__isnull=False).count())"
 > ```
 >
-> Seen both ways: 2026-08-20 (no-op, three duplicate rows, no crash) and
-> 2026-08-21 (`calls/0004`, real DDL — `celery-beat` won, `web` and `celery`
-> died with `DuplicateColumn`, ~40 s of downtime, self-healed, schema correct
-> and the backfill committed exactly once). Until #37's advisory lock lands,
-> this is expected rather than a fault.
+> History, for reading old logs: before the lock the symptom inverted with the
+> kind of migration — a choices-only `AlterField` left **three** rows in
+> `django_migrations` (2026-08-20), real DDL crashed the two losers with
+> `DuplicateColumn` until `restart: unless-stopped` brought them back
+> (2026-08-21, `calls/0004`, ~40 s of downtime). The three duplicate rows from
+> 08-20 are still in the table; they are harmless and were left alone.
 >
-> **Which container wins varies, so grep all three.** `seed_email_templates`
-> runs from the same entrypoint in every container, so "N templates created"
-> appears only in whichever one got there first — `celery` on 2026-08-20,
-> `celery-beat` on 2026-08-21. The services are `web`, `celery`, `celery-beat`.
+> **Which container runs the seed first varies, so grep all three.** "N
+> templates created" appears only in whichever container got the lock first;
+> the other two find everything already there. The services are `web`,
+> `celery`, `celery-beat`.
 
 After the rebuild, spot-check the app plus the user guide (the guide is read
 from `docs/USER_GUIDE.md` inside the image, so it catches a broken build

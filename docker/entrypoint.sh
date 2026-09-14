@@ -15,14 +15,14 @@ conn.ensure_connection()
 done
 echo "Database ready."
 
-echo "Running migrations..."
-python manage.py migrate --noinput
+echo "Running migrations (one container at a time, #37)..."
+python manage.py run_locked migrate --noinput
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "Seeding email templates..."
-python manage.py seed_email_templates
+python manage.py run_locked seed_email_templates
 
 echo "Configuring site..."
 python -c "
