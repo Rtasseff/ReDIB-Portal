@@ -34,15 +34,14 @@ the call edit form, the Spanish waitlist label, and prod's own roster commits
 preclinical 15, clinical 6, radiochemistry 3). Nothing on `main` that changes
 running code is undeployed. No bucket is open, nothing is undecided; the round
 is back to *verification, not construction*.
-Suite **417 + 11** (428 on merged `main`, 2026-09-11). The round is in **verification, not construction** — the
-build is done and the remaining risk is things nobody has looked at yet, not
-things nobody has written yet.
+Suite **468 + 11** (479, 2026-09-15). The build is done and the remaining risk
+is things nobody has looked at yet, not things nobody has written yet.
 
 **The dress rehearsal has now been run, both parts** (2026-09-08, § 4.7a and
 § 4.7c). All eleven stages passed; **nothing found blocks the call.** It
 produced backlog items **#66–#79** (prod added **#80** on 09-09, pausing the
-completion reminders); the three that have a date attached are rows 2, 6 and 7
-below.
+completion reminders); every one of them is now fixed and deployed (rows 2,
+6–9b below). **What is still open is rows 4, 5, 11 and 12 — nothing else.**
 
 ### Do these, in this order
 
@@ -61,7 +60,7 @@ below.
 | 10 | ~~**#37**, the migrate advisory lock~~ **Done 2026-09-14 (`bebbc80`):** `manage.py run_locked` wraps `migrate` and `seed_email_templates` in the entrypoint. Verified only against SQLite here; ~~the next deploy is its real test~~ **proven on prod 2026-09-15 (row 10a):** `celery-beat` applied `0015`, `web` and `celery` waited on the lock and logged `No migrations to apply`, one `django_migrations` row, no restart. | with 10a | dev |
 | 10a | ~~**Pre-open batch deploy**~~ **Done 2026-09-15** — prod pulled `d4a2d47 → 52a28e5` (#37, migration `0015` (`execution-deadline`), #64's edit warning, the Spanish label, prod's own roster commits), backup `redib_db_20260915_135238.sql.gz` first, built the three app images while the old containers kept serving, then recreated web/celery/celery-beat only at 13:53 UTC (~20 s down; gunicorn listening 13:53:55). **#37 held on its first real test:** `celery-beat` logged `Applying applications.0015_application_execution_end_and_more... OK` (13:53:41.55), then `web` (41.80) and `celery` (42.07) `No migrations to apply`, one after the other; no `DuplicateColumn`, no traceback, restart count 0 on all three. Checks: (1) `migrate --check` exits 0; (2) the schema query prints `0`, and `execution_end` exists, nullable, on both `applications_application` and `applications_historicalapplication`; (3) `django_migrations` holds **one** row for `0015` (92 → 93 rows; the three 08-20 `0014` rows untouched); (4) REDIB-2601-001's detail page, rendered as a coordinator, reads *Execution period ends Oct 30, 2026* with no *(set by node)* marker — none of the 15 accepted REDIB-2601 applications has an override. Site, user guide and `/calls/` answer; the Celery worker pings. Completion reminders still paused (#80's re-enable sequence is separate). **Same day, after the deploy: Raúl Herance confirmed**, so his account and evaluator role were reactivated on prod and his `users.tsv` row set back to `is_active` TRUE — coverage now preclinical 15, clinical 6, radiochemistry 3, and `check_role_drift` lists only the five #81 accounts (run against the image's copy of `users.tsv`, which keeps the old FALSE until the next rebuild). | ~~before 10-13~~ | prod |
 | 11 | **#42**, the publication follow-up dead end | before December | dev |
-| 12 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**, whose fix makes the shortfall visible on the assignment page) | before December | Ryan |
+| 12 | ~~**#63**, clinical evaluator capacity — recruit or reactivate~~ **Done 2026-09-15** (five dormant roles retired, five evaluators added; clinical 4 → 6). What remains is a watch, not a task: at assignment in December, the *no area match* marks (#76) on the assignment page show whether six clinical evaluators were enough. | December | Ryan |
 
 ### Only you can decide these
 
