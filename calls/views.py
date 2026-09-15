@@ -369,6 +369,48 @@ def call_create(request):
     return render(request, 'calls/call_form.html', context)
 
 
+
+def _dates_vs_status_warning(call):
+    """#64: say so when an edit leaves the dates and the status disagreeing.
+
+    `Call.status` is written by the dates (the daily beat and the public-page
+    fallbacks) and by humans (Announce / Publish), and the two are allowed to
+    disagree; the public lists filter on both, so a call whose owners disagree
+    drops out of the site while its badge still looks right. The edit form
+    cannot change `status` (#27) — this only tells the coordinator what the
+    dates they just saved actually do. Returns a message or None.
+    """
+    now = timezone.now()
+    fmt = lambda dt: timezone.localtime(dt).strftime('%d %b %Y, %H:%M')  # noqa: E731
+    if call.status == 'open' and not call.is_open:
+        if call.submission_start > now:
+            return (
+                f"{call.code} is marked Open, but its submission start is now in the "
+                f"future ({fmt(call.submission_start)}): it is NOT accepting applications "
+                "and is not listed on the public calls page until then. Applicants who "
+                "already hold a draft can still submit. Move the start back to today or "
+                "earlier if that was not the intent."
+            )
+        return (
+            f"{call.code} is marked Open, but its submission deadline is now in the past "
+            f"({fmt(call.submission_end)}): it is not accepting new applications and "
+            "will be closed automatically by the daily check. Extend the deadline if "
+            "that was not the intent."
+        )
+    if call.status == 'announced' and call.submission_start <= now:
+        return (
+            f"{call.code} is Announced, but its submission start ({fmt(call.submission_start)}) "
+            "has already passed: it will open automatically the next time the public "
+            "calls page is visited or the daily check runs."
+        )
+    if call.status == 'closed' and call.submission_end > now:
+        return (
+            f"{call.code} is Closed and stays closed: moving the deadline to "
+            f"{fmt(call.submission_end)} does not reopen it. Reopening a closed call "
+            "needs a developer (backlog #54)."
+        )
+    return None
+
 @coordinator_required
 def call_edit(request, pk):
     """Edit an existing call."""
@@ -383,6 +425,9 @@ def call_edit(request, pk):
             formset.save()
 
             messages.success(request, f"Call {call.code} updated successfully.")
+            warning = _dates_vs_status_warning(call)
+            if warning:
+                messages.warning(request, warning)
             return redirect('calls:detail', pk=call.pk)
     else:
         form = CallForm(instance=call)

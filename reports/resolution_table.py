@@ -17,7 +17,7 @@ MISSING = '—'  # em dash — missing data is shown as missing, never inferred
 
 RESOLUTION_LABELS = {
     'en': {'accept': 'Accepted', 'waitlist': 'Wait List', 'reject': 'Rejected'},
-    'es': {'accept': 'Aceptada', 'waitlist': 'En espera', 'reject': 'Rechazada'},
+    'es': {'accept': 'Aceptada', 'waitlist': 'Lista de espera', 'reject': 'Rechazada'},
 }
 
 COLUMN_HEADERS = {

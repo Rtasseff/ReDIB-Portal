@@ -2,9 +2,10 @@
 
 > **Merged 2026-08-21 (PR #40).** Record only — the branch and its worktree are
 > gone. #20 shipped with no deviations from this brief, which makes it the one
-> bucket of six where the brief's claims all held. **One item still open:** the
-> Spanish column headers in `COLUMN_HEADERS` are this brief's proposal
-> (Question 1), not something ReDIB has published — Ryan confirms or corrects.
+> bucket of six where the brief's claims all held. **Question 1 answered
+> 2026-09-15:** no prior published wording exists, so the headers stand as
+> proposed and the waitlist label became *Lista de espera* ("En espera" reads as
+> *pending*).
 
 
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
@@ -310,6 +311,8 @@ build on.
 1. **Spanish column headers** (decision 3) — Solicitud / Organización / Nodo /
    Resolución is my proposal, not something ReDIB has published. Ryan is the
    authority. Build with it; expect it may be corrected before merge.
+   **Answered 2026-09-15 (Ryan):** keep the headers; waitlist reads
+   *Lista de espera*. One dict entry, changed on `main`.
 2. **Does the table need a date or call title header line** above it, for the
    published document? #20 doesn't say. Default: render the call code and title
    above each table, outside the table element.

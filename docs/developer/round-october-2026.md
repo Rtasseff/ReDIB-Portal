@@ -23,13 +23,17 @@ mark it there and in the worktrees registry in the same commit.
 
 ## 0. Checking back in? Start here
 
-**Last updated 2026-09-14.** Every rehearsal finding is fixed **and deployed**
-(prod pulled `d4a2d47` on 09-14 — row 3). Since then `main` has gained two
-things prod has **not** pulled yet: **#37** (the migrate advisory lock,
-`bebbc80`) and **PR #43** `execution-deadline` (#80(a), migration `0015`).
-They ship together as the **pre-open batch (≤ 10-13)** — the first
-migration-bearing deploy since 08-21, and the one that proves #37. No bucket
-is open; the round is back to *verification, not construction*.
+**Last updated 2026-09-15.** Every rehearsal finding is fixed **and deployed**
+(prod pulled `d4a2d47` on 09-14 — row 3), and **every open decision is now
+decided** (see below). Since that deploy `main` has gained, all undeployed:
+**#37** (the migrate advisory lock), **PR #43** `execution-deadline` (#80(a),
+migration `0015`), **#64**'s warning on the call edit form, the Spanish
+waitlist label, and prod's own roster commits (four evaluators added, five
+dormant roles retired — effective coverage now preclinical 14, clinical 5,
+radiochemistry 3). All of it ships as the **pre-open batch (≤ 10-13)** — the
+first migration-bearing deploy since 08-21, and the one that proves #37. No
+bucket is open, nothing is undecided; the round is back to *verification, not
+construction*.
 Suite **417 + 11** (428 on merged `main`, 2026-09-11). The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
@@ -60,13 +64,20 @@ below.
 
 ### Only you can decide these
 
-- **The Spanish column headers** in `reports/resolution_table.py`'s
-  `COLUMN_HEADERS` are a proposal, not published ReDIB wording. One dict entry.
-- **#63**: whether the five deactivated accounts holding live evaluator roles
-  get reactivated or their roles retired. Effective coverage is preclinical 10,
-  clinical 4, radiochemistry 3.
-- **#64**: whether a coordinator should be *warned* when editing an open call
-  leaves `status` and `is_open` disagreeing, or whether that waits for #40.
+- ~~**The Spanish column headers**~~ **Decided 2026-09-15:** no prior published
+  wording exists; headers stand as proposed, waitlist reads *Lista de espera*.
+  Changed on `main`.
+- ~~**#63**~~ **Decided 2026-09-15:** the five dormant evaluators are out (roles
+  retired on prod, accounts stay deactivated); four evaluators added the same
+  day (Poblador, Aguiar, López Larrubia, Candiota — Herance added then
+  deactivated, unconfirmed). Effective coverage **preclinical 14, clinical 5,
+  radiochemistry 3** — clinical is still the thin one at assignment time; #76's
+  marks will show it. The TSV half (#81, a load would re-grant the retired
+  roles) is parked for 2027.
+- ~~**#64**~~ **Decided 2026-09-15:** warn, don't block — `call_edit` now says
+  what the saved dates do when they disagree with the status (Open-but-not-
+  accepting, Announced-but-start-passed, Closed-stays-closed). On `main`; #40
+  and #54 stay parked for 2027.
 - ~~**#80(a)**~~ **Decided 2026-09-11** — both halves: (1) for REDIB-2601, set
   the call's `execution_end` to the real date on the call edit form once the
   nodes know it (no code), then prod uncomments the beat entry; (2) for every
