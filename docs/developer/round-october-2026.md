@@ -25,15 +25,15 @@ mark it there and in the worktrees registry in the same commit.
 
 **Last updated 2026-09-15.** Every rehearsal finding is fixed **and deployed**
 (prod pulled `d4a2d47` on 09-14 — row 3), and **every open decision is now
-decided** (see below). Since that deploy `main` has gained, all undeployed:
-**#37** (the migrate advisory lock), **PR #43** `execution-deadline` (#80(a),
-migration `0015`), **#64**'s warning on the call edit form, the Spanish
-waitlist label, and prod's own roster commits (four evaluators added, five
-dormant roles retired — effective coverage now preclinical 14, clinical 5,
-radiochemistry 3). All of it ships as the **pre-open batch (≤ 10-13)** — the
-first migration-bearing deploy since 08-21, and the one that proves #37. No
-bucket is open, nothing is undecided; the round is back to *verification, not
-construction*.
+decided** (see below). The **pre-open batch is deployed too** (prod pulled
+`d4a2d47 → 52a28e5` on 09-15 — row 10a): **#37** (the migrate advisory lock —
+**proven on that deploy**: one container applied `0015`, the other two waited),
+**PR #43** `execution-deadline` (#80(a), migration `0015`), **#64**'s warning on
+the call edit form, the Spanish waitlist label, and prod's own roster commits
+(five evaluators added, five dormant roles retired — effective coverage now
+preclinical 15, clinical 6, radiochemistry 3). Nothing on `main` that changes
+running code is undeployed. No bucket is open, nothing is undecided; the round
+is back to *verification, not construction*.
 Suite **417 + 11** (428 on merged `main`, 2026-09-11). The round is in **verification, not construction** — the
 build is done and the remaining risk is things nobody has looked at yet, not
 things nobody has written yet.
@@ -57,8 +57,9 @@ below.
 | 7 | ~~**#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted.~~ **Merged 2026-09-11 (PR #41):** promotion writes `accept` on every waitlisted node resolution; the table is unchanged. | deploy 09-15 → 10-13 | prod |
 | 8 | ~~**`rehearsal-polish`** — the other nine findings (#67, #69, #70, #71, #75–#79).~~ **Merged 2026-09-11 (PR #42).** | deploy 09-15 → 10-13 | prod |
 | 9 | ~~**#80(b)(c)**~~ **Merged 2026-09-11 (PR #41):** the coordinator completion digest fires at most weekly per recipient and lists *every* running project at their nodes (not just the ones at a checkpoint that day — the brief had that wrong, the branch fixed it, Ryan approved); the admin's per-template **Is active** toggle now survives deploys. **The beat entry stays commented out** until row 9b is deployed and REDIB-2601's date is corrected; re-enabling is a prod action. | with row 7 | prod |
-| 9b | **`execution-deadline`** — **merged 2026-09-14 (PR #43)**, once row 3 was deployed and #37 was on `main`; ships with the pre-open batch (row 10a). #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev || 10 | ~~**#37**, the migrate advisory lock~~ **Done 2026-09-14 (`bebbc80`):** `manage.py run_locked` wraps `migrate` and `seed_email_templates` in the entrypoint. Verified only against SQLite here; **the next deploy is its real test** (DEPLOYMENT.md says what the logs should show). | with 10a | dev |
-| 10a | **Pre-open batch deploy** — `main` from `d4a2d47` to `3feb5c0` (15 commits): #37, migration `0015` (`execution-deadline`), #64's edit warning, the Spanish label, prod's own roster commits. Backup first as always; the entrypoint changed, so the three app images must be **rebuilt**, not just restarted. Expect *one* container to log `Applying applications.0015… OK` and the other two `No migrations to apply`, no traceback, no restart. Then: (1) `migrate --check` exits 0; (2) the schema query in DEPLOYMENT.md prints `0` (column exists, no overrides yet); (3) `django_migrations` holds **one** row for `0015_application_execution_end_and_more` — the proof #37 works; (4) open any accepted REDIB-2601 application as coordinator: its detail page shows *Execution period ends: Oct 30, 2026* with no *(set by node)* marker. Rollback point is `d4a2d47` + the backup. **Not tied to the announce — do it in the next quiet slot, not on 10-12.** | **before 10-13** | prod |
+| 9b | ~~**`execution-deadline`**~~ — **merged 2026-09-14 (PR #43)**, once row 3 was deployed and #37 was on `main`; **deployed 2026-09-15** with the pre-open batch (row 10a). #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev |
+| 10 | ~~**#37**, the migrate advisory lock~~ **Done 2026-09-14 (`bebbc80`):** `manage.py run_locked` wraps `migrate` and `seed_email_templates` in the entrypoint. Verified only against SQLite here; ~~the next deploy is its real test~~ **proven on prod 2026-09-15 (row 10a):** `celery-beat` applied `0015`, `web` and `celery` waited on the lock and logged `No migrations to apply`, one `django_migrations` row, no restart. | with 10a | dev |
+| 10a | ~~**Pre-open batch deploy**~~ **Done 2026-09-15** — prod pulled `d4a2d47 → 52a28e5` (#37, migration `0015` (`execution-deadline`), #64's edit warning, the Spanish label, prod's own roster commits), backup `redib_db_20260915_135238.sql.gz` first, built the three app images while the old containers kept serving, then recreated web/celery/celery-beat only at 13:53 UTC (~20 s down; gunicorn listening 13:53:55). **#37 held on its first real test:** `celery-beat` logged `Applying applications.0015_application_execution_end_and_more... OK` (13:53:41.55), then `web` (41.80) and `celery` (42.07) `No migrations to apply`, one after the other; no `DuplicateColumn`, no traceback, restart count 0 on all three. Checks: (1) `migrate --check` exits 0; (2) the schema query prints `0`, and `execution_end` exists, nullable, on both `applications_application` and `applications_historicalapplication`; (3) `django_migrations` holds **one** row for `0015` (92 → 93 rows; the three 08-20 `0014` rows untouched); (4) REDIB-2601-001's detail page, rendered as a coordinator, reads *Execution period ends Oct 30, 2026* with no *(set by node)* marker — none of the 15 accepted REDIB-2601 applications has an override. Site, user guide and `/calls/` answer; the Celery worker pings. Completion reminders still paused (#80's re-enable sequence is separate). **Same day, after the deploy: Raúl Herance confirmed**, so his account and evaluator role were reactivated on prod and his `users.tsv` row set back to `is_active` TRUE — coverage now preclinical 15, clinical 6, radiochemistry 3, and `check_role_drift` lists only the five #81 accounts (run against the image's copy of `users.tsv`, which keeps the old FALSE until the next rebuild). | ~~before 10-13~~ | prod |
 | 11 | **#42**, the publication follow-up dead end | before December | dev |
 | 12 | **#63**, clinical evaluator capacity — recruit or reactivate (see also **#76**, whose fix makes the shortfall visible on the assignment page) | before December | Ryan |
 
@@ -68,10 +69,11 @@ below.
   wording exists; headers stand as proposed, waitlist reads *Lista de espera*.
   Changed on `main`.
 - ~~**#63**~~ **Decided 2026-09-15:** the five dormant evaluators are out (roles
-  retired on prod, accounts stay deactivated); four evaluators added the same
-  day (Poblador, Aguiar, López Larrubia, Candiota — Herance added then
-  deactivated, unconfirmed). Effective coverage **preclinical 14, clinical 5,
-  radiochemistry 3** — clinical is still the thin one at assignment time; #76's
+  retired on prod, accounts stay deactivated); five evaluators added the same
+  day (Poblador, Aguiar, López Larrubia, Candiota, Herance — Herance deactivated
+  while unconfirmed, reactivated that afternoon when he confirmed). Effective
+  coverage **preclinical 15, clinical 6, radiochemistry 3** — clinical is still
+  the thin one at assignment time; #76's
   marks will show it. The TSV half (#81, a load would re-grant the retired
   roles) is parked for 2027.
 - ~~**#64**~~ **Decided 2026-09-15:** warn, don't block — `call_edit` now says
