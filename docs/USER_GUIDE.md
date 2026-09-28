@@ -7,7 +7,7 @@ images, no relative links to other docs.
 
 # ReDIB COA Portal - User Guide
 
-**Version 1.3** | **Last Updated: August 2026**
+**Version 1.4** | **Last Updated: September 2026**
 
 ---
 
@@ -18,175 +18,246 @@ images, no relative links to other docs.
 3. [Understanding the COA Workflow](#understanding-the-coa-workflow)
 4. [Getting Started](#getting-started-phase-0)
 5. [User Roles and Permissions](#user-roles-and-permissions)
-6. [Using the Portal](#using-the-portal)
-   - [Your Profile](#your-profile)
-   - [For Applicants](#for-applicants-researchers)
-   - [For Node Coordinators](#for-node-coordinators)
-   - [For Evaluators](#for-evaluators)
-   - [For ReDIB Coordinators](#for-redib-coordinators)
-7. [Getting Help](#getting-help)
+6. [Email Notifications](#email-notifications)
+7. [Using the Portal](#using-the-portal)
+    - [Your Profile](#your-profile)
+    - [For Applicants](#for-applicants-researchers)
+    - [For Node Coordinators](#for-node-coordinators)
+    - [For Evaluators](#for-evaluators)
+    - [For ReDIB Coordinators](#for-redib-coordinators)
+    - [For Administrators](#for-administrators)
+8. [Getting Help](#getting-help)
 
 ---
 
 ## Introduction
 
-Welcome to the ReDIB COA Portal User Guide. This guide will help you navigate and use the portal to manage Competitive Open Access (COA) applications for accessing advanced biomedical imaging equipment across the ReDIB network.
+This guide explains how to use the ReDIB COA Portal to apply for, review,
+evaluate and manage Competitive Open Access (COA) to the imaging equipment of
+the ReDIB network. It is written for everyone who uses the portal —
+applicants, node coordinators, evaluators, the ReDIB coordinator and
+administrators — and assumes no technical background.
 
-This guide is written for all users of the portal, regardless of technical background. It focuses on using the web interface to accomplish your tasks.
+Read the workflow overview first, then go to the section for your role under
+[Using the Portal](#using-the-portal).
 
 ---
 
 ## What is the ReDIB COA Portal?
 
-The **ReDIB COA Portal** is a web-based system that automates the complete lifecycle of Competitive Open Access (COA) applications for biomedical imaging equipment. The portal replaces the previous manual, email-based process with an integrated platform that streamlines everything from call publication to research outcome tracking.
+The **ReDIB COA Portal** runs the whole Competitive Open Access process on the
+web, from publishing a call to following up on the publications that result.
+It replaces the email-based process ReDIB used before.
 
 ### What does the portal do?
 
-The portal helps researchers:
-- **Apply** for access to specialized imaging equipment (MRI, PET, CT, etc.)
-- **Track** application status from submission through approval
-- **Accept** granted access and coordinate scheduling
-- **Report** publications resulting from their research
+For researchers, the portal is where you:
 
-The portal helps ReDIB staff:
-- **Publish** calls for access applications
-- **Review** technical feasibility of requests
-- **Evaluate** scientific merit of applications
-- **Manage** equipment allocation and scheduling
-- **Generate** reports for ministry compliance
+- **Apply** for time on specialised imaging equipment (MRI, PET, CT and more)
+- **Follow** your application from submission to decision
+- **Accept** the access you are granted and get put in touch with the node
+- **Report** the publications that come out of the work
+
+For ReDIB staff, it is where they:
+
+- **Publish** calls for applications
+- **Review** the technical feasibility of each request
+- **Evaluate** the scientific merit of each application
+- **Decide**, node by node, which applications get equipment time, and how many hours
+- **Report** on each call, including the published resolution table
 
 ### The ReDIB Network
 
-The portal serves **4 ReDIB nodes** across Spain:
+The portal serves the **4 ReDIB nodes** in Spain:
+
 1. **CIC biomaGUNE** (San Sebastián)
 2. **BioImaC** (Madrid)
 3. **Imaging La Fe** (Valencia)
 4. **TRIMA@CNIC** (Madrid)
 
-Each node offers specialized imaging equipment and expertise in preclinical, clinical, and radiotracer research.
+Each node offers its own imaging equipment and expertise in preclinical,
+clinical and radiochemistry research.
 
 ---
 
 ## Understanding the COA Workflow
 
-The ReDIB COA process follows **10 phases** from call creation to research outcome reporting. Understanding these phases will help you know what to expect as you use the portal.
+A call moves through the phases below, from setting up the portal (phase 0)
+to reporting (phase 10). Knowing them tells you where an application is and
+who has to act next.
 
 ### Phase 0: Foundation and Setup
+
 **Who:** Administrators
-- User accounts are created and roles assigned
-- Equipment and nodes are configured
-- Email notification templates are set up
+
+- User accounts, roles, nodes, equipment and email templates are set up in the
+  admin panel.
 
 ### Phase 1: Call Management
-**Who:** Coordinators
-- Coordinators create and publish calls for applications
-- Each call specifies submission deadlines, evaluation deadlines, and available equipment
-- Published calls become visible to all users on the public call listing
-- A call can also be *announced* ahead of time: it is listed publicly as
-  upcoming, takes no applications, and opens automatically on its submission
-  start date
-- Anyone can request a consult with a node about specific equipment listed on
-  an announced or open call, without an account
+
+**Who:** ReDIB coordinator
+
+- The ReDIB coordinator creates each call as a **Draft**, with its dates and
+  the equipment on offer.
+- **Announce** lists the call publicly under *Upcoming Calls* before it opens;
+  it then opens by itself on its submission start date. **Publish** opens a
+  call straight away.
+- The portal does not send a mass email when a call is announced or opens. The
+  ReDIB coordinator announces the call through ReDIB's own channels and links
+  people to its public page.
+- While a call is announced or open, anyone can ask a node about equipment on
+  it with **Request a Consult**, without an account.
+- The call closes by itself when its submission deadline passes.
+
+A call's status goes **Draft → Announced → Open → Closed → Resolved**.
 
 ### Phase 2: Application Submission
-**Who:** Applicants (Researchers)
-- Researchers browse open calls and submit applications through a 5-step wizard:
-  1. **Basic Information:** Your contact details and ORCID
-  2. **Project Details:** Funding information and project type
-  3. **Equipment Request:** Select equipment and specify hours needed
-  4. **Scientific Content:** Describe your research across 6 evaluation criteria
-  5. **Declarations:** Confirm ethics compliance and data protection consent
-- Applications can be saved as drafts and completed later
-- Once submitted, applications receive a unique code (e.g., COA-2025-01-001)
+
+**Who:** Applicants (researchers)
+
+- Applicants fill in a 5-step application form for an open call: basic
+  information, funding and project, equipment and hours, scientific content,
+  and declarations.
+- A draft can be saved at any point and finished later. Applicants who still
+  hold a draft are reminded 7 days and 2 days before the submission deadline.
+- On submission the application gets a code built from the call code, for
+  example `REDIB-2602-APP-001`.
 
 ### Phase 3: Feasibility Review
-**Who:** Node Coordinators
-- Node coordinators review applications requesting their equipment
-- They assess **technical feasibility** (not scientific merit)
-- For multi-node applications, **all nodes must approve** for the application to proceed
-- Applicants are notified of feasibility decisions
+
+**Who:** Node coordinators
+
+- Each node whose equipment is requested checks that the work is
+  **technically feasible** there. This is not a judgement of scientific merit.
+- **Every** node must approve for the application to go on to evaluation. One
+  rejection ends it. A request for edits sends it back to the applicant as a
+  draft; when it is resubmitted, every node reviews it again.
 
 ### Phase 4: Evaluator Assignment
-**Who:** Coordinators
-- After the submission deadline, coordinators assign evaluators to applications
-- The system automatically suggests evaluators while avoiding conflicts of interest
-- Each application typically receives 2 evaluators
-- Evaluators are notified of their assignments
+
+**Who:** ReDIB coordinator
+
+- The ReDIB coordinator assigns evaluators — normally two per application —
+  automatically or one by one. Automatic assignment never picks an evaluator
+  from the applicant's own organization, prefers evaluators whose
+  specialization matches the application, and spreads the work across the
+  pool.
+- Evaluators are emailed as soon as they are assigned.
 
 ### Phase 5: Evaluation Process
-**Who:** Evaluators
-- Evaluators review applications in a **blind review** process (applicant identity hidden)
-- They score applications on **6 criteria**, each rated 0-2 points (maximum 12 points total):
-  - **Category I: Scientific and Technical Relevance**
-    1. Quality and originality
-    2. Methodology and design suitability
-    3. Expected scientific contributions
-  - **Category II: Timeliness and Impact**
-    4. Contribution to knowledge advancement
-    5. Social/economic impact potential
-    6. Exploitation and dissemination opportunity
-- Evaluators also provide a recommendation (Approved/Denied) and optional comments
-- The system calculates final scores by averaging all evaluators' scores
 
-### Phase 6: Resolution and Prioritization
-**Who:** Node coordinators (per-node decision) + ReDIB coordinator (oversight)
-- Each node coordinator independently decides for the equipment at their node:
-  accept, waitlist (pending), or reject.
-- Per-node decisions aggregate to a final application outcome:
-  - **All nodes accept →** application is **Accepted**
-  - **Any node rejects →** application is **Rejected**
-  - **No rejects but at least one waitlist →** application is **Pending** (waitlisted)
-- Applications with competitive funding normally cannot be rejected at the
-  resolution phase. The exception: if at least one evaluator recommended
-  **Denied**, the node coordinator may use that independent denial as grounds
-  to reject. (Feasibility rejection and evaluator denial remain available at
-  their own phases regardless of funding status.)
-- Approved hours are recorded per equipment; on reject the service layer
-  forces approved hours to zero so Access Tracking doesn't show phantom
-  approved time.
-- Once aggregation finalises, the applicant receives a resolution email
-  (accepted, pending, or rejected).
+**Who:** Evaluators
+
+- Evaluation is **blind**: evaluators do not see who applied.
+- Each application is scored on **6 criteria**, 0–2 points each (maximum 12):
+    - **Category 1: Scientific and Technical Relevance** — quality and
+      originality; methodology, design and work plan; expected
+      scientific–technical contributions
+    - **Category 2: Timeliness and Impact** — advancement of knowledge;
+      social, economic and/or industrial impact; exploitation, translation
+      and/or dissemination
+- Each evaluator also gives an **Access Decision**: **Approved** or
+  **Denied**. A Denied decision must be explained in a comment.
+- The application's final score is the average of its evaluators' totals.
+  When the last evaluation is in, the application becomes **Evaluated**.
+- Evaluations can still be submitted for 7 days after the evaluation
+  deadline. After that the form locks.
+
+### Phase 6: Release and Resolution
+
+**Who:** ReDIB coordinator (release), then node coordinators (decisions)
+
+- Evaluated applications wait until the ReDIB coordinator **releases** the
+  call's results to the nodes, all at once. Each node then weighs the whole set
+  of applications against its capacity instead of deciding them one at a time
+  as the scores trickle in.
+- Each node coordinator decides for the equipment at their node: **Accept**,
+  **Waitlist** or **Reject**. They also set the approved hours for each piece
+  of equipment and, when accepting, the date the project's access ends.
+- The node decisions combine into the application's outcome:
+    - **all nodes accept** → **Accepted**
+    - **any node rejects** → **Rejected**
+    - **no rejection, but at least one waitlist** → **Pending (Waiting List)**
+- **Competitive funding rule:** an application with competitive funding cannot
+  be rejected at this stage unless at least one evaluator recommended
+  **Denied**. Rejection at feasibility, and an evaluator's Denied, are not
+  affected by funding.
+- When every node has decided, the applicant is emailed the outcome.
 
 ### Phase 7: Acceptance and Handoff
-**Who:** Applicants, then node coordinators for waitlist promotions
-- Accepted applicants have **10 days** to accept or decline the granted access.
-- **Pending (waitlist)** applicants get the same 10-day accept/decline window
-  but the wording differs — accepting the waitlist offer only keeps the
-  application in the queue; no hand-off fires yet.
-- When an applicant accepts an accepted grant, a single hand-off email goes
-  to the applicant (`To`) with all relevant node coordinators on `Cc`, so
-  they can reply-all to coordinate scheduling directly.
-- When a slot frees up for a waitlisted application whose applicant has
-  already accepted the waitlist offer, a node coordinator clicks
-  **"Mark as Accepted"** on the Access Tracking page. That promotes the
-  application to Accepted and triggers the same resolution-accepted and
-  hand-off emails as a normal accepted application.
-- If an applicant does not respond within 10 days, the application is
-  automatically expired and hours are released.
+
+**Who:** Applicants, then node coordinators
+
+- Accepted and waitlisted applicants have **10 days** to accept or decline.
+  Reminders go out 7, 3 and 1 days before the deadline.
+- When an applicant accepts an accepted application, one **hand-off email**
+  goes to the applicant with the node coordinator(s) copied, so they can
+  arrange the work by replying to all.
+- Accepting a **waitlist** offer keeps the application in the queue. If a slot
+  opens, a node coordinator clicks **Promote to Accepted** and the applicant
+  gets the acceptance and hand-off emails. If no slot opens, the node closes it
+  out as **Not Reached This Call**.
+- **Nothing expires by itself.** If the 10 days pass without an answer, the
+  applicant can no longer respond in the portal, and the node coordinator is
+  reminded (with the ReDIB coordinator copied) until they either **Expire** the
+  application or **Accept on Behalf** of the applicant. An expired application
+  can be reinstated if that was a mistake.
 
 ### Phase 8: Execution and Completion
-**Who:** Node Coordinators and Applicants
-- Node coordinators and applicants coordinate directly to schedule experiment time
-- This happens outside the portal via email or phone
-- Coordinators can optionally mark access as "completed" in the portal for tracking purposes
+
+**Who:** Node coordinators and applicants
+
+- Node coordinators and applicants arrange the equipment time directly, by
+  email or phone, outside the portal.
+- Each accepted project has an **execution period end**: the call's date
+  unless the node coordinator sets a different one.
+- The applicant and the node coordinators are reminded to close the project
+  out, starting 60 days after the hand-off and then every 30 days, plus once
+  after the execution period ends.
+- When the work is done, the applicant or a node coordinator marks the
+  application complete and records the actual hours used.
 
 ### Phase 9: Publication Follow-up
-**Who:** Applicants (Researchers)
-- Applicants receive follow-up reminders at **6 months** and **12 months** after access completion
-- They are asked to report any publications resulting from their research
-- Publications must acknowledge ReDIB according to the template:
-  > *"This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU) at [NODE NAME]."*
-- Reporting publications helps demonstrate ReDIB's research impact
 
-### Phase 10: Reporting and Statistics
-**Who:** Coordinators
-- Coordinators can view comprehensive statistics and generate reports
-- Reports include:
-  - Call summary reports (Excel workbooks with 3 sheets)
-  - Equipment utilization metrics
-  - Publication statistics and acknowledgment rates
-  - Ministry compliance reports
-- All report generation is tracked for audit purposes
+**Who:** Applicants
+
+- About six months after the hand-off, applicants who have not yet reported a
+  publication get a follow-up email.
+- Publications must acknowledge ReDIB. The publication form shows the required
+  text:
+  > *"This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU) at [NODE NAME]."*
+
+### Phase 10: Close-out and Reporting
+
+**Who:** ReDIB coordinator
+
+- Once every application on the call has an outcome, the ReDIB coordinator
+  marks the call **Resolved**.
+- Reports include a statistics page, an Excel workbook for the current call,
+  and a per-call resolution table in English and Spanish, ready to publish.
+
+### Application statuses
+
+These are the status labels you will see on applications, and what each one
+means:
+
+| Status | What it means |
+|--------|---------------|
+| Draft | Being written, or sent back by a node for edits. Not submitted. |
+| Under Feasibility Review | Submitted; the nodes are checking technical feasibility. |
+| Rejected - Not Feasible | A node found the work technically infeasible. Final. |
+| Pending Evaluation | Passed feasibility; waiting for evaluators to be assigned. |
+| Under Evaluation | Evaluators are scoring it. |
+| Evaluated | All scores are in; waiting for the node decisions. |
+| Accepted — Awaiting Applicant | Access granted; the applicant has not answered yet. |
+| Accepted | The applicant has accepted. Shown as **Active** once the hand-off email has gone out. |
+| Waitlist — Awaiting Applicant | On the waiting list; the applicant has not answered yet. |
+| Waitlist — Accepted by Applicant | The applicant accepted the waitlist offer and is waiting for a slot. |
+| Rejected | Not granted at the decision stage. Final. |
+| Declined | The applicant declined. Final. |
+| Expired | Nobody answered within the 10 days and a coordinator expired it. Can be reinstated. |
+| Not Reached This Call | Waitlisted, but no slot opened. Final. |
+| Completed | The work is done and the actual hours are recorded. |
 
 ---
 
@@ -194,917 +265,866 @@ The ReDIB COA process follows **10 phases** from call creation to research outco
 
 ### Accessing the Portal
 
-The ReDIB COA Portal is accessed through your web browser at the URL provided by your ReDIB administrator.
+The portal is at `https://portal.redib.net`.
 
 **Pages you can read without logging in:**
 
-- `/calls/` — the published calls, with their deadlines and the equipment on offer.
-- `/newsletters/` — ReDIB newsletters, reachable from the **Newsletters** button on the calls page. Each one opens as a full newsletter inside the portal; links inside a newsletter open in a new tab.
-- `/help/user-guide/` — this guide, also linked from the **"Need help?"** menu in the navigation bar.
+- `/calls/` — the open calls and the upcoming (announced) ones, with their
+  dates and the equipment on offer. Each call has its own page, with a
+  **Request a Consult** button while it is announced or open.
+- `/newsletters/` — ReDIB newsletters, reachable from the **Newsletters**
+  button on the calls page. Each one opens as a full newsletter inside the
+  portal; links inside a newsletter open in a new tab.
+- `/help/user-guide/` — this guide, also linked from the **Need help?** menu
+  at the top of every page.
 
-You need an account to apply, review, or evaluate. Register at `/accounts/signup/`; new accounts receive the applicant role automatically.
+### Creating an account and logging in
 
-**For administrators accessing the admin interface:**
-Navigate to `/admin/` and log in with your administrator credentials. The admin interface is used for initial setup and configuration.
+- **Register:** click **Register** at the top right (or go to
+  `/accounts/signup/`), enter your email address twice and a password twice,
+  then click the confirmation link that is emailed to you. New accounts get the
+  **Applicant** role automatically, so you can start an application straight
+  away.
+- **Log in:** click **Login** and sign in with your email address and password.
+  **Forgot password?** on the login page emails you a link to set a new one.
+- **First login:** the portal takes you to your **Profile** until the required
+  fields are filled in — see [Your Profile](#your-profile).
 
-### Core Data in the System
-
-The portal manages several types of information:
-
-- **Organizations:** Universities, research centers, hospitals, and companies
-- **Nodes:** The 4 ReDIB network nodes that provide equipment
-- **Equipment:** Imaging devices (MRI, PET, CT, etc.) available at each node
-- **Users:** Portal users with their roles and permissions
-- **Calls:** Published opportunities to apply for equipment access
-- **Applications:** Researcher requests for equipment access
-- **Evaluations:** Scientific assessments of applications
-- **Publications:** Research outputs resulting from equipment access
+Every other role — node coordinator, evaluator, ReDIB coordinator,
+administrator — is assigned by an administrator.
 
 ---
 
 ## User Roles and Permissions
 
-The portal uses a **role-based access system** to control what each user can see and do. Understanding your role(s) will help you navigate the portal effectively.
-
-**Important:** Users can have multiple roles. For example, you might be both an Applicant and an Evaluator.
-
-### 1. Applicant
-
-**Role identifier:** `applicant`
-
-**Who you are:** A researcher applying for access to imaging equipment.
-
-#### What you see in the portal
-
-- **Dashboard:** Shows "My Applications" section with:
-  - List of your applications and their current status
-  - Count of draft applications you can continue working on
-  - Quick action buttons to view applications or browse available calls
-
-- **Sidebar Navigation:**
-  - "My Applications" - View and manage your submissions
-  - "Open Calls" - Browse available calls to apply for
-  - "My Profile" - Update your contact information and preferences
-
-#### What you can do
-
-- Browse published calls and view their details
-- Create and submit applications through the 5-step wizard
-- Save applications as drafts and return to complete them later
-- View your application status and evaluation results
-- Accept or decline granted access (within 10-day deadline)
-- Report publications resulting from your research
-- Update your notification preferences
-
-#### What you cannot do
-
-- View other users' applications
-- Access feasibility reviews or evaluations
-- Create or manage calls
-- Assign evaluators or make resolution decisions
-
-#### Notifications you receive
-
-- **Application confirmation** when you submit an application
-- **Feasibility decision** when node review is complete
-- **Resolution notification** when final decisions are made (accepted/pending/rejected)
-- **Acceptance reminder** at 7 days if you haven't responded to acceptance
-- **Publication follow-up** at 6 and 12 months after access completion
-- **Call announcements** (if you've enabled this in your preferences)
-
-**Tip:** You can control which notifications you receive in your profile settings under "Notification Preferences."
-
----
-
-### 2. Node Coordinator
-
-**Role identifier:** `node_coordinator`
-
-**Who you are:** A staff member at one of the ReDIB nodes responsible for reviewing technical feasibility and coordinating equipment access.
-
-#### What you see in the portal
-
-- **Dashboard:** Shows node coordinator sections including:
-  - "Pending Feasibility Reviews" with applications awaiting your review
-  - Direct action buttons to review applications
-  - Statistics on applications requesting your node's equipment
-
-- **Sidebar Navigation:**
-  - "Feasibility Reviews" - Applications awaiting technical review
-  - "Scheduling" - Accepted applications needing coordination
-  - "Access Tracking" - Monitor ongoing and completed access
-  - Equipment assigned to your node
-
-#### What you can do
-
-- Review applications requesting equipment from your node
-- Approve or reject applications based on technical feasibility
-- Provide comments explaining feasibility decisions
-- View applicant contact information for scheduling
-- Mark access as completed (optional tracking)
-- View statistics specific to your node's equipment
-- Update your notification preferences
-
-#### What you cannot do
-
-- View scientific evaluations or evaluator scores
-- Make final acceptance/rejection decisions (only feasibility)
-- Assign evaluators
-- Create or publish calls
-- Generate system-wide reports
-
-#### Notifications you receive
-
-- **Feasibility request** when new applications request your equipment
-- **Feasibility reminder** at 5 days if reviews are pending
-- **Handoff notification** when applicants accept access (to coordinate scheduling)
-
-**Important:** You only see applications that request equipment from your specific node. Multi-node applications appear in multiple node coordinators' queues.
-
----
-
-### 3. Evaluator
-
-**Role identifier:** `evaluator`
-
-**Who you are:** An expert reviewer who assesses the scientific merit of applications.
-
-#### What you see in the portal
-
-- **Dashboard:** Shows evaluator sections including:
-  - "My Pending Evaluations" with applications assigned to you
-  - Evaluation deadlines and days remaining
-  - Quick action buttons to view and complete evaluations
-
-- **Sidebar Navigation:**
-  - "My Evaluations" - Applications you need to evaluate
-  - "Completed Evaluations" - Your past reviews
-
-#### What you can do
-
-- View applications assigned to you in **blind review format** (applicant identity hidden)
-- Score applications on 6 criteria (0-2 points each, max 12 total)
-- Provide a recommendation (Approved/Denied)
-- Add optional comments to support your evaluation
-- View evaluation deadlines and track your progress
-- Update your notification preferences
-
-#### What you cannot do
-
-- See applicant name, organization, or contact information during review
-- Edit evaluations after submission (they are locked)
-- View other evaluators' scores before submitting your own
-- Make final acceptance decisions
-- Access feasibility reviews
-
-#### Notifications you receive
-
-- **Evaluation assignment** when you're assigned to review applications
-- **Evaluation reminder** at 7 and 14 days if evaluations are pending
-- **Deadline warnings** when evaluation deadlines are approaching
-
-**Your specialization matters:** Evaluators can declare one or more specialization areas (e.g. `clinical`, `preclinical`, `radiotracers`). The system preferentially assigns you to applications matching any of your declared areas.
-
----
-
-### 4. Coordinator (ReDIB Coordinator)
-
-**Role identifier:** `coordinator`
-
-**Who you are:** A ReDIB staff member with administrative authority to manage calls, assign evaluators, and make final decisions.
-
-#### What you see in the portal
-
-- **Dashboard:** Shows comprehensive coordinator panels including:
-  - Active calls and their status
-  - Resolution statistics across all calls
-  - Recent applications and their progress
-  - System-wide metrics and pending tasks
-
-- **Sidebar Navigation:**
-  - "Call Management" - Create, edit, publish, and close calls
-  - "Evaluator Assignment" - Assign evaluators to applications
-  - "Resolution" - Review evaluations and make final decisions
-  - "Reports & Statistics" - Generate reports and view analytics
-  - "Publications" - Review reported research outcomes
-
-#### What you can do
-
-- **Create and publish calls** with equipment allocations and deadlines
-- **Assign evaluators** to applications (manual or automatic assignment)
-- **Review evaluation results** and final scores
-- **Make resolution decisions** (accept/pending/reject applications)
-- **Finalize resolutions** and trigger acceptance deadlines
-- **Generate Excel reports** for ministry compliance
-- **View all applications** across all calls and nodes
-- **Monitor publication reporting** and acknowledgment rates
-- Update email notification templates (admin access required)
-
-#### What you cannot do
-
-- Conduct technical feasibility reviews (that's the node coordinators' role)
-- Submit evaluations (that's the evaluators' role)
-- Apply for equipment access as an applicant (separate role required)
-
-#### Notifications you receive
-
-- **Evaluator overdue reminder** (daily) for each evaluator who has an
-  evaluation past the call's evaluation deadline, plus a lockout email
-  the day the window closes.
-- **Applicant declination** when accepted applicants decline access.
-- **Publication submission** when applicants report research outcomes.
-
-You do **not** receive a per-application "evaluations complete" email —
-node coordinators own the next action (resolution). Track evaluation
-progress from the call detail and resolution dashboard instead.
-
-**Special authority:** Coordinators are the **only users who can create calls**. This ensures centralized control over the COA process.
-
----
-
-### 5. Administrator (Admin)
-
-**Role identifier:** `admin`
-
-**Who you are:** A system administrator with elevated privileges for configuration and user management.
-
-#### What you see in the portal
-
-- **Dashboard:** Same as Coordinator, plus:
-  - "Admin Panel" link in the sidebar (access to Django admin interface)
-
-- **Sidebar Navigation:**
-  - All sections available to coordinators
-  - "Admin Panel" - Direct link to `/admin/` for system configuration
-
-#### What you can do
-
-Everything a Coordinator can do, plus:
-- Access the Django admin interface for system configuration
-- Create and manage user accounts
-- Assign roles to users
-- Configure nodes and equipment
-- Manage email templates
-- Configure system settings
-- View and edit all data directly in the database
-
-#### What makes you an admin
-
-- You have the `admin` role assigned in UserRole, **OR**
-- You are a superuser (highest privilege level)
-
-**Security note:** Admin access should be restricted to technical staff responsible for system maintenance.
-
----
-
-### 6. Superuser
-
-**Who you are:** The highest privilege level in the system, typically used for initial setup and emergency access.
-
-#### What you can do
-
-- **Bypass all role restrictions** - Access any feature regardless of role assignments
-- Full access to the Django admin interface
-- Create other superusers and administrators
-- Access all views and data in the system
-
-**Note:** Superuser status is separate from role assignments. Superusers automatically pass all role checks, even without explicit roles assigned.
-
-**Security warning:** Superuser accounts should be carefully protected and used only when necessary for system administration.
-
----
-
-## Role Assignment and the "No Roles" State
+What you see and can do depends on your role. You can hold several roles —
+for example Applicant and Evaluator — and then see everything each of them
+gives you. Your roles are listed under **My Roles** on your profile page.
+
+| Role | Dashboard panels | Menu entries (left side) |
+|------|------------------|--------------------------|
+| Applicant | My Applications | My Applications, My Active Access, Publications, Open Calls |
+| Node Coordinator | Pending Feasibility Reviews, Pending Resolution Decisions | Feasibility Reviews, Resolution Queue, Scheduling, Access Tracking |
+| Evaluator | My Pending Evaluations | My Evaluations |
+| ReDIB Coordinator | Active Calls, Quick Stats, Recent Applications | Call Management, Assign Evaluators, Resolution, Reports |
+| Administrator | — | Admin Panel |
+
+Everyone also has **Dashboard** at the top of the menu and **Public Calls**
+under *General*.
+
+### The roles
+
+- **Applicant** — a researcher applying for equipment time. You see only your
+  own applications.
+- **Node Coordinator** — staff at a ReDIB node. You review the technical
+  feasibility of requests for your node's equipment, decide which evaluated
+  applications your node accepts, waitlists or rejects, and look after
+  accepted projects until they are complete. You see only applications that
+  request equipment at your node; one that requests equipment at several nodes
+  appears in each of those nodes' lists.
+- **Evaluator** — an expert reviewer who scores the applications assigned to
+  you. The review is blind: you never see the applicant's name, organization,
+  contact details, project title, project code or funding agency.
+- **ReDIB Coordinator** — runs the calls: creates and announces them, assigns
+  evaluators, releases each call's results to the nodes, follows the process
+  to the end, and produces the reports. Only ReDIB coordinators can create
+  calls. The feasibility and resolution decisions belong to the node
+  coordinators, and the scores to the evaluators.
+- **Administrator** — maintains accounts, roles, nodes, equipment and email
+  templates in the admin panel. See
+  [For Administrators](#for-administrators).
 
 ### How roles are assigned
 
-Anyone who registers through `/accounts/signup/` is given the **applicant** role automatically at signup, so you can start an application straight away. Every other role — node coordinator, evaluator, coordinator, admin — is assigned by administrators through the Django admin interface at `/admin/`.
-
-A user can have:
-- **No roles** - Limited access to public information only
-- **One role** - Access specific to that role
-- **Multiple roles** - Combined access from all assigned roles
+Registering through `/accounts/signup/` gives you the Applicant role. Every
+other role is assigned by an administrator.
 
 ### What happens if you have no roles assigned
 
-Because self-registration grants the applicant role, this state now only shows up for accounts created another way — imported from the ReDIB user list, or created in the admin panel — whose roles haven't been set yet.
-
-If you log in without any assigned roles, you will see:
-- A "no roles assigned" notice on your dashboard
-- Access to browse public calls only
-- A message instructing you to contact your administrator
-
-**What you cannot do without roles:**
-- Submit applications
-- Review feasibility
-- Evaluate applications
-- Create or manage calls
-- Access any role-specific features
-
-**If you need role access:** Contact your ReDIB administrator to request appropriate role assignment.
+An account with no active role — one created by ReDIB whose roles are not set
+yet, for example — sees a *"You don't have any roles assigned yet"* notice on
+the dashboard and can browse the public calls, but cannot apply, review or
+evaluate. Contact the ReDIB administrator to have the right role added.
 
 ---
 
-## Notification Preferences
+## Email Notifications
 
-All users can control which email notifications they receive. This is managed through your profile settings.
+The portal emails you whenever something needs your attention. Every subject
+starts with **ReDIB COA**. Each role section under
+[Using the Portal](#using-the-portal) ends with a list of the emails that role
+receives.
 
-### Available notification preferences
-
-1. **Call Published Notifications**
-   - Controlled by: `receive_call_notifications` flag on your user account
-   - Who it affects: All users
-   - What it does: Receive email when new calls are published
-
-2. **Application Update Notifications**
-   - Controlled by: `notify_application_updates` in Notification Preferences
-   - Who it affects: Applicants, Coordinators
-   - What it does: Receive updates on application status changes
-
-3. **Evaluation Assignment Notifications**
-   - Controlled by: `notify_evaluation_assigned` in Notification Preferences
-   - Who it affects: Evaluators
-   - What it does: Receive notification when assigned to review applications
-
-4. **Feasibility Request Notifications**
-   - Controlled by: `notify_feasibility_requests` in Notification Preferences
-   - Who it affects: Node Coordinators
-   - What it does: Receive notification when applications need feasibility review
-
-5. **Reminder Notifications**
-   - Controlled by: `notify_reminders` in Notification Preferences
-   - Who it affects: Evaluators, Node Coordinators, Applicants
-   - What it does: Receive deadline reminders and follow-up emails
-
-### How to update your preferences
-
-1. Log in to the portal
-2. Click on your profile or settings
-3. Navigate to "Notification Preferences"
-4. Check or uncheck the notification types you want to receive
-5. Save your changes
-
-**Tip:** Even if you disable reminders, you'll still receive critical notifications like resolution decisions and acceptance deadlines.
-
----
-
-## Understanding the Dashboard
-
-Your dashboard appearance depends on your assigned role(s). Here's what each role sees:
-
-### Dashboard sections by role
-
-| Section | Applicant | Node Coordinator | Evaluator | Coordinator | Admin |
-|---------|-----------|------------------|-----------|-------------|-------|
-| My Applications | ✓ | | | | |
-| Open Calls | ✓ | | | | |
-| Pending Feasibility Reviews | | ✓ | | | |
-| Scheduling & Access Tracking | | ✓ | | | |
-| My Pending Evaluations | | | ✓ | | |
-| Completed Evaluations | | | ✓ | | |
-| Active Calls | | | | ✓ | ✓ |
-| Resolution Statistics | | | | ✓ | ✓ |
-| Recent Applications (All) | | | | ✓ | ✓ |
-| System-wide Metrics | | | | ✓ | ✓ |
-| Admin Panel Link | | | | | ✓ |
-
-### Multiple roles = Combined dashboard
-
-If you have multiple roles, you'll see sections from all your roles combined. For example:
-- **Applicant + Evaluator:** See both "My Applications" and "My Pending Evaluations"
-- **Node Coordinator + Evaluator:** See both "Pending Feasibility Reviews" and "My Pending Evaluations"
+- **Reminders are grouped.** An evaluator with several pending evaluations gets
+  one email listing all of them, and node coordinators get one digest covering
+  their node's projects rather than one email per project.
+- **No call announcement emails.** The portal does not email users when a call
+  is announced or opens. ReDIB announces each call itself and links to the
+  call's public page.
+- **Turning emails off.** There is no email setting on your profile. If you
+  want to stop a kind of email — reminders, for example — ask the ReDIB
+  administrator, who can change your notification preferences in the admin
+  panel.
 
 ---
 
 ## Using the Portal
 
-This section walks through what each user actually sees and does at the portal,
-written as if you were sitting in front of the screen. After login, your
-dashboard and the menu down the left side are tailored to your role(s). If
-you have multiple roles (e.g. evaluator + applicant), the panels combine.
+This section walks through what each role sees and does, screen by screen.
+After you log in, your dashboard and the menu down the left side are tailored
+to your roles; with several roles, the panels combine.
 
-A few things every role sees at all times:
+Every page has:
 
-- A **navigation bar at the top** with the ReDIB logo, your name menu (Profile /
-  Logout), and a **"Need help?"** dropdown holding two items: **User guide**
-  (this document, served as a portal page at `/help/user-guide/`) and
-  **Contact us**, which opens an email to the ReDIB support address.
-- A **footer** with the same support address.
-- If your profile is missing a required field (phone, organization, position,
-  …), the system redirects you to your **Profile** page until you fill it in.
-  This matters most on first login — finish the profile, then the rest of the
-  portal becomes available.
+- A **navigation bar** at the top with **Need help?** — **User guide** (this
+  page) and **Contact us**, which opens an email to ReDIB support — plus
+  **Dashboard**, **Calls**, and your name, which opens **Profile** and
+  **Logout**.
+- A **footer** with the same support email address.
 
-Pick the section below that matches your role:
-
-- [Your Profile](#your-profile)
-- [For Applicants](#for-applicants-researchers)
-- [For Node Coordinators](#for-node-coordinators)
-- [For Evaluators](#for-evaluators)
-- [For ReDIB Coordinators](#for-redib-coordinators)
+If your profile is missing a required field, every page sends you to your
+**Profile** until you complete it. This guide stays readable in the meantime.
 
 ---
 
 ### Your Profile
 
-Every user has a profile page where you manage your personal information and
-account settings. Completing your profile is the first thing you need to do
-after logging in for the first time.
+Every user has a profile page. Completing it is the first thing to do after
+you log in for the first time.
 
 #### Navigating to your profile
 
-Click your **name** in the top-right corner of any page, then select
-**Profile** from the dropdown menu. You can also navigate directly to
-`portal.redib.net/profile/`.
+Click your **name** in the top-right corner of any page and choose
+**Profile**, or go to `portal.redib.net/profile/`.
 
 #### Required fields
 
-The portal requires the following fields before you can access any other
-pages. If any are missing, the system will redirect you to your profile
-page automatically until you complete them:
+Until these are filled in, the portal keeps bringing you back to this page:
 
-- **First name**
-- **Last name**
-- **Phone number** — the number node coordinators will use to reach you for
-  scheduling
-- **Organization** — select your institution from the dropdown
-- **Position** — your role at your institution (e.g. Researcher, Professor,
-  Technician)
+- **First Name** and **Last Name**
+- **Phone** — the number node coordinators will use to reach you
+- **Title / Position** — for example Principal Investigator, Researcher,
+  Technician
+- **Organization** — pick your institution from the list. If it is not there,
+  choose **Other (create new)** and fill in the new organization's details.
 
-Once all required fields are filled in, click **Save Changes**. You will be
-redirected to your dashboard and the rest of the portal becomes available.
+Click **Save Changes**. You go to your dashboard and the rest of the portal
+opens up.
 
 #### Other profile fields
 
-Beyond the required fields, you can also fill in:
+- **ORCID** — pre-fills into your applications.
+- **Evaluator Specialization Areas** (evaluators only) — Preclinical, Clinical
+  and/or Radiochemistry. These decide which applications you are preferably
+  matched with, so keep them up to date.
+- **Automatic data consent for applications** — tick it to give the
+  data-processing consent once, for all your future applications, instead of
+  on every application.
 
-- **ORCID** — your ORCID identifier (pre-fills into applications)
-- **Specialization areas** (evaluators only) — declare your expertise areas
-  (preclinical, clinical, radiochemistry) so the system can match you to
-  relevant applications
-- **Notification preferences** — control which email notifications you
-  receive (call announcements, reminders, etc.)
+The page also lists **My Roles**, the roles on your account.
 
 #### Changing your password
 
-1. Click your **name** in the top-right corner and select **Profile**.
-2. At the bottom of the profile page, click the **Change Password** link.
-   This takes you to the password change form.
-3. Enter your **current password**, then your **new password** twice to
-   confirm.
-4. Click **Change Password**. You will be logged out and redirected to the
-   login page, where you can sign in with your new password.
+1. On your profile page, click **Change Password** (in the *Password* box).
+2. Enter your **Current Password**, then your **New Password** and
+   **Confirm New Password**.
+3. Click **Change Password**.
 
-You can also navigate directly to `portal.redib.net/accounts/password/change/`.
+You can also go directly to `portal.redib.net/accounts/password/change/`.
 
 ---
 
 ### For Applicants (researchers)
 
 You apply for time on imaging equipment, follow the application through review
-and resolution, accept the offer if granted, and report any publications that
-result.
+and decision, accept the access if you are granted it, and report any
+publications that result.
 
 #### Your dashboard
 
-After logging in you see **My Applications** — a card listing every application
-you've created, with a status badge on each one (Draft / Under Review / Pending
-Evaluation / Evaluated / Accepted / Pending (Waitlist) / Rejected / etc.) and
-the action button you can take next: *Continue editing*, *Accept*, *Decline*,
-or *Add publication*.
+**My Applications** lists every application you have created with its status
+badge (see [Application statuses](#application-statuses)) and the next thing
+you can do:
 
-The left sidebar (under the **Applicant** heading) gives you:
+- **View** — open the application.
+- **Continue** — carry on with a draft.
+- **Accept/Decline** or **Accept/Decline Waitlist** — respond to a decision.
 
-- **My Applications** — the same list, in full detail.
-- **My Active Access** — applications that have been accepted; this becomes
-  your hand-off page once you say yes to a granted slot.
-- **Publications** — your reported publications + the form to add new ones.
-- **Open Calls** — currently-published calls you can apply to.
+The left-hand menu (under **Applicant**) gives you:
+
+- **My Applications** — the full list. Drafts on a call that has closed show
+  **Call closed** instead of **Continue**, and completed applications have an
+  **Add Publication** button.
+- **My Active Access** — the applications you have accepted, with their
+  equipment, hours and node contacts.
+- **Publications** — your reported publications, and the form to add one.
+- **Open Calls** — the public list of calls.
 
 #### Asking a node about equipment before you apply
 
-The public `/calls/` page lists open calls **and** upcoming ones that have been
-announced but not yet opened. Either kind of call has a detail page with the
-full equipment list, and next to each instrument a **Consult** button (there is
-also a general *Request a consult* button at the top of the equipment list).
+The public `/calls/` page lists open calls and, under *Upcoming Calls*, calls
+that have been announced but are not open yet. Each call's page lists its
+equipment, with a **Consult** button next to each instrument and a
+**Request a consult** button above the list.
 
 Use it when you want to know whether an instrument suits your study, what it
 can do, or whether time is likely to be available:
 
-1. Click **Consult** on the instrument you are interested in — it arrives
-   pre-ticked. You can tick more instruments, across as many nodes as you like.
-2. Fill in your name and email (if you are logged in these are pre-filled from
-   your profile, and you can edit them), optionally a phone number, your
-   institution, and what you would like to discuss.
-3. Send it. The coordinator(s) of every node whose equipment you ticked get
-   your enquiry by email and will contact you directly, and you receive a copy
-   for your records.
+1. Click **Consult** next to the instrument you are interested in — it
+   arrives already ticked. You can tick more, at as many nodes as you like.
+2. Fill in your name and email (pre-filled from your profile if you are logged
+   in) and, optionally, a phone number, your institution and what you would
+   like to discuss.
+3. Click **Send request**. The coordinator(s) of every node whose equipment
+   you ticked get your enquiry by email and will contact you directly. You get
+   a copy for your records.
 
-This is informal contact only: it does not create an application, does not
-commit you to applying, and no account is needed. To actually apply you still
-have to log in and use the application wizard once the call is open.
+This is informal contact only. It does not start an application or commit you
+to applying, and you do not need an account. To apply, log in and use the
+application form once the call is open.
 
 #### Submitting an application
 
-1. Click **Open Calls** (or *Browse Open Calls* on the dashboard). Each open
-   call shows the submission deadline, the equipment available across nodes,
-   and a description.
-2. On a call's detail page, click **Apply**. You enter a **5-step wizard**
-   with one read-only interstitial page part-way through.
+1. Find the call on the **Calls** page and click **Apply Now** (or
+   **Apply for Access** on the call's own page). You can hold one draft per
+   call — if you already have one, you are taken back to it.
+2. Work through the form. **Next** checks the current step and saves it.
+   From step 2 on, **Save Draft** saves whatever you have typed so far, even a
+   half-finished step, and returns you to your dashboard. Come back any time
+   with **Continue**.
+    - **Step 1 — Basic Information:** Name and Surname, ORCID, Entity, Email
+      and Phone come from your profile and cannot be changed here — use
+      **Edit your profile** on the step to correct them. Node coordinators
+      reach you through this email and phone. The only thing you type on this
+      step is the Project Title.
+    - **Step 2 — Funding & Project Information:** a one-line Project Summary,
+      the Subject Area, and whether the project has competitive funding. If it
+      does, give the Project Code and Funding Agency (pick from the list, or
+      choose *Other (enter new)*) and its Origin of Funds.
+    - **Step 3 — Equipment Request:** the Service Modality, the Specialization
+      Area (used to match evaluators), and the equipment from this call with
+      the hours you need on each. You can request equipment at more than one
+      node in the same application.
+    - **General Information and Instructions** — after step 3 you see a
+      read-only page with the instructions from the original ReDIB application
+      form. Read it and click **I have read this — Continue to Scientific
+      Content**. The same text is available later from the info button on
+      step 5.
+    - **Step 4 — Scientific Content:** six free-text sections, one for each
+      criterion the evaluators score.
+    - **Step 5 — Declarations & Consent:** use of animals or human subjects,
+      ethics approval, insurance, informed consent, and data-processing
+      consent. Some boxes only appear when earlier answers call for them. One
+      of them is **"I have confirmed technical feasibility with the ReDIB
+      node"** — see the next section.
+3. **Preview Application** shows the whole application as the reviewers will
+   see it. Click **Submit Application** and confirm. The status becomes
+   **Under Feasibility Review** and the node coordinators are emailed. Once
+   submitted, you cannot change it unless a node sends it back for edits.
 
-   Your work is saved when you click **Next** on a step. Steps 2–5 also have
-   a **Save Draft** button that saves whatever you have typed so far —
-   including half-finished steps — and returns you to your dashboard, so you
-   can stop mid-step without losing anything. Come back any time from
-   **My Applications → Continue**.
-   - **Step 1 — Applicant info**: name, ORCID, organization, email, phone,
-     project name. Most fields pre-fill from your profile. The email and
-     phone you enter *here* are what node coordinators will use to reach you,
-     so they can be different from your account email if needed.
-   - **Step 2 — Project details**: short summary, funding agency (pick from
-     the dropdown — about 375 entries seeded; use *Other (enter new)* if
-     yours isn't listed), origin of funds, subject area, service modality.
-   - **Step 3 — Equipment request**: select equipment items from the call
-     and enter the hours you need for each. You can request equipment from
-     more than one node in the same application.
-   - **General Information and Instructions** — after step 3, **Next** takes
-     you to a read-only page carrying the instructions from the original
-     ReDIB application form. Nothing is collected here; read it and click
-     **I have read this — Continue to Scientific Content**. The same text
-     stays available from the info button on step 5 if you want it again.
-   - **Step 4 — Scientific content**: six free-text sections — quality and
-     originality, methodology, expected contributions, advancement of
-     knowledge, social/economic impact, exploitation/dissemination.
-     Evaluators score each one 0–2.
-   - **Step 5 — Declarations**: animal/human use, ethics-committee
-     approval, insurance, informed consent, and data-processing consent.
-     Some checkboxes only appear if upstream answers warrant them. One of
-     these is **"I have confirmed technical feasibility with the ReDIB
-     node"** — see *Talking to the node before you submit* below.
-3. **Preview & Submit.** The preview page shows the whole application as the
-   reviewers will see it. When you click **Submit**, the status moves to
-   **Under Feasibility Review** and feasibility-review emails go out to the
-   relevant node coordinators.
+The preview also offers **Download PDF for your records (optional)**,
+**Back to Edit** and **Save and Continue Later**. **Cancel Application**
+(on the preview and on steps 2–5) permanently deletes the draft.
 
 #### Talking to the node before you submit
 
-ReDIB expects you to have discussed your proposal with the node(s) whose
-equipment you are requesting *before* you submit — feasibility is a technical
-conversation, and it goes much faster if it has already happened. Leaving
-step 5 triggers a short check on that:
+ReDIB expects you to discuss your proposal with the node(s) whose equipment you
+are requesting *before* you submit — feasibility is a technical conversation,
+and it goes much faster if it has already happened. Clicking
+**Next: Preview & Submit** on step 5 triggers a short check:
 
-- If you **left the feasibility checkbox unticked**, the portal asks whether
-  you'd like to **request a consult**. Answer **"Yes, request a consult"** and
-  it emails the node coordinator at every node with equipment on your draft;
-  they will contact you to discuss feasibility. Your draft is saved and you
-  return to **My Applications**. Answer **"No, continue without a consult"**
-  and you go straight to the preview page.
-- If you **ticked the checkbox**, the portal asks you to confirm you really
-  did speak to the node. **"Yes, I confirmed feasibility"** continues to the
-  preview. **"No, not yet"** unticks the box and offers the consult request
-  above.
+- If you **left the feasibility box unticked**, the portal asks whether you
+  would like to request a consult. **Yes, request a consult** emails the node
+  coordinator at every node with equipment on your draft; they will contact
+  you. Your draft is saved and you return to **My Applications**.
+  **No, continue without a consult** takes you to the preview.
+- If you **ticked the box**, the portal asks you to confirm you really did
+  speak to the node. **Yes, I confirmed feasibility** continues to the
+  preview. **No, not yet** unticks the box and offers the consult request.
 
-Requesting a consult does **not** submit your application and does not block
-you from submitting later — you can request one, wait for the node's reply,
-then come back and submit. If you haven't picked any equipment yet, the
-request is recorded but no emails go out; choose your equipment on step 3 and
-request again. The request is visible to the node coordinators and the ReDIB
-coordinator on your application, so they can see the conversation is under way.
+Requesting a consult does not submit your application and does not stop you
+submitting later — request one, wait for the node's reply, then come back and
+submit. If you have not picked any equipment yet, the request is recorded but
+no email goes out; choose your equipment on step 3 and request again. The
+request is shown on your application, so the coordinators can see the
+conversation is under way.
+
+#### If the call closes while you are drafting
+
+Once the submission deadline passes, every page of the form shows a banner
+saying when the call closed: you can still read and edit your draft, but it can
+no longer be submitted. In **My Applications** the draft shows **Call closed**
+instead of **Continue**.
 
 #### What happens after you submit
 
-Each status change emails you, and the dashboard shows the current state:
+Each step emails you, and your dashboard shows the current status:
 
-- **Feasibility result**: each requested node either approves, rejects, or
-  asks you for edits. If any node rejects on technical grounds the whole
-  application is rejected. If any node asks for edits, the application
-  returns to draft so you can revise and resubmit.
-- **Evaluation**: after the submission window closes, evaluators score your
-  application (you don't see scores during this phase). Once all evaluators
-  submit, the status moves to **Evaluated**.
-- **Resolution**: each node coordinator decides Accept / Pending (waitlist) /
-  Reject for the equipment at *their* node. The combination becomes your
-  overall outcome — see *Phase 6* in the workflow overview for the
-  aggregation rule.
-- **Acceptance**: if your outcome is **Accepted** or **Pending (waitlist)**,
-  you have **10 days** to respond. From your dashboard click **Accept Access**
-  or **Decline Access**. If you do nothing within 10 days, the application
-  auto-expires and the hours are released.
+- **Feasibility.** Each node with equipment on your application approves,
+  rejects, or asks for edits. If a node asks for edits, the application
+  returns to **Draft** with the node's comments at the top of the application
+  page; click **Edit Application**, make the changes and submit again — every
+  node then reviews it afresh. If a node rejects it, the application ends as
+  **Rejected - Not Feasible**. When every node has approved, it goes to
+  evaluation.
+- **Evaluation.** Evaluators score your application. You do not see the scores
+  during this phase.
+- **Decision.** Once ReDIB releases the call's results to the nodes, each node
+  decides for its own equipment, and the combination becomes your outcome (see
+  [Phase 6](#phase-6-release-and-resolution)). You are emailed when every node
+  has decided.
 
-#### After you've been accepted
+#### Responding to a decision
 
-- The **My Active Access** page lists your accepted applications with the
-  per-equipment hours approved and the contact info for each node
-  coordinator. **Scheduling happens off-portal** — by email or phone
-  with the node coordinators (they were CC'd on the hand-off email, so the
-  easiest start is to reply-all).
-- When the work is done, click **Mark Complete** on the access entry and
-  log the actual hours used per equipment.
+If your application is **Accepted** or placed on the **waiting list**, you have
+**10 days** to respond. Click **Accept/Decline** (or
+**Accept/Decline Waitlist**) on your dashboard. The page shows the equipment
+and hours granted and the days you have left.
+
+- **Accept Access** — you are put in touch with the node(s): one hand-off email
+  goes to you with the node coordinator(s) copied. Reply to all to arrange
+  your equipment time.
+- **Accept Waitlist Offer** — you stay on the waiting list. If a slot opens, a
+  node coordinator promotes your application and you receive the acceptance and
+  hand-off emails straight away, with no second click. If no slot opens this
+  call, you are told once that it was **Not Reached This Call**.
+- **Decline Access** — you give up the offer; you can add a reason. This
+  cannot be undone.
+
+You are reminded 7, 3 and 1 days before your deadline. After the deadline the
+page no longer accepts a response — your node coordinator will be in touch
+about what happens next.
+
+#### After you have been accepted
+
+- **My Active Access** lists the applications you have accepted. Open
+  **View Equipment & Hours** to see the approved hours and each node's
+  contact. Scheduling happens **outside the portal**, by email or phone with the
+  node coordinators.
+- The application page shows the **Execution period ends** date: the call's
+  date, or a date your node set for your project (marked *set by node*). Plan
+  your work to finish by then.
+- From about 60 days after the hand-off you get occasional reminders to
+  report your final hours. When the work is done, click **Mark Complete**,
+  enter the **Actual Hours Used** for every piece of equipment, and click
+  **Mark Application Complete**. The application becomes **Completed**; this
+  cannot be undone.
 
 #### Publications
 
-Six months after your access completes you'll get a follow-up email asking
-about publications. From the **Publications** page (or the *Add Publication*
-button next to a completed application), submit each publication with title,
-authors, journal, DOI, publication date, and the acknowledgment text from the
-article. Publications are how ReDIB demonstrates research impact, so this
-matters even when the work is years downstream.
+About six months after the hand-off, if you have not reported a publication
+yet, you get a follow-up email. To report one, open **Publications** and click
+**Submit Publication** (or **Add Publication** next to a completed application
+in **My Applications**). Enter the application it came from, the title,
+authors, journal or conference, DOI and publication date, and confirm that
+ReDIB is acknowledged; you can paste the acknowledgment text too. Publications
+are how ReDIB demonstrates its research impact, so this matters even years
+after the work.
+
+#### Emails you will receive
+
+- **Application [code] Received** — when you submit.
+- **Edits Requested for [code]** — a node needs changes; the application is
+  back in draft.
+- **Feasibility Review Complete for [code]** — every node has decided on
+  feasibility; says whether your application goes on to evaluation.
+- **Application [code] Accepted**, **Application [code] Placed on Waitlist**,
+  or **Application [code] Resolution** (not granted) — the decision.
+- **Reminder to accept access for [code]** or **Reminder to respond to your
+  waiting-list offer for [code]** — 7, 3 and 1 days before your response
+  deadline.
+- **Access Approved - Application [code] Ready for Scheduling** — the hand-off,
+  with the node coordinator(s) copied.
+- **Update on your waitlisted application [code]** — no slot opened this call.
+- **Application [code] has been closed** — only if a node coordinator expires
+  your application after the deadline and chooses to tell you by email.
+- **Log your final hours for [code]** — reminders to complete your project.
+- **Publication Follow-up for Application [code]** — about six months after
+  the hand-off.
+- **Your Application for [call] is Still a Draft** — 7 and 2 days before the
+  submission deadline, while your draft is unsubmitted.
+- **We received your consult request for [call]** — your copy of a consult
+  request sent from a call page.
 
 ---
 
 ### For Node Coordinators
 
-You handle two technical decisions per application that requests equipment from
-your node: **feasibility** (can we actually do this?) and **resolution** (do we
-accept this on our equipment?). After the applicant accepts, you also coordinate
-scheduling with them directly.
+You make the node's two decisions on every application that requests your
+equipment: **feasibility** (can we do this?) and **resolution** (do we accept
+it on our equipment, and for how many hours?). Afterwards you arrange the work
+with the applicant and see the project through to completion.
 
 #### Your dashboard
 
-Two queues at the top:
+- **Pending Feasibility Reviews** — submitted applications waiting for your
+  node's feasibility decision, each with a **Review** button.
+- **Pending Resolution Decisions** — evaluated applications waiting for your
+  node's decision, each with a **Resolve** button.
 
-- **Pending Feasibility Reviews** — applications just submitted that request
-  equipment at your node.
-- **Pending Resolution Decisions** — applications that have finished
-  evaluation and are waiting for your accept/waitlist/reject call.
+The left-hand menu (under **Node Coordinator**) gives you:
 
-The left sidebar (under **Node Coordinator**) gives you:
+- **Feasibility Reviews** — the full feasibility queue.
+- **Resolution Queue** — applications awaiting your decision, and the ones you
+  have already decided.
+- **Scheduling** — applications the applicant has accepted, with contact
+  details and hours.
+- **Access Tracking** — every application at your node, and the buttons for
+  waitlist promotion, stalled acceptances and completion.
 
-- **Feasibility Reviews** — full feasibility queue.
-- **Resolution Queue** — full resolution queue.
-- **Scheduling** — accepted applications at your node.
-- **Access Tracking** — master list of all applications at your node, plus
-  the buttons for **promoting waitlisted** applications to accepted and for
-  **marking access complete + logging hours**.
+Most emails about your node's applications go to all of its active node
+coordinators, and any one of you can act on them.
 
-#### Consult requests from the public call pages
+#### Consult requests
 
-While a call is announced or open, anyone can ask about specific equipment
-from its public page. Every active coordinator of the node concerned gets the
-enquiry by email — name, contact details, the instruments they asked about and
-their message — and the email links to the full list of requests for that call.
-
-Reply to the requester directly. Nothing else happens automatically: no
-application, no feasibility review, no deadline. If a node has no active
-coordinator on file, the ReDIB office is notified instead.
+- **From the public call pages.** While a call is announced or open, anyone
+  can ask about specific equipment. The coordinators of each node concerned get
+  the enquiry by email — contact details, the instruments asked about and the
+  message — with a link to the list of requests for that call. Reply to the
+  person directly; nothing else happens automatically.
+- **From an applicant's draft.** An applicant who has not yet confirmed
+  feasibility with you can ask for a consult from step 5 of their form; you get
+  an email naming the equipment. The request also shows on their application.
 
 #### Feasibility review
 
-1. Click **Review** on a queue entry (or open **Feasibility Reviews**). You
-   see the full application — applicant info, project details, equipment
-   requested **at your node only** (other nodes' equipment is their call,
-   not yours), and the scientific content. **Download PDF** on the
-   application page gives you the same content as a document, and works
-   for applications at your node in any state, drafts included. The
-   *Edit Application* / *Continue Editing* buttons are the applicant's
-   only — you won't see them.
-2. Pick one of three actions:
-   - **Approve** — equipment is feasible at your node.
-   - **Request edits** — applicant needs to revise before you can sign off
-     (you must include a comment explaining what to change).
-   - **Reject** — technically infeasible at your node (you must include a
-     comment).
-3. Submit. The system aggregates across all requested nodes: every node must
-   approve before the application moves to evaluation. If any node rejects,
-   the application is terminally rejected. If any node requests edits, it
-   returns to the applicant for revision.
+1. Click **Review** on a queue entry. You see the application — applicant,
+   project, the equipment requested **at your node** (other nodes' equipment
+   is theirs to judge), the scientific content and the declarations. The
+   application page's **Download PDF** gives you the same content as a
+   document, for applications at your node in any status, drafts included.
+2. Choose a **Feasibility Decision**:
+    - **Approve** — technically feasible at your node.
+    - **Request Edits** — the applicant must revise it first. The comment is
+      required: say clearly what to change.
+    - **Reject** — not feasible at your node. The comment is required.
+3. Click **Submit Feasibility Decision**.
+
+Every node must approve before the application goes to evaluation. A
+rejection from any node ends it. A request for edits returns it to the
+applicant straight away; when it comes back, every node reviews it again.
 
 #### Resolution
 
-After all evaluators submit their scores, the application appears in your
-**Resolution Queue**.
+Applications reach your **Resolution Queue** only after the ReDIB coordinator
+has **released** the call's results to the nodes — all of the call's
+evaluated applications at once, so you can weigh them together against your
+capacity. You get an **All Evaluations Complete** email for each one. (If you
+follow an older link before the release, the portal tells you the call has not
+been released yet.)
 
-1. Click **Resolve**. You see the average score, each evaluator's individual
-   score and recommendation, and a per-equipment table for *your node* with
-   the **hours requested** and a field for **hours approved** (you can grant
-   fewer hours than requested).
-2. Pick a decision: **Accept**, **Pending (waitlist)**, or **Reject**.
-   - If the application has **competitive funding**, **Reject is greyed
-     out** *unless* at least one evaluator independently recommended
-     Denied — see *Phase 6* in the workflow overview for why.
-3. Add an optional comment and submit. Other nodes' decisions (if any) are
-   visible on the page so you can see the full picture.
+1. Click **Review** in the Resolution Queue (or **Resolve** on the dashboard).
+   You see the application, the final score, each evaluator's score and
+   recommendation, and the equipment requested at your node.
+2. Under **Approved Hours per Equipment**, enter the hours you grant for each
+   item — up to the hours requested. They default to the request.
+3. **Execution period ends** is prefilled with the call's date. Change it if
+   this project's access will run to a different date. It only counts if you
+   accept; a waitlisted project gets its date when it is promoted.
+4. Choose a **Resolution Decision**: **Accept**, **Waitlist** or **Reject**.
+   If the application has **competitive funding** and no evaluator recommended
+   Denied, **Reject is not offered** — a banner at the top explains why. If an
+   evaluator did recommend Denied, the banner says rejection is available.
+5. Add an optional comment and click **Submit Resolution**. Other nodes'
+   decisions, if any, are shown at the bottom of the page.
 
-When all involved nodes have decided, the application status finalizes
-(Accepted / Pending / Rejected) and the applicant gets the resolution email.
+When every node involved has decided, the application's status is set
+(Accepted, Pending (Waiting List) or Rejected — see
+[Phase 6](#phase-6-release-and-resolution)) and the applicant is emailed.
 
-#### Access tracking + waitlist promotion
+#### Access tracking
 
-Open **Access Tracking**:
+**Access Tracking** lists every application at your node with its status. The
+**Node-accepted, awaiting applicant** button above the list filters it to
+accepted or waitlisted applications whose applicant has not responded yet.
+The buttons offered depend on where each application is:
 
-- For applications that are **Pending (waitlist)** *and* the applicant has
-  said yes to the waitlist offer, a **Promote to Accepted** button appears.
-  Click it when a slot frees up — that flips the status to Accepted, fires
-  the resolution-accepted and hand-off emails, and starts scheduling.
-- For applications that are **Accepted** (and the applicant has confirmed),
-  a **Mark Complete + Log Hours** button appears once the work is done.
-  Use it to record the actual hours used per equipment.
+- **Promote to Accepted** (waitlisted, and the applicant has accepted the
+  waitlist offer) — use it when a slot frees up. The confirmation page asks
+  you to confirm the approved hours for each item (at least one must be above
+  zero) and the **Execution period ends** date, then
+  **Confirm & Promote to Accepted**. The application becomes Accepted, your
+  node's decision is recorded as an acceptance, and the applicant gets the
+  acceptance and hand-off emails.
+- **Not Reached This Call** (same situation) — no slot will open. Give a
+  reason (it is shared with the applicant), then **Confirm & Close Out**. The
+  applicant is emailed once. This is final.
+- **Expire** and **Accept on Behalf** — see *Stalled acceptances* below.
+- **Mark Complete + Log Hours** (accepted and the applicant has accepted) —
+  once the work is done, enter the **Actual Hours Used** for every piece of
+  equipment and click **Mark Application Complete**. This is final.
 
-You only see applications at your node(s); multi-node applications appear
-in multiple coordinators' queues.
+Accepted, unfinished projects also show the date their execution period ends.
+
+#### Stalled acceptances
+
+Nothing expires by itself. When an applicant's 10-day window passes with no
+answer, their Accept/Decline page closes and you get a **Reminder #N** email
+the next day and every 3 days after, with the ReDIB coordinator copied, until
+you act. On **Access Tracking** the application then shows two buttons:
+
+- **Expire** — ends the application. A reason is required and stored on the
+  application. Tick *Also email the applicant* only if you want the system to
+  tell them; leave it unticked if you have already spoken to them. Expiring an
+  accepted application frees its hours, so you can promote a waitlisted one in
+  its place; a waitlisted one holds no hours, so nothing is freed.
+- **Accept on Behalf** — not recommended. Use it only if you know the
+  applicant is ready to go ahead (say how you know in the required reason). On
+  an accepted application the hand-off email goes out straight away; on a
+  waitlisted one it records that they accept the waitlist offer.
+
+The ReDIB coordinator is emailed whenever either button is used.
+
+**Reinstating.** If an application was expired by mistake, or the applicant
+gets in touch afterwards, open the application page and click **Reinstate**.
+With a required reason, it returns to Accepted or Pending (Waiting List) —
+whatever the node decided — and the applicant gets a fresh 10-day window and
+an email saying their link works again.
+
+#### Changing a project's end date
+
+On the page of an accepted, unfinished application at your node, the
+**Execution period ends** line has a date field and an **Update** button. The
+date cannot be earlier than the call's execution start. If several nodes share
+the application, the last change wins. Choosing the call's own date makes the
+project follow the call's date again.
+
+#### Emails you will receive
+
+- **New Application for Equipment at [node]** — a submission needs your
+  feasibility decision.
+- **Feasibility review pending for [code]** — a review has been waiting more
+  than 5 days; repeats until someone at your node acts.
+- **Pre-submission consult requested for [node]** — an applicant asked to talk
+  before submitting.
+- **Equipment consult requested for [node] ([call])** — an enquiry from a
+  public call page.
+- **All Evaluations Complete for [code]** — the call has been released; this
+  application is ready for your decision.
+- **Access Approved - Application [code] Ready for Scheduling** — the hand-off
+  (you are copied); the applicant accepted.
+- **Capacity freed on [code]** — an accepted applicant declined, or an
+  accepted application was expired; you may be able to promote a waitlisted
+  one.
+- **Reminder #N - [code] needs your decision** — an applicant missed their
+  response deadline.
+- **Waitlisted applications need a decision** — a digest of waitlisted
+  applications whose applicants have accepted: first 30 days after they
+  accepted, then every 30 days, and once after the execution period ends.
+- **Applications Awaiting Completion** — a digest of your node's projects that
+  are not marked complete yet, at most once a week.
 
 ---
 
 ### For Evaluators
 
-You score applications assigned to you. The system hides applicant identity
-so your scoring is independent.
+You score the applications assigned to you. The portal hides who applied, so
+your scoring is independent.
 
 #### Your dashboard
 
-You see **My Pending Evaluations** — every application currently assigned to
-you, with the call code, the date you were assigned, and the evaluation
-deadline. Each row has an **Evaluate** button.
+**My Pending Evaluations** lists your assigned applications with the call, the
+date you were assigned and the evaluation deadline, each with an **Evaluate**
+button.
 
-The left sidebar (under **Evaluator**) has a single entry: **My Evaluations**.
-That page is the full version of the dashboard list, plus an *Overdue* section
-(if you have any past-deadline assignments) and a *Completed* section showing
-your past submissions read-only.
+The left-hand menu (under **Evaluator**) has **My Evaluations**: counts of
+pending, overdue and completed evaluations, then the lists themselves.
+Completed evaluations open read-only with **View**.
 
 #### Submitting an evaluation
 
-1. Click **Evaluate** on an application. You land on the evaluation form.
-   The header has a **Download Blind PDF** button — useful if you'd rather
-   review the application offline.
-2. **Read the application.** You see the project title, summary, funding
-   origin, subject area, equipment requested, and the six scientific-content
-   sections. **You do not see** the applicant's name, ORCID, organization,
-   contact info, project code, or funding agency — that's the blind-review
-   protection.
-3. **Score the six criteria**, each on a 0–2 scale (0 = Poor, 1 = Good,
-   2 = Excellent). The total runs 0–12 and the form keeps a live total
-   as you go.
-   - Category I — Scientific & Technical Relevance: quality/originality,
-     methodology, expected contributions.
-   - Category II — Timeliness & Impact: knowledge advancement,
-     social/economic impact, exploitation/dissemination.
-4. Pick a recommendation: **Approved** or **Denied**.
-   - If you pick **Denied**, **a comment is required** — your independent
-     denial is the documented basis for rejecting an application that has
-     competitive funding (see *Phase 6*).
-5. **Submit.** Once submitted, your scores are locked. If the evaluation
-   deadline has passed by more than 7 days (the grace period), the form
-   auto-locks even if you haven't submitted, and the ReDIB coordinator is
-   notified.
+1. Click **Evaluate**. The **Download Blind PDF** button at the top gives you
+   a printable copy if you would rather read offline.
+2. **Read the application.** You see the application code, project summary,
+   origin of funds, subject area, specialization, the equipment requested, and
+   the six scientific-content sections. You do **not** see the applicant's
+   name, ORCID, organization or contact details, the project title (shown as
+   *withheld for blind review*), the project code or the funding agency.
+3. **Score the six criteria**, 0, 1 or 2 points each. The form describes what
+   each score means for each criterion.
+    - Category 1 — Scientific and Technical Relevance: quality and
+      originality; methodology, design and work plan; expected
+      scientific–technical contributions.
+    - Category 2 — Timeliness and Impact: advancement of knowledge; social,
+      economic and/or industrial impact; exploitation, translation and/or
+      dissemination.
+4. Choose an **Access Decision**: **Approved** or **Denied**. A Denied
+   decision **requires a comment** — an evaluator's Denied is what allows the
+   node to reject an application that has competitive funding (see
+   [Phase 6](#phase-6-release-and-resolution)).
+5. Click **Submit Evaluation**. The page shows your total. Submitted
+   evaluations cannot be changed.
+
+You can still submit for **7 days after the evaluation deadline**; the page
+warns that you are overdue. After that the form locks and can no longer be
+submitted, and the ReDIB coordinator is told which evaluations are missing.
 
 #### How you get assigned
 
-The coordinator runs auto-assign once a call closes. It prefers evaluators
-whose declared specialization areas (preclinical / clinical / radiochemistry)
-match the application, but area match is a preference, not a requirement — if
-no area-matched evaluator is available you may still be assigned outside your
-areas so that no application is left short. It never assigns you an
-application from your own organization, and it spreads the load: there is a
-cap on how many applications any one evaluator can pick up in a call. Update
-your areas any time on your **Profile** page.
+The ReDIB coordinator assigns evaluators after applications pass feasibility,
+usually by running automatic assignment across a call. It prefers evaluators
+whose specialization areas (Preclinical, Clinical, Radiochemistry) match the
+application, but a match is a preference, not a requirement: if no matching
+evaluator is available you may be assigned outside your areas so that no
+application is left short. It never assigns you an application from your own
+organization, and it caps how many applications any one evaluator takes in a
+call. Keep your areas up to date on your **Profile**.
 
-If your account has been deactivated you are left out of the pool entirely,
-so you won't be assigned work you can't log in to do.
+If your account or your evaluator role is deactivated, you are left out of
+assignment altogether.
+
+#### Emails you will receive
+
+- **Evaluation Assignment for [code]** — one for each new assignment.
+- **Evaluation Reminder ([n] Pending)** — one email listing all your pending
+  evaluations, 7, 3 and 1 days before the evaluation deadline.
+- **[n] Evaluations Overdue** — on the deadline day and then every 2 days,
+  until the form locks 7 days after the deadline.
 
 ---
 
 ### For ReDIB Coordinators
 
-You run the calls and watch the workflow end-to-end. You don't do feasibility
-(that's the node coordinators) or evaluation (that's the evaluators), but you
-have visibility into everything and you make sure each call closes cleanly.
+You run the calls and watch the process end to end. The feasibility and
+resolution decisions belong to the node coordinators and the scores to the
+evaluators, but you can see everything, and several steps wait on you:
+announcing the call, assigning evaluators, releasing results, and closing the
+call out.
 
 #### Your dashboard
 
-Three panels:
+- **Active Calls** — announced, open and closed calls, with **Manage Calls**
+  and **Create New Call**.
+- **Quick Stats** — applications waiting for a node decision, recent
+  applications, and a link to the reports.
+- **Recent Applications** — the latest submissions across all calls.
 
-- **Active Calls** — quick view of open and recently-closed calls with status
-  and an action button per call.
-- **Quick Stats** — pending-resolution count + recent-application count + a
-  button into Reports.
-- **Recent Applications** — a table across all calls so you can spot stuck
-  applications.
-
-The left sidebar (under **Coordinator**) gives you four entry points:
-
-- **Call Management** — create / edit / publish / close calls.
-- **Assign Evaluators** — assign evaluators per application, or run
-  auto-assign for a whole call.
-- **Resolution** — overview of every application's resolution status.
-- **Reports** — statistics dashboard + Excel exports.
+The left-hand menu (under **Coordinator**) gives you **Call Management**,
+**Assign Evaluators**, **Resolution** and **Reports**.
 
 #### Creating a call
 
-1. From **Call Management** click **Create New Call** (or *Create First Call*
-   on a fresh system). Fill in:
-   - **Call Code** (e.g. `COA-2026-01`), **Title**, **Description**, optional
-     Guidelines.
-   - **Status** — leave as **Draft** until you're ready to announce or
-     publish; `Draft` calls are invisible to applicants.
-   - **Submission period** (start + end), **Evaluation deadline**, **Execution
-     period** (start + end). All dates are date-only. Start dates open at
-     **00:00** on the day you pick, and end dates and deadlines run to
-     **23:59** — so a call set to open today is open immediately, and
-     applicants get the whole of the closing day. The form rejects illogical
-     ordering.
-   - **Equipment Allocations** — every active equipment item across all
-     nodes is included by default. Tick the **Remove** column to exclude
-     any. You must keep at least one.
-2. **Save Call** — the call is saved as a Draft, only you can see it.
-3. When ready, click **Announce** or **Publish** — see *Announce vs Publish*
-   below.
-4. After the submission deadline, click **Close** to stop new submissions and
-   open the call for evaluator assignment.
+1. In **Call Management**, click **Create New Call** and fill in:
+    - **Call Code** (for example `REDIB-2602`), **Title**, **Description**
+      (shown to applicants) and, optionally, **Guidelines**.
+    - **Submission Period** (Start Date, End Date), **Evaluation Deadline**,
+      **Execution Start** and **Execution End**. All dates are whole days:
+      start dates open at **00:00** on the day you pick, and end dates and
+      deadlines run to **23:59**, so applicants get the whole of the closing
+      day. The evaluation deadline must fall after the submission end.
+    - **Equipment Allocations** — every active piece of equipment at every
+      node is included by default. Tick **Remove** to leave one out. A call
+      needs at least one before it can be announced or published.
+2. Click **Save Call**. The call is a **Draft**, visible only to coordinators.
 
-You can edit a call after publication, but you **cannot delete** it once
-published or unpublish it. To revert a published-but-empty call to Draft you
-have to use the admin panel at `/admin/`.
+A call's status only ever changes through the buttons on its page (or by the
+calendar), never on the form. A draft call with no applications can be
+removed with **Delete Call**; once a call has been announced or published it
+cannot be deleted.
+
+After you save changes to an existing call, the portal warns you if the dates
+you saved contradict its status — for example, a call marked Open whose start
+date is now in the future is **not** accepting applications or listed publicly
+until then, and moving a closed call's deadline does not reopen it.
 
 #### Announce vs Publish
 
-Both actions make a call public; they differ in whether it is open for
-submissions.
+The call page (open it from **Call Management**) shows the buttons for its
+current status.
 
-- **Announce** — use this when the submission period starts in the future.
-  The call moves to **Announced**, appears on the public `/calls/` page under
-  *Upcoming Calls* with its own detail page (dates, equipment list, and a
-  *Request a consult* button), and an "upcoming call" email goes out to
-  everyone who opted in to call announcements. No applications can be
-  submitted yet.
-- The announced call **opens by itself** on its submission start date, and
-  the "Now Open" email goes out then, not at announce time. The check runs
-  daily and also whenever someone loads the public calls pages, so the
-  changeover may lag by a few hours at most.
-- **Publish** — opens the call for submissions **now** and sends the "Now
-  Open" email immediately. It is refused if the submission start date is
-  still in the future; announce the call instead and let it open on schedule.
-  You can also click **Open Now** on an announced call if you want to bring
-  the opening forward — edit the submission start date first.
+- **Announce** — for a call whose submission period starts in the future. The
+  call becomes **Announced** and appears on `/calls/` under *Upcoming Calls*,
+  with its own page (dates, equipment list and **Request a Consult**). No one
+  can apply yet. It **opens by itself** on its start date — checked daily just
+  after midnight and whenever someone loads the public calls pages.
+- **Publish** — opens the call for submissions **now**. It is refused while the
+  start date is still in the future; announce the call instead. On an
+  announced call the same action is **Open Now**, which also needs the start
+  date to have arrived — edit the start date first if you want to open early.
 
-While a call is Announced or Open, anyone visiting its public page — with or
-without a portal account — can send a consult request about specific
-instruments. Those requests arrive by email at the coordinator(s) of each node
-involved, and are listed for you under **Consult requests** on the call detail
-page. They are informal enquiries: no application or feasibility review is
-created.
+**No email goes to users** when a call is announced or opens, and the
+confirmations say so. Announce the call yourself — through ReDIB's newsletter,
+mailing lists and website — and link people to its public page (the
+**Public View** button on the call page opens it).
+
+While a call is announced or open, anyone can send a consult request about its
+equipment. The requests go to the coordinators of the nodes involved and are
+listed under **Consult Requests** on the call page (**Open list** shows them
+full-page). If a node has no active coordinator, the request comes to you
+instead. They are informal enquiries: nothing else is created.
+
+#### Closing submissions
+
+An open call closes by itself once its submission deadline passes.
+**Close Submissions** on the call page closes it early. A closed call cannot
+be reopened from the portal.
 
 #### Assigning evaluators
 
-After a call is closed, open **Assign Evaluators** and pick the call. You can
-assign application by application, or run **auto-assign** across the whole
-call at once.
+Open **Assign Evaluators**, then **View Details** or **Manage** on the call.
+Applications that have passed feasibility show as **Pending Assignment**.
 
-Auto-assign allocates the call as a whole rather than one application at a
-time, so the work spreads across the pool:
+- **Auto-Assign Evaluators** assigns **Evaluators per Application** (2 by
+  default) to every application pending assignment, across the whole call at
+  once:
+    - it **never** assigns evaluators from the applicant's own organization,
+      nor the same evaluator twice to one application;
+    - it **caps** how many applications each evaluator takes in the call,
+      counting those they already hold, so the work is spread out;
+    - it **prefers** evaluators whose specialization areas match the
+      application, but uses any eligible evaluator rather than leave an
+      application short;
+    - it **skips** deactivated accounts and evaluator roles.
+- Afterwards, the page warns you if some applications could not be filled, or
+  were filled with evaluators outside their specialization area. In each
+  application's list of evaluators, **✓** marks an area match and
+  **no area match** marks a mismatch — swap them by hand if a better evaluator
+  is available.
+- **Assign** on an application adds one evaluator by hand (evaluators whose
+  areas match are marked ✓ in the list). **Remove** takes off an evaluator who
+  has not submitted yet.
 
-- **Never** assigns an evaluator to an application from their own
-  organization (conflict of interest), or the same evaluator twice to one
-  application.
-- **Caps** how many applications each evaluator can take in the call, counting
-  any evaluations they already have, so no one absorbs a disproportionate
-  share.
-- **Prefers** evaluators whose specialization areas match the application, but
-  falls back to any eligible evaluator rather than leaving an application
-  short-handed.
-- **Skips** evaluators whose user account is deactivated — they could receive
-  the assignment email but not log in to act on it.
+**Evaluators are emailed the moment they are assigned** — there is no review
+step before the emails go out. You can assign while the call is still open (the
+page reminds you of this); applications submitted later will need a second
+run.
 
-If some applications still come out short of evaluators, the page shows a
-warning listing their call codes so you can fill them in by hand.
+#### Watching a call
 
-**Assignment fires the notification emails immediately** — there's a backlog
-item to add a confirm-and-review preview step (#4 in
-`docs/developer/backlog.md`).
+A call's page is the status wall for the call: every submitted application with
+its current status, plus drafts a node has **sent back for edits**, so you can
+see who is waiting on the applicant (drafts never submitted stay hidden). A
+**Consult** badge marks applications whose applicant asked for a pre-submission
+consult. **View** opens an application; as a coordinator you see its
+feasibility status per node and, once scored, the evaluation summary with each
+evaluator's scores, recommendation and comments. **Download PDF** works on any
+application, drafts included.
 
-You can re-assign or add evaluators at any time before the deadline.
+The **Reminders** panel sends the same reminder emails the daily schedule
+sends, right now, for this call only:
 
-#### Watching a call's applications
+- **Remind Evaluators with Unsubmitted Scores**
+- **Remind Open Feasibility Reviews**
 
-A call's detail page is the status wall for that call: every application on
-it, with its current state. Two things worth knowing:
+Each shows first who will be emailed and who will be skipped because they were
+already reminded today. Tick **Send anyway, including people reminded today**
+to include them, then **Send Reminders**.
 
-- Applications a node coordinator has **sent back for edits** stay on the
-  wall even though they have returned to draft, so you can see who is stuck
-  waiting on the applicant instead of losing them from the list. Drafts that
-  were never submitted stay hidden.
-- **Download PDF** works from any application's page whatever its state, so
-  you can read a draft without needing the applicant to submit it first.
+#### Releasing results to the nodes
+
+When a call's evaluations are complete, the evaluated applications wait for
+you: node coordinators are not told and cannot decide until you release them.
+The **Resolution** page lists calls that are waiting on you.
+
+1. On the call page, click **Release to Nodes**.
+2. The confirmation page lists every evaluated application with its final
+   score, each evaluator's score and recommendation, and the **spread**
+   between evaluators. A warning mark flags a spread of 5 points or more —
+   whether such a pair needs a closer look is ReDIB's call, not the portal's.
+3. Click **Confirm & Release to Nodes**. Every node coordinator involved is
+   emailed for each application at once. This cannot be undone.
+
+Applications that finish evaluation after the release go to their nodes
+straight away.
 
 #### Watching resolution
 
-The **Resolution** dashboard shows every application by status across calls.
-Per-application, you can drill into the evaluation summary (per-criterion
-average + per-evaluator scores + recommendations + comments). You don't make
-the resolution decisions yourself — the **node coordinators** at each
-requested node do that. Your job is to flag stuck applications and follow up
-on overdue evaluators.
+The **Resolution** page lists released calls that still have applications
+waiting for a node decision, with counts of accepted, waitlisted and rejected
+applications. **Review** opens a call's list, ranked by score.
 
-The system already fires daily reminder emails for overdue evaluators (and
-copies you on the lockout when an evaluator misses the grace-period
-deadline), so you don't need to chase by hand.
+That call page also carries older tools from before the nodes made the
+decisions — **Decide**, **Apply Bulk Resolution** and
+**Finalize Resolution & Send Notifications**. Leave them alone: they record
+decisions on the nodes' behalf, and *Finalize* re-sends every applicant's
+decision email. Each applicant is already emailed when their nodes finish
+deciding.
+
+The portal chases evaluators, applicants and nodes for you (see the email
+list below). From an application's page you can also **Reinstate** it or
+change its **Execution period ends** date, just as a node coordinator can.
+
+#### Closing out a call
+
+When every application on a closed call has its outcome, click
+**Mark Call Resolved** on the call page, then **Confirm & Mark Resolved**. The
+call moves to **Resolved** and its resolution is locked. **No emails are
+sent.** It is refused while any application is still **Evaluated**.
 
 #### Reports
 
-The **Reports** page shows statistics across all calls — total apps, average
-score, acceptance rate, breakdown by status, publication-acknowledgment rate.
-The big affordance is **Download Excel Report** for any call: a multi-sheet
-workbook (applications + equipment usage + summary) suitable for ministry
-compliance reporting.
+**Reports** opens the **Statistics & Reports** page:
+
+- Totals for calls, applications, reported publications and pending
+  evaluations.
+- **Current Call** — the most recent open or closed call, with its
+  applications by status, average score, acceptance rate, and
+  **Download Excel Report**: a workbook with *Summary*, *Applications* and
+  *Equipment Summary* sheets.
+- **Resolution Tables** — every call, each with **View Resolution Table**.
+- Publication statistics, including the share that acknowledge ReDIB, and
+  recent applications. **View Report History** lists the reports generated.
+
+**The resolution table** is the per-call results table ReDIB publishes. It
+shows two tables, English then Spanish, one row per submitted application:
+
+| English | Spanish |
+|---------|---------|
+| Application | Solicitud |
+| Organization | Organización |
+| Node | Nodo |
+| Resolution: Accepted / Wait List / Rejected | Resolución: Aceptada / Lista de espera / Rechazada |
+
+The resolution is each node's own decision — an application promoted from the
+waiting list reads *Accepted*. An application involving several nodes lists
+each node on its own line within the row. Copy the tables straight into a
+document, or use **Download CSV (English)** and **Download CSV (Español)**.
+Warnings above the tables tell you if the call has not been released yet (the
+table is then provisional), which applications have no node decision recorded
+(for example, those rejected at feasibility), and which applicants have no
+organization on their profile.
+
+#### Emails you will receive
+
+- **Overdue Evaluations for Call [call]** — the morning after the evaluation
+  deadline, if any evaluations are missing, naming them and their evaluators.
+- **Evaluators Locked Out - Call [call]** — the morning after the 7-day grace
+  period ends, if evaluations are still missing.
+- **Reminder #N - [code] needs your decision** — you are copied on the node
+  coordinators' reminders about stalled acceptances. The node coordinator must
+  act; you are copied so you know.
+- **[code] was expired / force-accepted / reinstated by [name]** — a record
+  each time a node coordinator (or another coordinator) uses Expire, Accept on
+  Behalf or Reinstate, with their reason.
+- When a node has **no active node coordinator**, the portal sends you what
+  would have gone to them: new-application alerts, public consult requests and
+  stalled-acceptance reminders. Ask an administrator to give the node a
+  coordinator — until then nobody can do that node's feasibility review.
+
+---
+
+### For Administrators
+
+Administrators look after the data behind the portal in the admin panel at
+`/admin/`, reached from **Admin Panel** in the left-hand menu.
+
+- **Accounts and roles.** Create users and assign roles under *User Roles*. A
+  role can be switched off without deleting it. Deactivating an evaluator's
+  account or evaluator role takes them out of automatic assignment.
+- **Nodes and equipment.** Equipment marked inactive is not offered on new
+  calls.
+- **Email templates.** Switching a template off (*Is active*) stops that email
+  being sent, and stays off when the portal is updated. Changes to a
+  template's subject or wording, however, are replaced by the standard text
+  whenever the portal is updated — ask the developers to change the wording
+  permanently.
+- **Email preferences.** Notification preferences for any user can be changed
+  here.
+
+The Administrator role adds the **Admin Panel** link. To use call management
+and the coordinator dashboard, the account also needs the ReDIB Coordinator
+role, and the admin panel itself only opens for accounts with staff access. A *superuser* passes every role check in the portal and has
+full access to the admin panel; keep such accounts to a minimum.
 
 ---
 
@@ -1112,45 +1132,44 @@ compliance reporting.
 
 ### Common questions
 
-**Q: I can't see the call management section. Why?**
-A: Only users with the Coordinator or Admin role can create and manage calls. Contact your administrator if you need this access.
+**Q: I can't see Call Management. Why?**
+A: Only ReDIB coordinators create and manage calls. Contact the administrator
+if you need this access.
 
 **Q: Can I change my role?**
-A: No, roles are assigned by administrators. If you need a different or additional role, contact your ReDIB administrator.
+A: No — roles are assigned by administrators. Ask the ReDIB administrator if you
+need a different or additional role.
 
-**Q: Why can't I see applicant names in evaluations?**
-A: Evaluations use blind review to ensure objectivity. Applicant identity is intentionally hidden from evaluators.
+**Q: Why can't I see the applicant's name when I evaluate?**
+A: Evaluation is blind to keep it objective. The applicant's identity is hidden
+on purpose.
 
-**Q: I'm a node coordinator. Why don't I see all applications?**
-A: Node coordinators only see applications requesting equipment from their specific node. This is intentional to focus your review on relevant requests.
+**Q: I'm a node coordinator. Why don't I see every application?**
+A: You see only applications that request equipment at your node.
+
+**Q: An evaluated application isn't in my Resolution Queue. Why?**
+A: The ReDIB coordinator has not released that call's results to the nodes yet.
+You will get an email for each application once they do.
+
+**Q: I missed my 10-day deadline to accept. What now?**
+A: The portal no longer accepts a response, but nothing has been cancelled
+automatically. Contact the node coordinator — the node decides what happens
+next.
 
 **Q: How do I stop receiving reminder emails?**
-A: Update your notification preferences in your profile settings. Uncheck "Reminder Notifications" to disable deadline reminders.
+A: There is no setting on your profile. Ask the ReDIB administrator to turn
+reminders off for your account.
 
 ### Technical support
 
-For technical issues, questions about the portal, or role assignment requests, contact:
-
-**ReDIB Portal Administrator**
-Email: info@redib.net
-
----
-
-## Next Steps
-
-Now that you understand the portal workflow and your role, you're ready to start using the system:
-
-- **Applicants:** Browse open calls and start your first application
-- **Node Coordinators:** Check for pending feasibility reviews
-- **Evaluators:** Review your assigned evaluations before the deadline
-- **Coordinators:** Create your first call or manage existing applications
-- **Admins:** Configure nodes, equipment, and user accounts
-
-**Remember:** The portal guides you through each step with clear instructions and help text. Don't hesitate to explore the interface - you can always save drafts and return later.
+For problems with the portal, questions about using it, or role requests, use
+**Contact us** in the **Need help?** menu, or email the address at the bottom
+of this page.
 
 ---
 
 **Document Version History**
+
 - v1.0 (January 2026): Initial user guide created for ReDIB COA Portal
 - v1.2 (April 2026): "Using the Portal" rewritten as four role-based
   walkthroughs (Applicants, Node Coordinators, Evaluators, ReDIB
@@ -1162,5 +1181,15 @@ Now that you understand the portal workflow and your role, you're ready to start
   reviewers, load-balanced evaluator auto-assign, and call open/close times.
   This guide is now served as a portal page at `/help/user-guide/` rather
   than downloaded as a PDF.
+- v1.4 (2026-09-28): checked against the portal as deployed for the October
+  2026 call. New: releasing a call's results to the nodes; the execution
+  period end set per project; stalled acceptances (nothing expires by itself —
+  Expire, Accept on Behalf, Reinstate); waitlist promotion and *Not Reached
+  This Call*; Mark Call Resolved; the bilingual resolution table; grouped
+  reminder emails and the on-demand Reminders panel; the closed-call banner;
+  no call announcement emails; an application status table and per-role email
+  lists. Corrected the dashboards, buttons, email timings, publication
+  follow-up and notification preferences, and removed the duplicated role and
+  dashboard sections.
 
 ---
