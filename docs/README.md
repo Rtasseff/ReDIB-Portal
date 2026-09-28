@@ -1,85 +1,84 @@
 # ReDIB Portal Documentation
 
-This directory contains all project documentation, reference materials, and test reports.
+Everything a developer or administrator needs to run, change and support the
+portal. The files under **Current** are kept in step with the code. Everything
+under **History** is a record of how the portal got here; don't expect it to be
+current.
 
-## When should I read what?
+## Start here
 
-**I need to run the app locally tomorrow** → [QUICKSTART.md](QUICKSTART.md).
+| I want to… | Read |
+|---|---|
+| Understand what the portal is and get it running locally | [../README.md](../README.md), then [QUICKSTART.md](QUICKSTART.md) |
+| Understand how the code is organised: apps, statuses, rules, scheduled jobs, email | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Find a management command or script and know when to use it | [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Load or change reference data (users, roles, evaluators, equipment, organizations) | [SETUP_GUIDE.md § Initial Data Setup](SETUP_GUIDE.md#initial-data-setup), then [../data/README.md](../data/README.md) for formats and recipes |
+| Look up an environment variable or feature flag | [SETUP_GUIDE.md § Environment Configuration](SETUP_GUIDE.md#environment-configuration) |
+| Deploy, back up, restore, or pause a scheduled job on the production server | [DEPLOYMENT.md](DEPLOYMENT.md) |
+| Run the tests, or walk through the portal by hand | [TESTING.md](TESTING.md) |
+| Know what users see and click | [USER_GUIDE.md](USER_GUIDE.md) |
+| Know what's being worked on now and what's deferred | [developer/round-october-2026.md](developer/round-october-2026.md), [developer/backlog.md](developer/backlog.md) |
 
-**I'm deploying to production this weekend** → [DEPLOYMENT.md](DEPLOYMENT.md). Skim [SETUP_GUIDE.md](SETUP_GUIDE.md) first for the env-var table.
+## Current
 
-**I want to understand the workflow as a user** → [USER_GUIDE.md](USER_GUIDE.md).
+These are the canonical homes. When a change alters behaviour, update the one
+file that owns it and link to it from elsewhere instead of repeating it.
 
-**I'm adding a feature or fixing a bug** → [DEVELOPMENT.md](DEVELOPMENT.md), then the latest file in [developer/](developer/).
+| File | Owns |
+|---|---|
+| [QUICKSTART.md](QUICKSTART.md) | Local setup: venv, SQLite, sample data, test accounts; optional local Docker |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | The code map as built: apps and models, call and application status machines and who writes each transition, business rules, scheduled jobs, email plumbing, "where to look when…" |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Day-to-day commands; the reference table of every management command and script |
+| [SETUP_GUIDE.md](SETUP_GUIDE.md) | Every environment variable; how to do a first data load |
+| [../data/README.md](../data/README.md) | TSV formats, loader rules and failure modes, and recipes for everyday edits |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | The production VPS: install, deploy, run commands, backups and restore, pausing a scheduled job, troubleshooting |
+| [TESTING.md](TESTING.md) | The automated suite, the dress-rehearsal harness, and the sandboxes for manual testing |
+| [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) | What `seed_test_applicants` creates |
+| [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) | `send_test_emails`, for checking every email template |
+| [USER_GUIDE.md](USER_GUIDE.md) | The end-user guide, per role |
+| [developer/branding-and-styles.md](developer/branding-and-styles.md) | Logo, colours and CSS |
 
-**I have an idea / found a small UX nit / spotted a known test failure** → drop it in [developer/backlog.md](developer/backlog.md) for the next batch.
+**The user guide is a live page.** The portal renders `USER_GUIDE.md` at
+`/help/user-guide/`, so it must stay self-contained: only `#anchor` links and
+absolute URLs, no images, no relative links to other docs
+(`tests/test_help_guide.py` checks the anchors). It is baked into the Docker
+image, so a change reaches `portal.redib.net` only after a production
+`git pull` and `up -d --build`.
 
-**I want to test the system end to end** → [TESTING.md](TESTING.md) plus [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) for seeded data, and [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) for verifying outgoing mail.
+### Working documents (`developer/`)
 
-## Documentation Index
+| File | What it is |
+|---|---|
+| [round-october-2026.md](developer/round-october-2026.md) | The operating plan for the 2026-27 round: status board, deadlines, settled decisions. Read first when picking work back up |
+| [backlog.md](developer/backlog.md) | Deferred work, known bugs and ideas. Add to it when you find something you aren't fixing now |
+| [worktrees.md](developer/worktrees.md) | How large changes get their own branch and directory, the registry of active worktrees, and `scripts/new-worktree.sh` |
+| [handoff-template.md](developer/handoff-template.md) | Seeded into `handoffs/<slug>.md` for each new worktree branch |
+| [dress-rehearsal.md](developer/dress-rehearsal.md) | The pre-call rehearsal with `scripts/rehearsal.py`, and what it found in September 2026 |
+| [call-lifecycle-proposal.md](developer/call-lifecycle-proposal.md) | The announced/open/closed design and its open disagreement on auto-open emails (backlog #41) |
+| [developer-notes.md](developer/developer-notes.md) | Running log of design decisions and gotchas |
+| [localtest3-database-plan.md](developer/localtest3-database-plan.md) | Spec for the `setup_localtest3_database` sandbox |
 
-### Getting Started
-- **[QUICKSTART.md](QUICKSTART.md)** — Development setup (venv + SQLite) and optional local Docker testing
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** — Environment-variable reference and initial data loading
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** — Day-to-day workflows, common commands, data loading
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** — Production deployment (VPS, Docker Compose, Caddy, backups, pre-launch checklist)
+### Reference (`reference/`)
 
-### User Documentation
-- **[USER_GUIDE.md](USER_GUIDE.md)** — End-user guide for all roles (applicant, node coordinator, evaluator, ReDIB coordinator, admin). Rendered live in the portal at `/help/user-guide/`, so keep it self-contained: only `#anchor` links and absolute URLs — no images, no relative links to other docs.
+- [coa-application-form-spec.md](reference/coa-application-form-spec.md) and
+  [evaluationForm_en.md](reference/evaluationForm_en.md): the paper forms the
+  application wizard and the evaluation form reproduce.
+- [redib-coa-system-design.md](reference/redib-coa-system-design.md): the
+  original design specification. Parts no longer match the code;
+  [ARCHITECTURE.md](ARCHITECTURE.md) is the as-built reference.
 
-### Testing
-- **[TESTING.md](TESTING.md)** — Automated test suite summary and manual end-to-end test plan
-- **[TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md)** — What `seed_test_applicants` creates and how to use it
-- **[TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md)** — `send_test_emails` command for verifying every email template
+## History
 
-### Reference Data
-- **[../data/README.md](../data/README.md)** — TSV fixture format (nodes.tsv, organizations.tsv, users.tsv, equipment.tsv, funding_agencies.tsv)
+Kept for the record. None of these are maintained.
 
-### Historical / Archived
-- **[archive/](archive/)** — Completed planning documents and historical notes (includes `UPDATE_PDF_APP.md` — the pre-implementation plan for the now-shipped PDF flow)
-
-## Directory Structure
-
-### `/developer/`
-Developer guides, planning documents, and running notes:
-- `round-october-2026.md` — **Current round's operating plan** (2026-27 COA call): bucket order, worktree assignments, production deadlines, settled decisions, live status. Start here when resuming work.
-- `backlog.md` — **Dynamic backlog** of feature requests, UX polish, and known test issues to address in future batches. Add new ideas here when they come up but aren't being implemented immediately.
-- `developer-notes.md` — Running log of design decisions, deferred improvements, and gotchas
-- `worktrees.md` — **Parallel agent sessions**: one worktree dir per branch under `~/projects/ReDIB-Portal-wt/`, handoff-doc convention, registry of active worktrees, `scripts/new-worktree.sh`
-- `handoff-template.md` — Template seeded into `docs/handoffs/<slug>.md` on each new worktree branch
-- `branding-and-styles.md` — How to change branding, logo, colors, and CSS
-- `tier1-manual-test-checklist.md` — Manual QA checklist
-- `batch1-implementation-plan.md` / `batch1-progress.md` — Batch 1 (merged to main)
-- `batch2-implementation-plan.md` / `batch2-progress.md` — Batch 2 (current)
-- `localtest3-database-plan.md` — Spec for the `setup_localtest3_database` sandbox (10 users, 2 calls, 16 apps spanning every status)
-- `localtest3-test-log.md` — Running log of the manual end-to-end walkthrough against the localtest3 sandbox
-- `issue-action-plan-20260204.md`, `issues-actionplan-20260301.md` — Older dated action plans (historical)
-
-### `/handoffs/`
-One brief per worktree branch (`<slug>.md`), committed on that branch and landing here at merge as a record. See `developer/worktrees.md`.
-
-### `/reference/`
-Reference materials and specifications:
-- `redib-coa-system-design.md` — Complete system design document
-- `coa-application-form-spec.md` — Application form specification
-- `evaluationForm_en.md` — Evaluation form specification
-
-### `/test-reports/`
-Comprehensive test reports for each phase:
-- `PHASE1_PHASE2_TEST_REPORT.md` - Call Management & Application Submission
-- `PHASE3_TEST_REPORT.md` - Feasibility Review
-- `PHASE4_TEST_REPORT.md` - Evaluator Assignment
-- `PHASE_8_9_10_TEST_RESULTS.md` - Acceptance, Publications, and Reporting
-
-### `/archive/`
-Completed planning documents and historical notes:
-- `PHASE_6_CHANGE.md` - Node coordinator resolution workflow implementation
-- `PHASES_8_9_10_REVIEW.md` - Phases 8-10 review and implementation
-- `ACCEPTANCE_WORKFLOW_FIXED.md` - Acceptance workflow fixes
-- `OPTIMIZE_SPEED.md` - Performance optimization plan
-- `TESTING_NOTES.md` - Historical testing notes
-
-## Related Documentation
-
-- [../README.md](../README.md) - Main project README
-- [../tests/README.md](../tests/README.md) - Test suite documentation
+- [handoffs/](handoffs/): one brief per worktree branch, describing what that
+  branch changed and why. Useful for the reasoning behind a feature.
+- `developer/`: `batch1-*` and `batch2-*` (the spring 2026 batches, merged),
+  `issue-action-plan-20260204.md` and `issues-actionplan-20260301.md` (older
+  action plans), `localtest3-test-log.md` (the April walk-through) and
+  `tier1-manual-test-checklist.md` (February QA checklist).
+- [test-reports/](test-reports/): phase-by-phase test reports from the build.
+- [archive/](archive/): completed plans and notes, including
+  `TESTING_MANUAL_PLAN_2026-04.md` (the old phase-by-phase manual test plan)
+  and `root-archive/` (what used to sit in the repository's top-level
+  `archive/` and `workflows/` directories).

@@ -255,8 +255,13 @@ Fill in every value. The critical ones:
 | `REDIS_URL` | `redis://redis:6379/0` (default — matches the Redis container) |
 | `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | `redis://redis:6379/0` |
 | `SENTRY_DSN` | _(optional)_ Sentry project DSN for error reporting; leave blank to disable |
+| `CALL_ANNOUNCEMENT_EMAILS_ENABLED` | `False`. Leave it off until backlog #41 is done. It mass-mails every account. |
 
-`SITE_DOMAIN` and `SITE_NAME` are applied to the Django `Site` record on every container start by `docker/entrypoint.sh` and by the `setup_base_database` command.
+`SITE_DOMAIN` and `SITE_NAME` are applied to the Django `Site` record on every container start by `docker/entrypoint.sh` and by the `setup_base_database` command. Defaults, dev values and every other variable: [SETUP_GUIDE.md § Environment Configuration](SETUP_GUIDE.md#environment-configuration).
+
+The template's last two lines, `ALERT_RECIPIENT` and `HEALTHCHECK_URL`, have **no effect in `.env`**. `scripts/backup-db.sh` reads its own shell environment and never loads `.env`. They go on the cron line in [§ 6.2](#62-schedule-daily-backups).
+
+`.env` is read when a container is **created**. After changing it, run `docker compose -f docker-compose.prod.yml up -d`. `restart` keeps the old values.
 
 ### 4.3 Start the Stack
 
@@ -267,7 +272,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 This will:
 1. Build the Django application image
 2. Start PostgreSQL and Redis
-3. Run database migrations (automatic via entrypoint)
+3. Run database migrations (automatic via entrypoint, one container at a time: see #37 under [Deploying Code Updates](#deploying-code-updates))
 4. Collect static files (automatic via entrypoint)
 5. Seed email templates (automatic via entrypoint)
 6. Start Gunicorn, Celery, Celery Beat, and Caddy
@@ -307,7 +312,9 @@ Run the base database setup command, which populates nodes, organizations, users
 docker compose -f docker-compose.prod.yml exec web python manage.py setup_base_database
 ```
 
-If you need to populate piece-by-piece instead (e.g., to debug a specific TSV), run the individual `populate_redib_*` commands in dependency order: nodes → organizations → users → equipment → funding_agencies. See [SETUP_GUIDE.md#individual-population-commands](SETUP_GUIDE.md#individual-population-commands) for details.
+It stops at the first failing step and prints `Failed: <reason>`, but still exits 0, so read the output. Every account it creates gets the password `changeme123`, which is published in these docs. Ask those people to set their own password through "Forgot password" before the portal is announced.
+
+If you need to populate piece-by-piece instead (e.g., to debug a specific TSV), run the individual `populate_redib_*` commands in dependency order: organizations → nodes → users → equipment → funding agencies. See [SETUP_GUIDE.md § Individual population commands](SETUP_GUIDE.md#individual-population-commands) and [data/README.md](../data/README.md) for the rules.
 
 ### 4.6 Verify
 
@@ -389,6 +396,8 @@ The backup script (`scripts/backup-db.sh`) handles two things:
 
 Both are saved to `/home/deploy/backups/redib/` with matching timestamps and automatically cleaned up after 7 days.
 
+**Not covered: uploaded files.** Signed application PDFs, newsletters and generated reports live in the `media_volume` Docker volume (`/app/media` in `web`). The script doesn't back them up, so a lost host loses them even with a good dump.
+
 ### 6.1 Set Up Automated Backups
 
 ```bash
@@ -412,12 +421,14 @@ crontab -e
 Add this line:
 
 ```
-0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
+0 2 * * * cd /home/deploy/ReDIB-Portal && ALERT_RECIPIENT=coordinator@redib.net HEALTHCHECK_URL= ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
 ```
 
-**Important:** The `cd /home/deploy/ReDIB-Portal &&` prefix is required — cron runs from the home directory, and the script needs to be in the project root to find `docker-compose.prod.yml`.
+**Important:** The `cd /home/deploy/ReDIB-Portal &&` prefix is required. Cron runs from the home directory, and the script needs to be in the project root to find `docker-compose.prod.yml`.
 
-This runs daily at 2 AM and keeps backups for 7 days.
+**Script settings go on this line, not in `.env`.** The script reads `ALERT_RECIPIENT`, `HEALTHCHECK_URL`, `RETENTION_DAYS`, `MIN_SIZE_RATIO_PERCENT` and `BACKUP_DIR` from its own environment and never loads `.env`. The values shown are the defaults, so the line above behaves exactly like the bare one. Full list: [SETUP_GUIDE.md](SETUP_GUIDE.md#environment-configuration).
+
+This runs daily at 2 AM server time and keeps backups for 7 days.
 
 ### 6.3 Validation and Pruning Safety
 
@@ -455,10 +466,13 @@ Mechanics:
 
 - The Django management command `send_ops_alert` (`communications/management/commands/send_ops_alert.py`) wraps `django.core.mail.send_mail` synchronously (no Celery), so SMTP failures surface as non-zero exit codes and alerts still go out if Redis is down.
 - The shell script installs an `EXIT` trap; any failed validation gate or shell error fires one email with the exit code, hostname, backup directory, and the tail of `backup.log`.
-- Recipient is controlled by `ALERT_RECIPIENT` (default `coordinator@redib.net`). To change it, set the var in `.env`:
+- Recipient is controlled by `ALERT_RECIPIENT` (default `coordinator@redib.net`). To change it, edit it **on the cron line** (§ 6.2). Setting it in `.env` does nothing, because the script doesn't read `.env`.
+- To test the channel by hand:
+  ```bash
+  docker compose -f docker-compose.prod.yml exec -T web python manage.py send_ops_alert \
+    --recipient you@example.org --subject "[ReDIB] alert test" --body "test"
   ```
-  ALERT_RECIPIENT=ops@example.com
-  ```
+  It prints `Alert sent to …`, or fails with a non-zero exit if SMTP refuses.
 
 **What this channel cannot catch:** cron daemon stopped, host powered off, script deleted, `web` container down (the command can't run). For those you need the deadman ping below.
 
@@ -469,13 +483,13 @@ A "deadman switch" inverts the alerting model: instead of the script paging you 
 **Setup (using https://healthchecks.io, free tier):**
 
 1. Sign up with `coordinator@redib.net` (or whichever operator address).
-2. Create a check called `redib-backup`. Schedule: **every day**, grace period **2 hours**. Our cron runs at 02:00 UTC; the 26-hour total window handles clock skew and slow runs.
-3. Copy the check's ping URL — looks like `https://hc-ping.com/<uuid>`.
-4. Add it to `/home/deploy/ReDIB-Portal/.env`:
+2. Create a check called `redib-backup`. Schedule: **every day**, grace period **2 hours**. Our cron runs at 02:00 server time; the 26-hour total window handles clock skew and slow runs.
+3. Copy the check's ping URL. It looks like `https://hc-ping.com/<uuid>`.
+4. Put it on the cron line from § 6.2 (`crontab -e`), not in `.env`:
    ```
-   HEALTHCHECK_URL=https://hc-ping.com/<uuid>
+   ... HEALTHCHECK_URL=https://hc-ping.com/<uuid> ./scripts/backup-db.sh ...
    ```
-5. Done. The next successful run `curl`s the URL; the service emails you if a day passes with no ping.
+5. Done. The next successful run `curl`s the URL; the service emails you if a day passes with no ping. The log line `Deadman ping sent.` in `backup.log` confirms it.
 
 Until `HEALTHCHECK_URL` is set, the script simply skips the ping — no errors, no noise. Alternatives with the same integration shape: Dead Man's Snitch, BetterStack Uptime, a self-hosted cron monitor. Just paste a different URL.
 
@@ -484,7 +498,7 @@ Until `HEALTHCHECK_URL` is set, the script simply skips the ping — no errors, 
 | Failure mode | Email alert | Deadman ping |
 |---|---|---|
 | `pg_dump` silently broken / truncated | ✓ | ✓ |
-| DB or web container down | ✓ (if web is up) | ✓ |
+| db container down | ✓ | ✓ |
 | web container down | ✗ | ✓ |
 | Cron stopped / script deleted | ✗ | ✓ |
 | Host powered off | ✗ | ✓ |
@@ -522,18 +536,36 @@ tar -xzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
 
 ### 6.6 Restore Database from Backup
 
+The dump is plain SQL with no `DROP` statements (`pg_dump --no-owner --no-acl`), so it
+must go into an **empty** database. Piped over the live one, it fails on every existing
+table and leaves a mix of old and restored data.
+
 ```bash
-# Stop application services
+cd ~/ReDIB-Portal
+
+# 0. Keep what is there now, in case you need to come back to it
+./scripts/backup-db.sh
+
+# 1. Stop everything that holds a database connection
 docker compose -f docker-compose.prod.yml stop web celery celery-beat
 
-# Restore (replace filename with your backup)
+# 2. Replace the database with an empty one (POSTGRES_USER is the superuser in the db container)
+docker compose -f docker-compose.prod.yml exec -T db dropdb -U redib_user redib_db
+docker compose -f docker-compose.prod.yml exec -T db createdb -U redib_user -O redib_user redib_db
+
+# 3. Load the dump, stopping at the first error (replace the filename)
 gunzip < /home/deploy/backups/redib/redib_db_YYYYMMDD_HHMMSS.sql.gz | \
   docker compose -f docker-compose.prod.yml exec -T db \
-  psql -U redib_user -d redib_db
+  psql -v ON_ERROR_STOP=1 -U redib_user -d redib_db
 
-# Restart services
+# 4. Start the app. The entrypoint's migrate applies anything newer than the dump.
 docker compose -f docker-compose.prod.yml start web celery celery-beat
 ```
+
+Afterwards run `migrate --check` and the counts snippet from
+[Full Database Reset § 6](#full-database-reset-and-reload). If the restore is meant to
+roll back a deploy, check out the matching commit and rebuild first, so the code and the
+schema agree.
 
 ### 6.7 Off-site Backup (Recommended)
 
@@ -556,9 +588,9 @@ rsync -avz /home/deploy/backups/redib/ user@backup-server:/backups/redib/
    ```
    SENTRY_DSN=https://your-key@sentry.io/your-project-id
    ```
-4. Restart web:
+4. Recreate the containers so they pick up the new `.env` (`restart` would not):
    ```bash
-   docker compose -f docker-compose.prod.yml restart web
+   docker compose -f docker-compose.prod.yml up -d
    ```
 
 ### 7.2 Log Viewing
@@ -668,26 +700,48 @@ docker compose -f docker-compose.prod.yml exec web python manage.py <command>
 ```
 
 > This runs the code **in the image**, not the code in `~/ReDIB-Portal`. See the
-> warning under *Deploying Code Updates*.
+> warning under *Deploying Code Updates*. **The same goes for `data/*.tsv`:** a loader
+> reads the copy baked in at the last `--build`, not the file you just edited. To check an
+> edited file before the next rebuild, copy it into the running container first:
+>
+> ```bash
+> docker compose -f docker-compose.prod.yml cp data/users.tsv web:/app/data/users.tsv
+> ```
+>
+> The copy lasts until the container is recreated, and the next build bakes in the
+> same committed file. `scripts/check_role_drift.py` always reads
+> `/app/data/users.tsv`, so this is the way to point it at your edit.
 
-**`populate_redib_users` is never run by a deploy** — the entrypoint runs
-`migrate`, `collectstatic` and `seed_email_templates` only. Loading users is a
-deliberate, separate act, and it has a required order:
+**`populate_redib_users` is never run by a deploy.** The entrypoint runs `migrate`,
+`collectstatic` and `seed_email_templates` only. Any users load is a deliberate,
+separate act, and it has a required order:
 
 ```bash
 # 1. read-only: what do the DB and data/users.tsv disagree about?
-docker compose -f docker-compose.prod.yml exec web \
+docker compose -f docker-compose.prod.yml exec -T web \
   python manage.py shell < scripts/check_role_drift.py
 # 2. write-free: exactly what would this load change?
 docker compose -f docker-compose.prod.yml exec web \
   python manage.py populate_redib_users --dry-run
-# 3. only then, and only if step 2 says what you expect
+# 3. only if step 2 lists exactly the changes you intend, and no others
 docker compose -f docker-compose.prod.yml exec web \
   python manage.py populate_redib_users
 ```
 
-Do not skip step 1. See `data/README.md` § `users.tsv` for why the TSV is not
-authoritative for an existing user's profile, or for a blank `areas` cell.
+Do not skip step 1, and **today, don't reach step 3 with the full file.** Five retired
+evaluators keep `roles=evaluator` in `users.tsv` as the record (#81), and a real run
+would re-activate their roles. Step 2 shows them as five
+`would update (is_active: False -> True)` lines. So production makes user and role
+changes by hand, mirrors them into the file, and uses steps 1–2 only to prove the two
+match. If a real load is needed, pass `--tsv` a file holding only the header and the new
+rows. The recipes (add a user, add an evaluator, retire a role, add equipment, add an
+organization) are in [data/README.md § Recipes](../data/README.md#recipes). **Never pass
+`--sync` to `populate_redib_users` here.** It deactivates every account not in the file,
+which means every applicant.
+
+The other loaders (`populate_redib_equipment`, `populate_redib_nodes`,
+`populate_redib_funding_agencies`) are safe to rerun after a rebuild. Their files are the
+authority.
 
 Examples:
 
@@ -719,14 +773,63 @@ docker compose -f docker-compose.prod.yml up -d
 ### Checking Celery Tasks
 
 ```bash
-# Active tasks
+# Tasks the worker is running right now
 docker compose -f docker-compose.prod.yml exec celery \
   celery -A redib inspect active
 
-# Scheduled tasks
+# Tasks the worker holds with a future ETA/countdown (NOT the beat schedule)
 docker compose -f docker-compose.prod.yml exec celery \
   celery -A redib inspect scheduled
 ```
+
+**The beat schedule lives in code**, in `app.conf.beat_schedule` in `redib/celery.py`.
+Times are Europe/Madrid (`CELERY_TIMEZONE`). What each job does is in
+[ARCHITECTURE.md](ARCHITECTURE.md). The `celery-beat` container runs that file as of the
+last `--build`. To list what the image will schedule:
+
+```bash
+docker compose -f docker-compose.prod.yml exec web python manage.py shell -c \
+  "from redib.celery import app; [print(k, v['task'], v['schedule']) for k, v in sorted(app.conf.beat_schedule.items())]"
+```
+
+On 2026-09-28 that prints nine entries. The tenth, `send-completion-reminders`, is
+paused (below). Beat and the worker log at `warning` level, so a job that ran normally
+leaves no log line. To confirm a mail-sending job ran, look for its rows in the admin
+under **Email Logs**.
+
+### Pausing and resuming a scheduled job
+
+A beat job is paused by **commenting out its entry** in `app.conf.beat_schedule` in
+`redib/celery.py`. The task function stays, and so do its tests. Beat simply stops
+calling it. The live example is `send-completion-reminders`, paused on prod on
+2026-09-09 (backlog #80).
+
+**To pause:**
+
+1. Comment out the entry and put a dated `PAUSED` comment above it, the way the
+   completion-reminder block does. Say why, which emails it silences, what happens on
+   resume, and which backlog item restores it.
+2. Commit, push, and deploy (`git pull` then `up -d --build`). **Beat only sees the
+   change after the rebuild.** Editing the file on disk does nothing.
+3. Run the listing command above and check the entry is gone.
+
+**To resume:** uncomment the entry, remove or date the `PAUSED` note, deploy, and check
+the listing again.
+
+Things to know before you pause or resume:
+
+- **Nothing queues up while a job is paused.** The next run after resuming is simply the
+  next scheduled time. Whether it then catches up on missed work depends on the task.
+  The completion reminder fires only on exact cadence days, so it resumes at the next
+  checkpoint and skips the ones in between (the comment in `redib/celery.py` spells this
+  out).
+- **To silence one email without a deploy**, untick **Is active** on its template under
+  **Email Templates** in the admin. It stays off across deploys, because the seed
+  preserves `is_active`. Each suppressed send then leaves a `failed` "Template … not
+  found" row in Email Logs. The job itself keeps running, so this only helps when the
+  email is all the job does.
+- Removing an entry entirely, as opposed to commenting it out, also works, but it loses
+  the note that explains why it's off.
 
 ### Updating Base Images (PostgreSQL, Redis, Caddy)
 
@@ -761,25 +864,21 @@ docker compose -f docker-compose.prod.yml up -d --build
 The entrypoint auto-runs: migrations, collectstatic, email template seeding,
 and site configuration.
 
-**3. Handle the migration race condition:**
+**3. Check the start-up:**
 
-All three application containers (web, celery, celery-beat) run the same
-entrypoint, which includes `migrate`. On a fresh database they all try to
-create tables simultaneously. Typically one succeeds and the other two crash
-with `DuplicateTable` or `UniqueViolation` errors. Check with:
+Since #37 (2026-09-14), `migrate` runs under a Postgres advisory lock. On an
+empty database, one of `web` / `celery` / `celery-beat` creates every table,
+while the other two wait and then log `No migrations to apply`. No container
+should crash or restart. Check with:
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate --check
 ```
 
-If web or celery-beat exited or restarted, restart them — this time
-migrations are already applied so the entrypoint passes cleanly:
-
-```bash
-docker compose -f docker-compose.prod.yml restart web celery-beat
-```
-
-Verify all 6 services show `Up` / `healthy` before continuing.
+All 6 services should show `Up` / `healthy`, and `migrate --check` should exit
+0. A container that is restarting is now a real failure, so read its log
+(`logs <service>`) rather than restarting it.
 
 **4. Create the superuser:**
 
@@ -799,14 +898,23 @@ docker compose -f docker-compose.prod.yml exec web \
 ```
 
 This loads in dependency order: organizations → nodes → users → equipment →
-funding agencies → email templates → site config. All from the TSV files in
-`data/`. The command aborts entirely on any validation error (missing FK,
-bad enum), so no partial loads are possible.
+funding agencies → email templates → site config. All from the TSV files
+**baked into the image**, so rebuild after any `data/` change. On a bad row
+(missing FK, bad enum) it stops at that step and prints `Failed: <reason>`, but
+**exits 0**. The steps before it stay loaded, and the users and equipment
+loaders can stop part-way through their file. Fix the TSV, rebuild, and run it
+again: reruns are idempotent. Failure modes by loader:
+[data/README.md](../data/README.md#when-a-load-fails-part-way).
 
 All TSV-loaded users receive password `changeme123` with pre-verified
-emails. The `ProfileCompletionMiddleware` will redirect users to `/profile/`
+emails. The password is in these docs, so have them reset it ("Forgot password").
+The `ProfileCompletionMiddleware` will redirect non-staff users to `/profile/`
 on first login if any required field (first name, last name, phone,
 organization, position) is missing from the TSV data.
+
+Note what this does **not** restore: every applicant account, call and
+application. It rebuilds reference data only. To recover a working production
+database, restore a backup ([§ 6.6](#66-restore-database-from-backup)) instead.
 
 **6. Verify:**
 
@@ -862,20 +970,15 @@ docker stats --no-stream
 # If celery is using too much, reduce --concurrency in docker-compose.prod.yml
 ```
 
-### Migration Race Condition on Fresh Database
+### `DuplicateTable` / `DuplicateColumn` / `UniqueViolation` at start-up
 
-When starting all containers against a brand-new (empty) database volume,
-the web, celery, and celery-beat containers all run `migrate` via the shared
-entrypoint. One wins and applies the migrations; the others crash with
-`DuplicateTable` or `UniqueViolation` errors. This is harmless — restart the
-failed containers and migrations will be a no-op:
-
-```bash
-docker compose -f docker-compose.prod.yml restart web celery-beat
-```
-
-This only happens on a fresh database. Normal code-update deploys
-(`up -d --build`) do not trigger it because the schema already exists.
+This was the migration race (#37): all three app containers ran `migrate` at
+once. It has been fixed since 2026-09-14. The entrypoint wraps `migrate` and
+`seed_email_templates` in `manage.py run_locked`, a Postgres advisory lock. If
+you see one of these errors now, it is **not** the old race. Check that the
+image really is current (`up -d --build`), then read the full traceback. Old
+logs from before the fix are explained under
+[Deploying Code Updates](#deploying-code-updates).
 
 ### Database Connection Errors
 
@@ -907,7 +1010,7 @@ before each deploy.
 - [ ] SMTP credentials tested (see Step 5 in this guide).
 
 **Data**
-- [ ] Migrations applied: `docker compose -f docker-compose.prod.yml exec web python manage.py migrate` reports `No migrations to apply`.
+- [ ] Migrations applied: `docker compose -f docker-compose.prod.yml exec web python manage.py migrate --check` exits 0.
 - [ ] Email templates seeded (the entrypoint runs `seed_email_templates` on
       every start — confirm in the web container logs).
 - [ ] Real reference data loaded via `setup_base_database` **or** TSVs in
@@ -927,8 +1030,9 @@ before each deploy.
 - [ ] An end-to-end smoke test: register a new user, verify the verification
       email arrives, log in, create a draft application, submit, run through
       the feasibility workflow.
-- [ ] Backup script is scheduled (`scripts/backup-db.sh` in cron) and the
-      first backup file landed in the configured backup dir.
+- [ ] Backup script is scheduled (`scripts/backup-db.sh` in cron, with
+      `ALERT_RECIPIENT` / `HEALTHCHECK_URL` on the cron line, not in `.env`) and
+      the first backup file landed in the configured backup dir.
 - [ ] Sentry (if configured) receives its first deploy event.
 
 **Monitoring & operations**

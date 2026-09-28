@@ -161,6 +161,6 @@ auto-acceptance.
 changes here, add one to `tests/test_phase6_node_resolution.py`.
 
 **Docs:** End-user wording lives in
-[`docs/USER_GUIDE.md` → Phase 6](../USER_GUIDE.md#phase-6-resolution-and-prioritization).
+[`docs/USER_GUIDE.md` → Phase 6](../USER_GUIDE.md#phase-6-release-and-resolution).
 Operator/admin wording lives in [`CLAUDE.md` → Application Workflow
-States](../../CLAUDE.md#competitive-funding--reject-protection).
+States](../../CLAUDE.md#critical-business-rule--competitive-funding-reject-protection).

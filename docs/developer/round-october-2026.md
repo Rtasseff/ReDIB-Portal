@@ -43,6 +43,8 @@ produced backlog items **#66–#79** (prod added **#80** on 09-09, pausing the
 completion reminders); every one of them is now fixed and deployed (rows 2,
 6–9b below). **What is still open is rows 4, 5, 11 and 12 — nothing else.**
 
+**Documentation audit, 2026-09-28.** Every current doc was checked against the code. The user guide is at v1.4, and `docs/ARCHITECTURE.md` is new: see [docs/README.md](../README.md). The audit filed backlog #82–#90. Two of them have dates: **#82** (loaded accounts get the password `changeme123`) needs a read-only check on prod now; **#84** (legacy resolution tools, including a *Finalize* that re-sends every decision email) must be dealt with before the resolution phase. The rest are deferred.
+
 ### Do these, in this order
 
 | # | What | By | Who |

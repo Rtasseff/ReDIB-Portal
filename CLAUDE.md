@@ -41,7 +41,11 @@ The app reads a single `.env` file. Templates: `.env.example` (dev) and `.env.pr
   background only.
 - **Backlog of deferred work**: [docs/developer/backlog.md](docs/developer/backlog.md). Drop new
   feature requests, UX nits, and known-broken-tests there when they're not in the active batch.
-- **System design**: [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md).
+- **How the code is organised (as built)**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): apps,
+  status machines and who writes each transition, business rules, scheduled jobs, email
+  plumbing. The original design spec,
+  [docs/reference/redib-coa-system-design.md](docs/reference/redib-coa-system-design.md), is
+  partly out of date.
 - **End-user walkthrough** (per role): [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
 ## Worktrees & parallel sessions
@@ -93,11 +97,13 @@ instead. Announced and open calls both accept public `ConsultRequest`s.
 `draft` → `submitted` → `under_feasibility_review` → `pending_evaluation` → `under_evaluation` →
 `evaluated` → `accepted` / `pending` / `rejected`
 
-Terminals: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `expired`, `completed`.
+Terminals: `rejected_feasibility`, `rejected`, `declined_by_applicant`, `not_reached` (waitlist
+close-out), `completed`; `expired` too, unless a coordinator reinstates it.
 
 `pending` is the **waitlist** state. Same 10-day accept/decline window as `accepted`, but the
-hand-off email only fires once a node coordinator clicks **"Mark as Accepted"** on Access
-Tracking (`applications:promote_waitlisted`).
+hand-off email only fires once a node coordinator clicks **"Promote to Accepted"** on Access
+Tracking (`applications:promote_waitlisted`). Who writes every transition, and the full
+status machine: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) § 3.
 
 ## Critical business rule — competitive funding reject protection
 
@@ -137,8 +143,8 @@ send_email_from_template.delay(
 )
 ```
 Templates live in the DB; reseed with `python manage.py seed_email_templates`. Recipient
-helper: applicant emails prefer `Application.applicant_email` (form-declared PI contact) and
-fall back to `Application.applicant.email`.
+helper: applicant emails prefer `Application.applicant_email` (a read-only copy of the account
+email, taken at wizard step 1) and fall back to `Application.applicant.email`.
 
 ### TSV loaders (after the real-data prep work)
 

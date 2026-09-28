@@ -1,5 +1,13 @@
 # ReDIB COA System - Testing Guide
 
+> **Archived 2026-09-28.** This is the phase-era `docs/TESTING.md` (last edited
+> April 2026), kept verbatim. Its test counts, standalone-script commands,
+> seed accounts and node list no longer match the code, and it predates
+> announced calls, the release gate and the waitlist promotion flow. For the
+> current guide see
+> [../TESTING.md](../TESTING.md); for a current click-through of a whole call
+> see [../developer/dress-rehearsal.md](../developer/dress-rehearsal.md).
+
 ## Current Phase: Comprehensive Testing
 
 The ReDIB COA Portal has completed all 10 development phases and is now in the **comprehensive testing phase**. This guide provides detailed manual testing procedures to validate the complete COA lifecycle from call creation through publication tracking.
@@ -97,7 +105,7 @@ Before starting, ensure:
    plus seeded email templates. Prints a tester cheat-sheet at the end that
    maps each app code to "what to test with it." All accounts use the
    password `testpass123` and are pre-verified. See
-   [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md)
+   [developer/localtest3-database-plan.md](../developer/localtest3-database-plan.md)
    for the full spec.
 
    If you prefer to test against the real seed data from `data/*.tsv`,
@@ -531,7 +539,7 @@ coordinator may reject a competitively-funded application only if at least
 one evaluator independently recommended **Denied** (the evaluator's denial
 provides the grounds). Feasibility rejection (phase 3) and evaluator denial
 (phase 5) remain available regardless of funding status. See
-[USER_GUIDE.md → Phase 6](USER_GUIDE.md#phase-6-resolution-and-prioritization).
+[USER_GUIDE.md → Phase 6](../USER_GUIDE.md).
 
 | Step | Action | User | Expected Result | Notes |
 |------|--------|------|-----------------|-------|

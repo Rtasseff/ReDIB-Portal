@@ -17,7 +17,10 @@ static/
     └── (future scripts)
 ```
 
-After editing any file in `static/`, run:
+In development (`DEBUG=True`), `runserver` serves `static/` directly, so an
+edit shows up on reload. Production runs `collectstatic` in the container
+entrypoint on every deploy. Run it by hand only if you test locally with
+`DEBUG=False`:
 
 ```bash
 python manage.py collectstatic --noinput
@@ -27,15 +30,14 @@ python manage.py collectstatic --noinput
 
 The portal uses two separate logo images:
 
-- **Navbar (compact):** `ReDiB_logo.png` — referenced in `templates/base.html`, displayed at `height="32"`
+- **Navbar (compact):** `ReDiB_logo.png` — referenced in `templates/base.html`, displayed at `height="32"`. The same file is the browser-tab favicon.
 - **Auth pages (wide):** `ReDIB_logo_text.png` — referenced in `templates/account/base_entrance.html`, max-height `64px` (set in `auth.css`)
 - **ICTS affiliate:** `Logo-ICTS-def-low.jpg` — shown below the card on auth pages at `height: 40px`. Uses `mix-blend-mode: multiply` to make the white JPG background transparent. Replace with a transparent PNG when available.
 
 To swap either logo:
 
 1. Place the new file in `static/images/`
-2. Update the filename in the corresponding template
-3. Run `collectstatic`
+2. Update the filename in the corresponding template (for the navbar logo, both the `<img>` and the favicon `<link>` in `templates/base.html`)
 
 **Note:** Filenames are case-sensitive on Linux. Double-check capitalization if the logo doesn't appear.
 
@@ -47,7 +49,9 @@ All brand colors are defined as CSS custom properties at the top of `static/css/
 :root {
     --redib-primary: #1A3D50;       /* Deep navy-teal (navbar, buttons, links) */
     --redib-secondary: #6B7780;     /* Warm gray (muted text, secondary elements) */
-    --redib-accent: #BE2845;        /* Crimson red (badges, alerts, highlights) */
+    --redib-accent: #BE2845;        /* Crimson red from logo dot (badges, alerts, highlights) */
+    --redib-sidebar-shadow: rgba(0, 0, 0, 0.1);
+    --redib-navbar-height: 56px;
 }
 ```
 
@@ -58,7 +62,6 @@ To change the brand color scheme:
 1. Edit the hex values in `static/css/main.css` under `:root`
 2. The "Bootstrap Overrides" section directly below the variables wires them into Bootstrap's `.bg-primary`, `.btn-primary`, `.btn-outline-primary`, `a`, `.bg-info`, `.bg-secondary`, and related classes — so changing the variables automatically updates the navbar, buttons, links, and card headers
 3. If you change `--redib-primary`, also update the hover/active shades in the `.btn-primary:hover` and `.btn-primary:active` rules (make them slightly darker than your new primary)
-4. Run `collectstatic` after saving
 
 ## Key CSS Files
 
@@ -68,6 +71,7 @@ Loaded on every page via `templates/base.html`. Contains:
 
 | Section | What it controls |
 |---------|-----------------|
+| `[x-cloak]` | Hides Alpine.js elements until Alpine has initialised |
 | `:root` variables | Brand colors used throughout |
 | Bootstrap Overrides | Maps brand variables to `.bg-primary`, `.btn-primary`, `a`, etc. |
 | `.sidebar` | Dashboard sidebar layout and hover/active states |
@@ -78,7 +82,7 @@ Loaded on every page via `templates/base.html`. Contains:
 
 ### `static/css/auth.css`
 
-Loaded only on login/signup/logout pages. Controls the centered card layout:
+Loaded only on the login, signup, logout and password-change pages. Controls the centered card layout:
 
 | Class | Purpose |
 |-------|---------|
@@ -97,7 +101,8 @@ base.html                          ← global navbar, Bootstrap, main.css
 └── account/base_entrance.html     ← auth.css, centered card, logo
     ├── account/login.html
     ├── account/signup.html
-    └── account/logout.html
+    ├── account/logout.html
+    └── account/password_change.html
 ```
 
 Dashboard pages follow:
@@ -120,7 +125,7 @@ Edit `templates/account/base_entrance.html`, find the `<h2>` and `<p>` inside `.
 
 ### Add a new global CSS rule
 
-Add it to `static/css/main.css`, then run `collectstatic`. It will be available on every page.
+Add it to `static/css/main.css`. It will be available on every page.
 
 ### Add a page-specific style
 

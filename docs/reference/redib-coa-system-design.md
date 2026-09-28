@@ -1,3 +1,8 @@
+> **This is the original design specification (December 2025), kept for reference.**
+> Parts of it describe behaviour that has since changed. The resolution flow,
+> reminders, acceptance expiry and email are among the parts that differ. For the
+> system as built, see [docs/ARCHITECTURE.md](../ARCHITECTURE.md).
+
 # ReDIB Competitive Open Access (COA) Management System
 
 ## High-Level Design Document

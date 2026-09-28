@@ -1,236 +1,128 @@
 # Test Applicants & Applications Guide
 
-This guide describes the test data created by the `seed_test_applicants` management command.
+What `python manage.py seed_test_applicants` creates, and how to use it.
 
-> **Looking for a one-shot manual-test sandbox?** For full end-to-end
-> testing across every workflow phase, prefer
-> `python manage.py setup_localtest3_database --reset --yes` —
-> see [developer/localtest3-database-plan.md](developer/localtest3-database-plan.md).
-> `seed_test_applicants` (this guide) is still useful when you want extra
-> applicant variety on top of `setup_base_database`.
+> **Most manual testing should use the localtest3 sandbox instead**
+> (`python manage.py setup_localtest3_database --reset --yes`; see
+> [TESTING.md](TESTING.md#the-localtest3-sandbox)). Its accounts log straight
+> in and its applications carry the deadlines and flags each workflow step
+> needs. Use `seed_test_applicants` when you want a spread of applications
+> on top of the **real** reference data from `data/*.tsv`.
 
-## Overview
-
-The script creates **7 test applicants** with **17 applications** across all workflow stages to facilitate comprehensive testing of the ReDIB COA Portal.
-
-## Test Applicants
-
-All test applicants use the password: **`testpass123`**
-
-| Email | Name | Applications | Organization Type |
-|-------|------|--------------|-------------------|
-| testapplicant1@university.es | María García | 3 | University |
-| testapplicant2@research.de | Thomas Schmidt | 3 | Research Center |
-| testapplicant3@hospital.fr | Claire Dubois | 3 | Hospital |
-| testapplicant4@biotech.com | John Williams | 2 | Company |
-| testapplicant5@institute.it | Lucia Rossi | 2 | Research Center |
-| testapplicant6@university.uk | David Brown | 2 | University |
-| testapplicant7@lab.ch | Anna Mueller | 2 | Company |
-
-## Applications by Status
-
-The script creates applications in the following stages:
-
-| Status | Count | Test Purpose |
-|--------|-------|--------------|
-| Draft | 1 | Test saving and resuming applications |
-| Submitted | 1 | Test feasibility review workflow |
-| Under Feasibility Review | 1 | Test node coordinator review process |
-| Rejected - Not Feasible | 1 | Test feasibility rejection |
-| Pending Evaluation | 1 | Test evaluator assignment |
-| Under Evaluation | 2 | Test partial evaluations (1 of 2 complete vs both complete) |
-| Evaluated | 2 | Test resolution decisions |
-| Accepted | 5 | Test acceptance workflow and hours tracking |
-| Pending (Waiting List) | 1 | Test waiting list functionality |
-| Rejected | 1 | Test rejection notifications |
-| Declined by Applicant | 1 | Test applicant declining accepted access |
-
-**Total: 17 applications**
-
-## Application Details
-
-### Early Stage Applications (Phase 1-3)
-- **TEST-APP-001**: Draft - No equipment selected yet
-- **TEST-APP-002**: Submitted - Awaiting feasibility review
-- **TEST-APP-003**: Under Feasibility Review - Node coordinator needs to review
-- **TEST-APP-012**: Rejected (Feasibility) - Failed technical feasibility
-
-### Evaluation Stage Applications (Phase 4-6)
-- **TEST-APP-004**: Pending Evaluation - Ready for evaluator assignment
-- **TEST-APP-005**: Under Evaluation - **1 of 2 evaluations assigned** (incomplete - tests partial evaluation)
-- **TEST-APP-014**: Under Evaluation - **2 of 2 evaluations assigned** (incomplete - tests waiting for submissions)
-- **TEST-APP-006**: Evaluated - Score: 9.5/12 - Ready for resolution
-- **TEST-APP-017**: Evaluated - Score: 9.0/12 - Ready for resolution
-
-### Resolution & Acceptance (Phase 6-7)
-- **TEST-APP-007**: Accepted - Score: 10.5/12 - Awaiting applicant acceptance
-- **TEST-APP-008**: Pending (Waiting List) - Score: 8.5/12
-- **TEST-APP-009**: Rejected - Score: 4.0/12
-- **TEST-APP-010**: Accepted - Score: 11.0/12
-- **TEST-APP-011**: Declined by Applicant - Score: 9.0/12 - Applicant declined
-- **TEST-APP-013**: Accepted - Score: 10.0/12
-- **TEST-APP-015**: Accepted - Score: 8.0/12 (below threshold but manually accepted)
-- **TEST-APP-016**: Accepted - Score: 11.5/12 - **Has competitive funding**
-
-## Testing Scenarios
-
-### Test Feasibility Review (Phase 3)
-1. Login as `node.cic@redib.net` or `node.cnic@redib.net` (password: `changeme123` for users created via `populate_redib_users`, `testpass123` for users created via `setup_localtest3_database`).
-2. View applications under feasibility review
-3. Approve or reject based on technical feasibility
-4. Test multi-node applications (some applications request equipment from multiple nodes)
-
-### Test Evaluator Assignment (Phase 4)
-1. Login as `coordinator@redib.net` (password: `changeme123`).
-2. Navigate to call management
-3. Assign evaluators to applications in "Pending Evaluation" status
-4. Verify COI detection (evaluators from same organization excluded)
-
-### Test Evaluation Process (Phase 5)
-1. Login as `evaluator1@redib.net`, `evaluator2@redib.net`, or `evaluator3@redib.net`
-2. View assigned applications (blind - no applicant details)
-3. Score applications using 0-2 scale (6 criteria, max 12 points)
-4. Submit evaluations with recommendations
-
-### Test Resolution & Prioritization (Phase 6)
-1. Login as `coordinator@redib.net`
-2. View evaluated applications
-3. Test auto-resolution based on threshold (e.g., ≥9.0/12)
-4. Test manual overrides (accepting below threshold, rejecting above threshold)
-5. Verify competitive funding applications auto-approved
-
-### Test Acceptance Workflow (Phase 7)
-1. Login as test applicants
-2. View accepted applications
-3. Accept or decline access within 10-day deadline
-4. Test acceptance deadline enforcement
-
-### Test Hours Tracking
-- Applications have varied hours requested: 16, 24, or 32 hours
-- Test the three-tier tracking system:
-  - `hours_requested`: Original request
-  - `hours_approved`: Approved hours
-  - `actual_hours_used`: Actual usage (to be recorded on completion)
-
-## Special Test Cases
-
-### Multi-Equipment Applications
-- Every 5th application (TEST-APP-001, TEST-APP-006, etc.) requests equipment from **multiple nodes**
-- Tests multi-node feasibility review workflow
-- All nodes must approve for application to proceed
-
-### Competitive Funding
-- Every 4th application has `has_competitive_funding=True`
-- **TEST-APP-016** specifically tests competitive funding auto-approval
-- These applications should be auto-approved regardless of score
-
-### Specialization Areas
-- Applications rotate through: Preclinical, Clinical, Radiotracers
-- Tests area-based evaluator matching
-
-### Partial Evaluation
-- **TEST-APP-005**: Only 1 of 2 evaluations assigned (incomplete)
-- **TEST-APP-014**: 2 of 2 evaluations assigned (both incomplete)
-- Tests "waiting for evaluator submissions" functionality
-- Applications should remain in "Under Evaluation" status until evaluators submit scores
-- **Note:** Evaluations are created without scores (None), so they show as assigned but incomplete
-- When evaluators submit scores via the form, the application status will automatically transition to "Evaluated"
-
-## Running the Script
-
-### Initial Setup
-
-The fastest path is `setup_test_database`, which chains the base data load,
-test calls, and test applicants in one command:
+## Getting the data
 
 ```bash
 python manage.py setup_test_database --reset --yes
 ```
 
-If you prefer to run the pieces individually:
+This loads the real reference data, runs `seed_dev_data` (a dev call pair and
+a few `@test.redib.net` accounts) and then `seed_test_applicants`. `--reset`
+first deletes all data except superuser accounts.
+
+> `seed_dev_data` currently crashes part-way, at "Creating evaluations and
+> grants". `setup_test_database` reports that step as "may already exist" and
+> carries on, so the run still finishes with the calls and test applicants in
+> place. See the [command reference](DEVELOPMENT.md#management-command-reference).
+
+To add or re-create only the test applicants on a database that already has a
+call, nodes, equipment and organizations:
 
 ```bash
-# 1. Base reference data (nodes, equipment, users, organizations,
-#    funding agencies, email templates) — reads data/*.tsv files
-python manage.py setup_base_database
-
-# 2. Test calls (creates one open and one resolved call)
-python manage.py seed_dev_data
-
-# 3. Test applicants with 17 applications in various states
-python manage.py seed_test_applicants
+python manage.py seed_test_applicants            # adds them (fails on duplicate codes if they exist)
+python manage.py seed_test_applicants --clear    # deletes the testapplicant* users and their applications first
 ```
 
-### Clearing and Recreating
+`--clear` touches only users whose email contains `testapplicant`, and their
+applications.
+
+## The seven test applicants
+
+Password for all of them: **`testpass123`**.
+
+| Email | Name | Applications |
+|-------|------|--------------|
+| testapplicant1@university.es | María García | 001, 008, 015 |
+| testapplicant2@research.de | Thomas Schmidt | 002, 009, 016 |
+| testapplicant3@hospital.fr | Claire Dubois | 003, 010, 017 |
+| testapplicant4@biotech.com | John Williams | 004, 011 |
+| testapplicant5@institute.it | Lucia Rossi | 005, 012 |
+| testapplicant6@university.uk | David Brown | 006, 013 |
+| testapplicant7@lab.ch | Anna Mueller | 007, 014 |
+
+Each is given an organization by cycling through the database's organization
+list, so the affiliation is arbitrary.
+
+**Logging in takes two extra steps.** These accounts are not email-verified
+and have no phone number:
+
+1. The first login stops at "confirm your email". The confirmation link prints
+   in the `runserver` terminal; open it.
+2. After logging in, the portal sends you to `/profile/` until you add a phone
+   number (`ProfileCompletionMiddleware`).
+
+## The 17 applications
+
+All are in the first **open** call (`COA-TEST-02` after `setup_test_database`),
+coded `TEST-APP-001` to `TEST-APP-017`.
+
+| Code | Status | Score | Notes |
+|------|--------|-------|-------|
+| 001 | draft | | Competitive funding; instruments at 2 nodes |
+| 002 | submitted | | No feasibility review rows, so it is in no node coordinator's queue |
+| 003 | under_feasibility_review | | One pending review |
+| 004 | pending_evaluation | | Ready for evaluator assignment |
+| 005 | under_evaluation | | 1 evaluator assigned, not scored; competitive funding |
+| 006 | evaluated | 9.5 | 2 nodes, no node resolutions yet |
+| 007 | accepted | 10.5 | |
+| 008 | pending (waitlist) | 8.5 | 2 nodes: one accepted, one waitlisted |
+| 009 | rejected | 4.0 | 2 nodes: one accepted, one rejected. Competitive funding, but both evaluations recommend *denied*, which is what allows the rejection |
+| 010 | accepted | 11.0 | |
+| 011 | declined_by_applicant | 9.0 | 2 nodes |
+| 012 | rejected_feasibility | | |
+| 013 | accepted | 10.0 | Competitive funding |
+| 014 | under_evaluation | | 2 evaluators assigned, neither scored |
+| 015 | accepted | 8.0 | |
+| 016 | accepted | 11.5 | 2 nodes |
+| 017 | evaluated | 9.0 | Competitive funding, no node resolutions yet: the node coordinator cannot reject it |
+
+How the spread is generated:
+- **Competitive funding** is set on every 4th application (001, 005, 009,
+  013, 017).
+- **Two nodes**: every 5th application (001, 006, 011, 016) plus the
+  waitlist and reject cases (008, 009). The rest request one instrument.
+- **Specialization area** rotates preclinical, clinical, radiochemistry.
+- **Hours requested** rotate 16, 24, 32 per instrument.
+- Unscored evaluations stay incomplete. When an evaluator submits the form,
+  the application moves to `evaluated` once all assigned evaluations are in.
+
+**Limits of this data.** The `accepted` and `pending` applications have no
+`acceptance_deadline` and no applicant answer recorded, so they are not good
+for testing the 10-day accept/decline window, reminders or promotion. Use
+localtest3's `LIVE-009` and `LIVE-010` for that. Node resolution on 006 and
+017 is also held by the release gate: the call has to be closed and the ReDIB
+coordinator has to click **Release to Nodes** on the call's page first.
+
+## Who to log in as
+
+| To test | Log in as | Password |
+|---|---|---|
+| Applicant views | a `testapplicant*` account above | `testpass123` |
+| ReDIB coordinator | `coordinator@test.redib.net` (from `seed_dev_data`; needs the email confirmation step) or `coordinator@redib.net` (from `data/users.tsv`, pre-verified) | `testpass123` / `changeme123` |
+| Node coordinator, real nodes (CIC-biomaGUNE, BioImaC, IIS-LaFe, TRIMA@CNIC) | the `node_coordinator` rows in `data/users.tsv` (pre-verified) | `changeme123` |
+| Node coordinator, dev nodes (CICBIO, CNIC) | `cic@test.redib.net`, `cnic@test.redib.net` (need the email confirmation step) | `testpass123` |
+| Evaluator | the `evaluator` rows in `data/users.tsv`. The seeded evaluations go to the first two evaluators by email address. | `changeme123` |
+
+`setup_test_database` prints a sample of these accounts when it finishes.
+Everything runs against your local database with the console email backend,
+so nothing reaches the real people named in `data/users.tsv`.
+
+## Checking what was created
+
 ```bash
-# Clear existing test applicants and recreate
-python manage.py seed_test_applicants --clear
-```
-
-**Note:** The `--clear` flag only removes test applicants (emails containing 'testapplicant'), not the applicants from `seed_dev_data.py`.
-
-## Integration with Existing Data
-
-This script works alongside:
-- `seed_dev_data.py`: Creates basic roles and 2 applicants with simple applications
-- `populate_redib_*`: Loads nodes, equipment, and core users from TSV files
-- `seed_email_templates`: Loads email templates
-
-The test applicants script requires:
-- At least one Call (open or resolved)
-- Active nodes and equipment
-- Organizations for applicant affiliations
-- Evaluators and node coordinators (from populate_redib_users)
-
-## Verification
-
-After running the script, verify the data:
-
-```bash
-python manage.py shell
-```
-
-```python
+python manage.py shell -c "
 from applications.models import Application
 from django.db.models import Count
-
-# Check application counts by status
-for status, label in Application.APPLICATION_STATUSES:
-    count = Application.objects.filter(status=status).count()
-    if count > 0:
-        print(f"{label}: {count}")
-
-# Check evaluations
-from evaluations.models import Evaluation
-print(f"\nTotal evaluations: {Evaluation.objects.count()}")
-print(f"Completed: {Evaluation.objects.filter(completed_at__isnull=False).count()}")
+for row in Application.objects.filter(code__startswith='TEST-APP').values('status').annotate(n=Count('id')).order_by('status'):
+    print(row['status'], row['n'])
+"
 ```
-
-## Next Steps
-
-1. **Set passwords** for coordinator and evaluator accounts (use admin or shell)
-2. **Login as different users** to test workflows
-3. **Progress applications** through stages manually
-4. **Test email notifications** (if Celery is configured)
-5. **Test reporting** and statistics views with diverse data
-
-## Troubleshooting
-
-### No calls found error
-- Run the organizations and calls creation script
-- Or run `seed_dev_data.py` to create calls
-
-### No evaluators found
-- Run `python manage.py populate_redib_users`
-- Ensure evaluators have `is_active=True` roles
-
-### Evaluation field errors
-- This script uses the NEW 0-12 scoring system (6 criteria, 0-2 scale)
-- Field names: `score_quality_originality`, `score_methodology_design`, `score_expected_contributions`, `score_knowledge_advancement`, `score_social_economic_impact`, `score_exploitation_dissemination`
-
-## Additional Notes
-
-- All applications have realistic scientific content for each specialization area
-- Project titles are randomized based on the specialization area
-- Scores are distributed to create realistic test scenarios
-- Applications are timestamped in the past (-10 days) to simulate real workflow timing
