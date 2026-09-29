@@ -69,25 +69,33 @@ prod, `manage.py` commands run inside the container:
 |---|---|---|---|
 | `setup_localtest3_database` | **The default dev sandbox.** Creates 3 nodes, 6 instruments, 10 pre-verified accounts (`testpass123`), 2 calls and 16 applications spanning every status, plus email templates. No TSVs. Prints a login table and cheat-sheet. | `--reset` deletes every non-superuser row. Without it the command fails on a non-empty database. | `--reset`, `--yes` (skip the prompt) |
 | `setup_localtest1_database` | Older, smaller sandbox: the same 3 nodes and 6 instruments, 10 accounts (3 node coordinators), **no calls or applications**. Useful for starting from an empty portal. Its account names differ slightly from localtest3's (`eval.radiochemistry@`, `nc.bioimac@`, no `applicant4`). | Same as localtest3 | `--reset`, `--yes` |
-| `setup_base_database` | Real reference data only: the five `populate_redib_*` loaders in order, `seed_email_templates`, and the Site record. No calls or applications. TSV accounts get password `changeme123`. | `--reset` deletes every non-superuser row, including email templates and email logs | `--reset`, `--yes` |
-| `setup_test_database` | `setup_base_database`'s loads, then `seed_dev_data`, email templates, Site, and `seed_test_applicants`. It reports a failed step as "may already exist" and carries on. | `--reset` deletes every non-superuser row | `--reset`, `--yes`, `--skip-applicants` |
-| `seed_dev_data` | Adds 2 dev nodes (`CICBIO`, `CNIC`), 4 instruments, 8 `@test.redib.net` accounts (`testpass123`, not email-verified, so the first login asks for confirmation), calls `COA-TEST-01` (resolved) and `COA-TEST-02` (open), and 4 applications. **Currently crashes** at "Creating evaluations and grants" (stale score field names); everything before that step is kept. | `--clear` deletes **all** calls, applications, nodes, equipment, organizations and non-superuser users, not only its own | `--clear` |
-| `seed_test_applicants` | Adds 7 `testapplicant*` accounts and 17 applications `TEST-APP-001` to `-017` in the first open call. Needs a call, nodes, equipment and organizations to exist. See [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md). | `--clear` deletes only the `testapplicant*` users and their applications | `--clear` |
-| `setup_livetest_small_database` | **Historical.** Seeded a tiny real-data sandbox (CIC biomaGUNE node, 3 users, no calls) for a sanity check on the live server before launch. | `--reset` deletes every non-superuser row. **Never run it on production now.** | `--reset`, `--yes` |
+| `setup_base_database` | Real reference data only: the five `populate_redib_*` loaders in order, `seed_email_templates`, and the Site record. No calls or applications. TSV accounts get no usable password (each sets one with "Forgot password"). Stops with a non-zero exit at the first failed step. | `--reset` deletes every non-superuser row, including email templates and email logs | `--reset`, `--yes` |
+
+`setup_test_database`, `seed_dev_data`, `seed_test_applicants` and
+`setup_livetest_small_database` were removed on 2026-09-29 (#88(b), #90):
+`seed_dev_data` crashed on renamed evaluation fields, and `setup_localtest3_database`
+covers what they did.
 
 ### Reference data loaders (dev and prod)
 
 Each reads one TSV from `data/`, validates it and upserts by natural key.
 Load order and rules: [SETUP_GUIDE.md](SETUP_GUIDE.md#individual-population-commands)
-and [data/README.md](../data/README.md). All five take `--tsv <path>`.
+and [data/README.md](../data/README.md). All five take `--tsv <path>`, and each runs in
+one transaction or checks the whole file first, so a bad row writes nothing.
 
 | Command | Reads | `--sync` does | Other flags |
 |---|---|---|---|
 | `populate_redib_organizations` | `organizations.tsv` | Lists organizations not in the TSV; changes nothing | |
 | `populate_redib_nodes` | `nodes.tsv` (needs organizations) | Marks nodes not in the TSV inactive | |
-| `populate_redib_users` | `users.tsv` (needs organizations and nodes) | **Deactivates every active non-superuser account not in the TSV, self-registered applicants included. Never on production.** | `--dry-run` (writes nothing), `--update-existing` (overwrite existing profiles; create-only by default) |
+| `populate_redib_users` | `users.tsv` (needs organizations and nodes). New users get no usable password. Unknown role names and bad ORCID or phone abort the load. | No `--sync` (#83) | `--dry-run` (writes nothing), `--update-existing` (overwrite existing profiles; create-only by default) |
 | `populate_redib_equipment` | `equipment.tsv` (needs nodes) | Marks instruments not in the TSV inactive | |
 | `populate_redib_funding_agencies` | `funding_agencies.tsv` | Lists agencies not in the TSV; changes nothing | |
+
+`export_redib_users` goes the other way. The database is the authority for people, and
+this writes `users.tsv` from it: every user with a non-applicant role (active or
+retired) or `is_staff`, in the file's columns plus a trailing `retired_roles`. TSV to
+stdout (UTF-8, CRLF, sorted by email); `--output <path>`, `--format xlsx`. Read-only.
+Details: [data/README.md § `export_redib_users`](../data/README.md#export_redib_users).
 
 Before any users load against production, run `scripts/check_role_drift.py`
 (below), then `--dry-run`.
@@ -97,13 +105,14 @@ Before any users load against production, run `scripts/check_role_drift.py`
 | Command | What it does | Destructive? | Key flags |
 |---|---|---|---|
 | `seed_email_templates` | Creates or updates all 31 `EmailTemplate` rows from the definitions in the command file. Runs automatically in the Docker entrypoint on every container start. | Overwrites each template's subject and body, so content edits made in the admin are lost. `is_active` is set only on create, so a template switched off in the admin stays off. | none |
-| `send_test_emails` | Sends 15 of the 31 templates to one existing user so you can check rendering and links. Creates the call `COA-EMAIL-TEST` and one application under it. On prod it sends real mail. See [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md). | Adds an evaluator role (preclinical) to the recipient, which `--cleanup` does not remove | `--to <email>` (default `rtasseff@cicbiomagune.es`), `--cleanup` |
+| `send_test_emails` | Sends 15 of the 31 templates to one existing user so you can check rendering and links. Creates the call `COA-EMAIL-TEST` and one application under it. On prod it sends real mail. See [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md). | Adds an evaluator role (preclinical) to the recipient if they had none. `--cleanup` deletes the test call and everything under it, and that role (never one the recipient already had). | `--to <email>` (default `rtasseff@cicbiomagune.es`), `--cleanup` |
 
 ### Operations (prod)
 
 | Command or script | What it does | Destructive? | How to run |
 |---|---|---|---|
 | `run_locked` | Runs another management command under a Postgres advisory lock, so the three app containers don't race `migrate` at startup (#37). On SQLite it just runs the command. Used by `docker/entrypoint.sh`. | Only as destructive as the wrapped command | `manage.py run_locked migrate --noinput` |
+| `purge_unverified_signups` | Deletes self-registered accounts that never confirmed their email or logged in, are not staff, hold no role but applicant, have no applications, and joined more than `--days` ago (#92). Loaded and hand-added staff have a verified email, so it never touches them. | **Yes**, deletes accounts. Run `--dry-run` first. | `--dry-run`, `--days N` (default 7) |
 | `send_ops_alert` | Sends one plain-text email synchronously through the SMTP settings, with no Celery and no template. Used by `backup-db.sh` on failure. | No | `--recipient`, `--subject`, `--body` (all required) |
 | `backfill_waitlist_hours_approved` | One-off for #31: fills `RequestedAccess.hours_approved` from a TSV of figures node coordinators confirmed, only where the current value is null or 0. Prod checked and it was never needed; kept for the record. | Writes only null/0 rows | `--tsv <path>` (required), `--dry-run` |
 | `scripts/backup-db.sh` | Nightly cron job on the VPS: `pg_dump` through `docker-compose.prod.yml` plus a tarball of key files (`.env` among them), validated before anything old is pruned. Keeps 7 days by default. Emails `ALERT_RECIPIENT` on failure. Details in [DEPLOYMENT.md](DEPLOYMENT.md). | Prunes backups older than `RETENTION_DAYS`, only after a good dump | `cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh`; env overrides `RETENTION_DAYS`, `MIN_SIZE_RATIO_PERCENT`, `BACKUP_DIR`, `ALERT_RECIPIENT`, `HEALTHCHECK_URL` |
@@ -115,7 +124,6 @@ Before any users load against production, run `scripts/check_role_drift.py`
 |---|---|---|---|
 | `scripts/rehearsal.py` | Dress-rehearsal harness: resets to the localtest3 sandbox with one draft call (`REHEARSAL-2701`), simulates days passing, runs every scheduled task once, and lists the emails sent. Refuses to run unless `DEBUG` is on and the database is SQLite. See [developer/dress-rehearsal.md](developer/dress-rehearsal.md). | `seed` wipes like `setup_localtest3_database --reset`, then deletes all calls, applications and email logs | `python scripts/rehearsal.py {seed,status,advance N,beat,inbox [--full]}` |
 | `scripts/new-worktree.sh` | Creates a git worktree for a bucket of work under `~/projects/ReDIB-Portal-wt/<slug>/`. It copies `.env`, `db.sqlite3` and `media/`, builds a venv, and seeds `docs/handoffs/<slug>.md`. See [developer/worktrees.md](developer/worktrees.md). Never on the VPS. | No | `scripts/new-worktree.sh <slug> [branch] [base-ref]` from the main checkout |
-| `scripts/add_feasibility_test_apps.py` | **Legacy.** Adds two `under_feasibility_review` applications (`TEST-FEAS-CIC-<MMDD>`, `TEST-FEAS-CNIC-<MMDD>`) to the first open call. Needs `setup_test_database` data (the `testapplicant*` users and the `TRIMA@CNIC` node). | No | `PYTHONPATH=. python scripts/add_feasibility_test_apps.py` from the repo root. The file's own usage line fails with `No module named 'redib'`. |
 
 ## Email templates
 

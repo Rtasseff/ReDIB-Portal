@@ -59,7 +59,7 @@ area rather than by name:
 | Acceptance, waitlist, hand-off | `test_phase7_acceptance`, `test_acceptance_repair`, `test_batch2_phase4`, `test_closeout_waitlist_deadlines`, `test_closeout_waitlist_followup` |
 | Execution, completion, publications | `test_execution_deadline`, `test_closeout_completion_reminders`, `test_phase9_publications` |
 | Reports and Excel export | `reports/tests.py` |
-| Loaders and ops commands | `test_user_loader_create_only`, `test_backfill_waitlist_hours_approved`, `test_run_locked` |
+| Loaders and ops commands; the users export, `send_test_emails` | `test_user_loader_create_only`, `test_commands_cleanup`, `test_backfill_waitlist_hours_approved`, `test_run_locked` |
 | UI, help page, rehearsal regressions | `test_design`, `test_help_guide`, `test_rehearsal_guards`, `test_rehearsal_polish` |
 
 **Adding a test.** Create `tests/test_<topic>.py` with Django `TestCase`
@@ -69,19 +69,6 @@ in and drives a real view, build that user with
 redirects any non-staff user with an incomplete profile to `/profile/`, and a
 bare `User.objects.create_user` will quietly test that redirect instead of your
 view.
-
-### Legacy standalone scripts (not part of the suite)
-
-Seven files in `tests/` are phase-era scripts, not `TestCase` classes, and the
-runner skips them: `test_application_form_spec`, `test_phase1_phase2_workflow`,
-`test_phase3_feasibility_review`, `test_phase4_evaluator_assignment`,
-`test_phase5_evaluation_submission`, `test_phase6_node_resolution`,
-`test_phase6_resolution`. They run as `PYTHONPATH=. python tests/<file>.py`
-and **write to whatever database `DATABASE_URL` names**, which by default is
-your dev `db.sqlite3`. On 2026-09-28 only `phase1_phase2` and `phase3` still
-passed; the other five fail on behaviour that has changed since (the release
-gate, for one). Don't use them as evidence of anything. The same areas are
-covered by the suite above.
 
 ## Testing by hand
 
@@ -135,9 +122,8 @@ the caveats on what `advance` does not move, are in
 
 ### Other test data and email checks
 
-- **Real reference data plus 17 extra test applications**:
-  `python manage.py setup_test_database --reset --yes`. See
-  [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md).
+- **Real reference data, no calls or applications**:
+  `python manage.py setup_base_database --reset --yes`.
 - **Render every workflow email at once**: `send_test_emails`. See
   [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md).
 - In dev, every email, workflow and allauth alike, prints to the `runserver`

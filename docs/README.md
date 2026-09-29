@@ -33,7 +33,6 @@ file that owns it and link to it from elsewhere instead of repeating it.
 | [../data/README.md](../data/README.md) | TSV formats, loader rules and failure modes, and recipes for everyday edits |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | The production VPS: install, deploy, run commands, backups and restore, pausing a scheduled job, troubleshooting |
 | [TESTING.md](TESTING.md) | The automated suite, the dress-rehearsal harness, and the sandboxes for manual testing |
-| [TEST_APPLICANTS_GUIDE.md](TEST_APPLICANTS_GUIDE.md) | What `seed_test_applicants` creates |
 | [TEST_EMAIL_TEMPLATES.md](TEST_EMAIL_TEMPLATES.md) | `send_test_emails`, for checking every email template |
 | [USER_GUIDE.md](USER_GUIDE.md) | The end-user guide, per role |
 | [developer/branding-and-styles.md](developer/branding-and-styles.md) | Logo, colours and CSS |

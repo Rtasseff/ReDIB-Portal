@@ -62,9 +62,8 @@ which allauth's emails use:
 | `SITE_NAME` | `ReDIB COA Portal` | same | same | Name written to `Site` id 1. |
 
 These are written by `docker/entrypoint.sh` on every container start, and by the
-`setup_*` commands (`setup_base_database`, `setup_test_database`,
-`setup_localtest1_database`, `setup_localtest3_database`,
-`setup_livetest_small_database`). On dev, after changing them, rerun a setup command or
+`setup_*` commands (`setup_base_database`, `setup_localtest1_database`,
+`setup_localtest3_database`). On dev, after changing them, rerun a setup command or
 edit **Sites** in the admin. After changing `SITE_URL`, restart `runserver`.
 
 **Read by Docker Compose** (interpolated into `docker-compose.prod.yml` from `.env`):
@@ -140,35 +139,21 @@ It runs, in order: `populate_redib_organizations` → `populate_redib_nodes` →
 `populate_redib_users` → `populate_redib_equipment` → `populate_redib_funding_agencies`
 → `seed_email_templates` → sets the `Site` record. Result on 2026-09-28: 186
 organizations, 4 nodes, 28 users (1 coordinator, 5 node-coordinator and 21 evaluator
-roles), 14 equipment, 375 funding agencies, 31 templates. **New** users get the password
-`changeme123` and a verified email address.
+roles), 14 equipment, 375 funding agencies, 31 templates. **New** users get a verified
+email address and no usable password: each sets one with "Forgot password" on the login
+page.
 
-- It stops at the first step that fails, prints `Failed: <reason>`, and **exits 0**. The
-  steps before it stay loaded. Read the output.
+- It stops at the first step that fails with a non-zero exit
+  (`CommandError: Step N failed: <reason>`). The steps before it stay loaded; the failed
+  step writes nothing.
 - It is for an empty database. It is not a way to sync a live one. `--reset` deletes
   every call, application and non-superuser account. On production that is the
   [Full Database Reset](DEPLOYMENT.md#full-database-reset-and-reload) and nothing else.
 
-### Option C: `setup_test_database`, real reference data plus fake workflow data
-
-```bash
-python manage.py setup_test_database --reset --yes
-python manage.py setup_test_database --reset --yes --skip-applicants
-```
-
-It runs the same five loaders, then `seed_dev_data` (3 extra organizations, 2 nodes,
-4 equipment, 8 `@test.redib.net` users, 2 calls, 4 applications), the email templates,
-the `Site` record, and `seed_test_applicants` (7 applicants, 17 applications in every
-status; skip it with `--skip-applicants`).
-
-> **Currently broken part-way (2026-09-28).** `seed_dev_data` crashes after its
-> applications, at "Creating evaluations and grants", on renamed evaluation score
-> fields. This command reports every failed step as "may already exist" and carries on,
-> so it exits 0 without dev-data evaluations or grants. Use Option A unless you need the
-> real reference data plus fake applications.
-
-`setup_localtest1_database` and `setup_livetest_small_database` also exist. See the
-command reference in [DEVELOPMENT.md](DEVELOPMENT.md).
+`setup_localtest1_database` also exists. See the command reference in
+[DEVELOPMENT.md](DEVELOPMENT.md). (`setup_test_database`, `seed_dev_data`,
+`seed_test_applicants` and `setup_livetest_small_database` were removed on 2026-09-29;
+`setup_localtest3_database` replaces them.)
 
 ### Individual population commands
 
@@ -188,10 +173,12 @@ python manage.py seed_email_templates              # any time; no TSV
 - Each takes `--tsv <path>` to read another file.
 - `populate_redib_users` is **create-only**: existing accounts keep their profile, but
   their roles are applied. `--update-existing` overwrites profiles, blanks included.
-  `--dry-run` writes nothing.
-- `--sync` does **not** mean "update". It deactivates what isn't in the file: nodes,
-  equipment, and, for users, **every non-superuser account not listed, applicants
-  included**. Never use `populate_redib_users --sync` on production. Details:
+  `--dry-run` writes nothing. A bad row aborts the whole load with nothing written.
+- `export_redib_users` goes the other way: it writes `data/users.tsv` from the database,
+  which is the authority for people. See
+  [data/README.md § `export_redib_users`](../data/README.md#export_redib_users).
+- `--sync` does **not** mean "update". On the nodes and equipment loaders it deactivates
+  what isn't in the file. `populate_redib_users` has no `--sync`. Details:
   [data/README.md § `--sync`](../data/README.md).
 - `seed_email_templates` creates the 31 templates and, on every rerun, **overwrites
   their subject and body** from the code. A template switched off with **Is active** in

@@ -7,6 +7,12 @@ to run a full load (dev or a fresh production database) is in
 [docs/SETUP_GUIDE.md § Initial Data Setup](../docs/SETUP_GUIDE.md#initial-data-setup).
 This file covers the formats, the rules, and the everyday edits.
 
+**People are the exception: the database is the authority, and `users.tsv` is an
+export of it** (backlog #91). Change a user or a role in the admin or the shell, then
+run `export_redib_users` and commit the file. See [§ `users.tsv`](#userstsv) and
+[§ Recipes](#recipes). The file is still what `setup_base_database` loads into a fresh
+database.
+
 **Why TSV.** Equipment descriptions and organization names contain commas. Tabs appear
 in no field, so there is no quoting to get wrong. Multi-line cells (equipment
 descriptions) are still quoted in the file, and Python's `csv` module reads them.
@@ -15,14 +21,14 @@ descriptions) are still quoted in the file, and Python's `csv` module reads them
 |---|---|---|---|---|
 | `organizations.tsv` | `populate_redib_organizations` | `core.Organization` | `name` | 186 |
 | `nodes.tsv` | `populate_redib_nodes` | `core.Node` | `code` | 4 |
-| `users.tsv` | `populate_redib_users` | `core.User` + `core.UserRole` | `email` (lower-cased) | 28 |
+| `users.tsv` | `populate_redib_users` (written by `export_redib_users`) | `core.User` + `core.UserRole` | `email` (lower-cased) | 28 |
 | `equipment.tsv` | `populate_redib_equipment` | `core.Equipment` | (`node_code`, `name`) | 14 |
 | `funding_agencies.tsv` | `populate_redib_funding_agencies` | `applications.FundingAgency` | `name` | 375 |
 | `waitlist_hours_backfill.tsv.example` | `backfill_waitlist_hours_approved` (one-off) | `RequestedAccess` | — | example only |
 
 Every `populate_redib_*` loader takes `--tsv <path>` (default `data/<file>.tsv`, relative to the project
-root; an absolute path also works) and `--sync`. Only `populate_redib_users` has
-`--dry-run` and `--update-existing`.
+root; an absolute path also works). All but `populate_redib_users` take `--sync`. Only
+`populate_redib_users` has `--dry-run` and `--update-existing`.
 
 ## Load order
 
@@ -53,9 +59,10 @@ root; an absolute path also works) and `--sync`. Only `populate_redib_users` has
   The loaders don't diff, so the organizations, nodes and equipment loaders report
   `↻ Updated` for every row on every run, even when nothing changed. Users are the
   exception: see below.
-- **Not validated:** role names in `users.tsv` (`evaluater` is written as a role
-  nobody checks for), and ORCID and phone format. A malformed ORCID or phone loads
-  fine, and the user's profile form then refuses to save until they fix it.
+- **`users.tsv` role names, ORCID and phone are validated before anything is written.**
+  An unknown role name (`evaluater`) aborts the load and lists the valid names. ORCID
+  and phone go through the same validators as the profile form, so a load can't create
+  a user whose profile then refuses to save.
 
 ### When a load fails part-way
 
@@ -64,22 +71,22 @@ root; an absolute path also works) and `--sync`. Only `populate_redib_users` has
 | organizations | missing `name`, `ISO2` or `country`; `ISO2` not 2 letters; unknown `organization_type` | — | No. The whole file is checked before anything is written. |
 | nodes | `organization_name` not found | row missing `code` or `organization_name` | No. The whole file is checked first. |
 | funding agencies | missing `name` or `origin_of_funds`; unknown label (all errors listed together) | duplicate `name` within the file | No. The whole file is checked first. |
-| users | `organization_name` not found; `node_coordinator:CODE` not a node; invalid `areas` value | row missing `email`, `first_name` or `last_name` | **Yes.** Rows are written one at a time. Rows above the bad one are already saved. For a bad `areas` cell, the user on that row has been created too, without the role. |
-| equipment | invalid `category` or `area` (checked first); `node_code` not a node (checked while writing) | row missing `node_code`, `name` or `category` | **Yes**, for an unknown `node_code`. |
+| users | unknown role name, bad ORCID or phone (checked first); `organization_name` not found; `node_coordinator:CODE` not a node; invalid `areas` value | row missing `email`, `first_name` or `last_name` | No. The whole load runs in one transaction, so a bad row leaves the database as it was. |
+| equipment | invalid `category` or `area` (checked first); `node_code` not a node (checked while writing) | row missing `node_code`, `name` or `category` | No. One transaction, as for users. |
 
 The recovery is the same every time: fix the file and run the loader again. Reruns are
-idempotent. For users, `--dry-run` hits the same three errors without writing anything,
-so a clean dry-run means the real run won't hit them.
+idempotent. For users, `--dry-run` hits the same errors without writing anything, so a
+clean dry-run means the real run won't hit them.
 
 `setup_base_database` runs the loaders in order and **stops at the first failed step
-but still exits 0**. Read its output for `Failed:`.
+with a non-zero exit** (`CommandError: Step N failed: …`).
 
 ### `--sync`: what "not in the file" does
 
 | Loader | Rows in the DB but not in the file |
 |---|---|
 | nodes, equipment | set `is_active=False` |
-| **users** | **every active non-superuser account not in the file is deactivated**, and that includes every self-registered applicant. On production that is ~1,200 people locked out. **Never run `populate_redib_users --sync` on production.** On dev, try it with `--dry-run` first. |
+| users | **No `--sync`** (removed, #83). The file lists the few dozen people ReDIB manages, not every account, so "not in the file" says nothing about a user. Deactivate a leaver by hand ([recipe](#retire-a-role-or-deactivate-a-person)). |
 | organizations, funding agencies | listed with their reference counts, not changed (no `is_active` field) |
 
 ### What a clean rerun looks like
@@ -143,23 +150,28 @@ leaving cells empty (backlog #43(b)).
 
 ### `users.tsv`
 
+This file is written by `export_redib_users` from the database, and read by
+`populate_redib_users` into a fresh one. Don't edit it by hand on production: change
+the database, then export (see [§ Recipes](#recipes)).
+
 | Column | Notes |
 |---|---|
 | `email` | Natural key and login. Lower-cased on load. |
 | `first_name`, `last_name` | Required, or the row is skipped. |
 | `organization_name` | Optional; must match an organization if filled. |
-| `orcid`, `phone`, `position` | Optional, not validated by the loader (see above). No `_NNNN` phone extensions. |
+| `orcid`, `phone`, `position` | Optional. ORCID and phone are checked with the profile form's validators (see above). No `_NNNN` phone extensions. |
 | `is_staff` | `TRUE` lets the account into the Django admin (limited to its permissions) and exempts it from the profile-completion redirect. |
 | `is_active` | Blank means **False on create**, so write `TRUE` for anyone who should log in. |
 | `roles` | `;`-separated. See below. |
 | `areas` | `;`-separated evaluator areas. See below. |
 | `auto_data_consent` | Blank means False on create. |
+| `retired_roles` | Written by the export only, last column. Roles whose `UserRole` is inactive, same syntax as `roles`. The loader reads with `csv.DictReader` and ignores it, so a retired role is recorded without being re-granted (#81). |
 
 **Roles:** `coordinator`, `evaluator`, `applicant`, and `node_coordinator:NODE_CODE`, the
 only role with a `:` qualifier. Separate several with `;`, e.g.
 `node_coordinator:BioImaC;evaluator`. Model role names are `applicant`,
-`node_coordinator`, `evaluator`, `coordinator` and `admin`. A name outside that list is
-written anyway, so check spelling.
+`node_coordinator`, `evaluator`, `coordinator` and `admin`. A name outside that list
+aborts the load.
 
 **Areas:** `preclinical`, `clinical`, `radiochemistry`, `;`-separated, in any order
 (order is not compared). They are stored on the evaluator `UserRole` row only. Other role
@@ -175,14 +187,16 @@ The TSV is **not** the authority for a person's own profile. `phone`, `position`
 can change their own areas there too. So the loader is split:
 
 - **Create-only by default (#43).** A new email is created with every column from the
-  file, the password `changeme123`, and a verified primary email address. For an
+  file, **no usable password** (the person sets one with "Forgot password" on the login
+  page, #82), and a verified primary email address. For an
   existing email, the profile fields and `is_active` are **left alone**. It reports
   `· Exists, profile untouched`. `--update-existing` brings back the old
   overwrite-everything behaviour, blanks included. Always pair it with `--dry-run` first.
-- **Roles are applied in both modes.** Each role in the cell is created if missing and
-  **set `is_active=True`** if it exists. That re-activates a role retired in the admin
-  (#81, parked for 2027). The loader never removes or deactivates a role, so a role
-  granted by mistake must be removed by hand.
+- **Roles are applied in both modes.** Each role in the `roles` cell is created if
+  missing and **set `is_active=True`** if it exists. A role retired in the admin is
+  exported under `retired_roles`, not `roles`, so loading a fresh export leaves it
+  retired. The loader never removes or deactivates a role, so a role granted by mistake
+  must be removed by hand.
 - **A blank `areas` cell is never written (#61).** It means "the file isn't saying". A
   **filled** cell wins over the DB, and that includes an evaluator's own edit on the
   profile page.
@@ -212,14 +226,42 @@ python manage.py shell < scripts/check_role_drift.py
 Self-registered applicants are counted, not listed. Its closing line, "Inactive rows are
 never touched by the loader", is wrong: see #81 above.
 
-**On production, today (2026-09):** five evaluators retired on 2026-09-15 (#81) keep
-`roles=evaluator` in the file as the historical record. So every dry-run shows five
-`would update (is_active: False -> True)` lines, and the drift check shows five
-`TSV only : evaluator` lines. **A real `populate_redib_users` run would re-activate
-them.** Production therefore makes user and role changes by hand and uses the dry-run and
-the drift check only to prove the file matches (see the recipes below). If a real load is
-ever needed, pass `--tsv` a file with the header plus only the rows you mean to load.
-The loader touches nothing else (verified on a scratch DB, 2026-09-28).
+**Until production regenerates the file** (the first export after the
+`commands-cleanup` deploy): five evaluators retired on 2026-09-15 (#81) keep
+`roles=evaluator` in the committed file. Until then every dry-run shows five
+`would update (is_active: False -> True)` lines, the drift check shows five
+`TSV only : evaluator` lines, and **a real `populate_redib_users` run would re-activate
+them.** After the export they sit in `retired_roles` and those lines go away. If a real
+load is ever needed on production, pass `--tsv` a file with the header plus only the
+rows you mean to load. The loader touches nothing else (verified on a scratch DB,
+2026-09-28).
+
+#### `export_redib_users`
+
+Writes every user who holds at least one non-applicant role (active or retired), plus
+any `is_staff` user, in the columns above. A self-registered applicant is left out, and
+the `applicant` role is never written: the portal grants it itself when an address is
+confirmed.
+
+- `roles`: active roles, `node_coordinator:<NODE>` for a node role. `retired_roles`:
+  inactive ones. `areas`: from the evaluator role (the active one if the user has one).
+- Booleans are written `TRUE` / `FALSE`, never blank.
+- UTF-8 without a BOM, CRLF line endings, rows sorted by email.
+- Output goes to stdout. `--output <path>` writes a file instead. `--format xlsx`
+  writes a spreadsheet: the read-only copy to put on SharePoint.
+
+```bash
+# dev
+python manage.py export_redib_users > data/users.tsv
+# production: -T, so the redirect writes the host's checkout, not the container's
+docker compose -f docker-compose.prod.yml exec -T web python manage.py export_redib_users > data/users.tsv
+docker compose -f docker-compose.prod.yml exec -T web python manage.py export_redib_users --format xlsx > users.xlsx
+```
+
+Loading an export back gives the same values: the round trip is tested against the
+committed file. The only textual differences from a hand-written file are that blank
+booleans come back as `FALSE`, the rows are sorted, and a row with no role that isn't
+staff (like `bioimac@ucm.es` today) is not exported.
 
 ### `equipment.tsv`
 
@@ -233,8 +275,8 @@ The loader touches nothing else (verified on a scratch DB, 2026-09-28).
 | `is_essential`, `is_active` | Blank means False. |
 
 The loader also reads a `technical_specs` column if one exists. This file has none, so
-**every load blanks any technical specs typed into the admin**. Add the column if you
-start using them.
+a load leaves the technical specs typed into the admin alone. Add the column if you want
+the file to own them; then a blank cell clears the field.
 
 ### `funding_agencies.tsv`
 
@@ -260,20 +302,24 @@ origin pre-fills the application's "Origin of Funds".
 
 ## Recipes
 
-**On dev:** edit the file and run its loader (for users, `--dry-run` first). **On
-production** the practice (commits d7ff65a, 74609d7, c29c4fe, 794923e) is:
+**People (users and roles).** The database is the authority, on dev and production:
 
-1. Make the change in the production DB by hand. Use the Django admin or
+1. Make the change in the database. Use the Django admin or
    `docker compose -f docker-compose.prod.yml exec web python manage.py shell`.
-2. Mirror it into the TSV in the same sitting, matching the DB field for field.
-3. Prove the match. Run the drift check and `populate_redib_users --dry-run` (see
-   [DEPLOYMENT.md § Running Management Commands](../docs/DEPLOYMENT.md#running-management-commands)
-   for running them against the edited file). The expected result is 0 to create, the
-   changed row `= Unchanged`, and no role lines beyond the known retired ones (the five
-   #81 evaluators, plus any role you have just retired).
+2. Export: `docker compose -f docker-compose.prod.yml exec -T web python manage.py export_redib_users > data/users.tsv`
+   (on dev, `python manage.py export_redib_users > data/users.tsv`).
+3. Check `git diff data/users.tsv` shows only the change you made. If the export warns
+   that an organization is not in `data/organizations.tsv` (someone created it from
+   the profile form), add its row there too (see
+   [Add an organization](#add-an-organization)). Otherwise a fresh
+   `setup_base_database` fails at the users step.
 4. Commit only `data/` with a subject like
    `Users: add evaluator Jane Doe (jane.doe@example.org), preclinical;clinical`. The body
-   says what was changed by hand and what the dry-run and drift check showed. Push.
+   says what was changed. Push. If the SharePoint copy is kept, refresh it with
+   `--format xlsx`.
+
+**Equipment, nodes, organizations, funding agencies.** The file is still the authority
+(#91 decides these for 2027): edit the file and run its loader.
 
 ### Add a user, or an evaluator with areas
 
@@ -293,19 +339,11 @@ UserRole.objects.create(user=u, role='evaluator', areas='preclinical;clinical')
 ```
 
 The person sets a password with "Forgot password" on the login page. The admin's
-**Add user** form insists on a password, and the loader would set `changeme123`, which is
-why production uses the shell. They will be sent to `/profile/` to fill in phone and
-position on first login.
+**Add user** form insists on a password, which is why the shell is used. They will be
+sent to `/profile/` to fill in phone and position on first login. If the organization is
+new, add it first (below).
 
-Then append the row to `users.tsv`:
-
-```
-jane.doe@example.org	Jane	Doe	Universidad Complutense de Madrid				FALSE	TRUE	evaluator	preclinical;clinical	
-```
-
-This recipe was checked on a scratch DB. With that row appended, the dry-run reports
-`= Unchanged: jane.doe@example.org` and 0 to create. If the organization is new, add it
-first (below).
+Then export and commit (steps 2 to 4 above). The new row appears in `users.tsv`.
 
 ### Retire a role, or deactivate a person
 
@@ -313,14 +351,11 @@ In the admin, open **User Roles**, find the row and untick **Is active**. For so
 leaving altogether, also untick **Active** on the user (a Permissions field). The login
 stops working. Nothing is deleted.
 
-In `users.tsv`, set `is_active` to `FALSE` for a departing person. **Leave the `roles`
-cell as it is.** The file is read as the record of who has served (Ryan's decision on
-#81). The cost is the known dry-run and drift lines described above. To keep a retired
-role from coming back, **don't run a real users load on production.** If one is
-unavoidable, give it a file with only the new rows. Clearing the `roles` cell (1acb6d1)
-also works, but it erases that history.
+Then export and commit. The export moves the role from `roles` to `retired_roles` and
+writes `is_active` `FALSE` for a departed person, so the file keeps the record of who
+has served (#81) without a load re-granting it.
 
-To reactivate, tick both boxes again and set `is_active` back to `TRUE` (74609d7).
+To reactivate, tick both boxes again and export.
 
 ### Add or correct equipment
 

@@ -312,7 +312,7 @@ Run the base database setup command, which populates nodes, organizations, users
 docker compose -f docker-compose.prod.yml exec web python manage.py setup_base_database
 ```
 
-It stops at the first failing step and prints `Failed: <reason>`, but still exits 0, so read the output. Every account it creates gets the password `changeme123`, which is published in these docs. Ask those people to set their own password through "Forgot password" before the portal is announced.
+It stops at the first failing step with a non-zero exit (`CommandError: Step N failed: <reason>`). The accounts it creates have no usable password: each person sets one through "Forgot password" on the login page.
 
 If you need to populate piece-by-piece instead (e.g., to debug a specific TSV), run the individual `populate_redib_*` commands in dependency order: organizations → nodes → users → equipment → funding agencies. See [SETUP_GUIDE.md § Individual population commands](SETUP_GUIDE.md#individual-population-commands) and [data/README.md](../data/README.md) for the rules.
 
@@ -730,9 +730,28 @@ docker compose -f docker-compose.prod.yml exec web python manage.py <command>
 > same committed file. `scripts/check_role_drift.py` always reads
 > `/app/data/users.tsv`, so this is the way to point it at your edit.
 
+**People: the database is the authority, and `data/users.tsv` is its export.** Change a
+user or a role in the admin or the shell, then write the file from the database and
+commit it:
+
+```bash
+# -T, so the redirect writes the host's checkout, not the container's
+docker compose -f docker-compose.prod.yml exec -T web \
+  python manage.py export_redib_users > data/users.tsv
+git diff data/users.tsv   # only the change you made
+```
+
+If the export warns that an organization is missing from `data/organizations.tsv`, add
+that row too, or a fresh `setup_base_database` fails at the users step.
+
+`--format xlsx` writes the spreadsheet copy for SharePoint. The recipes (add a user, add
+an evaluator, retire a role, add equipment, add an organization) are in
+[data/README.md § Recipes](../data/README.md#recipes).
+
 **`populate_redib_users` is never run by a deploy.** The entrypoint runs `migrate`,
-`collectstatic` and `seed_email_templates` only. Any users load is a deliberate,
-separate act, and it has a required order:
+`collectstatic` and `seed_email_templates` only. Production has no routine need for a
+users load any more. If one is ever needed, it is a deliberate, separate act with a
+required order:
 
 ```bash
 # 1. read-only: what do the DB and data/users.tsv disagree about?
@@ -746,16 +765,11 @@ docker compose -f docker-compose.prod.yml exec web \
   python manage.py populate_redib_users
 ```
 
-Do not skip step 1, and **today, don't reach step 3 with the full file.** Five retired
-evaluators keep `roles=evaluator` in `users.tsv` as the record (#81), and a real run
-would re-activate their roles. Step 2 shows them as five
-`would update (is_active: False -> True)` lines. So production makes user and role
-changes by hand, mirrors them into the file, and uses steps 1–2 only to prove the two
-match. If a real load is needed, pass `--tsv` a file holding only the header and the new
-rows. The recipes (add a user, add an evaluator, retire a role, add equipment, add an
-organization) are in [data/README.md § Recipes](../data/README.md#recipes). **Never pass
-`--sync` to `populate_redib_users` here.** It deactivates every account not in the file,
-which means every applicant.
+Do not skip step 1. Pass `--tsv` a file holding only the header and the rows you mean to
+load. The load is all-or-nothing: a bad row aborts it with nothing written. Until the
+first export after the `commands-cleanup` deploy, the committed file lists five retired
+evaluators under `roles` (#81), and a full-file run would re-activate them; the export
+moves them to `retired_roles`. `populate_redib_users` has no `--sync` (#83).
 
 The other loaders (`populate_redib_equipment`, `populate_redib_nodes`,
 `populate_redib_funding_agencies`) are safe to rerun after a rebuild. Their files are the
@@ -918,14 +932,14 @@ docker compose -f docker-compose.prod.yml exec web \
 This loads in dependency order: organizations → nodes → users → equipment →
 funding agencies → email templates → site config. All from the TSV files
 **baked into the image**, so rebuild after any `data/` change. On a bad row
-(missing FK, bad enum) it stops at that step and prints `Failed: <reason>`, but
-**exits 0**. The steps before it stay loaded, and the users and equipment
-loaders can stop part-way through their file. Fix the TSV, rebuild, and run it
-again: reruns are idempotent. Failure modes by loader:
+(missing FK, bad enum) it stops at that step with a non-zero exit
+(`CommandError: Step N failed: <reason>`). The steps before it stay loaded; the
+failed step itself writes nothing. Fix the TSV, rebuild, and run it again:
+reruns are idempotent. Failure modes by loader:
 [data/README.md](../data/README.md#when-a-load-fails-part-way).
 
-All TSV-loaded users receive password `changeme123` with pre-verified
-emails. The password is in these docs, so have them reset it ("Forgot password").
+TSV-loaded users are created with pre-verified emails and no usable password:
+each sets one with "Forgot password" on the login page.
 The `ProfileCompletionMiddleware` will redirect non-staff users to `/profile/`
 on first login if any required field (first name, last name, phone,
 organization, position) is missing from the TSV data.

@@ -14,9 +14,11 @@ Use this after creating a fresh database and superuser:
 Or to reset an existing database (preserves superusers):
 
     python manage.py setup_base_database --reset --yes
+
+A failed step stops the run with a non-zero exit (CommandError).
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 
@@ -64,8 +66,7 @@ class Command(BaseCommand):
             call_command('populate_redib_organizations', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 1 failed: {e}') from e
 
         # Step 2: Nodes (depend on organizations via Node.organization FK;
         # users and equipment depend on nodes).
@@ -74,8 +75,7 @@ class Command(BaseCommand):
             call_command('populate_redib_nodes', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 2 failed: {e}') from e
 
         # Step 3: Users (depends on nodes + organizations)
         self.stdout.write('Step 3: Populating users from data/users.tsv...')
@@ -83,8 +83,7 @@ class Command(BaseCommand):
             call_command('populate_redib_users', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 3 failed: {e}') from e
 
         # Step 4: Equipment (depends on nodes)
         self.stdout.write('Step 4: Populating equipment from data/equipment.tsv...')
@@ -92,8 +91,7 @@ class Command(BaseCommand):
             call_command('populate_redib_equipment', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 4 failed: {e}') from e
 
         # Step 5: Funding agencies (no dependencies)
         self.stdout.write('Step 5: Populating funding agencies from data/funding_agencies.tsv...')
@@ -101,8 +99,7 @@ class Command(BaseCommand):
             call_command('populate_redib_funding_agencies', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 5 failed: {e}') from e
 
         # Step 6: Email templates
         self.stdout.write('Step 6: Seeding email templates...')
@@ -110,8 +107,7 @@ class Command(BaseCommand):
             call_command('seed_email_templates', verbosity=0)
             self.stdout.write(self.style.SUCCESS('  Done'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'  Failed: {e}'))
-            return
+            raise CommandError(f'Step 6 failed: {e}') from e
 
         # Step 7: Configure site
         self.stdout.write('Step 7: Configuring site...')
@@ -220,7 +216,7 @@ class Command(BaseCommand):
             self.stdout.write(f'  {role:20s}: {count}')
 
         self.stdout.write('\nAll TSV users have:')
-        self.stdout.write('  Password:           changeme123')
+        self.stdout.write('  Password:           none; each sets one via "Forgot password"')
         self.stdout.write('  Email verified:     yes')
 
         self.stdout.write('\n' + '=' * 70 + '\n')

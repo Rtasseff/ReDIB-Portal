@@ -149,6 +149,8 @@ email, taken at wizard step 1) and fall back to `Application.applicant.email`.
 
 All five `populate_redib_*` commands now share these rules — match them in any new loader:
 - UTF-8 read; hard-error on missing FK target or unknown enum value.
+- All-or-nothing: validate the whole file first, or run the writes in
+  `transaction.atomic()`, so a bad row writes nothing.
 - Booleans: blank → False; only `TRUE`/`1`/`YES` (case-insensitive) flips to True.
   **One exception, and it matters:** `populate_redib_users` is **create-only by
   default** (`--update-existing` opts back in). The blank→False rule is right for
@@ -158,6 +160,13 @@ All five `populate_redib_*` commands now share these rules — match them in any
   **never written**, since blanking an evaluator's specialization takes them out
   of area-matched assignment just as surely as deactivating them (#61). A filled
   `areas` cell still wins. See `data/README.md` and backlog #43.
+- **People: the database is the authority, `data/users.tsv` is its export**
+  (#91). Change users and roles in the admin or shell, then
+  `python manage.py export_redib_users > data/users.tsv` and commit. The export
+  adds a trailing `retired_roles` column, which the loader ignores.
+  `populate_redib_users` creates users with no usable password (they use
+  "Forgot password") and has no `--sync`; unknown role names and bad ORCID or
+  phone abort the load.
 - Before any load against production: `python manage.py shell <
   scripts/check_role_drift.py` (read-only), then `--dry-run`, then the real run.
 - Human-readable enum labels in the TSV map to short codes via a static label-map dict

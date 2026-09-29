@@ -21,9 +21,14 @@ from calls.models import Call
 from communications.tasks import send_email_from_template
 from core.models import Node, User, UserRole
 from evaluations.models import Evaluation
+from evaluations.tasks import _evaluation_pending_item
 
 
 TEST_CALL_CODE = 'COA-EMAIL-TEST'
+# Written into the test call's description when this command grants the
+# recipient an evaluator role, so --cleanup (a separate run) removes that role
+# and never one the person already held.
+GRANTED_ROLE_MARKER = 'send_test_emails granted evaluator UserRole id: '
 
 
 class Command(BaseCommand):
@@ -120,13 +125,17 @@ class Command(BaseCommand):
             },
         )
 
-        # Ensure user has evaluator role (track if we created it)
+        # Ensure user has evaluator role. If we create it, record it on the
+        # test call so --cleanup can remove exactly that row.
         evaluator_role, eval_role_created = UserRole.objects.get_or_create(
             user=user,
             role='evaluator',
             node=None,
             defaults={'areas': 'preclinical'},
         )
+        if eval_role_created:
+            call.description += f'\n{GRANTED_ROLE_MARKER}{evaluator_role.pk}'
+            call.save(update_fields=['description'])
 
         # Create evaluation
         evaluation, _ = Evaluation.objects.get_or_create(
@@ -143,6 +152,13 @@ class Command(BaseCommand):
         publication_url = base + reverse('access:publication_submit')
 
         deadline = call.evaluation_deadline
+
+        # The evaluator digests get the same context the daily task builds
+        # (evaluations.tasks._send_evaluator_digest): one item per pending
+        # evaluation. The test call's deadline is past, so the item is overdue;
+        # the reminder's item is built as of three days before the deadline.
+        overdue_item, _ = _evaluation_pending_item(evaluation, now)
+        reminder_item, _ = _evaluation_pending_item(evaluation, deadline - timedelta(days=3))
 
         # ── Template contexts ──────────────────────────────────────
         templates = [
@@ -171,19 +187,13 @@ class Command(BaseCommand):
             }),
             ('evaluation_reminder', {
                 'evaluator_name': user_name,
-                'application_code': app.code,
-                'application_title': app.brief_description,
-                'call_code': call.code,
-                'days_remaining': 3,
-                'deadline': deadline,
-                'evaluation_url': evaluation_url,
+                'pending_evaluations': [reminder_item],
+                'pending_count': 1,
             }),
             ('evaluation_overdue', {
                 'evaluator_name': user_name,
-                'application_code': app.code,
-                'call_code': call.code,
-                'deadline': deadline,
-                'evaluation_url': evaluation_url,
+                'pending_evaluations': [overdue_item],
+                'pending_count': 1,
             }),
             ('coordinator_overdue_evaluations', {
                 'coordinator_name': user_name,
@@ -318,7 +328,8 @@ class Command(BaseCommand):
         ))
         if eval_role_created:
             self.stdout.write(self.style.WARNING(
-                f'Note: evaluator role was added to {recipient_email} for testing.'
+                f'Note: evaluator role was added to {recipient_email} for testing; '
+                f'--cleanup removes it.'
             ))
         self.stdout.write(self.style.WARNING(
             f'Run with --cleanup to remove test data (call {TEST_CALL_CODE} and related objects).'
@@ -337,6 +348,11 @@ class Command(BaseCommand):
             return
 
         apps = Application.objects.filter(call=call)
+        granted_role_ids = [
+            int(line[len(GRANTED_ROLE_MARKER):])
+            for line in call.description.splitlines()
+            if line.startswith(GRANTED_ROLE_MARKER)
+        ]
 
         # Delete evaluations
         eval_count, _ = Evaluation.objects.filter(application__in=apps).delete()
@@ -355,8 +371,10 @@ class Command(BaseCommand):
         call.delete()
         self.stdout.write(f'  Deleted call {TEST_CALL_CODE}')
 
-        # Remove evaluator role if it was added for testing
-        # (only remove if user has no other evaluations)
-        # We don't track which user, so skip automatic role removal — it's harmless.
+        # Remove the evaluator role a previous run granted, and only that one:
+        # left in place it would put the recipient in the auto-assign pool.
+        for role in UserRole.objects.filter(pk__in=granted_role_ids, role='evaluator'):
+            self.stdout.write(f'  Removed the evaluator role granted to {role.user.email}')
+            role.delete()
 
         self.stdout.write(self.style.SUCCESS('\nCleanup complete.'))
