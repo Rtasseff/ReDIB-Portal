@@ -11,7 +11,7 @@
 
 <div class="alert alert-info">
     <i class="bi bi-info-circle"></i>
-    <strong>Your Role:</strong> As a coordinator, you review evaluated applications and make final decisions on acceptance, pending, or rejection.
+    <strong>Your Role:</strong> The node coordinators decide each application for their node. This page lets you watch that progress; it changes nothing.
 </div>
 
 {% if gated_calls %}
@@ -22,7 +22,7 @@
         <li><a href="{% url 'calls:detail' call.id %}">{{ call.code }} — {{ call.title }}</a></li>
         {% endfor %}
     </ul>
-    <p class="mb-0">Evaluations are complete but the results have not been released to the node coordinators. <strong>Release Resolutions</strong> is on the call page.</p>
+    <p class="mb-0">Evaluations are complete but the results have not been released to the node coordinators. <strong>Release to Nodes</strong> is on the call page.</p>
 </div>
 {% endif %}
 
@@ -93,7 +93,7 @@
                         </td>
                         <td>
                             {% if item.stats.is_locked %}
-                                <span class="badge bg-secondary">Finalized</span>
+                                <span class="badge bg-secondary">Resolved</span>
                             {% elif item.stats.all_resolved %}
                                 <span class="badge bg-success">All Resolved</span>
                             {% else %}
@@ -103,7 +103,7 @@
                         <td>
                             <a href="{% url 'applications:call_resolution_detail' item.call.id %}"
                                class="btn btn-sm btn-primary">
-                                <i class="bi bi-arrow-right-circle"></i> Review
+                                <i class="bi bi-eye"></i> View
                             </a>
                         </td>
                     </tr>
@@ -116,7 +116,7 @@
 {% else %}
 <div class="alert alert-info">
     <h5><i class="bi bi-info-circle"></i> No Calls Ready for Resolution</h5>
-    <p class="mb-0">All calls have been resolved, or there are no evaluated applications waiting for your decision.</p>
+    <p class="mb-0">All calls have been resolved, or no evaluated applications are waiting on the nodes.</p>
 </div>
 {% endif %}
 

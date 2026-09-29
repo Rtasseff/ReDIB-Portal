@@ -15,7 +15,7 @@ from core.models import UserRole, User
 from calls.models import Call
 from applications.models import Application
 from .models import Evaluation
-from .utils import is_evaluation_locked, GRACE_PERIOD_DAYS
+from .utils import is_evaluation_locked, check_and_transition_application, GRACE_PERIOD_DAYS
 from .tasks import assign_evaluators_to_application, assign_evaluators_to_call
 
 
@@ -124,7 +124,7 @@ def evaluation_detail(request, pk):
                 messages.info(
                     request,
                     f'All {result["total"]} evaluations for {evaluation.application.code} are now complete. '
-                    f'The coordinator has been notified.'
+                    f'It moves on to the resolution stage; nothing more is needed from you.'
                 )
 
             return redirect('evaluations:my_evaluations')
@@ -422,10 +422,16 @@ def remove_evaluator_assignment(request, evaluation_id):
         messages.error(request, 'Cannot remove completed evaluation')
         return redirect('evaluations:call_assignment_detail', call_id=call_id)
 
-    application_code = evaluation.application.code
+    application = evaluation.application
+    application_code = application.code
     evaluator_name = evaluation.evaluator.get_full_name()
 
     evaluation.delete()
+
+    # If that was the last outstanding evaluation, the application is now
+    # fully evaluated: move it on, through the release gate as usual. With
+    # no evaluations left it stays put until someone else is assigned.
+    check_and_transition_application(application)
 
     messages.success(request, f'Removed {evaluator_name} from {application_code}')
 

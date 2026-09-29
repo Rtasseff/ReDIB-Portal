@@ -9,8 +9,10 @@ pre-submission consult, which:
 - Force-resets `Application.technical_feasibility_confirmed` to False.
 - Stamps `Application.consult_requested_at`.
 - Treats the form as a lenient draft save.
-- Dispatches one `feasibility_consult_request` email per node that has
-  requested equipment, to the first active node coordinator of that node.
+- Dispatches a `feasibility_consult_request` email to every active node
+  coordinator of each node with requested equipment, and to the ReDIB
+  coordinators for a node with none (#87 f, the public consult's rule via
+  `calls.services.consult_recipients`).
 - Redirects to My Applications.
 
 The Bootstrap JS chain (confirmedModal → unconfirmedModal) is client-side
@@ -154,6 +156,58 @@ class Step5ConsultRequestTests(TestCase):
         self.assertEqual(mock_send.delay.call_count, 2)
         recipients = {c.kwargs['recipient_email'] for c in mock_send.delay.call_args_list}
         self.assertEqual(recipients, {coords[0].email, coords[1].email})
+
+    @patch('communications.tasks.send_email_from_template')
+    def test_consult_emails_every_coordinator_of_a_node(self, mock_send):
+        """#87 (f): a node with two active coordinators → both are emailed."""
+        app, coords = self._make_app(num_equipment_nodes=1, with_coordinators=True)
+        node = coords[0].roles.get(role='node_coordinator').node
+        second = User.objects.create_user(
+            username='nc0b', email='nc0b@test.com', password='x',
+            first_name='Second', last_name='Coord',
+        )
+        UserRole.objects.create(
+            user=second, role='node_coordinator', node=node, is_active=True
+        )
+        url = reverse('applications:edit_step5', kwargs={'pk': app.pk})
+        self.client.post(url, {'action': 'request_consult'})
+        recipients = {c.kwargs['recipient_email'] for c in mock_send.delay.call_args_list}
+        self.assertEqual(recipients, {coords[0].email, 'nc0b@test.com'})
+        for c in mock_send.delay.call_args_list:
+            self.assertFalse(c.kwargs['context_data']['no_node_coordinator'])
+
+    @patch('communications.tasks.send_email_from_template')
+    def test_consult_falls_back_to_redib_when_node_has_no_coordinator(self, mock_send):
+        """#87 (f): no node coordinator → every active ReDIB coordinator."""
+        redib = User.objects.create_user(
+            username='redib', email='redib@test.com', password='x',
+            first_name='Re', last_name='Dib',
+        )
+        UserRole.objects.create(user=redib, role='coordinator', is_active=True)
+        app, _ = self._make_app(num_equipment_nodes=1, with_coordinators=False)
+        url = reverse('applications:edit_step5', kwargs={'pk': app.pk})
+        resp = self.client.post(url, {'action': 'request_consult'}, follow=True)
+        mock_send.delay.assert_called_once()
+        kwargs = mock_send.delay.call_args.kwargs
+        self.assertEqual(kwargs['recipient_email'], 'redib@test.com')
+        self.assertEqual(kwargs['template_type'], 'feasibility_consult_request')
+        self.assertTrue(kwargs['context_data']['no_node_coordinator'])
+        self.assertEqual(kwargs['context_data']['equipment_list'], 'MRI 0')
+        self.assertContains(resp, 'went to the ReDIB coordinators instead')
+
+    def test_fallback_template_renders(self):
+        """The seeded template renders its no-coordinator branch."""
+        from django.core.management import call_command
+        from django.template import Context, Template
+        from communications.models import EmailTemplate
+        call_command('seed_email_templates', verbosity=0)
+        tpl = EmailTemplate.objects.get(template_type='feasibility_consult_request')
+        text = Template(tpl.text_content).render(Context({
+            'coordinator_name': 'Re Dib', 'node_name': 'Node X',
+            'equipment_list': 'MRI', 'no_node_coordinator': True,
+        }))
+        self.assertIn('NO ACTIVE COORDINATOR', text)
+        self.assertIn('Node(s): Node X', text)
 
     @patch('communications.tasks.send_email_from_template')
     def test_consult_soft_path_no_equipment(self, mock_send):

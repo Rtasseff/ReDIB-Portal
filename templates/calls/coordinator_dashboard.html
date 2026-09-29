@@ -71,28 +71,28 @@
                         </a>
 
                         {% if call.status == 'draft' %}
-                        <a href="{% url 'calls:announce' call.pk %}" class="btn btn-outline-primary"
+                        <button type="submit" form="call-action-form" formaction="{% url 'calls:announce' call.pk %}" class="btn btn-outline-primary"
                            onclick="return confirm('Announce this call? It will be listed publicly as upcoming and opens automatically on its start date.')" title="Announce">
                             <i class="bi bi-megaphone"></i>
-                        </a>
-                        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
+                        </button>
+                        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
                            onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')" title="Publish (open now)">
                             <i class="bi bi-send"></i>
-                        </a>
+                        </button>
                         <a href="{% url 'calls:delete' call.pk %}" class="btn btn-outline-danger"
                            onclick="return confirm('WARNING: This will permanently delete this call. This action cannot be undone. Are you sure?')" title="Delete">
                             <i class="bi bi-trash"></i>
                         </a>
                         {% elif call.status == 'announced' %}
-                        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
+                        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
                            onclick="return confirm('Open this call for submissions now?')" title="Open now">
                             <i class="bi bi-send"></i>
-                        </a>
+                        </button>
                         {% elif call.status == 'open' %}
-                        <a href="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
+                        <button type="submit" form="call-action-form" formaction="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
                            onclick="return confirm('Close this call for submissions?')" title="Close">
                             <i class="bi bi-lock"></i>
-                        </a>
+                        </button>
                         {% endif %}
                     </div>
                 </td>
@@ -145,4 +145,5 @@
         </ul>
     </div>
 </div>
+<form id="call-action-form" method="post" class="d-none">{% csrf_token %}</form>
 {% endblock %}

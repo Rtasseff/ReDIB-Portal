@@ -41,15 +41,18 @@ def _is_consult_request(request):
 
 
 def _send_consult_request_emails(request, application):
-    """Dispatch a pre-submission consult email to the node coordinator(s)
-    of every node whose equipment this draft requests.
+    """Dispatch a pre-submission consult email for every node whose
+    equipment this draft requests.
 
-    Returns (sent_count, nodes_without_coordinator). Wraps each call in a
-    try/except per node so a single failure doesn't block the rest; the
-    caller wraps the whole thing again in try/except to survive Celery
-    being down (mirroring the application_submit pattern at lines ~668-705).
+    Recipients come from `calls.services.consult_recipients`, the same rule
+    as the public consult: every active node coordinator of each node, and
+    the ReDIB coordinators for a node with none.
+
+    Returns (sent_count, nodes_without_coordinator). Wraps each send in a
+    try/except so a single failure doesn't block the rest; the caller wraps
+    the whole thing again in try/except to survive Celery being down.
     """
-    from core.models import UserRole
+    from calls.services import consult_recipients
     from communications.tasks import send_email_from_template
     import logging
     log = logging.getLogger(__name__)
@@ -62,8 +65,11 @@ def _send_consult_request_emails(request, application):
     for ra in requested_access:
         equipment_by_node.setdefault(ra.equipment.node, []).append(ra.equipment.name)
 
+    by_node, nodes_without_coord, fallback_users = consult_recipients(
+        equipment_by_node.keys()
+    )
+
     sent = 0
-    nodes_without_coord = []
     application_url = request.build_absolute_uri(
         reverse('applications:detail', kwargs={'pk': application.pk})
     )
@@ -74,40 +80,48 @@ def _send_consult_request_emails(request, application):
     )
     applicant_email = application.applicant_email or application.applicant.email
 
-    for node, equipment_names in equipment_by_node.items():
-        coord = (
-            UserRole.objects
-            .filter(node=node, role='node_coordinator', is_active=True)
-            .select_related('user')
-            .first()
-        )
-        if not coord:
-            nodes_without_coord.append(node)
-            continue
+    # One (recipient, node label, equipment names, fallback?) per email.
+    sends = [
+        (user, node.name, equipment_by_node[node], False)
+        for node, users in by_node.items()
+        for user in users
+    ]
+    if nodes_without_coord:
+        uncovered_names = ', '.join(n.name for n in nodes_without_coord)
+        uncovered_equipment = [
+            name for n in nodes_without_coord for name in equipment_by_node[n]
+        ]
+        sends += [
+            (user, uncovered_names, uncovered_equipment, True)
+            for user in fallback_users
+        ]
+
+    for user, node_name, equipment_names, is_fallback in sends:
         try:
             send_email_from_template.delay(
                 template_type='feasibility_consult_request',
-                recipient_email=coord.user.email,
+                recipient_email=user.email,
                 context_data={
-                    'coordinator_name': coord.user.get_full_name() or coord.user.email,
+                    'coordinator_name': user.get_full_name() or user.email,
                     'applicant_name': applicant_name,
                     'applicant_email': applicant_email,
                     'applicant_phone': application.applicant_phone or '',
                     'application_code': application.code,
-                    'node_name': node.name,
+                    'node_name': node_name,
                     'equipment_list': ', '.join(equipment_names),
                     'application_url': application_url,
                     'call_code': application.call.code,
                     'submission_end': application.call.submission_end.strftime('%Y-%m-%d %H:%M'),
+                    'no_node_coordinator': is_fallback,
                 },
-                recipient_user_id=coord.user.id,
+                recipient_user_id=user.id,
                 related_application_id=application.id,
             )
             sent += 1
         except Exception:
             log.exception(
-                "Consult email failed for application %s node %s",
-                application.code, node.code,
+                "Consult email failed for application %s recipient %s",
+                application.code, user.email,
             )
     return sent, nodes_without_coord
 
@@ -660,8 +674,9 @@ def application_edit_step5(request, pk):
                 if no_coord_nodes:
                     messages.warning(
                         request,
-                        "Some nodes have no active coordinator on file and were not "
-                        "notified: " + ", ".join(n.code for n in no_coord_nodes)
+                        "Some nodes have no active coordinator on file, so your request "
+                        "went to the ReDIB coordinators instead: "
+                        + ", ".join(n.code for n in no_coord_nodes)
                     )
                 return redirect('applications:my_applications')
             if draft_mode:
@@ -1216,12 +1231,9 @@ def resolution_dashboard(request):
 @role_required('coordinator')
 def call_resolution_detail(request, call_id):
     """
-    Prioritized list of applications for resolution.
-
-    Shows applications sorted by priority (score DESC, code ASC) with:
-    - Hours availability per equipment
-    - Current resolution status
-    - Actions to set resolution
+    Read-only watch list: a call's evaluated applications ranked by score
+    (score DESC, code ASC) with the call's resolution counts. The node
+    coordinators make the decisions; nothing on this page writes.
     """
     from calls.models import Call
     from applications.services import ResolutionService
@@ -1241,160 +1253,6 @@ def call_resolution_detail(request, call_id):
         'summary': summary,
     }
     return render(request, 'applications/resolution/call_detail.html', context)
-
-
-@login_required
-@role_required('coordinator')
-def application_resolution(request, application_id):
-    """
-    AJAX endpoint for individual application resolution.
-
-    GET: Return application details as JSON
-    POST: Apply resolution and return result
-    """
-    import json
-    from django.http import JsonResponse
-    from applications.forms import ApplicationResolutionForm
-    from applications.services import ResolutionService
-
-    application = get_object_or_404(Application, pk=application_id)
-    service = ResolutionService(application.call)
-
-    if request.method == 'GET':
-        # Return application details
-        can_accept, reason, details = service.can_accept_application(application)
-
-        data = {
-            'id': application.id,
-            'code': application.code,
-            'applicant_name': application.applicant_name,
-            'brief_description': application.brief_description,
-            'final_score': float(application.final_score) if application.final_score else None,
-            'has_competitive_funding': application.has_competitive_funding,
-            'has_any_denied_evaluation': application.has_any_denied_evaluation,
-            'current_resolution': application.resolution,
-            'resolution_comments': application.resolution_comments,
-            'can_accept': can_accept,
-            'acceptance_reason': reason,
-            'acceptance_details': details,
-            'requested_access': [
-                {
-                    'equipment': ra.equipment.name,
-                    'hours_requested': float(ra.hours_requested),
-                }
-                for ra in application.requested_access.select_related('equipment').all()
-            ]
-        }
-        return JsonResponse(data)
-
-    elif request.method == 'POST':
-        # Apply resolution
-        form = ApplicationResolutionForm(request.POST, instance=application, application=application)
-
-        if form.is_valid():
-            resolution = form.cleaned_data['resolution']
-            comments = form.cleaned_data['resolution_comments']
-
-            try:
-                result = service.apply_resolution(
-                    application,
-                    resolution,
-                    comments,
-                    request.user
-                )
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Resolution applied: {resolution}',
-                    'result': result
-                })
-            except ValidationError as e:
-                return JsonResponse({
-                    'success': False,
-                    'error': str(e)
-                }, status=400)
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            }, status=400)
-
-
-@login_required
-@role_required('coordinator')
-def bulk_resolution(request, call_id):
-    """
-    AJAX endpoint for bulk auto-allocation of resolutions.
-
-    POST: Apply bulk resolution and return summary
-    """
-    from django.http import JsonResponse
-    from applications.forms import BulkResolutionForm
-    from applications.services import ResolutionService
-    from calls.models import Call
-
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-
-    call = get_object_or_404(Call, pk=call_id)
-    service = ResolutionService(call)
-
-    form = BulkResolutionForm(request.POST)
-
-    if form.is_valid():
-        threshold_score = form.cleaned_data['threshold_score']
-        auto_pending = form.cleaned_data['auto_pending']
-
-        try:
-            result = service.bulk_auto_allocate(
-                threshold_score=threshold_score,
-                auto_pending=auto_pending
-            )
-            return JsonResponse({
-                'success': True,
-                'message': f'Bulk resolution complete',
-                'result': result
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    else:
-        return JsonResponse({
-            'success': False,
-            'errors': form.errors
-        }, status=400)
-
-
-@login_required
-@role_required('coordinator')
-def finalize_resolution(request, call_id):
-    """
-    Finalize call resolution and trigger notifications.
-
-    POST: Lock call and send notification emails
-    """
-    from calls.models import Call
-    from applications.services import ResolutionService
-
-    if request.method != 'POST':
-        messages.error(request, 'Invalid request method')
-        return redirect('applications:resolution_dashboard')
-
-    call = get_object_or_404(Call, pk=call_id)
-    service = ResolutionService(call)
-
-    try:
-        result = service.finalize_resolution(request.user)
-        messages.success(
-            request,
-            f'Resolution finalized for {call.code}. '
-            f'{result["statistics"]["total"]} notifications sent.'
-        )
-        return redirect('applications:resolution_dashboard')
-    except ValidationError as e:
-        messages.error(request, str(e))
-        return redirect('applications:call_resolution_detail', call_id=call.id)
 
 
 # =============================================================================
@@ -1843,8 +1701,8 @@ def close_out_waitlisted_application(request, pk):
         messages.error(
             request,
             f"Cannot close out {application.code}: the applicant has not yet "
-            "responded to the waitlist offer. Wait for their response, or let "
-            "it auto-expire."
+            "responded to the waitlist offer. Wait for their response. If the "
+            "deadline passes with no answer, use Expire on Access Tracking."
         )
         return redirect('applications:detail', pk=application.pk)
 

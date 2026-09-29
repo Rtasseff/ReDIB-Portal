@@ -1626,14 +1626,14 @@ Please do not reply to this email.''',
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
 
-            <p>An applicant is preparing a COA proposal for call <strong>{{ call_code }}</strong> and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.</p>
+            {% if no_node_coordinator %}<p>An applicant is preparing a COA proposal for call <strong>{{ call_code }}</strong> and has asked for a consult before submitting, about equipment at a node with <strong>no active coordinator</strong> on file. You are receiving this as the ReDIB coordinator so the request does not go unanswered.</p>{% else %}<p>An applicant is preparing a COA proposal for call <strong>{{ call_code }}</strong> and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.</p>{% endif %}
 
             <div class="info-box">
                 <p><strong>Applicant:</strong> {{ applicant_name }}</p>
                 <p><strong>Contact:</strong> {{ applicant_email }}{% if applicant_phone %} &middot; {{ applicant_phone }}{% endif %}</p>
                 <p><strong>Application (draft):</strong> {{ application_code }}</p>
-                <p><strong>Your node:</strong> {{ node_name }}</p>
-                <p><strong>Equipment requested at your node:</strong> {{ equipment_list }}</p>
+                <p><strong>{% if no_node_coordinator %}Node(s){% else %}Your node{% endif %}:</strong> {{ node_name }}</p>
+                <p><strong>Equipment requested{% if not no_node_coordinator %} at your node{% endif %}:</strong> {{ equipment_list }}</p>
                 <p><strong>Call submission deadline:</strong> {{ submission_end }}</p>
             </div>
 
@@ -1660,13 +1660,13 @@ Please do not reply to this email.''',
                 'text_content': '''
 Dear {{ coordinator_name }},
 
-An applicant is preparing a COA proposal for call {{ call_code }} and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.
+{% if no_node_coordinator %}An applicant is preparing a COA proposal for call {{ call_code }} and has asked for a consult before submitting, about equipment at a node with NO ACTIVE COORDINATOR on file. You are receiving this as the ReDIB coordinator so the request does not go unanswered.{% else %}An applicant is preparing a COA proposal for call {{ call_code }} and has asked for a consult with your node before submitting. They have not yet confirmed technical feasibility and would like to discuss their request with you.{% endif %}
 
 Applicant: {{ applicant_name }}
 Contact: {{ applicant_email }}{% if applicant_phone %} - {{ applicant_phone }}{% endif %}
 Application (draft): {{ application_code }}
-Your node: {{ node_name }}
-Equipment requested at your node: {{ equipment_list }}
+{% if no_node_coordinator %}Node(s){% else %}Your node{% endif %}: {{ node_name }}
+Equipment requested{% if not no_node_coordinator %} at your node{% endif %}: {{ equipment_list }}
 Call submission deadline: {{ submission_end }}
 
 Please reach out to the applicant directly to discuss feasibility. You can review their draft application in the portal:
@@ -1693,7 +1693,8 @@ Please do not reply to this email.
     "equipment_list": "Comma-separated list of equipment at this node requested by the applicant",
     "application_url": "Absolute URL to the application detail page",
     "call_code": "Code of the call (e.g., COA-2026-01)",
-    "submission_end": "Formatted submission deadline of the call"
+    "submission_end": "Formatted submission deadline of the call",
+    "no_node_coordinator": "True when sent to a ReDIB coordinator because the node has no active coordinator"
 }
                 '''
             },
@@ -2204,7 +2205,7 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ applicant_name }},</p>
-            <p>Your access under <strong>{{ call_code }}</strong> is still open. Once your work on each piece of equipment is finished, please mark it done and enter the actual hours used so the network can close out the project.</p>
+            <p>Your access under <strong>{{ call_code }}</strong> is still open. Once all your work is finished, open <strong>My Active Access</strong> in the portal, click <strong>Mark Complete</strong>, and enter the actual hours used for every piece of equipment, so the network can close out the project. A node coordinator can also do this for you (<strong>Mark Complete + Log Hours</strong> on Access Tracking).</p>
             <div class="info-box">
                 <p><strong>Application:</strong> {{ application_code }}</p>
             </div>
@@ -2223,7 +2224,7 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ applicant_name }},
 
-Your access under {{ call_code }} is still open. Once your work on each piece of equipment is finished, please mark it done and enter the actual hours used so the network can close out the project.
+Your access under {{ call_code }} is still open. Once all your work is finished, open My Active Access in the portal, click Mark Complete, and enter the actual hours used for every piece of equipment, so the network can close out the project. A node coordinator can also do this for you (Mark Complete + Log Hours on Access Tracking).
 
 Application: {{ application_code }}
 
@@ -2263,7 +2264,7 @@ Please do not reply to this email.''',
         </div>
         <div class="content">
             <p>Dear {{ coordinator_name }},</p>
-            <p>The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.</p>
+            <p>The following applications at your node(s) are still open. Once each applicant's work is finished, and if they have not done it themselves, use Mark Complete + Log Hours on Access Tracking and enter the actual hours used for every piece of equipment.</p>
             {% for node in node_summaries %}
             <div class="info-box">
                 <p><strong>{{ node.node_name }}</strong></p>
@@ -2284,7 +2285,7 @@ Please do not reply to this email.''',
 </html>''',
                 'text_content': '''Dear {{ coordinator_name }},
 
-The following applications at your node(s) are still open. Once each applicant's work is finished, confirm the equipment lines as done and check the actual hours used are recorded.
+The following applications at your node(s) are still open. Once each applicant's work is finished, and if they have not done it themselves, use Mark Complete + Log Hours on Access Tracking and enter the actual hours used for every piece of equipment.
 {% for node in node_summaries %}
 {{ node.node_name }}:
 {% for app in node.applications %}  - {{ app.application_code }} - {{ app.applicant_name }} ({{ app.call_code }})
