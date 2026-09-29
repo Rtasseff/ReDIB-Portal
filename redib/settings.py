@@ -178,11 +178,17 @@ ACCOUNT_SIGNUP_FIELDS = [
 #   normal "verification sent" page but creates no account and sends no email.
 #   templates/account/signup.html renders it, by name.
 # - allauth's default signup limit is 20 a minute per IP. Only one rate per
-#   key type works (they share a cache entry). The IP is the first
-#   X-Forwarded-For entry, which Caddy sets from the real client address.
+#   key type works (they share a cache entry).
+# - The IP comes from X-Forwarded-For only because of ALLAUTH_TRUSTED_PROXY_COUNT.
+#   allauth's default (0) ignores the header and keys on REMOTE_ADDR, which in
+#   prod is the Caddy container, so every visitor shared one limit. Caddy has
+#   no trusted_proxies, so it discards any client-sent X-Forwarded-For and
+#   sends the real client IP as the only entry: one trusted proxy. Change this
+#   if another proxy (e.g. Cloudflare) goes in front of Caddy.
 ACCOUNT_FORMS = {'signup': 'core.forms.SignupForm'}
 ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = 'website'
 ACCOUNT_RATE_LIMITS = {'signup': '10/h/ip'}
+ALLAUTH_TRUSTED_PROXY_COUNT = 1
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
