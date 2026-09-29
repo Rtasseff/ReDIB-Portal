@@ -61,7 +61,7 @@ record — on the production VPS it is history, not a task list.
 
 1. Keep this doc's **Status** current; note anything you deviated from.
 2. `python manage.py check`; `python manage.py makemigrations --check`;
-   full suite `python manage.py test tests` — record the pass/fail counts
+   full suite `python manage.py test tests reports` — record the pass/fail counts
    against the baseline you took before starting (do not make it worse).
 3. Push the branch and open a PR against `main`. PR body = the review
    packet: what changed and why, deviations from this brief, the test
