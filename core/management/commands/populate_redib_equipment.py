@@ -10,11 +10,18 @@ upserts. Hard-errors on:
 
 Boolean columns (is_essential, is_active) follow the strict rule used across
 all loaders: blank → False, only TRUE/1/YES enables.
+
+`technical_specs` is written only when the file has that column. The
+committed equipment.tsv has none, so a load leaves the admin's value alone.
+
+The whole load runs in one transaction: a bad row (an unknown node_code, say)
+leaves the database exactly as it was.
 """
 import csv
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import transaction
 from core.models import Node, Equipment
 
 
@@ -49,6 +56,7 @@ class Command(BaseCommand):
         try:
             with open(csv_file, 'r', encoding='utf-8', newline='') as f:
                 reader = csv.DictReader(f, delimiter='\t')
+                self.has_technical_specs = 'technical_specs' in (reader.fieldnames or [])
                 for row_num, row in enumerate(reader, start=2):
                     if not row.get('node_code') or not row.get('name') or not row.get('category'):
                         self.stdout.write(self.style.WARNING(
@@ -93,7 +101,11 @@ class Command(BaseCommand):
         return (value or '').strip().upper() in ('TRUE', '1', 'YES')
 
     def handle(self, *args, **options):
-        """Create equipment for all nodes from TSV file"""
+        """Create equipment for all nodes from TSV file, all or nothing."""
+        with transaction.atomic():
+            self._load(options)
+
+    def _load(self, options):
 
         csv_path = options['tsv']
         sync_mode = options['sync']
@@ -124,17 +136,19 @@ class Command(BaseCommand):
                     f'Run `populate_redib_nodes` first, or fix data/equipment.tsv.'
                 )
 
+            defaults = {
+                'category': category,
+                'description': equip_data['description'],
+                'area': equip_data['area'],
+                'is_essential': equip_data['is_essential'],
+                'is_active': equip_data['is_active'],
+            }
+            if self.has_technical_specs:
+                defaults['technical_specs'] = equip_data['technical_specs']
             equipment, equipment_created = Equipment.objects.update_or_create(
                 node=node,
                 name=equipment_name,
-                defaults={
-                    'category': category,
-                    'description': equip_data['description'],
-                    'technical_specs': equip_data['technical_specs'],
-                    'area': equip_data['area'],
-                    'is_essential': equip_data['is_essential'],
-                    'is_active': equip_data['is_active'],
-                },
+                defaults=defaults,
             )
 
             if equipment_created:

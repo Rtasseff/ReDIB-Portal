@@ -9,14 +9,26 @@ Role format in TSV:
 - Node-specific: "node_coordinator:CIC-biomaGUNE"
 - Area-specific: "evaluator:preclinical"
 - Multiple roles: "coordinator;evaluator:clinical"
+
+New users get no usable password: they set one through "Forgot password" on
+the login page (backlog #82). There is no --sync: the file lists the few dozen
+people ReDIB manages, not every account, so "not in the file" says nothing
+about a user (backlog #83). Deactivate a leaver by hand (data/README.md).
+
+The load is all-or-nothing. Every row is validated before anything is written
+(role names, ORCID, phone), and the writes run in one transaction.
 """
 import csv
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from allauth.account.models import EmailAddress
-from core.models import Organization, Node, UserRole
+from core.models import (
+    ORCID_VALIDATOR, PHONE_VALIDATOR, Organization, Node, UserRole,
+)
 
 User = get_user_model()
 
@@ -30,11 +42,6 @@ class Command(BaseCommand):
             type=str,
             default='data/users.tsv',
             help='Path to users TSV file (default: data/users.tsv)'
-        )
-        parser.add_argument(
-            '--sync',
-            action='store_true',
-            help='Mark users not in TSV as inactive (is_active=False)'
         )
         parser.add_argument(
             '--dry-run',
@@ -79,19 +86,54 @@ class Command(BaseCommand):
                     is_active = self._parse_bool(row.get('is_active'))
                     auto_data_consent = self._parse_bool(row.get('auto_data_consent'))
 
+                    email = row['email'].strip().lower()
+                    orcid = (row.get('orcid') or '').strip()
+                    phone = (row.get('phone') or '').strip()
+                    # The profile form's own validators, so a load can't
+                    # create a user whose profile then refuses to save.
+                    for field, value, validator in (
+                        ('orcid', orcid, ORCID_VALIDATOR),
+                        ('phone', phone, PHONE_VALIDATOR),
+                    ):
+                        if not value:
+                            continue
+                        try:
+                            validator(value)
+                        except ValidationError as e:
+                            raise CommandError(
+                                f'Row {row_num} ("{email}"): invalid {field} '
+                                f'{value!r}: {" ".join(e.messages)}'
+                            )
+                        max_length = User._meta.get_field(field).max_length
+                        if len(value) > max_length:
+                            raise CommandError(
+                                f'Row {row_num} ("{email}"): {field} {value!r} '
+                                f'is longer than {max_length} characters.'
+                            )
+
+                    roles = (row.get('roles') or '').strip()
+                    valid_roles = [r for r, _ in UserRole.ROLES]
+                    for entry in filter(None, (e.strip() for e in roles.split(';'))):
+                        role_name = entry.split(':', 1)[0].strip()
+                        if role_name not in valid_roles:
+                            raise CommandError(
+                                f'Row {row_num} ("{email}"): unknown role '
+                                f'{role_name!r}. Valid roles: {", ".join(valid_roles)}.'
+                            )
+
                     users_data.append({
                         'row_num': row_num,
-                        'email': row['email'].strip().lower(),
+                        'email': email,
                         'first_name': row['first_name'].strip(),
                         'last_name': row['last_name'].strip(),
                         'organization_name': (row.get('organization_name') or '').strip(),
-                        'orcid': (row.get('orcid') or '').strip(),
-                        'phone': (row.get('phone') or '').strip(),
+                        'orcid': orcid,
+                        'phone': phone,
                         'position': (row.get('position') or '').strip(),
                         'is_staff': is_staff,
                         'is_active': is_active,
                         'auto_data_consent': auto_data_consent,
-                        'roles': (row.get('roles') or '').strip(),
+                        'roles': roles,
                         'areas': (row.get('areas') or '').strip(),
                     })
 
@@ -217,10 +259,12 @@ class Command(BaseCommand):
         return parsed_roles
 
     def handle(self, *args, **options):
-        """Create users from TSV file"""
+        """Create users from TSV file, all or nothing."""
+        with transaction.atomic():
+            self._load(options)
 
+    def _load(self, options):
         csv_path = options['tsv']
-        sync_mode = options['sync']
         dry_run = options['dry_run']
         update_existing = options['update_existing']
 
@@ -237,12 +281,9 @@ class Command(BaseCommand):
                 'Create-only mode (default): existing users keep their profile '
                 'fields; new users are created and roles are applied to everyone.'
             )
-        if sync_mode:
-            self.stdout.write(self.style.WARNING('Sync mode enabled: Will mark orphaned users as inactive'))
 
         # Load user data from TSV
         users_data = self.load_users_from_csv(csv_path)
-        tsv_emails = {u['email'] for u in users_data}
 
         created_count = 0
         updated_count = 0
@@ -289,7 +330,9 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'  + Would create: {email}'))
                     for field, value in new_field_values.items():
                         self.stdout.write(f'      {field}: {value!r}')
-                    self.stdout.write('      password: set to default (new user)')
+                    self.stdout.write(
+                        '      password: none; they set one via "Forgot password" (new user)'
+                    )
                 else:
                     diffs = self._diff_fields(user, new_field_values)
                     if diffs and not update_existing:
@@ -335,10 +378,11 @@ class Command(BaseCommand):
                         defaults=new_field_values,
                     )
 
-                # Only set the default password for brand-new users — an
-                # existing user keeps whatever password they set themselves.
+                # A new user gets no usable password and sets their own via
+                # "Forgot password" (backlog #82). An existing user keeps
+                # whatever password they set themselves.
                 if user_created:
-                    user.set_password('changeme123')
+                    user.set_unusable_password()
                     user.save()
 
                 # Ensure allauth EmailAddress exists and is verified
@@ -433,36 +477,6 @@ class Command(BaseCommand):
                             f'    → Role: {role_name}{node_info}{area_info}'
                         )
 
-        # Handle sync mode: Mark orphaned users as inactive
-        deactivated_count = 0
-        if sync_mode:
-            self.stdout.write('\n' + '-' * 60)
-            self.stdout.write('Checking for orphaned users (in DB but not in TSV)...')
-
-            # Any active, non-superuser account whose email isn't in this TSV
-            orphaned_users = User.objects.exclude(email__in=tsv_emails).filter(
-                is_active=True,
-                is_superuser=False
-            )
-
-            for user in orphaned_users:
-                if dry_run:
-                    self.stdout.write(
-                        f'  - Would deactivate: {user.email} ({user.get_full_name()}) (not in TSV)'
-                    )
-                else:
-                    user.is_active = False
-                    user.save()
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f'  ⊗ Deactivated: {user.email} ({user.get_full_name()}) (not in TSV)'
-                        )
-                    )
-                deactivated_count += 1
-
-            if deactivated_count == 0:
-                self.stdout.write(self.style.SUCCESS('  ✓ No orphaned users found'))
-
         # Summary
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write(
@@ -483,9 +497,6 @@ class Command(BaseCommand):
             self.stdout.write(
                 '    (re-run with --update-existing to overwrite them from the TSV)'
             )
-        if sync_mode and deactivated_count > 0:
-            label = 'Users that would be deactivated' if dry_run else 'Users deactivated'
-            self.stdout.write(f'  {label}: {deactivated_count}')
         self.stdout.write(
             f'  Total users in TSV: '
             f'{created_count + updated_count + unchanged_count + protected_count}'
@@ -495,5 +506,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'  Roles assigned: {roles_created_count}')
         if created_count > 0 and not dry_run:
-            self.stdout.write('\n' + self.style.WARNING('Note: New users have default password "changeme123"'))
+            self.stdout.write(
+                '\nNew users have no password yet: they set one with '
+                '"Forgot password" on the login page.'
+            )
         self.stdout.write('=' * 60 + '\n')
