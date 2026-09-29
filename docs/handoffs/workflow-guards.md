@@ -157,7 +157,7 @@ cut it and say so.
 ## Status
 
 - [x] #84 · [x] #85 · [x] #86 · [x] #87 a–f · [x] docs · [x] click-through · [x] /code-review · [x] PR
-- Suite: baseline 494 → 490 after removing the four legacy `ResolutionService` tests
+- Suite: baseline 494 (origin/main @ b089df7) → 490 after removing the four legacy `ResolutionService` tests
   in `test_release_gate.py` → **516** with 26 new (`tests/test_workflow_guards.py`, plus
   four consult tests in `tests/test_wizard_step5_consult.py`). `check` and
   `makemigrations --check` clean; no migration.
