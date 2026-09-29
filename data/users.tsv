@@ -1,29 +1,29 @@
-email	first_name	last_name	organization_name	orcid	phone	position	is_staff	is_active	roles	areas	auto_data_consent
-coordinator@redib.net	ReDIB	Coordinator	Red Distribuida de Imagen Biomédica			ReDIB Coordinator	TRUE	TRUE	coordinator		
-rtasseff@cicbiomagune.es	Ryan	Tasseff	Asociación de Investigación Cooperativa en Biomateriales			Node Coordinator	TRUE	TRUE	node_coordinator:CIC-biomaGUNE		
-amartinez@cicbiomagune.es	Ángel Manuel	Martínez Villacorta	Asociación de Investigación Cooperativa en Biomateriales	0000-0002-3199-0479	+34 943 005 302	Node Coordinator	TRUE	TRUE	node_coordinator:CIC-biomaGUNE		
-gonzalo.pizarro@cnic.es	Gonzalo	Pizarro Sánchez	Hospital Universitario Ruber Juan Bravo Madrid	0000-0002-5082-3596	+34 914 531 200	Node Coordinator	TRUE	TRUE	node_coordinator:TRIMA@CNIC		
-bioimac@ucm.es	Cristina	Álvarez de Lara Sánchez	Bio Imagen Complutense		+34 91 394 3252	Node Coordinator	FALSE			preclinical	
-ana_penades@iislafe.es	Ana	Penadés Blanco	Imaging La Fe		+34 636 602 423	Node Coordinator	TRUE	TRUE	node_coordinator:IIS-LaFe		
-aarjonilla@hospitalreyjuancarlos.es	Antonia	Arjonilla López	Hospital Universitario Rey Juan Carlos		+34 915 504 897		FALSE		evaluator		
-anapaula.candiota@uab.cat	Ana Paula	Candiota	Universidad Autónoma de Barcelona				FALSE	TRUE	evaluator	preclinical	
-andres@die.upm.es	Andrés	Santos Lleó	Universidad Politécnica de Madrid	0000-0001-7423-9135	+34 91 0672 228		FALSE	TRUE	evaluator	preclinical;clinical	
-bjrubio@ucm.es	Benito Jorge	Rubio Retama	Universidad Complutense de Madrid	0000-0002-1785-5844	+34 913 941 751		FALSE	TRUE	evaluator	preclinical;radiochemistry	
-c.caballero@bcbl.eu	Cesar	Caballero-Gaudes	Basque Center on Cognition Brain and Language	0000-0002-9068-5810	+34 943 309 300		FALSE	TRUE	evaluator	preclinical;clinical	
-carlos.santos-gallego@mssm.edu	Carlos G.	Santos-Gallego	Icahn School of Medicine at Mount Sinai				FALSE	TRUE	evaluator	clinical	
-dsilvia@umh.es	Silvia	De Santis	Instituto de Neurociencias de Alicante-UMH-CSIC	0000-0001-9739-6926	+34 965 919 369		FALSE	TRUE	evaluator	preclinical;clinical	
-esau.pobladorrodriguez@fhwn.ac.at	Esau	Poblador Rodriguez	University of Applied Sciences Wiener Neustadt				FALSE	TRUE	evaluator	preclinical	
-fherranz@iqm.csic.es	Fernando	Herranz	Instituto de Química Médica-CSIC	0000-0002-3743-0050	+34 913 349 000		FALSE	TRUE	evaluator	preclinical;radiochemistry	
-fmulero@cnio.es	Francisca	Mulero	Centro Nacional de Investigaciones Oncológicas	0000-0001-9584-4211	+34 917 328 000		FALSE	TRUE	evaluator	preclinical;clinical	
-jalonsof@salud.madrid.org	Juan Carlos	Alonso Farto	Hospital General Universitario Gregorio Marañón	0000-0002-1615-9724	+34 91 394 1551		FALSE		evaluator		
-mamunozb@ing.uc3m.es	Arrate	Muñoz Barrutia	Universidad Carlos III	0000-0002-1573-1661	+34 91 426 5067		FALSE		evaluator		
-mangel.morcillo@ciemat.es	Miguel Ángel	Morcillo Alonso	Centro de Investigaciones Energéticas Medioambientales y Tecnológicas	0000-0002-1984-5834	+34 913 466 229		FALSE	TRUE	evaluator	preclinical;radiochemistry	
-mariaguembe@hotmail.com	María	Guembe	Hospital General Universitario Gregorio Marañón	0000-0002-7607-5848			FALSE	FALSE	evaluator		
-marisa@hggm.es	María Luisa	Soto Montenegro	Instituto de Investigación Sanitaria Gregorio Marañón	0000-0003-4350-4789	+34 91 586 8823		FALSE	TRUE	evaluator	preclinical	
-mceballos@cajal.csic.es	María	López de Ceballos Lafarga	Instituto Cajal-CSIC	0000-0003-4067-9700			FALSE	FALSE	evaluator	preclinical	
-morejaso@fjd.es	Miguel	Orejas Orejas	Hospital Universitario Fundación Jiménez Díaz				FALSE		evaluator		
-pa12061963@telefonica.net	Pablo	Avilés Marín	Pharma Mar S.A.				FALSE	TRUE	evaluator	preclinical	
-pablo.aguiar@usc.es	Pablo	Aguiar Fernández	Universidad de Santiago de Compostela				FALSE	TRUE	evaluator	preclinical;clinical	
-plopez@iib.uam.es	Pilar	López Larrubia	"Instituto de Investigaciones Biomédicas ""Alberto Sols""-CSIC-UAM"				FALSE	TRUE	evaluator	preclinical	
-raul.herance@vhir.org	Raúl	Herance	Vall d'Hebron Research Institute				FALSE	TRUE	evaluator	preclinical;clinical	
-aac.bioimac@ucm.es	BioImaC	COA Access	Bio Imagen Complutense			Node Coordinator		TRUE	node_coordinator:BioImaC		
+email	first_name	last_name	organization_name	orcid	phone	position	is_staff	is_active	roles	areas	auto_data_consent	retired_roles
+aac.bioimac@ucm.es	BioImaC	COA Access	Bio Imagen Complutense		913941506	Node Coordinator	FALSE	TRUE	node_coordinator:BioImaC		TRUE	
+aarjonilla@hospitalreyjuancarlos.es	Antonia	Arjonilla López	Hospital Universitario Rey Juan Carlos		+34 915 504 897		FALSE	FALSE			FALSE	evaluator
+amartinez@cicbiomagune.es	Ángel Manuel	Martínez Villacorta	Asociación de Investigación Cooperativa en Biomateriales	0000-0002-3199-0479	+34 943 005 302	Node Coordinator	TRUE	TRUE	node_coordinator:CIC-biomaGUNE		TRUE	
+anapaula.candiota@uab.cat	Ana Paula	Candiota	Universidad Autónoma de Barcelona				FALSE	TRUE	evaluator	preclinical	FALSE	
+ana_penades@iislafe.es	Ana	Penadés Blanco	Imaging La Fe		+34 636 602 423	Node Coordinator	TRUE	TRUE	node_coordinator:IIS-LaFe		FALSE	
+andres@die.upm.es	Andrés	Santos Lleó	Universidad Politécnica de Madrid	0000-0001-7423-9135	+34 91 0672 228	Catedrático de Universidad	FALSE	TRUE	evaluator	clinical;preclinical	TRUE	
+bioimac@ucm.es	Cristina	Álvarez de Lara Sánchez	Bio Imagen Complutense		+34 91 394 3252	Node Coordinator	FALSE	FALSE			FALSE	node_coordinator:BioImaC
+bjrubio@ucm.es	Benito Jorge	Rubio Retama	Universidad Complutense de Madrid	0000-0002-1785-5844	+34 913 941 751	Prof.	FALSE	TRUE	evaluator	preclinical;radiochemistry	TRUE	
+carlos.santos-gallego@mssm.edu	Carlos G.	Santos-Gallego	Icahn School of Medicine at Mount Sinai				FALSE	TRUE	evaluator	clinical	FALSE	
+c.caballero@bcbl.eu	Cesar	Caballero-Gaudes	Basque Center on Cognition Brain and Language	0000-0002-9068-5810	+34 943 309 300	Group Leader	FALSE	TRUE	evaluator	clinical;preclinical	TRUE	
+coordinator@redib.net	ReDIB	Coordinator	Red Distribuida de Imagen Biomédica		+34 943 005 302	ReDIB Coordinator	TRUE	TRUE	coordinator		FALSE	
+dsilvia@umh.es	Silvia	De Santis	Instituto de Neurociencias de Alicante-UMH-CSIC	0000-0001-9739-6926	+34 965 919 369	Principal Investigador	FALSE	TRUE	evaluator	clinical;preclinical	TRUE	
+esau.pobladorrodriguez@fhwn.ac.at	Esau	Poblador Rodriguez	University of Applied Sciences Wiener Neustadt				FALSE	TRUE	evaluator	preclinical	FALSE	
+fherranz@iqm.csic.es	Fernando	Herranz	Instituto de Química Médica-CSIC	0000-0002-3743-0050	+34 912587635	Principal Investigator	FALSE	TRUE	evaluator	preclinical;radiochemistry	TRUE	
+fmulero@cnio.es	Francisca	Mulero	Centro Nacional de Investigaciones Oncológicas	0000-0001-9584-4211	+34 917 328 000	Head Molecular Imaging	FALSE	TRUE	evaluator	clinical;preclinical	TRUE	
+gonzalo.pizarro@cnic.es	Gonzalo	Pizarro Sánchez	Hospital Universitario Ruber Juan Bravo Madrid	0000-0002-5082-3596	+34 914 531 200	Node Coordinator	TRUE	TRUE	node_coordinator:TRIMA@CNIC		FALSE	
+jalonsof@salud.madrid.org	Juan Carlos	Alonso Farto	Hospital General Universitario Gregorio Marañón	0000-0002-1615-9724	+34 91 394 1551		FALSE	FALSE			FALSE	evaluator
+mamunozb@ing.uc3m.es	Arrate	Muñoz Barrutia	Universidad Carlos III	0000-0002-1573-1661	+34 91 426 5067	Catedrático de Universidad	FALSE	TRUE	evaluator	preclinical	TRUE	
+mangel.morcillo@ciemat.es	Miguel Ángel	Morcillo Alonso	Centro de Investigaciones Energéticas Medioambientales y Tecnológicas	0000-0002-1984-5834	+34 661471425	Principal Investigator	FALSE	TRUE	evaluator	preclinical;radiochemistry	TRUE	
+mariaguembe@hotmail.com	María	Guembe	Hospital General Universitario Gregorio Marañón	0000-0002-7607-5848			FALSE	FALSE			FALSE	evaluator
+marisa@hggm.es	María Luisa	Soto Montenegro	Instituto de Investigación Sanitaria Gregorio Marañón	0000-0003-4350-4789	+34 91 586 8823	Principal Investigator	FALSE	TRUE	evaluator	preclinical	TRUE	
+mceballos@cajal.csic.es	María	López de Ceballos Lafarga	Instituto Cajal-CSIC	0000-0003-4067-9700			FALSE	FALSE		preclinical	FALSE	evaluator
+morejaso@fjd.es	Miguel	Orejas Orejas	Hospital Universitario Fundación Jiménez Díaz				FALSE	FALSE			FALSE	evaluator
+pa12061963@telefonica.net	Pablo	Avilés Marín	Pharma Mar S.A.		+34619482909	Director Asociado	FALSE	TRUE	evaluator	preclinical	TRUE	
+pablo.aguiar@usc.es	Pablo	Aguiar Fernández	Universidad de Santiago de Compostela	0000-0002-7322-2195	0034661625017	Principal Investigator	FALSE	TRUE	evaluator	clinical;preclinical	TRUE	
+plopez@iib.uam.es	Pilar	López Larrubia	"Instituto de Investigaciones Biomédicas ""Alberto Sols""-CSIC-UAM"	0000-0002-5141-8736	+34 679828411	Dr/Principal Investigator	FALSE	TRUE	evaluator	preclinical	TRUE	
+raul.herance@vhir.org	Raúl	Herance	Vall d'Hebron Research Institute				FALSE	TRUE	evaluator	preclinical;clinical	FALSE	
+rtasseff@cicbiomagune.es	Ryan	Tasseff	Asociación de Investigación Cooperativa en Biomateriales		747448941	Lead	TRUE	TRUE	node_coordinator:CIC-biomaGUNE		TRUE	
