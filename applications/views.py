@@ -663,6 +663,16 @@ def application_edit_step5(request, pk):
                         "Your consult request has been sent to the node coordinator(s). "
                         "They will contact you. Your draft has been saved."
                     )
+                elif no_coord_nodes:
+                    # Nobody to email at all: no node coordinator, and no
+                    # active ReDIB coordinator to fall back on.
+                    messages.warning(
+                        request,
+                        "Your draft has been saved and your consult request recorded, "
+                        "but nobody could be emailed: these nodes have no coordinator "
+                        "on file: " + ", ".join(n.code for n in no_coord_nodes)
+                        + ". Please contact ReDIB directly."
+                    )
                 else:
                     messages.success(
                         request,
@@ -671,7 +681,7 @@ def application_edit_step5(request, pk):
                         "this to a specific node coordinator. Please add equipment in "
                         "step 3 and click Save Draft again, or contact ReDIB directly."
                     )
-                if no_coord_nodes:
+                if sent and no_coord_nodes:
                     messages.warning(
                         request,
                         "Some nodes have no active coordinator on file, so your request "

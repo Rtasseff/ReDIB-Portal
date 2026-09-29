@@ -156,7 +156,33 @@ cut it and say so.
 
 ## Status
 
-- [ ] #84 · [ ] #85 · [ ] #86 · [ ] #87 a–f · [ ] docs · [ ] click-through · [ ] /code-review · [ ] PR
+- [x] #84 · [x] #85 · [x] #86 · [x] #87 a–f · [x] docs · [x] click-through · [x] /code-review · [x] PR
+- Suite: baseline 494 → 490 after removing the four legacy `ResolutionService` tests
+  in `test_release_gate.py` → **516** with 26 new (`tests/test_workflow_guards.py`, plus
+  four consult tests in `tests/test_wizard_step5_consult.py`). `check` and
+  `makemigrations --check` clean; no migration.
+- Click-through (2026-09-29, fresh `localtest3`, runserver 8003, scripted over HTTP
+  with real login + CSRF): announce, publish, close and their refusals; GET on
+  announce/close → 405, a resolved call stays resolved; close + Release to Nodes on
+  COA-LIVE-2026; Resolution pages render with no Decide/Bulk/Finalize, old URLs 404;
+  both nodes decide LIVE-007 → `accepted`, `resolution_accepted` logged; applicant
+  accepts LIVE-010's waitlist offer, NC promotes → `resolution_accepted` +
+  `handoff_notification` logged. History rows present for every call change.
+- `/code-review` (medium): one low finding, fixed. With no node coordinator *and* no
+  active ReDIB coordinator, the wizard consult said "no equipment selected" and "went
+  to the ReDIB coordinators" though nothing was sent; it now says nobody could be
+  emailed (test added). Everything else checked clean.
+- Deviations:
+  - `ResolutionService` stays, trimmed to its two read methods: the watch-list pages
+    use them, and `tests/test_phase6_resolution.py` (no TestCase, never runs; the
+    `commands-cleanup` bucket owns deleting it) still imports the class.
+  - Also fixed `completion_reminder_coordinator`: it had the same "confirm the
+    equipment lines as done" wording as (e).
+  - The feasibility consult template gained a `no_node_coordinator` branch for the
+    ReDIB fallback (f), like the public consult's.
+  - `ARCHITECTURE.md` §4's `applications` row still calls `services/resolution.py`
+    the "older route": that line also holds the `Commands:` list `commands-cleanup`
+    edits, so it is left for the merge.
 
 ## Questions for the handoff session
 

@@ -195,6 +195,18 @@ class Step5ConsultRequestTests(TestCase):
         self.assertEqual(kwargs['context_data']['equipment_list'], 'MRI 0')
         self.assertContains(resp, 'went to the ReDIB coordinators instead')
 
+    @patch('communications.tasks.send_email_from_template')
+    def test_consult_with_nobody_to_email_says_so(self, mock_send):
+        """No node coordinator and no ReDIB coordinator: nothing is sent, and
+        the applicant is told so rather than told it went to ReDIB."""
+        app, _ = self._make_app(num_equipment_nodes=1, with_coordinators=False)
+        url = reverse('applications:edit_step5', kwargs={'pk': app.pk})
+        resp = self.client.post(url, {'action': 'request_consult'}, follow=True)
+        mock_send.delay.assert_not_called()
+        self.assertContains(resp, 'nobody could be emailed')
+        self.assertNotContains(resp, 'went to the ReDIB coordinators')
+        self.assertNotContains(resp, 'not yet selected any equipment')
+
     def test_fallback_template_renders(self):
         """The seeded template renders its no-coordinator branch."""
         from django.core.management import call_command
