@@ -31,9 +31,6 @@ urlpatterns = [
     # Coordinator views - Phase 6: Resolution
     path('resolution/', views.resolution_dashboard, name='resolution_dashboard'),
     path('resolution/call/<int:call_id>/', views.call_resolution_detail, name='call_resolution_detail'),
-    path('resolution/application/<int:application_id>/', views.application_resolution, name='application_resolution'),
-    path('resolution/call/<int:call_id>/bulk/', views.bulk_resolution, name='bulk_resolution'),
-    path('resolution/call/<int:call_id>/finalize/', views.finalize_resolution, name='finalize_resolution'),
 
     # Node Coordinator views - Phase 6: Node Resolution
     path('node-resolution/', views.node_resolution_queue, name='node_resolution_queue'),

@@ -113,9 +113,8 @@ coordinators must accept or waitlist — **unless** at least one completed evalu
 `Application.has_any_denied_evaluation` everywhere; do not reimplement the check. Feasibility
 rejection (phase 3) and evaluator denial (phase 5) are unaffected by funding status.
 
-Enforced in: `applications/services/node_resolution.py`, `applications/services/resolution.py`,
-`applications/forms.py` (`NodeResolutionForm`, `ApplicationResolutionForm`),
-`applications/views.py`.
+Enforced in: `applications/services/node_resolution.py`, `applications/forms.py`
+(`NodeResolutionForm`), `applications/views.py` (`node_resolution_review`).
 
 ## Conventions you'll need
 

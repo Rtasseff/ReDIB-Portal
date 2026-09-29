@@ -201,6 +201,15 @@ def mark_application_complete(request, application_id):
         messages.warning(request, 'This application is already marked as complete.')
         return redirect('applications:detail', pk=application.pk)
 
+    # Only an accepted application the applicant has confirmed can be completed.
+    if application.status != 'accepted' or not application.accepted_by_applicant:
+        messages.error(
+            request,
+            f'{application.code} cannot be marked complete: only an accepted '
+            'application that the applicant has confirmed can be.'
+        )
+        return redirect('applications:detail', pk=application.pk)
+
     if request.method == 'POST':
         # Collect actual hours used for each equipment
         all_hours_recorded = True

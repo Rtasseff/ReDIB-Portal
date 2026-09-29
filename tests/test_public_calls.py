@@ -119,7 +119,7 @@ class AnnounceCallTests(TestCase):
         UserRole.objects.create(user=applicant, role='applicant', is_active=True)
         self.client.force_login(applicant)
 
-        response = self.client.get(reverse('calls:announce', kwargs={'pk': call.pk}))
+        response = self.client.post(reverse('calls:announce', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'draft')
@@ -130,7 +130,7 @@ class AnnounceCallTests(TestCase):
         call, _, _ = _make_call()
         self.client.force_login(self.coordinator)
 
-        self.client.get(reverse('calls:announce', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:announce', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'announced')
@@ -156,7 +156,7 @@ class AnnounceCallTests(TestCase):
         self.client.force_login(self.coordinator)
         mail.outbox = []
 
-        response = self.client.get(
+        response = self.client.post(
             reverse('calls:announce', kwargs={'pk': call.pk}), follow=True
         )
 
@@ -179,7 +179,7 @@ class AnnounceCallTests(TestCase):
         self.client.force_login(self.coordinator)
         mail.outbox = []
 
-        self.client.get(reverse('calls:announce', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:announce', kwargs={'pk': call.pk}))
 
         recipients = [address for message in mail.outbox for address in message.to]
         self.assertIn('sub@test.com', recipients)
@@ -194,7 +194,7 @@ class AnnounceCallTests(TestCase):
         call.equipment_allocations.all().delete()
         self.client.force_login(self.coordinator)
 
-        self.client.get(reverse('calls:announce', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:announce', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'draft')
@@ -203,7 +203,7 @@ class AnnounceCallTests(TestCase):
         call, _, _ = _make_call(starts_in_days=-1)
         self.client.force_login(self.coordinator)
 
-        self.client.get(reverse('calls:announce', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:announce', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'draft')
@@ -213,7 +213,7 @@ class AnnounceCallTests(TestCase):
         self.client.force_login(self.coordinator)
         mail.outbox = []
 
-        response = self.client.get(
+        response = self.client.post(
             reverse('calls:publish', kwargs={'pk': call.pk}), follow=True
         )
 
@@ -226,7 +226,7 @@ class AnnounceCallTests(TestCase):
         call, _, _ = _make_call(status='announced', starts_in_days=-1)
         self.client.force_login(self.coordinator)
 
-        self.client.get(reverse('calls:publish', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:publish', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'open')
@@ -235,7 +235,7 @@ class AnnounceCallTests(TestCase):
         call, _, _ = _make_call(status='closed', starts_in_days=-40)
         self.client.force_login(self.coordinator)
 
-        self.client.get(reverse('calls:publish', kwargs={'pk': call.pk}))
+        self.client.post(reverse('calls:publish', kwargs={'pk': call.pk}))
 
         call.refresh_from_db()
         self.assertEqual(call.status, 'closed')

@@ -14,6 +14,14 @@
     </div>
 </div>
 
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    This page is read-only. Each node coordinator decides for their node on
+    <strong>Node Resolution</strong>; an application is resolved, and its applicant emailed,
+    as soon as its last node decides. When every application is resolved, press
+    <strong>Mark Call Resolved</strong> on the call page.
+</div>
+
 <!-- Call Information -->
 <div class="card mb-4">
     <div class="card-header">
@@ -25,7 +33,7 @@
                 <p><strong>Title:</strong> {{ call.title }}</p>
                 <p><strong>Status:</strong>
                     {% if summary.is_locked %}
-                        <span class="badge bg-secondary">Finalized</span>
+                        <span class="badge bg-secondary">Resolved</span>
                     {% else %}
                         <span class="badge bg-warning">In Progress</span>
                     {% endif %}
@@ -74,48 +82,11 @@
             </div>
             <div class="col-md-2">
                 <h4 class="text-primary">{{ summary.competitive_funding }}</h4>
-                <small class="text-muted">Auto-Approve</small>
+                <small class="text-muted">Competitive Funding</small>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Bulk Resolution -->
-{% if summary.evaluated > 0 and not summary.is_locked %}
-<div class="card mb-4 border-primary">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="bi bi-lightning"></i> Bulk Auto-Resolution</h5>
-    </div>
-    <div class="card-body">
-        <p>Automatically apply resolutions to all pending applications based on score threshold.</p>
-        <form id="bulkResolutionForm" class="row g-3">
-            {% csrf_token %}
-            <div class="col-md-4">
-                <label for="threshold_score" class="form-label">Score Threshold (0-12):</label>
-                <input type="number" class="form-control" id="threshold_score" name="threshold_score"
-                       value="9.0" min="0" max="12" step="0.5" required>
-                <small class="form-text text-muted">Applications scoring above this will be accepted. Default: 9.0 (75%)</small>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Below Threshold:</label>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="auto_pending" name="auto_pending" checked>
-                    <label class="form-check-label" for="auto_pending">
-                        Mark as Pending (instead of Reject)
-                    </label>
-                </div>
-                <small class="form-text text-muted">Recommended: Keep good applications on waiting list</small>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-primary d-block">
-                    <i class="bi bi-lightning"></i> Apply Bulk Resolution
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
 
 <!-- Applications Table -->
 <div class="card">
@@ -160,7 +131,7 @@
                         </td>
                         <td>
                             {% if app.has_competitive_funding %}
-                                <span class="badge bg-primary">Yes (Auto-Approve)</span>
+                                <span class="badge bg-primary">Yes</span>
                             {% else %}
                                 <span class="text-muted">No</span>
                             {% endif %}
@@ -177,15 +148,6 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if not summary.is_locked %}
-                                <button type="button" class="btn btn-sm btn-primary resolve-btn"
-                                        data-app-id="{{ app.id }}"
-                                        data-app-code="{{ app.code }}"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#resolutionModal">
-                                    <i class="bi bi-gavel"></i> Decide
-                                </button>
-                            {% endif %}
                             <a href="{% url 'applications:detail' app.pk %}"
                                class="btn btn-sm btn-outline-primary"
                                target="_blank">
@@ -241,233 +203,5 @@
         {% endif %}
     </div>
 </div>
-
-<!-- Finalize Resolution -->
-{% if summary.all_resolved and not summary.is_locked %}
-<div class="card mt-4 border-success">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0"><i class="bi bi-check-circle"></i> Ready to Finalize</h5>
-    </div>
-    <div class="card-body">
-        <p>All applications have been resolved. Click below to finalize and send notifications to applicants.</p>
-        <form method="post" action="{% url 'applications:finalize_resolution' call.id %}"
-              onsubmit="return confirm('This will lock the resolution and send notifications to all applicants. Are you sure?');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-lg">
-                <i class="bi bi-send"></i> Finalize Resolution & Send Notifications
-            </button>
-        </form>
-    </div>
-</div>
-{% endif %}
-
-<!-- Resolution Modal -->
-<div class="modal fade" id="resolutionModal" tabindex="-1" aria-labelledby="resolutionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="resolutionModalLabel">Application Resolution</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="modalContent">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-// Handle resolution modal
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('resolutionModal');
-    let currentAppId = null;
-
-    // When modal opens, load application details
-    modal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        currentAppId = button.getAttribute('data-app-id');
-        const appCode = button.getAttribute('data-app-code');
-
-        // Update modal title
-        document.getElementById('resolutionModalLabel').textContent = `Resolution for ${appCode}`;
-
-        // Fetch application details
-        fetch(`/applications/resolution/application/${currentAppId}/`)
-            .then(response => response.json())
-            .then(data => {
-                renderResolutionForm(data);
-            })
-            .catch(error => {
-                document.getElementById('modalContent').innerHTML = `
-                    <div class="alert alert-danger">Error loading application details: ${error}</div>
-                `;
-            });
-    });
-
-    // Render resolution form
-    function renderResolutionForm(app) {
-        const hasCompetitiveFunding = app.has_competitive_funding;
-        const hasAnyDeniedEvaluation = app.has_any_denied_evaluation;
-        const canReject = !hasCompetitiveFunding || hasAnyDeniedEvaluation;
-
-        let competitiveFundingNotice = '';
-        if (hasCompetitiveFunding && !hasAnyDeniedEvaluation) {
-            competitiveFundingNotice = '<p class="alert alert-info mb-2"><i class="bi bi-info-circle"></i> This application has competitive funding and cannot be rejected.</p>';
-        } else if (hasCompetitiveFunding) {
-            competitiveFundingNotice = '<p class="alert alert-warning mb-2"><i class="bi bi-info-circle"></i> This application has competitive funding, but an evaluator recommended denial, so rejection is available here.</p>';
-        }
-
-        let html = `
-            <div class="mb-3">
-                <h6>Application: <strong>${app.code}</strong></h6>
-                <p><strong>Applicant:</strong> ${app.applicant_name}</p>
-                <p><strong>Description:</strong> ${app.brief_description}</p>
-                <p><strong>Final Score:</strong> <strong class="${app.final_score >= 9 ? 'text-success' : app.final_score >= 6 ? 'text-warning' : 'text-danger'}">${app.final_score}</strong>/12</p>
-                ${competitiveFundingNotice}
-            </div>
-
-            <form id="resolutionForm">
-                <div class="mb-3">
-                    <label class="form-label"><strong>Resolution Decision:</strong></label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="resolution" id="res_accepted" value="accepted" ${app.current_resolution === 'accepted' ? 'checked' : ''} required>
-                        <label class="form-check-label" for="res_accepted">
-                            <strong>Accepted</strong> - Grant access to requested equipment
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="resolution" id="res_pending" value="pending" ${app.current_resolution === 'pending' ? 'checked' : ''} required>
-                        <label class="form-check-label" for="res_pending">
-                            <strong>Pending</strong> - Waiting list (good quality, limited resources)
-                        </label>
-                    </div>
-                    ${canReject ? `
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="resolution" id="res_rejected" value="rejected" ${app.current_resolution === 'rejected' ? 'checked' : ''} required>
-                        <label class="form-check-label" for="res_rejected">
-                            <strong>Rejected</strong> - Does not meet quality threshold
-                        </label>
-                    </div>
-                    ` : ''}
-                </div>
-
-                <div class="mb-3">
-                    <label for="resolution_comments" class="form-label">Comments (Optional):</label>
-                    <textarea class="form-control" id="resolution_comments" name="resolution_comments" rows="3"
-                              placeholder="Add any comments about this decision...">${app.resolution_comments || ''}</textarea>
-                </div>
-            </form>
-        `;
-
-        document.getElementById('modalContent').innerHTML = html;
-    }
-
-    // Handle form submission
-    window.submitResolution = function() {
-        const form = document.getElementById('resolutionForm');
-        const formData = new FormData(form);
-        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-        fetch(`/applications/resolution/application/${currentAppId}/`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the row
-                const statusCell = document.getElementById(`resolution-status-${currentAppId}`);
-                const resolution = data.result.resolution;
-                let badgeClass = 'bg-secondary';
-                let badgeText = resolution;
-
-                if (resolution === 'accepted') {
-                    badgeClass = 'bg-success';
-                    badgeText = 'Accepted';
-                } else if (resolution === 'pending') {
-                    badgeClass = 'bg-info';
-                    badgeText = 'Pending';
-                } else if (resolution === 'rejected') {
-                    badgeClass = 'bg-danger';
-                    badgeText = 'Rejected';
-                }
-
-                statusCell.innerHTML = `<span class="badge ${badgeClass}">${badgeText}</span>`;
-
-                // Close modal and show success
-                bootstrap.Modal.getInstance(modal).hide();
-                alert(`Resolution applied successfully: ${badgeText}`);
-
-                // Reload page to update summary
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || JSON.stringify(data.errors)));
-            }
-        })
-        .catch(error => {
-            alert('Error submitting resolution: ' + error);
-        });
-    };
-});
-
-// Handle bulk resolution
-document.getElementById('bulkResolutionForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const threshold = formData.get('threshold_score');
-    const autoPending = formData.get('auto_pending') === 'on';
-
-    if (!confirm(`Apply bulk resolution with threshold ${threshold}?\n\n` +
-                 `Applications with score >= ${threshold} will be ACCEPTED.\n` +
-                 (autoPending ? 'Applications below threshold will be marked as PENDING.' : 'Applications below threshold will be REJECTED.'))) {
-        return;
-    }
-
-    fetch(`/applications/resolution/call/{{ call.id }}/bulk/`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Bulk resolution complete!\n\n` +
-                  `Accepted: ${data.result.accepted}\n` +
-                  `Pending: ${data.result.pending}\n` +
-                  `Rejected: ${data.result.rejected}`);
-            location.reload();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('Error: ' + error);
-    });
-});
-
-// Add submit button to modal footer dynamically
-const modalFooter = document.querySelector('#resolutionModal .modal-footer');
-if (!modalFooter) {
-    const footer = document.createElement('div');
-    footer.className = 'modal-footer';
-    footer.innerHTML = `
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="submitResolution()">Apply Resolution</button>
-    `;
-    document.querySelector('#resolutionModal .modal-content').appendChild(footer);
-}
-</script>
 
 {% endblock %}
