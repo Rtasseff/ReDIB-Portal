@@ -71,10 +71,10 @@ involved:
 It finishes by printing the login table and a cheat-sheet of which application
 to use for which test. More in [TESTING.md](TESTING.md#the-localtest3-sandbox).
 
-> Alternative: `python manage.py setup_test_database --reset --yes` loads the
+> Alternative: `python manage.py setup_base_database --reset --yes` loads the
 > real reference data from `data/*.tsv` (the 4 ReDIB nodes and their
-> instruments, the organization list, staff accounts) plus sample calls and
-> applications. It is closer to production but less convenient to log in to.
+> instruments, the organization list, staff accounts), with no calls or
+> applications. The staff accounts have no password until you set one.
 > See [DEVELOPMENT.md](DEVELOPMENT.md#management-command-reference) for every
 > setup command.
 

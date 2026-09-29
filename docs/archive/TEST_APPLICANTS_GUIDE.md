@@ -1,5 +1,9 @@
 # Test Applicants & Applications Guide
 
+> **Archived 2026-09-29.** `seed_test_applicants`, `seed_dev_data` and
+> `setup_test_database` were removed (backlog #88(b), #90). Use
+> `setup_localtest3_database`. Kept as history; links below may be stale.
+
 What `python manage.py seed_test_applicants` creates, and how to use it.
 
 > **Most manual testing should use the localtest3 sandbox instead**

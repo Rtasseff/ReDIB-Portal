@@ -158,7 +158,32 @@ deploys by 10-10, before the 10-13 → 10-15 change freeze. If a piece isn't rea
 
 ## Status
 
-- [ ] #82 · [ ] #83 · [ ] export · [ ] #88 a/c/d/e/f · [ ] #90 · [ ] docs · [ ] /code-review · [ ] PR
+- [x] #82 · [x] #83 · [x] export · [x] #88 a/c/d/e/f · [x] #90 · [x] docs · [ ] /code-review · [ ] PR
+- **Suite:** baseline 494 OK → 520 OK (26 new, `tests/test_commands_cleanup.py`).
+  `check` clean; `makemigrations --check` no changes.
+- **#90 / #88(b):** nothing outside docs used `seed_dev_data`, so the chain is
+  retired: `seed_dev_data`, `seed_test_applicants`, `setup_test_database` deleted;
+  `TEST_APPLICANTS_GUIDE.md` archived. (#88(a) then only applies to `setup_base_database`.)
+- **Scratch DB runs (2026-09-29, `DATABASE_URL=sqlite:///…/scratchpad/x.sqlite3`):**
+  - `setup_base_database`: exit 0; 28 users, 27 roles, 14 equipment. "Password: none;
+    each sets one via Forgot password".
+  - `export_redib_users` vs `data/users.tsv`: every value matches as the loader reads
+    it. Textual differences beyond the new column, both expected: blank booleans come
+    back `FALSE`, and `bioimac@ucm.es` is not exported (no role, not staff, so the
+    brief's selection rule leaves it out). Rows are sorted by email, so prod's first
+    regeneration also reorders the file. Output is UTF-8, CRLF, no BOM.
+  - Bad `users.tsv` (unknown role `evalutor` on row 3): exit 1, 28 users / 27 roles
+    before and after. Bad org on row 3 after a good row 2: row 2 was written then
+    rolled back, exit 1, counts unchanged.
+  - `send_test_emails --to you@example.org` with the console backend: 15/15 sent;
+    "Evaluation Reminder (1 Pending)" and "1 Evaluation Overdue" render with their
+    item. `--cleanup` removed the granted evaluator role; no role left.
+- **Decisions:** the export leaves out the `applicant` role (in both role columns):
+  the portal grants it itself on email confirmation, and the file is ReDIB's staff
+  list. `areas` comes from the active evaluator role, else the retired one, so a
+  former evaluator's areas stay on record (the loader warns and ignores them).
+  `send_test_emails` records the role it granted as a marker line in the test
+  call's description; `--cleanup` reads it.
 
 ## Questions for the handoff session
 

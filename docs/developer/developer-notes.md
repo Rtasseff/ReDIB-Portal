@@ -158,7 +158,7 @@ auto-acceptance.
 **Tests.** Smoke-checked manually in the localtest3 walkthrough
 (LIVE-008 has competitive funding + low scores → both evaluators denied
 → reject re-enabled). No dedicated unit test yet; if/when behaviour
-changes here, add one to `tests/test_phase6_node_resolution.py`.
+changes here, add one as a `TestCase` module in `tests/`.
 
 **Docs:** End-user wording lives in
 [`docs/USER_GUIDE.md` → Phase 6](../USER_GUIDE.md#phase-6-release-and-resolution).

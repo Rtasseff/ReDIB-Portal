@@ -61,15 +61,15 @@ Everything hangs off a dedicated call, **COA-EMAIL-TEST**:
 | EmailLog | One row per email sent |
 
 `--cleanup` deletes the evaluation, the feasibility review, the application and
-the call. **It does not remove the evaluator role.** On production, remove
-that role by hand in the admin afterwards, or the recipient stays in the
-evaluator pool for assignment.
+the call, and the evaluator role if this command granted it. A role the
+recipient already held is left alone. (The run records the role it granted in
+the test call's description, which is how `--cleanup` finds it.)
 
 Running the command twice reuses the existing call and application.
 
 ## Templates Sent
 
-Subjects as rendered on 2026-09-28:
+Subjects as rendered on 2026-09-29:
 
 | # | Template | Subject | Link in body |
 |---|----------|---------|--------------|
@@ -77,8 +77,8 @@ Subjects as rendered on 2026-09-28:
 | 2 | application_received | ReDIB COA: Application [code] Received | |
 | 3 | feasibility_complete | ReDIB COA: Feasibility Review Complete for [code] | |
 | 4 | evaluation_assigned | ReDIB COA: Evaluation Assignment for [code] | Evaluation |
-| 5 | evaluation_reminder | ReDIB COA: Evaluation Reminder ([n] Pending) | **Renders broken, see below** |
-| 6 | evaluation_overdue | ReDIB COA: [n] Evaluation(s) Overdue | **Renders broken, see below** |
+| 5 | evaluation_reminder | ReDIB COA: Evaluation Reminder (1 Pending) | Evaluation ("3 days remaining") |
+| 6 | evaluation_overdue | ReDIB COA: 1 Evaluation Overdue | Evaluation ("Overdue by 5 days") |
 | 7 | coordinator_overdue_evaluations | ReDIB COA: Overdue Evaluations for Call [call] | |
 | 8 | coordinator_evaluations_locked | ReDIB COA: Evaluators Locked Out - Call [call] | |
 | 9 | evaluations_complete | ReDIB COA: All Evaluations Complete for [code] | Application |
@@ -89,12 +89,10 @@ Subjects as rendered on 2026-09-28:
 | 14 | acceptance_expired | ReDIB COA: Application [code] has been closed | |
 | 15 | publication_followup | ReDIB COA - Publication Follow-up for Application [code] | Publication form |
 
-**Known defect.** `evaluation_reminder` and `evaluation_overdue` became
-per-evaluator digests, which expect a pending count and a list of
-evaluations. `send_test_emails` still passes the old single-evaluation
-context, so both arrive with an empty count and no list ("Evaluation Reminder
-( Pending)"). That is a fault in the test command, not in the templates. To
-see them render properly, use the rehearsal harness instead.
+`evaluation_reminder` and `evaluation_overdue` are per-evaluator digests. The
+command builds their one-item list with the same helper the daily task uses
+(`evaluations.tasks._evaluation_pending_item`), so they look like the real
+thing.
 
 ## Verification Checklist
 
