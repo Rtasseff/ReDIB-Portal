@@ -259,7 +259,7 @@ Fill in every value. The critical ones:
 
 `SITE_DOMAIN` and `SITE_NAME` are applied to the Django `Site` record on every container start by `docker/entrypoint.sh` and by the `setup_base_database` command. Defaults, dev values and every other variable: [SETUP_GUIDE.md § Environment Configuration](SETUP_GUIDE.md#environment-configuration).
 
-The template's last two lines, `ALERT_RECIPIENT` and `HEALTHCHECK_URL`, have **no effect in `.env`**. `scripts/backup-db.sh` reads its own shell environment and never loads `.env`. They go on the cron line in [§ 6.2](#62-schedule-daily-backups).
+The backup settings `ALERT_RECIPIENT` and `HEALTHCHECK_URL` are **not** `.env` settings. `scripts/backup-db.sh` reads its own shell environment and never loads `.env`, so they go on the cron line in [§ 6.2](#62-schedule-daily-backups). An older `.env` that still has them is harmless: they are ignored there.
 
 `.env` is read when a container is **created**. After changing it, run `docker compose -f docker-compose.prod.yml up -d`. `restart` keeps the old values.
 
@@ -391,12 +391,18 @@ Check the received email headers for `spf=pass`, `dkim=pass`, `dmarc=pass`.
 
 The backup script (`scripts/backup-db.sh`) handles two things:
 
-1. **Database dump** — exports the PostgreSQL database to a gzipped SQL file.
-2. **Key files** — archives files not tracked in git (e.g., `.env`) into a tarball.
+1. **Database dump**: `redib_db_<timestamp>.sql.gz`, the PostgreSQL database as gzipped SQL.
+2. **Files**: `redib_files_<timestamp>.tar.gz`, with `.env` at the top and **every uploaded
+   file** under `media/`. Uploads include newsletters, signed application PDFs from earlier
+   calls, and anything uploaded in future. They are copied out of the `media_volume` Docker
+   volume (`/app/media` in `web`) on every run, so a new kind of upload is covered without
+   anyone having to remember it (backlog #89, 2026-09-29).
 
-Both are saved to `/home/deploy/backups/redib/` with matching timestamps and automatically cleaned up after 7 days.
-
-**Not covered: uploaded files.** Signed application PDFs, newsletters and generated reports live in the `media_volume` Docker volume (`/app/media` in `web`). The script doesn't back them up, so a lost host loses them even with a good dump.
+Both are saved to `/home/deploy/backups/redib/` with matching timestamps and cleaned up
+after 7 days. Each run keeps a full copy of the uploads, so the files archive grows with
+them. Check `du -sh /home/deploy/backups/redib` now and then. If the media copy fails (for
+example, `web` is down), the whole run fails. You get the alert email (§ 6.4) and older
+backups are kept.
 
 ### 6.1 Set Up Automated Backups
 
@@ -509,7 +515,8 @@ See §6.7. Local validation and alerting catch silent corruption; only an off-si
 
 ### 6.5 Backing Up Additional Files
 
-The backup script archives key files that are not tracked in git (e.g., `.env`). To change which files are backed up, edit the `BACKUP_FILES` array near the top of `scripts/backup-db.sh`:
+Uploaded files are always included (above). For anything else on the host that isn't
+tracked in git, edit the `BACKUP_FILES` array near the top of `scripts/backup-db.sh`:
 
 ```bash
 BACKUP_FILES=(
@@ -523,15 +530,26 @@ BACKUP_FILES=(
 
 Each backup run produces a `redib_files_TIMESTAMP.tar.gz` alongside the database dump. If a listed file does not exist, the script logs a warning but continues without failing.
 
-To restore files from a backup:
+To restore files from a backup, unpack it somewhere temporary first. Unpacking it into the
+project directory would overwrite `.env` and leave the uploads in a folder the containers
+never read.
 
 ```bash
 # List contents of a file backup
 tar -tzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
 
-# Extract to the project directory (overwrites existing files)
+# Unpack to a temporary directory
+mkdir -p /tmp/redib-restore
+tar -xzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz -C /tmp/redib-restore
+
+# .env: compare before replacing the live one
+diff /tmp/redib-restore/.env ~/ReDIB-Portal/.env
+
+# Uploaded files: copy back into the media volume (adds and overwrites, deletes nothing)
 cd ~/ReDIB-Portal
-tar -xzf /home/deploy/backups/redib/redib_files_YYYYMMDD_HHMMSS.tar.gz
+docker compose -f docker-compose.prod.yml cp /tmp/redib-restore/media/. web:/app/media/
+
+rm -rf /tmp/redib-restore
 ```
 
 ### 6.6 Restore Database from Backup

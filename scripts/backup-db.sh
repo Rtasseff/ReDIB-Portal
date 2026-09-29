@@ -1,12 +1,18 @@
 #!/bin/bash
 # ============================================================================
-# ReDIB Portal - Backup Script (Database + Key Files)
+# ReDIB Portal - Backup Script (Database + Files)
 # ============================================================================
 # Usage:
 #   ./scripts/backup-db.sh
 #
 # Cron example (daily at 2 AM, keep 7 days):
-#   0 2 * * * cd /home/deploy/ReDIB-Portal && ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
+#   0 2 * * * cd /home/deploy/ReDIB-Portal && ALERT_RECIPIENT=coordinator@redib.net HEALTHCHECK_URL= ./scripts/backup-db.sh >> /home/deploy/backups/redib/backup.log 2>&1
+#
+# Each run writes two files to BACKUP_DIR:
+#   redib_db_<timestamp>.sql.gz     the PostgreSQL dump
+#   redib_files_<timestamp>.tar.gz  .env (plus anything in BACKUP_FILES) and
+#                                   every uploaded file, as media/ — copied out
+#                                   of the web container's media volume
 #
 # IMPORTANT: The "cd /home/deploy/ReDIB-Portal &&" prefix is required because
 # this script uses a relative path to docker-compose.prod.yml. Without it,
@@ -59,10 +65,11 @@
 #      - On successful completion the script hits HEALTHCHECK_URL once.
 #      - If the ping never arrives (the failure modes the email can't catch),
 #        the service pages you after its grace period.
-#      - Leave HEALTHCHECK_URL empty to disable. Set it in .env once you have
-#        a URL from the service; no other changes needed.
+#      - Leave HEALTHCHECK_URL empty to disable. Set it on the cron line once
+#        you have a URL from the service (DEPLOYMENT.md §6.4).
 #
-# Env vars:
+# Env vars — read from this script's own environment (the cron line), NEVER
+# from .env; setting them in .env does nothing:
 #   ALERT_RECIPIENT    — email address for failure alerts (default
 #                        coordinator@redib.net).
 #   HEALTHCHECK_URL    — URL to GET on success (default empty = no ping).
@@ -81,8 +88,9 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/redib_db_${TIMESTAMP}.sql.gz"
 FILES_BACKUP="${BACKUP_DIR}/redib_files_${TIMESTAMP}.tar.gz"
 
-# Files/directories to back up (paths relative to project root).
-# Edit this list to add anything not tracked in git.
+# Project files/directories to back up (paths relative to project root), for
+# anything not tracked in git. Uploaded files (the media volume) are always
+# included on top of this list; they don't need an entry here.
 BACKUP_FILES=(
     ".env"
 )
@@ -113,8 +121,11 @@ send_alert() {
 # an alert email. We guard against re-entry with ALERT_FIRED so nested
 # failures in send_alert itself don't loop.
 ALERT_FIRED=0
+STAGE_DIR=""
 on_exit() {
     local rc=$?
+    # The files archive is assembled in a staging dir; never leave it behind.
+    if [ -n "${STAGE_DIR}" ]; then rm -rf "${STAGE_DIR}"; fi
     if [ "${rc}" -ne 0 ] && [ "${ALERT_FIRED}" -eq 0 ]; then
         ALERT_FIRED=1
         send_alert \
@@ -196,23 +207,32 @@ fi
 BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
 echo "[$(date)] Backup validated: ${BACKUP_FILE} (${BACKUP_SIZE})"
 
-# Back up key files not tracked in git
-VALID_FILES=()
+# --- Files archive: project files + every uploaded file ---
+# One redib_files_*.tar.gz holding the BACKUP_FILES entries and the whole media
+# volume as media/ (newsletters, signed application PDFs, and anything else
+# uploaded in future — nothing has to be remembered). The media copy streams
+# out of the running web container. If it fails (web down, disk full), the run
+# fails like a bad dump does: the alert fires and the prune below is skipped.
+STAGE_DIR=$(mktemp -d "${BACKUP_DIR}/.files_${TIMESTAMP}.XXXXXX")
 for f in "${BACKUP_FILES[@]}"; do
     if [ -e "${f}" ]; then
-        VALID_FILES+=("${f}")
+        cp -a --parents "${f}" "${STAGE_DIR}/"
     else
         echo "[$(date)] WARNING: ${f} not found, skipping"
     fi
 done
 
-if [ ${#VALID_FILES[@]} -gt 0 ]; then
-    tar -czf "${FILES_BACKUP}" "${VALID_FILES[@]}"
-    FILES_SIZE=$(du -h "${FILES_BACKUP}" | cut -f1)
-    echo "[$(date)] Files backup completed: ${FILES_BACKUP} (${FILES_SIZE})"
-else
-    echo "[$(date)] No files to back up, skipping file archive"
-fi
+mkdir -p "${STAGE_DIR}/media"
+docker compose -f "${COMPOSE_FILE}" exec -T web tar -C /app/media -cf - . \
+    | tar -C "${STAGE_DIR}/media" -xf -
+MEDIA_COUNT=$(find "${STAGE_DIR}/media" -type f | wc -l)
+
+tar -czf "${FILES_BACKUP}" -C "${STAGE_DIR}" .
+# The archive must read back cleanly before we call the run good.
+tar -tzf "${FILES_BACKUP}" > /dev/null
+rm -rf "${STAGE_DIR}"; STAGE_DIR=""
+FILES_SIZE=$(du -h "${FILES_BACKUP}" | cut -f1)
+echo "[$(date)] Files backup completed: ${FILES_BACKUP} (${FILES_SIZE}; ${MEDIA_COUNT} uploaded file(s))"
 
 # --- Retention pruning ---
 # Only reached when every validation gate above has passed. If any gate
@@ -231,7 +251,7 @@ fi
 # Reached only on full success (any earlier exit 1 short-circuits this).
 # Hitting HEALTHCHECK_URL tells the external monitor "we ran, we're fine".
 # If the ping never arrives — because cron died, the host is off, etc. —
-# the external service pages the operator. See DEPLOYMENT.md §6.3 for
+# the external service pages the operator. See DEPLOYMENT.md §6.4 for
 # how to get a URL from healthchecks.io (or equivalent). Empty = disabled.
 if [ -n "${HEALTHCHECK_URL}" ]; then
     curl -fsS --max-time 10 --retry 3 "${HEALTHCHECK_URL}" > /dev/null \

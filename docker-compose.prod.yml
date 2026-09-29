@@ -4,7 +4,8 @@
 #   1. Copy .env.production.template to .env and fill in all values
 #   2. Start all services:  docker compose -f docker-compose.prod.yml up -d --build
 #   3. Create superuser:    docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
-#   4. Load initial data:   docker compose -f docker-compose.prod.yml exec web python manage.py populate_redib_nodes
+#   4. Load initial data:   docker compose -f docker-compose.prod.yml exec web python manage.py setup_base_database
+#      (every reference TSV, in dependency order; see docs/DEPLOYMENT.md § 4.5)
 #
 # Migrations, collectstatic, and email templates are handled automatically by the entrypoint script.
 
