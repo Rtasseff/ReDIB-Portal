@@ -31,6 +31,9 @@ writes the host's checkout. `--output <path>` writes a file instead, and
 import csv
 import io
 import sys
+from pathlib import Path
+
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -111,6 +114,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         rows = export_rows()
+        self._warn_unknown_organizations(rows)
         if options['format'] == 'xlsx':
             data = self._xlsx(rows)
         else:
@@ -129,6 +133,23 @@ class Command(BaseCommand):
             # Bytes, so the file is UTF-8 with CRLF whatever the locale is.
             sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
+
+    def _warn_unknown_organizations(self, rows):
+        """An organization created from the profile form is in the DB but not
+        in data/organizations.tsv. setup_base_database on a fresh database
+        would then fail at the users step, so say so (on stderr, which the
+        redirect into users.tsv doesn't catch)."""
+        path = Path(settings.BASE_DIR) / 'data' / 'organizations.tsv'
+        if not path.exists():
+            return
+        with open(path, encoding='utf-8', newline='') as f:
+            known = {(r.get('name') or '').strip() for r in csv.DictReader(f, delimiter='\t')}
+        missing = sorted({r['organization_name'] for r in rows} - known - {''})
+        for name in missing:
+            self.stderr.write(self.style.WARNING(
+                f'Warning: organization "{name}" is not in data/organizations.tsv. '
+                f'Add its row there too, or a fresh setup_base_database fails at the users step.'
+            ))
 
     @staticmethod
     def _tsv(rows):

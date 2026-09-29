@@ -308,7 +308,11 @@ origin pre-fills the application's "Origin of Funds".
    `docker compose -f docker-compose.prod.yml exec web python manage.py shell`.
 2. Export: `docker compose -f docker-compose.prod.yml exec -T web python manage.py export_redib_users > data/users.tsv`
    (on dev, `python manage.py export_redib_users > data/users.tsv`).
-3. Check `git diff data/users.tsv` shows only the change you made.
+3. Check `git diff data/users.tsv` shows only the change you made. If the export warns
+   that an organization is not in `data/organizations.tsv` (someone created it from
+   the profile form), add its row there too (see
+   [Add an organization](#add-an-organization)). Otherwise a fresh
+   `setup_base_database` fails at the users step.
 4. Commit only `data/` with a subject like
    `Users: add evaluator Jane Doe (jane.doe@example.org), preclinical;clinical`. The body
    says what was changed. Push. If the SharePoint copy is kept, refresh it with

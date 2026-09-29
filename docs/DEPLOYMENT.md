@@ -741,6 +741,9 @@ docker compose -f docker-compose.prod.yml exec -T web \
 git diff data/users.tsv   # only the change you made
 ```
 
+If the export warns that an organization is missing from `data/organizations.tsv`, add
+that row too, or a fresh `setup_base_database` fails at the users step.
+
 `--format xlsx` writes the spreadsheet copy for SharePoint. The recipes (add a user, add
 an evaluator, retire a role, add equipment, add an organization) are in
 [data/README.md § Recipes](../data/README.md#recipes).

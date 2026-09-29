@@ -158,8 +158,13 @@ deploys by 10-10, before the 10-13 → 10-15 change freeze. If a piece isn't rea
 
 ## Status
 
-- [x] #82 · [x] #83 · [x] export · [x] #88 a/c/d/e/f · [x] #90 · [x] docs · [ ] /code-review · [ ] PR
-- **Suite:** baseline 494 OK → 520 OK (26 new, `tests/test_commands_cleanup.py`).
+- [x] #82 · [x] #83 · [x] export · [x] #88 a/c/d/e/f · [x] #90 · [x] docs · [x] /code-review · [x] PR
+- **Suite:** baseline 494 OK → 522 OK (28 new, `tests/test_commands_cleanup.py`).
+- **/code-review (medium):** one finding. The export can write an organization the
+  profile form created that isn't in `organizations.tsv`, and a fresh
+  `setup_base_database` would then fail at step 3. **Fixed:** the export warns on stderr
+  for each such organization (tested), and the recipe in `data/README.md` and
+  `DEPLOYMENT.md` says to add the row.
   `check` clean; `makemigrations --check` no changes.
 - **#90 / #88(b):** nothing outside docs used `seed_dev_data`, so the chain is
   retired: `seed_dev_data`, `seed_test_applicants`, `setup_test_database` deleted;

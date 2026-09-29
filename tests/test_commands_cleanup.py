@@ -342,6 +342,23 @@ class ExportUsersTest(TestCase):
         self.assertEqual(rows['both@example.org']['roles'], 'node_coordinator:N1;coordinator')
         self.assertEqual(rows['staff@example.org']['roles'], '')
 
+    def test_warns_on_organization_missing_from_organizations_tsv(self):
+        """Review finding: an org created from the profile form would make a
+        fresh setup_base_database fail at the users step."""
+        org = Organization.objects.create(name='Hospital Made Up In The Profile Form', short_name='H')
+        User.objects.create_user(email='staff@example.org', is_staff=True, organization=org)
+        err = io.StringIO()
+        out = io.StringIO()
+        call_command('export_redib_users', stdout=out, stderr=err)
+        self.assertIn('Hospital Made Up In The Profile Form', err.getvalue())
+        self.assertNotIn('Warning', out.getvalue())
+
+    def test_no_warning_for_committed_data(self):
+        self.load_reference_data()
+        err = io.StringIO()
+        call_command('export_redib_users', stdout=io.StringIO(), stderr=err)
+        self.assertEqual(err.getvalue(), '')
+
     def test_retired_role_is_recorded_not_regranted(self):
         """#81: a retired evaluator is exported under retired_roles, and
         loading the export back leaves the role inactive. The loader reads
