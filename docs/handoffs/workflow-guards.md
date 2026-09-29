@@ -137,6 +137,8 @@ cut it and say so.
 
 ## Context & decisions already made
 
+- **Main moved after this branch was cut: #92, `3da147b`, rebased in on 2026-09-29.** Bot sign-ups are stopped. The applicant role is now granted on email *confirmation* (`core/signals.py`), the signup form has a browser check and a honeypot, and there is a new command, `purge_unverified_signups`. Prod found that most of the ~1,200–1,480 accounts were bots. **Suite baseline is now 494.** Read `3da147b`'s message before you start. Don't change what it built.
+- **For this branch:** nothing in #92 overlaps your scope. `USER_GUIDE.md` and `ARCHITECTURE.md` changed on `main` (the signup and role wording, and the new command), so edit the versions you now have.
 - The governing rule: *a scheduled task may compute and notify; only a human writes a
   transition*. The call auto-open/close is the documented exception (`ARCHITECTURE.md`
   §3.3). Don't widen it.
