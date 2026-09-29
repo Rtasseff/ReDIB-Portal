@@ -534,9 +534,9 @@ and it goes much faster if it has already happened. Clicking
 **Next: Preview & Submit** on step 5 triggers a short check:
 
 - If you **left the feasibility box unticked**, the portal asks whether you
-  would like to request a consult. **Yes, request a consult** emails the node
-  coordinator at every node with equipment on your draft; they will contact
-  you. Your draft is saved and you return to **My Applications**.
+  would like to request a consult. **Yes, request a consult** emails every
+  node coordinator at each node with equipment on your draft (or ReDIB, for a
+  node with no coordinator); they will contact you. Your draft is saved and you return to **My Applications**.
   **No, continue without a consult** takes you to the preview.
 - If you **ticked the box**, the portal asks you to confirm you really did
   speak to the node. **Yes, I confirmed feasibility** continues to the
@@ -982,7 +982,8 @@ Applications that have passed feasibility show as **Pending Assignment**.
   is available.
 - **Assign** on an application adds one evaluator by hand (evaluators whose
   areas match are marked ✓ in the list). **Remove** takes off an evaluator who
-  has not submitted yet.
+  has not submitted yet. If everyone left has submitted, the application moves
+  on to **Evaluated**.
 
 **Evaluators are emailed the moment they are assigned** — there is no review
 step before the emails go out. You can assign while the call is still open (the
@@ -1031,14 +1032,9 @@ straight away.
 
 The **Resolution** page lists released calls that still have applications
 waiting for a node decision, with counts of accepted, waitlisted and rejected
-applications. **Review** opens a call's list, ranked by score.
-
-That call page also carries older tools from before the nodes made the
-decisions — **Decide**, **Apply Bulk Resolution** and
-**Finalize Resolution & Send Notifications**. Leave them alone: they record
-decisions on the nodes' behalf, and *Finalize* re-sends every applicant's
-decision email. Each applicant is already emailed when their nodes finish
-deciding.
+applications. **View** opens a call's list of those applications, ranked by
+score. Both pages are read-only: the node coordinators make the decisions, and
+each applicant is emailed as soon as their last node decides.
 
 The portal chases evaluators, applicants and nodes for you (see the email
 list below). From an application's page you can also **Reinstate** it or
@@ -1097,8 +1093,8 @@ organization on their profile.
   each time a node coordinator (or another coordinator) uses Expire, Accept on
   Behalf or Reinstate, with their reason.
 - When a node has **no active node coordinator**, the portal sends you what
-  would have gone to them: new-application alerts, public consult requests and
-  stalled-acceptance reminders. Ask an administrator to give the node a
+  would have gone to them: new-application alerts, public and pre-submission
+  consult requests, and stalled-acceptance reminders. Ask an administrator to give the node a
   coordinator — until then nobody can do that node's feasibility review.
 
 ---

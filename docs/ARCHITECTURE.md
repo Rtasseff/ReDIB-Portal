@@ -61,19 +61,21 @@ call it (`manage.py shell`, or `scripts/rehearsal.py beat`). Prod runs six servi
 draft ─Announce─▶ announced ─start date (auto)─▶ open ─end date (auto)─▶ closed ─Mark Call Resolved─▶ resolved
 draft or announced ─Publish / Open Now─▶ open        (refused while submission_start is in the future)
 open ─Close Submissions─▶ closed                      (manual, any time)
+announced ─end date passed (auto)─▶ closed           (never opened; the window is gone)
 ```
 
 | Transition | Written by | Code |
 |---|---|---|
-| draft → announced | Coordinator, **Announce**. Refused with no equipment, or once `submission_start` has passed | `calls.views.call_announce` |
-| draft / announced → open | Coordinator, **Publish** (the button reads **Open Now** on an announced call) | `calls.views.call_publish` |
+| draft → announced | Coordinator, **Announce**. Refused unless `draft`, with no equipment, or once `submission_start` has passed | `calls.views.call_announce` |
+| draft / announced → open | Coordinator, **Publish** (the button reads **Open Now** on an announced call). Refused from any other status | `calls.views.call_publish` |
 | announced → open | Automatic when `submission_start ≤ now < submission_end` | `calls.services.open_announced_calls`, called by beat `check_call_deadlines` and on every load of `/calls/` or `/calls/<pk>/` |
-| open → closed | Automatic after `submission_end`: the same beat task, plus the page-load fallback `calls.views._auto_close_expired_calls`. Also `assign_evaluators_to_call` run on an open call past its deadline, and the coordinator's **Close Submissions** | `calls/tasks.py`, `calls/views.py`, `evaluations/tasks.py` |
+| open → closed; announced → closed | Automatic after `submission_end`: `calls.services.close_expired_calls`, called by the same beat task and by the page-load fallback `calls.views._auto_close_expired_calls`. It saves each call, so history records it. An announced call whose whole window has passed closes the same way. Also `assign_evaluators_to_call` run on an open call past its deadline, and the coordinator's **Close Submissions** (refused unless `open`) | `calls/services.py`, `calls/views.py`, `evaluations/tasks.py` |
 | closed → resolved | Coordinator, **Mark Call Resolved**. Refused while any application is `evaluated`. Sets `is_resolution_locked` and sends no email | `calls.views.call_resolve` |
 
 The edit form cannot change `status` (#27). It warns when saved dates disagree with the
 status (`_dates_vs_status_warning`). Reopening a closed call needs a developer (backlog
-#54). Start dates save as 00:00 and end dates as 23:59:59, Madrid time.
+#54). Start dates save as 00:00 and end dates as 23:59:59, Madrid time. Announce, Publish
+and Close are POST-only (#85): a GET, such as an old link, gets a 405 and changes nothing.
 `Call.resolutions_released` is a flag rather than a status: the release gate (§6.4).
 
 ### 3.2 Application statuses
@@ -109,10 +111,10 @@ completed ■
 | under_feasibility_review → draft | A node coordinator picks **Request Edits** | `feasibility_review` |
 | under_feasibility_review → rejected_feasibility / pending_evaluation | Whoever decides the last pending review. Any rejection gives `rejected_feasibility` | `feasibility_review` |
 | pending_evaluation → under_evaluation | Coordinator, **Auto-Assign Evaluators** (moves only applications that got ≥1 evaluator), or a manual assignment | `evaluations.tasks.assign_evaluators_to_call` (run synchronously by `auto_assign_call`); `evaluations.views.manual_assign_evaluator` |
-| under_evaluation → evaluated | The evaluator who submits the last outstanding evaluation. `final_score` becomes the mean of the `total_score`s | `evaluations.utils.check_and_transition_application` |
-| evaluated → accepted / pending / rejected | The node coordinator whose decision completes the set. Older route: a ReDIB coordinator on the Resolution page (§10) | `NodeResolutionService.aggregate_application_resolution`; `ResolutionService.apply_resolution` / `bulk_auto_allocate` |
+| under_evaluation → evaluated | The evaluator who submits the last outstanding evaluation, or the coordinator who **Remove**s the last outstanding one (not the only one). `final_score` becomes the mean of the `total_score`s | `evaluations.utils.check_and_transition_application`, from `submit_evaluation` and `remove_evaluator_assignment` |
+| evaluated → accepted / pending / rejected | The node coordinator whose decision completes the set | `NodeResolutionService.aggregate_application_resolution` |
 | accepted / pending → declined_by_applicant | Applicant, **Decline**, before the deadline | `application_acceptance` |
-| accepted → completed | Applicant or node coordinator, **Mark Complete + Log Hours**; every line needs its hours | `access.views.mark_application_complete` |
+| accepted → completed | Applicant or node coordinator, **Mark Complete + Log Hours**; every line needs its hours. Refused unless `accepted` and the applicant has accepted | `access.views.mark_application_complete` |
 | pending → accepted | **Promote to Accepted**, once the applicant has accepted the waitlist offer | `promote_waitlisted_application` |
 | pending → not_reached | **Not Reached This Call**; needs the same acceptance, plus a reason | `close_out_waitlisted_application` |
 | accepted / pending → expired | **Expire**, only after the deadline has passed with no answer | `expire_stalled_application` |
@@ -144,10 +146,9 @@ writes a transition."** It holds for applications: no beat task writes
   fallback, which any visitor fires, even anonymous ones. They fit the rule because a
   coordinator chose the dates and pressed Announce or Publish; the automation only
   carries out that choice. They touch `Call.status` only. With
-  `CALL_ANNOUNCEMENT_EMAILS_ENABLED` off, auto-open emails nobody. Two caveats:
-  - Auto-close uses queryset `.update()`, so **no history row records it**.
-  - The page fallback also closes an *announced* call whose whole window has passed;
-    the beat task does not.
+  `CALL_ANNOUNCEMENT_EMAILS_ENABLED` off, auto-open emails nobody. Both paths call the
+  same `calls.services` functions, so they agree, and each call is saved on its own, so
+  history records every change (with no user).
 
 Some deadline states are never stored, only worked out when a page loads: the evaluation
 lockout (`is_evaluation_locked`, deadline + 7 days), `acceptance_deadline_passed` and
@@ -247,11 +248,9 @@ serves `/media/` and `/static/` itself only when `DEBUG` is on.
 `has_competitive_funding=True` cannot be rejected at resolution unless at least one
 completed evaluation recommended `denied`; always test with
 `Application.has_any_denied_evaluation`. *Enforced in:*
-`NodeResolutionService.apply_node_resolution` and `ResolutionService.apply_resolution`
-(raise `ValidationError`); `NodeResolutionForm` and `ApplicationResolutionForm` (drop
-the reject choice); `bulk_auto_allocate` (always accepts funded applications). It does
-not cover feasibility rejection, an evaluator's `denied`, Not Reached This Call or
-Expire.
+`NodeResolutionService.apply_node_resolution` (raises `ValidationError`) and
+`NodeResolutionForm` (drops the reject choice). It does not cover feasibility rejection,
+an evaluator's `denied`, Not Reached This Call or Expire.
 
 **6.2 Feasibility.** Submit gives each node with requested equipment one
 `FeasibilityReview`, resets them all to `pending`, and emails every active node
@@ -401,11 +400,11 @@ which calls `send_mail` directly.
 | `equipment_consult_request` / `_confirmation` | Public consult form → `calls.services` | Every node coordinator of each node (ReDIB coordinators if a node has none) / the requester |
 | `application_received` | `application_submit` | Applicant's account email |
 | `feasibility_request` | `application_submit` | Every node coordinator of each node; ReDIB coordinators for a node with none |
-| `feasibility_consult_request` | Wizard Step 5 consult request (`_send_consult_request_emails`) | The **first** active node coordinator of each node |
+| `feasibility_consult_request` | Wizard Step 5 consult request (`_send_consult_request_emails`) | Every node coordinator of each node (ReDIB coordinators if a node has none), via `calls.services.consult_recipients`, the public consult's rule |
 | `feasibility_edits_requested`, `feasibility_complete` | `feasibility_review` | Applicant |
 | `evaluation_assigned` | `assign_evaluators_to_call`, `manual_assign_evaluator` | Evaluator |
 | `evaluations_complete` | `check_and_transition_application` (after release); **Release to Nodes** | The application's node coordinators |
-| `resolution_accepted` / `_pending` / `_rejected` | `send_single_resolution_notification_task` (after the node decisions are combined, and on promotion); legacy **Finalize** → `send_resolution_notifications_task` | Applicant |
+| `resolution_accepted` / `_pending` / `_rejected` | `send_single_resolution_notification_task` (after the node decisions are combined, and on promotion) | Applicant |
 | `handoff_notification` | `_send_handoff_email`: applicant accepts, **Promote to Accepted**, **Accept on Behalf** | Applicant; node coordinators in CC |
 | `acceptance_reminder` | Beat; **Reinstate** | Applicant |
 | `acceptance_expired` | **Expire**, if "notify applicant" is ticked | Applicant |
@@ -460,7 +459,6 @@ which calls `send_mail` directly.
 
 | Item | Status |
 |---|---|
-| The **Resolution** page (`applications:resolution_dashboard` → `call_resolution_detail`): per-application resolve, bulk auto-allocate by score threshold, and **Finalize Resolution & Send Notifications** | The ReDIB-coordinator route from before node resolution. Still in the coordinator sidebar, still behind the release gate. **Finalize re-sends `resolution_*` to every resolved applicant of the call**, so never press it on a call the nodes have resolved. **Mark Call Resolved** locks the call, which hides the button |
 | `access.models.AccessGrant` | Deprecated; create no rows |
 | `signed_pdf*` fields; `applications:upload_signed_pdf` | No signature is required any more; the URL redirects to the preview |
 | `applications:handoff_dashboard` / `mark_completed` | Linked from nowhere. Sets `is_completed` without changing `status`; the linked path is `access:mark_complete` |
@@ -474,9 +472,9 @@ which calls `send_mail` directly.
 |---|---|
 | **An email didn't go out** | Admin → Email logs, filtered by recipient. **No row** means the code never reached the send. Check the job's filter and schedule (§7), the recipient's `NotificationPreference`, the 24 h guard, and in prod `docker compose logs celery celery-beat`. For call announcements, check `CALL_ANNOUNCEMENT_EMAILS_ENABLED`. **A `failed` row**: read `error_message`; "does not exist" can also mean the template is switched off. Signup and password emails are never logged |
 | **An email's wording is wrong** | `seed_email_templates.py`, not the admin: the next deploy overwrites admin edits |
-| **A status looks wrong** | The object's admin **History**, the writer tables in §3, and the `[…]` stamps in `resolution_comments`. Call auto-closes leave no history row; an admin edit that is refused was blocked by `VALID_TRANSITIONS` |
+| **A status looks wrong** | The object's admin **History**, the writer tables in §3, and the `[…]` stamps in `resolution_comments`. An admin edit that is refused was blocked by `VALID_TRANSITIONS` |
 | **Stuck in `under_feasibility_review`** | A `FeasibilityReview` still `pending`, often at a node with no active coordinator (#48) |
-| **Stuck in `under_evaluation`** | An incomplete `Evaluation`, or an evaluator locked out after deadline + 7. Removing an evaluator does not re-run the completion check |
+| **Stuck in `under_evaluation`** | An incomplete `Evaluation`, or an evaluator locked out after deadline + 7. Removing the last outstanding evaluator moves it on; removing the only one leaves it for a new assignment |
 | **A node coordinator has nothing to resolve** | `Call.resolutions_released`; whether the application is `evaluated`; whether their node already decided (`NodeResolution`); their `UserRole` `node` and `is_active` |
 | **A user can't open a page** | `user.roles.filter(is_active=True)`, the view's decorator and object check (§5), an incomplete profile (redirects to `/profile/`), and whether the account is active |
 | **Auto-assign left gaps** | The warnings shown after **Auto-Assign Evaluators**, the pool size (role active *and* account active), conflict of interest by organization name, and the load cap |
