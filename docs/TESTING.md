@@ -10,7 +10,7 @@ source venv/bin/activate
 python manage.py test tests reports
 ```
 
-**479 tests, about 2¼ minutes** (134 s on the dev laptop, 2026-09-28). All
+**494 tests, about 2¼ minutes** (129 s on the dev laptop, 2026-09-29). All
 should pass on `main`.
 
 **Why the two labels.** `tests/` has no `__init__.py`, so a bare
@@ -51,6 +51,7 @@ area rather than by name:
 | Area | Files (`tests/` unless noted) |
 |---|---|
 | Calls: announce, open, edit, resolve; public pages | `test_public_calls`, `test_call_edit_warning`, `test_closeout_call_resolve` |
+| Signup bot protection, applicant role on email confirmation, purging bot accounts (#92) | `test_signup_bot_protection` |
 | Application wizard and applicant form | `test_wizard_save_draft`, `test_wizard_step5_consult`, `test_batch2_phase5`, `test_eval_reminders_draft_nudge` |
 | Feasibility review | `test_feasibility_no_coordinator`, `test_closeout_feasibility_reminder` |
 | Evaluation and evaluator reminders | `test_eval_reminders_digest`, `test_eval_reminders_dispatch` |

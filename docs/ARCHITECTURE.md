@@ -160,7 +160,7 @@ copies (§10).
 
 | App | Owns | Models | Where the code is |
 |---|---|---|---|
-| `core` | Users, roles, organizations, nodes, equipment. Dashboard, profile, user guide page, startup lock | `User` (`is_profile_complete`, `receive_call_notifications`), `UserRole`, `Organization`, `Node` (`name` is `organization.name`), `Equipment` (`category`, `area`) | `views.py` (`dashboard` has one section per role; `profile`; `user_guide`), `decorators.py`, `middleware.py`, `signals.py`, `context_processors.py`, `checks.py` (`core.E001`), `forms.ProfileForm`. Commands: `populate_redib_{organizations,nodes,users,equipment}`, `setup_*_database`, `run_locked` |
+| `core` | Users, roles, organizations, nodes, equipment. Dashboard, profile, user guide page, startup lock | `User` (`is_profile_complete`, `receive_call_notifications`), `UserRole`, `Organization`, `Node` (`name` is `organization.name`), `Equipment` (`category`, `area`) | `views.py` (`dashboard` has one section per role; `profile`; `user_guide`), `decorators.py`, `middleware.py`, `signals.py`, `context_processors.py`, `checks.py` (`core.E001`), `forms.ProfileForm`, `forms.SignupForm` (the signup browser check, #92). Commands: `populate_redib_{organizations,nodes,users,equipment}`, `setup_*_database`, `run_locked`, `purge_unverified_signups` |
 | `calls` | Calls and their equipment; public call pages and consult requests; call lifecycle; per-call reminder buttons | `Call`, `CallEquipmentAllocation`, `ConsultRequest` | `views.py` (public list, detail and consult pages; coordinator manage/create/edit/detail, announce, publish, close, resolve, release, remind, and delete for a draft with no applications), `services.py` (call-audience email, auto-open, consult email, feasibility reminders), `tasks.py` |
 | `applications` | Wizard, feasibility, resolution, acceptance, waitlist, stalled acceptances, execution end, PDF | `Application`, `RequestedAccess` (hours requested / approved / used per equipment line, per-line completion), `FeasibilityReview` and `NodeResolution` (one per node each), `FundingAgency` | `views.py` (~3,000 lines, sectioned by phase), `services/node_resolution.py`, `services/resolution.py` (older route), `tasks.py`, `forms.py`. Commands: `populate_redib_funding_agencies`, `seed_test_applicants`, `seed_dev_data`, `backfill_waitlist_hours_approved` |
 | `evaluations` | Assignment, blind scoring, evaluator reminders | `Evaluation`: six criteria scored 0–2, `total_score` = their sum (max 12), `recommendation` approved/denied, `completed_at` set once all six are scored | `views.py` (evaluator list and form; assignment pages for `coordinator`/`admin`), `utils.py` (`check_and_transition_application`, `get_blind_application_data`, `is_evaluation_locked`, `GRACE_PERIOD_DAYS = 7`), `tasks.py` |
@@ -220,10 +220,26 @@ serves `/media/` and `/static/` itself only when `DEBUG` is on.
   their first name, last name, phone, organization or position is missing. Not
   redirected: staff, superusers, `/accounts/`, `/admin/`, `/help/`, `/static/`,
   `/media/`, and the public consult form and its thanks page.
-- **Applicant role.** Self-signup grants it through
-  `core.signals.assign_applicant_role_on_signup` (on allauth's `user_signed_up`).
-  `application_submit` also calls `get_or_create` for it, as a safety net. Users created
-  by the loaders or in the admin never go through signup.
+- **Applicant role.** Granted when a self-registered user confirms their email, through
+  `core.signals.assign_applicant_role_on_email_confirmed` (on allauth's
+  `email_confirmed`). It is not granted at signup, because bots sign up with strangers'
+  addresses and never confirm (#92). `application_submit` also calls `get_or_create` for
+  it, as a safety net. The signal fires on every confirmation, including an address added
+  later at `/accounts/email/`. So an account that already holds another role is left
+  alone: a loaded or hand-added evaluator, node coordinator or coordinator never gains
+  it this way.
+- **Signup bot protection (#92).** Three checks run on the public signup form:
+  - **Browser check.** `core.forms.SignupForm` (set in `ACCOUNT_FORMS`) refuses a post
+    whose hidden `browser_check` field the page's script did not fill, or that arrived
+    within 3 s of the page rendering. The person sees an error, and the web log gets a
+    `Signup refused by the browser check` warning.
+  - **Honeypot.** allauth's own (`ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = 'website'`). A
+    bot that fills the hidden field sees the normal "verification sent" page, but no
+    account is created and no email is sent.
+  - **Rate limit.** `ACCOUNT_RATE_LIMITS` caps signup POSTs at 10 an hour per IP.
+
+  `purge_unverified_signups` deletes accounts that never confirmed their email and never
+  logged in.
 
 ## 6. Business rules and where they are enforced
 

@@ -170,6 +170,19 @@ ACCOUNT_SIGNUP_FIELDS = [
 ]
 # Note: Username not included in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_USERNAME_REQUIRED=False)
 # Note: Email required via email* in ACCOUNT_SIGNUP_FIELDS (replaces ACCOUNT_EMAIL_REQUIRED=True)
+
+# Bot protection on the public signup form (backlog #92). Each bot signup
+# emailed a verification link to a stranger's address.
+# - SignupForm adds a browser check: a hidden field that the page's JavaScript fills in.
+# - The honeypot is a hidden field only bots fill in. allauth then shows the
+#   normal "verification sent" page but creates no account and sends no email.
+#   templates/account/signup.html renders it, by name.
+# - allauth's default signup limit is 20 a minute per IP. Only one rate per
+#   key type works (they share a cache entry). The IP is the first
+#   X-Forwarded-For entry, which Caddy sets from the real client address.
+ACCOUNT_FORMS = {'signup': 'core.forms.SignupForm'}
+ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = 'website'
+ACCOUNT_RATE_LIMITS = {'signup': '10/h/ip'}
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -204,7 +217,8 @@ CONTACT_EMAIL = env('CONTACT_EMAIL', default='info@redib.net')
 # Mass "call announced" / "now open" emails to every opted-in account.
 # OFF by default, deliberately — see backlog #41. The audience is every
 # account (1193 of 1193 in prod, since receive_call_notifications defaults
-# True and no one has ever opted out), the fan-out has no rate limit, no
+# True and no one has ever opted out; by 2026-09-29, ~1,400 of the accounts
+# were bot sign-ups with strangers' addresses, #92), the fan-out has no rate limit, no
 # retry, no bounce handling and no unsubscribe link, and IONOS's bulk-mail
 # ceiling is unknown. Announcements go out by hand with the /calls/ link
 # until that work is done. Do not flip this on without it.

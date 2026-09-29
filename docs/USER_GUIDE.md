@@ -282,9 +282,9 @@ The portal is at `https://portal.redib.net`.
 
 - **Register:** click **Register** at the top right (or go to
   `/accounts/signup/`), enter your email address twice and a password twice,
-  then click the confirmation link that is emailed to you. New accounts get the
-  **Applicant** role automatically, so you can start an application straight
-  away.
+  then click the confirmation link that is emailed to you. Confirming gives your
+  account the **Applicant** role, so you can start an application straight
+  away. The registration page needs JavaScript switched on in your browser.
 - **Log in:** click **Login** and sign in with your email address and password.
   **Forgot password?** on the login page emails you a link to set a new one.
 - **First login:** the portal takes you to your **Profile** until the required
