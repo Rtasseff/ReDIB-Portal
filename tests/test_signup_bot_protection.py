@@ -118,6 +118,17 @@ class SignupBotProtectionTest(SignupMixin, TestCase):
         self.assertEqual(self.signup(email='person10@example.org').status_code, 429)
         self.assertEqual(User.objects.count(), 10)
 
+    def test_rate_limit_counts_the_client_ip_that_caddy_forwards(self):
+        # Behind Caddy every request comes from the same REMOTE_ADDR. Without
+        # ALLAUTH_TRUSTED_PROXY_COUNT all visitors shared one limit.
+        for i in range(11):
+            response = self.client.post(reverse('account_signup'), {
+                'email': f'person{i}@example.org', 'email2': f'person{i}@example.org',
+                'password1': PASSWORD, 'password2': PASSWORD,
+                'browser_check': browser_check_token(age_seconds=30),
+            }, HTTP_X_FORWARDED_FOR=f'203.0.113.{i}')
+            self.assertEqual(response.status_code, 302)
+
 
 class ApplicantRoleOnConfirmationTest(SignupMixin, TestCase):
 
