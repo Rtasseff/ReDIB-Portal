@@ -139,6 +139,8 @@ deploys by 10-10, before the 10-13 → 10-15 change freeze. If a piece isn't rea
 
 ## Context & decisions already made
 
+- **Main moved after this branch was cut: #92, `3da147b`, rebased in on 2026-09-29.** Bot sign-ups are stopped. The applicant role is now granted on email *confirmation* (`core/signals.py`), the signup form has a browser check and a honeypot, and there is a new command, `purge_unverified_signups`. Prod found that most of the ~1,200–1,480 accounts were bots. **Suite baseline is now 494.** Read `3da147b`'s message before you start. Don't change what it built.
+- **For this branch:** add `purge_unverified_signups` to the `DEVELOPMENT.md` command table (18 commands now). The case for #83 stands, and is stronger: the file lists the few dozen real staff, not every account. **#82:** allauth's reset form (`ResetPasswordForm`, allauth 65.13) looks users up by email and `is_active` only, not by usable password. So "Forgot password" works for a loaded user with an unusable password. Add a test that proves it: load a user, then POST the reset form, and one email goes out with a reset link. Loaded users are created with a verified email and staff roles, so the new purge never touches them. Keep it that way.
 - Ryan, 2026-09-29: remove `--sync` for users, add an export, and delete the dead
   scripts and commands listed above. His reasoning on why `data/*.tsv` exists at all
   is backlog #91. Don't re-open it.
