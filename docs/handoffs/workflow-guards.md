@@ -1,5 +1,7 @@
 # Handoff — `feature/workflow-guards`
 
+> **Merged 2026-09-29 as PR #45** (suite 545 with both branches in). This file is now the record of the branch, not a task list.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/workflow-guards.md on the branch. Keep "Status" current. -->
 

@@ -177,8 +177,6 @@ live right now.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
-| `commands-cleanup/` | `feature/commands-cleanup` | 8002 | 2026-09-29 | **Active.** #82 no default password, #83 no `--sync` for users, `export_redib_users`, #88 loader/dev-command fixes, #90 dead tooling. PR by 10-06. Brief: `docs/handoffs/commands-cleanup.md` on the branch. |
-| `workflow-guards/` | `feature/workflow-guards` | 8003 | 2026-09-29 | **Active.** #84 remove Decide/Bulk/Finalize, #85 call actions POST + status guards, #86 view gaps, #87 copy + consult fan-out. PR by 10-06. Brief: `docs/handoffs/workflow-guards.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 

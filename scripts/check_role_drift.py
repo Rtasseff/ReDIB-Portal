@@ -139,4 +139,5 @@ else:
 print('\n' + '-' * 72)
 print(f'active UserRole rows: {UserRole.objects.filter(is_active=True).count()}')
 print(f'inactive UserRole rows: {UserRole.objects.filter(is_active=False).count()}')
-print('Inactive rows are never touched by the loader and are not compared above.')
+print('Inactive rows are not compared above. A load re-activates any role listed in the')
+print('`roles` column; a retired role belongs in `retired_roles` (export_redib_users writes it).')
