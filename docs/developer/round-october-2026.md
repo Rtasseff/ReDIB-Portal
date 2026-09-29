@@ -45,6 +45,8 @@ completion reminders); every one of them is now fixed and deployed (rows 2,
 
 **Documentation audit, 2026-09-28.** Every current doc was checked against the code. The user guide is at v1.4, and `docs/ARCHITECTURE.md` is new: see [docs/README.md](../README.md). The audit filed backlog #82–#90. Two of them have dates: **#82** (loaded accounts get the password `changeme123`) needs a read-only check on prod now; **#84** (legacy resolution tools, including a *Finalize* that re-sends every decision email) must be dealt with before the resolution phase. The rest are deferred.
 
+**Audit fixes, 2026-09-29 (Ryan: do all of #82–#90 before the freeze).** Two worktrees run in parallel: `commands-cleanup` (#82, #83, #88, #90, plus a users export, per #91) and `workflow-guards` (#84, #85, #86, #87). #89 (uploaded files into the `redib_files` backup) is done on `main`. PRs by **10-06**, merged by **10-08**, prod deploy by **10-10**, no migrations expected. After that deploy, prod regenerates `data/users.tsv` with `export_redib_users` and commits it, which also settles #81.
+
 ### Do these, in this order
 
 | # | What | By | Who |
