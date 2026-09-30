@@ -177,6 +177,7 @@ live right now.
 | Dir (`~/projects/ReDIB-Portal-wt/`) | Branch | Port | Since | Status |
 |---|---|---|---|---|
 | `marketing-site/` | `feature/marketing-site` | 8001 | 2026-08-17 | **Parked.** Wagtail rebuild of redib.net; ships next year, not for the October 2026 call. Handoff: `docs/handoffs/marketing-site.md` on the branch. |
+| `resubmit-after-edits/` | `feature/resubmit-after-edits` | 8002 | 2026-09-30 | **Active, held.** A draft sent back for edits can be resubmitted after the deadline, and a first submission needs `call.is_open` (ultrareview findings 1 and 4). PR by 10-16; **merge and deploy on 11-02**, after submissions close. Brief: `docs/handoffs/resubmit-after-edits.md` on the branch. |
 
 ## Marketing branch — why it is parked in a worktree
 
