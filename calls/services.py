@@ -88,7 +88,7 @@ def open_announced_calls(request=None, send_emails=True):
     now = timezone.now()
     # Only calls whose window is *currently* open. An announced call whose end
     # date has already passed (e.g. status edited by hand) must not fire the
-    # 'Now Open' email; close_expired_calls closes it.
+    # 'Now Open' email; _auto_close_expired_calls / check_call_deadlines close it.
     due = list(Call.objects.filter(
         status='announced', submission_start__lte=now, submission_end__gt=now,
     ))
@@ -120,103 +120,42 @@ def open_announced_calls(request=None, send_emails=True):
     return codes, emails_sent
 
 
-def close_expired_calls():
-    """Close calls whose submission window has passed.
-
-    Shared by the daily beat task (`check_call_deadlines`) and the view-level
-    fallback, so both give the same result: an `open` call past
-    `submission_end` closes, and so does an `announced` call whose whole
-    window has passed (it was never opened). Each call is saved on its own so
-    django-simple-history records the change. Sends nothing.
-
-    Returns the codes of the calls closed.
-    """
-    from .models import Call
-
-    now = timezone.now()
-    due = list(Call.objects.filter(
-        status__in=['open', 'announced'], submission_end__lt=now,
-    ))
-    codes = []
-    for call in due:
-        call.status = 'closed'
-        call.save(update_fields=['status', 'updated_at'])
-        codes.append(call.code)
-
-    if codes:
-        logger.info(
-            "Auto-closed %d call(s) past submission deadline: %s",
-            len(codes), ', '.join(codes)
-        )
-    return codes
-
-
-def consult_recipients(nodes):
-    """Who hears about a consult on `nodes`.
-
-    Every active node coordinator of each node, not just the first one; and,
-    when any node has none, every active ReDIB coordinator instead, so the
-    request is not lost. Shared by the public consult and the application
-    wizard's pre-submission consult.
-
-    Returns (coordinators_by_node, nodes_without_coordinator, fallback_users):
-    `coordinators_by_node` maps each covered node to its coordinator Users;
-    `fallback_users` is empty when every node is covered.
-    """
-    from core.models import UserRole
-
-    by_node = {}
-    nodes_without_coord = []
-    for node in nodes:
-        users = [
-            role.user for role in UserRole.objects
-            .filter(node=node, role='node_coordinator', is_active=True)
-            .select_related('user')
-        ]
-        if users:
-            by_node[node] = users
-        else:
-            nodes_without_coord.append(node)
-
-    fallback_users = []
-    if nodes_without_coord:
-        fallback_users = [
-            role.user for role in UserRole.objects
-            .filter(role='coordinator', is_active=True)
-            .select_related('user')
-        ]
-    return by_node, nodes_without_coord, fallback_users
-
-
 def send_consult_request_emails(consult, call_url, consult_requests_url):
     """Notify every active node coordinator of each node in `consult`.
 
-    Recipients come from `consult_recipients`. Returns (sent_count,
-    nodes_without_coordinator). Each send is wrapped individually so one bad
-    address doesn't strand the rest; the caller wraps the whole call again to
-    survive an unavailable broker.
+    Deliberately emails *all* active coordinators of a node, not just the
+    first one. Returns (sent_count, nodes_without_coordinator). Each send is
+    wrapped individually so one bad address doesn't strand the rest; the
+    caller wraps the whole call again to survive an unavailable broker.
     """
     from communications.tasks import send_email_from_template
+    from core.models import UserRole
 
     sent = 0
-    grouped = consult.equipment_by_node()
-    by_node, nodes_without_coord, fallback_users = consult_recipients(grouped.keys())
+    nodes_without_coord = []
 
-    for node in nodes_without_coord:
-        logger.warning(
-            "Consult request %s: node %s has no active coordinator",
-            consult.pk, node.code,
+    for node, equipment_items in consult.equipment_by_node().items():
+        equipment_list = ', '.join(item.name for item in equipment_items)
+        coordinators = list(
+            UserRole.objects
+            .filter(node=node, role='node_coordinator', is_active=True)
+            .select_related('user')
         )
+        if not coordinators:
+            nodes_without_coord.append(node)
+            logger.warning(
+                "Consult request %s: node %s has no active coordinator",
+                consult.pk, node.code,
+            )
+            continue
 
-    for node, coordinators in by_node.items():
-        equipment_list = ', '.join(item.name for item in grouped[node])
-        for user in coordinators:
+        for role in coordinators:
             try:
                 send_email_from_template.delay(
                     template_type='equipment_consult_request',
-                    recipient_email=user.email,
+                    recipient_email=role.user.email,
                     context_data={
-                        'coordinator_name': user.get_full_name() or user.email,
+                        'coordinator_name': role.user.get_full_name() or role.user.email,
                         'requester_name': consult.name,
                         'requester_email': consult.email,
                         'requester_phone': consult.phone,
@@ -232,26 +171,27 @@ def send_consult_request_emails(consult, call_url, consult_requests_url):
                         'call_url': call_url,
                         'consult_requests_url': consult_requests_url,
                     },
-                    recipient_user_id=user.id,
+                    recipient_user_id=role.user.id,
                 )
                 sent += 1
             except Exception:
                 logger.exception(
                     "Consult request %s: email failed for node %s coordinator %s",
-                    consult.pk, node.code, user.email,
+                    consult.pk, node.code, role.user.email,
                 )
 
     if nodes_without_coord:
         _alert_redib_coordinators(
-            consult, nodes_without_coord, fallback_users, call_url, consult_requests_url
+            consult, nodes_without_coord, call_url, consult_requests_url
         )
 
     return sent, nodes_without_coord
 
 
-def _alert_redib_coordinators(consult, nodes, users, call_url, consult_requests_url):
+def _alert_redib_coordinators(consult, nodes, call_url, consult_requests_url):
     """Fall back to the ReDIB coordinator(s) for nodes with no coordinator."""
     from communications.tasks import send_email_from_template
+    from core.models import UserRole
 
     grouped = consult.equipment_by_node()
     node_names = ', '.join(node.name for node in nodes)
@@ -259,13 +199,15 @@ def _alert_redib_coordinators(consult, nodes, users, call_url, consult_requests_
         item.name for node in nodes for item in grouped.get(node, [])
     )
 
-    for user in users:
+    for role in UserRole.objects.filter(
+        role='coordinator', is_active=True
+    ).select_related('user'):
         try:
             send_email_from_template.delay(
                 template_type='equipment_consult_request',
-                recipient_email=user.email,
+                recipient_email=role.user.email,
                 context_data={
-                    'coordinator_name': user.get_full_name() or user.email,
+                    'coordinator_name': role.user.get_full_name() or role.user.email,
                     'requester_name': consult.name,
                     'requester_email': consult.email,
                     'requester_phone': consult.phone,
@@ -282,12 +224,12 @@ def _alert_redib_coordinators(consult, nodes, users, call_url, consult_requests_
                     'consult_requests_url': consult_requests_url,
                     'no_node_coordinator': True,
                 },
-                recipient_user_id=user.id,
+                recipient_user_id=role.user.id,
             )
         except Exception:
             logger.exception(
                 "Consult request %s: fallback email to ReDIB coordinator %s failed",
-                consult.pk, user.email,
+                consult.pk, role.user.email,
             )
 
 

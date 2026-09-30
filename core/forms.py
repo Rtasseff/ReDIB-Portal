@@ -1,66 +1,8 @@
 """
 Forms for the core app.
 """
-import logging
-import time
-
-from allauth.account.forms import SignupForm as AllauthSignupForm
 from django import forms
-from django.core import signing
-
 from .models import User, Organization
-
-logger = logging.getLogger(__name__)
-
-
-class SignupForm(AllauthSignupForm):
-    """allauth's signup form plus a check that a browser filled it in (backlog #92).
-
-    The page carries a signed timestamp in a data attribute, and a line of
-    JavaScript copies it into the hidden ``browser_check`` field. A bot that
-    posts the form back without running the page's script sends the field
-    empty; a scripted browser that submits within MIN_SECONDS is caught by the
-    age check. Either way the form is refused with a visible error, so a real
-    person who trips it can simply submit again.
-
-    The honeypot (ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD) is allauth's own and
-    lives in the parent class.
-    """
-
-    BROWSER_CHECK_SALT = 'core.forms.SignupForm.browser_check'
-    MIN_SECONDS = 3
-    MAX_AGE_SECONDS = 24 * 60 * 60
-
-    browser_check = forms.CharField(required=False, widget=forms.HiddenInput)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Rendered into the page's data-token attribute, fresh on every render.
-        self.browser_check_token = signing.dumps(
-            time.time(), salt=self.BROWSER_CHECK_SALT
-        )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        try:
-            issued = signing.loads(
-                cleaned_data.get('browser_check', ''),
-                salt=self.BROWSER_CHECK_SALT,
-                max_age=self.MAX_AGE_SECONDS,
-            )
-        except signing.SignatureExpired:
-            reason = 'page open for over a day'
-        except signing.BadSignature:
-            reason = 'no token: the page script did not run'
-        else:
-            reason = 'submitted too fast' if time.time() - issued < self.MIN_SECONDS else None
-        if reason:
-            logger.warning('Signup refused by the browser check (%s)', reason)
-            raise forms.ValidationError(
-                'We could not complete your registration. Please make sure '
-                'JavaScript is enabled in your browser, then submit the form again.'
-            )
-        return cleaned_data
 
 
 class OrgWithOtherChoiceField(forms.ModelChoiceField):

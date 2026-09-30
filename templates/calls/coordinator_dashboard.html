@@ -71,28 +71,28 @@
                         </a>
 
                         {% if call.status == 'draft' %}
-                        <button type="submit" form="call-action-form" formaction="{% url 'calls:announce' call.pk %}" class="btn btn-outline-primary"
+                        <a href="{% url 'calls:announce' call.pk %}" class="btn btn-outline-primary"
                            onclick="return confirm('Announce this call? It will be listed publicly as upcoming and opens automatically on its start date.')" title="Announce">
                             <i class="bi bi-megaphone"></i>
-                        </button>
-                        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
-                           onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')" title="Publish (open now)">
+                        </a>
+                        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
+                           onclick="return confirm('Publish this call? This opens it for submissions now and notifies users.')" title="Publish (open now)">
                             <i class="bi bi-send"></i>
-                        </button>
+                        </a>
                         <a href="{% url 'calls:delete' call.pk %}" class="btn btn-outline-danger"
                            onclick="return confirm('WARNING: This will permanently delete this call. This action cannot be undone. Are you sure?')" title="Delete">
                             <i class="bi bi-trash"></i>
                         </a>
                         {% elif call.status == 'announced' %}
-                        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
+                        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-outline-success"
                            onclick="return confirm('Open this call for submissions now?')" title="Open now">
                             <i class="bi bi-send"></i>
-                        </button>
+                        </a>
                         {% elif call.status == 'open' %}
-                        <button type="submit" form="call-action-form" formaction="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
+                        <a href="{% url 'calls:close' call.pk %}" class="btn btn-outline-warning"
                            onclick="return confirm('Close this call for submissions?')" title="Close">
                             <i class="bi bi-lock"></i>
-                        </button>
+                        </a>
                         {% endif %}
                     </div>
                 </td>
@@ -130,7 +130,7 @@
             </li>
             <li class="mb-2">
                 <span class="badge bg-primary">Announced</span> - Advertised publicly as upcoming; no applications yet.
-                Opens by itself on the submission start date{% if announcement_emails_enabled %}, when the "Now Open" email goes out{% else %} &mdash; no email is sent, so announce it yourself and link people to the public call page{% endif %}.
+                Opens by itself on the submission start date, when the "Now Open" email goes out.
                 Visitors can already request a consult about the listed equipment.
             </li>
             <li class="mb-2">
@@ -145,5 +145,4 @@
         </ul>
     </div>
 </div>
-<form id="call-action-form" method="post" class="d-none">{% csrf_token %}</form>
 {% endblock %}

@@ -205,10 +205,10 @@
 
         {% if not is_create and call.status == 'draft' %}
         <div>
-            <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-success"
-               onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')">
+            <a href="{% url 'calls:publish' call.pk %}" class="btn btn-success"
+               onclick="return confirm('Publish this call? This will send notification emails to users.')">
                 <i class="bi bi-send"></i> Publish Call
-            </button>
+            </a>
             <a href="{% url 'calls:delete' call.pk %}" class="btn btn-danger ms-2"
                onclick="return confirm('WARNING: This will permanently delete this call and all associated equipment allocations. This action cannot be undone. Are you sure?')">
                 <i class="bi bi-trash"></i> Delete Call
@@ -217,5 +217,4 @@
         {% endif %}
     </div>
 </form>
-<form id="call-action-form" method="post" class="d-none">{% csrf_token %}</form>
 {% endblock %}
