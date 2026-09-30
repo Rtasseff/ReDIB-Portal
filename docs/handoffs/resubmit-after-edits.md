@@ -118,7 +118,26 @@ If it starts to need more, stop and ask.
 
 ## Status
 
-- [ ] helper · [ ] submit guard · [ ] badge + banner · [ ] tests · [ ] docs · [ ] click-through · [ ] /code-review · [ ] PR
+- [x] helper · [x] submit guard · [x] badge + banner · [x] tests · [x] docs · [x] click-through · [ ] /code-review · [ ] PR
+- **Helper:** `Application.can_resubmit_after_deadline` = a draft with any `FeasibilityReview`,
+  on a call that isn't `resolved`. Signal checked: `Application.save()` only allows
+  `→ draft` from `under_feasibility_review` (Request Edits), and only `application_submit`
+  creates review rows. **Deviation:** the brief's `was_sent_back_for_edits` plus a separate
+  resolved check in the view became one helper that includes the resolved check. The view
+  and both templates then use one rule, so a leftover sent-back draft on a *resolved* call
+  still shows **Call closed** and the old banner, not a Continue that submit would refuse.
+- **Tests:** there was no existing resubmission test to mirror, so
+  `tests/test_resubmit_after_edits.py` builds on the `test_feasibility_no_coordinator.py`
+  fixtures and drives the real path (submit → Request Edits → deadline passes → resubmit).
+  It has 8 tests. Without the fix, the 3 sent-back tests fail and the 5 refusal tests pass,
+  since they pin today's behaviour.
+- **Suite:** 547 baseline → 555.
+- **Click-through (2026-09-30, `localtest3` rebuilt, `runserver 8002`, over HTTP):** applicant1
+  finished and submitted LIVE-001. CICBIO asked for edits, then the call was closed (end date
+  moved into the past). LIVE-001 showed **Continue** and the new banner, and was edited and
+  resubmitted: `under_feasibility_review`, review back to `pending`, in CICBIO's queue.
+  NEVER-001 (applicant3, complete, never submitted) showed **Call closed** and the old banner,
+  and its submit was refused with "Submission deadline has passed."
 
 ## Questions for the handoff session
 

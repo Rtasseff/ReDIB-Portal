@@ -556,6 +556,10 @@ saying when the call closed: you can still read and edit your draft, but it can
 no longer be submitted. In **My Applications** the draft shows **Call closed**
 instead of **Continue**.
 
+The exception is an application a node sent back for edits. You can still
+resubmit it after the deadline, so it keeps **Continue**, and the banner says
+you can resubmit. This lasts until the call is **Resolved**.
+
 #### What happens after you submit
 
 Each step emails you, and your dashboard shows the current status:
@@ -705,6 +709,8 @@ coordinators, and any one of you can act on them.
 Every node must approve before the application goes to evaluation. A
 rejection from any node ends it. A request for edits returns it to the
 applicant straight away; when it comes back, every node reviews it again.
+You can request edits after the submission deadline too: the applicant can
+still resubmit, until the call is **Resolved**.
 
 #### Resolution
 

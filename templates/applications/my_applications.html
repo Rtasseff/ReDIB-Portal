@@ -38,7 +38,7 @@
                         <a href="{% url 'applications:detail' app.pk %}" class="btn btn-outline-primary" title="View">
                             <i class="bi bi-eye"></i> View
                         </a>
-                        {% if app.status == 'draft' and not app.call.is_open %}
+                        {% if app.status == 'draft' and not app.call.is_open and not app.can_resubmit_after_deadline %}
                         <span class="btn btn-outline-secondary disabled" title="This call closed on {{ app.call.submission_end|date:'j F Y, H:i' }}">
                             Call closed
                         </span>

@@ -1,7 +1,14 @@
 {# `application` is absent on the create page (no draft yet), where the view has already bounced a closed call. #}
 {% if application and not application.call.is_open %}
+{% if application.can_resubmit_after_deadline %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    The call has closed, but a node asked for edits, so you can still resubmit.
+</div>
+{% else %}
 <div class="alert alert-warning">
     <i class="bi bi-exclamation-triangle"></i>
     This call closed on {{ application.call.submission_end|date:"j F Y, H:i" }}. You can still read and edit this draft, but it can no longer be submitted.
 </div>
+{% endif %}
 {% endif %}
