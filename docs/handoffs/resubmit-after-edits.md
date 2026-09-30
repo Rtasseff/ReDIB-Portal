@@ -118,7 +118,7 @@ If it starts to need more, stop and ask.
 
 ## Status
 
-- [x] helper · [x] submit guard · [x] badge + banner · [x] tests · [x] docs · [x] click-through · [ ] /code-review · [ ] PR
+- [x] helper · [x] submit guard · [x] badge + banner · [x] tests · [x] docs · [x] click-through · [x] /code-review · [x] PR
 - **Helper:** `Application.can_resubmit_after_deadline` = a draft with any `FeasibilityReview`,
   on a call that isn't `resolved`. Signal checked: `Application.save()` only allows
   `→ draft` from `under_feasibility_review` (Request Edits), and only `application_submit`
@@ -138,10 +138,18 @@ If it starts to need more, stop and ask.
   resubmitted: `under_feasibility_review`, review back to `pending`, in CICBIO's queue.
   NEVER-001 (applicant3, complete, never submitted) showed **Call closed** and the old banner,
   and its submit was refused with "Submission deadline has passed."
+- **/code-review (medium):** no correctness bugs. One low-severity point, left as a question
+  below rather than fixed.
 
 ## Questions for the handoff session
 
--
+- **A new node added during edits.** The exemption covers the whole draft. After the deadline,
+  a sent-back applicant can still add equipment from a node that wasn't on the original request.
+  On resubmit that node gets its first `FeasibilityReview` and email, after the deadline. It's
+  left as is: a node's edit request may well be "use node X instead", and refusing it would
+  strand the applicant again. If the directors want it refused, the check is "after the deadline,
+  every requested node must already have a review row". That's a few lines in the same guard,
+  plus a message.
 
 ## Return protocol
 
