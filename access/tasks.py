@@ -54,6 +54,11 @@ def send_publication_followups():
             'handoff_date': application.handoff_email_sent_at,
             'acknowledgment_text': 'This work acknowledges the use of ReDIB ICTS, supported by the Ministry of Science, Innovation and Universities (MICIU).',
             'publication_url': settings.SITE_URL + reverse('access:publication_submit'),
+            # #42: publications can only be reported against a completed
+            # application, so a still-running project is told to mark it
+            # complete first instead of landing on an empty form.
+            'project_complete': application.status == 'completed',
+            'active_access_url': settings.SITE_URL + reverse('access:applicant_handoff'),
         }
 
         applicant_email = application.applicant_email or application.applicant.email

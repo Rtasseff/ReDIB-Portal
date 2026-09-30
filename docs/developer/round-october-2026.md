@@ -56,7 +56,7 @@ completion reminders); every one of them is now fixed and deployed (rows 2,
 | 1 | ~~**Run the dress rehearsal.**~~ **Done 2026-09-08 — Parts A *and* B**, all eleven stages walked; 14 findings filed (#66–#79), none blocking. See § 4.7a and § 4.7c. | before 09-15 | Ryan |
 | 2 | ~~**#68** — Announce/Publish and the Call Status Guide promise notification emails that are switched off.~~ **Done 2026-09-10 on `main` (`53c4fae`)**, together with #66 (blank call title, incl. the applicant's PDF) and #72 (footer year). Text only; the wording now follows `CALL_ANNOUNCEMENT_EMAILS_ENABLED`, so it stays right whichever way #41 goes. Reaches prod with row 3. | ~~before 09-15~~ | dev |
 | 3 | ~~**Deploy `main` to prod.**~~ **Done 2026-09-14** — prod pulled `f4a2b4e → d4a2d47` (27 commits: the three text fixes, PR #41, PR #42), backup `redib_db_20260914_123713.sql.gz` first, rebuilt web/celery/celery-beat only, seconds of downtime, no migrations, all checks green. Completion reminders confirmed still paused. | ~~before 09-15~~ | prod |
-| 4 | **Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1 | ~09-15 | Ryan |
+| 4 | ~~**Announce REDIB-2602** in the portal, and confirm its real dates replace the estimates in § 1~~ **Done:** REDIB-2602 is announced on `/calls/2/` and opens **2026-10-01**. Its real dates are now in § 1. Ryan publicises it on 09-30/10-01. | ~09-15 | Ryan |
 | 5 | ~~**Ask the nodes to close finished REDIB-2601 projects** — it shrinks the 10-31 email burst (§ 4.8)~~ **The burst will not happen:** prod paused `send_completion_reminders` on 09-09 (#80). Closing finished projects is now data hygiene, still worth doing, no date. | — | Ryan |
 | 6 | ~~**#73** — Auto-Assign Evaluators force-closes an open call.~~ **Merged 2026-09-11 (PR #41):** the close only happens once the deadline has actually passed; assigning early is allowed and the page says so. | deploy 09-15 → 10-13 | prod |
 | 7 | ~~**#74** — the published resolution table prints "Wait List" for an application the node promoted to accepted.~~ **Merged 2026-09-11 (PR #41):** promotion writes `accept` on every waitlisted node resolution; the table is unchanged. | deploy 09-15 → 10-13 | prod |
@@ -65,7 +65,7 @@ completion reminders); every one of them is now fixed and deployed (rows 2,
 | 9b | ~~**`execution-deadline`**~~ — **merged 2026-09-14 (PR #43)**, once row 3 was deployed and #37 was on `main`; **deployed 2026-09-15** with the pre-open batch (row 10a). #80(a) as decided 09-11: `Application.execution_end`, nullable (null = the call's date), set by the node coordinator where they set approved hours (node resolution, Promote to Accepted), prefilled with the call's date, editable later from the application detail page, last edit wins for multi-node; the two reminder tasks read it. **One migration → lands after #37** (row 10); either in the pre-open batch or after 10-31; **must be in prod before REDIB-2602 resolutions (~Jan 2027)**. | after #37, before ~2027-01 | dev |
 | 10 | ~~**#37**, the migrate advisory lock~~ **Done 2026-09-14 (`bebbc80`):** `manage.py run_locked` wraps `migrate` and `seed_email_templates` in the entrypoint. Verified only against SQLite here; ~~the next deploy is its real test~~ **proven on prod 2026-09-15 (row 10a):** `celery-beat` applied `0015`, `web` and `celery` waited on the lock and logged `No migrations to apply`, one `django_migrations` row, no restart. | with 10a | dev |
 | 10a | ~~**Pre-open batch deploy**~~ **Done 2026-09-15** — prod pulled `d4a2d47 → 52a28e5` (#37, migration `0015` (`execution-deadline`), #64's edit warning, the Spanish label, prod's own roster commits), backup `redib_db_20260915_135238.sql.gz` first, built the three app images while the old containers kept serving, then recreated web/celery/celery-beat only at 13:53 UTC (~20 s down; gunicorn listening 13:53:55). **#37 held on its first real test:** `celery-beat` logged `Applying applications.0015_application_execution_end_and_more... OK` (13:53:41.55), then `web` (41.80) and `celery` (42.07) `No migrations to apply`, one after the other; no `DuplicateColumn`, no traceback, restart count 0 on all three. Checks: (1) `migrate --check` exits 0; (2) the schema query prints `0`, and `execution_end` exists, nullable, on both `applications_application` and `applications_historicalapplication`; (3) `django_migrations` holds **one** row for `0015` (92 → 93 rows; the three 08-20 `0014` rows untouched); (4) REDIB-2601-001's detail page, rendered as a coordinator, reads *Execution period ends Oct 30, 2026* with no *(set by node)* marker — none of the 15 accepted REDIB-2601 applications has an override. Site, user guide and `/calls/` answer; the Celery worker pings. Completion reminders still paused (#80's re-enable sequence is separate). **Same day, after the deploy: Raúl Herance confirmed**, so his account and evaluator role were reactivated on prod and his `users.tsv` row set back to `is_active` TRUE — coverage now preclinical 15, clinical 6, radiochemistry 3, and `check_role_drift` lists only the five #81 accounts (run against the image's copy of `users.tsv`, which keeps the old FALSE until the next rebuild). | ~~before 10-13~~ | prod |
-| 11 | **#42**, the publication follow-up dead end | before December | dev |
+| 11 | ~~**#42**, the publication follow-up dead end~~ **Done 2026-09-30 on `main`:** the 6-month email still goes to accepted and completed projects, but a project not yet complete is told to **Mark Complete** first (link to My Active Access) instead of landing on an empty publication form. Email template reseeds on deploy. | before 10-13 | dev |
 | 12 | ~~**#63**, clinical evaluator capacity — recruit or reactivate~~ **Done 2026-09-15** (five dormant roles retired, five evaluators added; clinical 4 → 6). What remains is a watch, not a task: at assignment in December, the *no area match* marks (#76) on the assignment page show whether six clinical evaluators were enough. | December | Ryan |
 | 13 | **#92, bot sign-ups.** Deploy `main` (no migration), then do the checks and the `purge_unverified_signups` run in the #92 backlog row | as soon as it is pushed; before 10-13 | prod |
 
@@ -101,8 +101,10 @@ Because the risk now is breaking something, not missing something:
 - **now → 09-15:** rehearsal findings only. No new features.
 - **09-15 → 10-13:** fix what the rehearsal turned up (the two `rehearsal-*`
   buckets), plus #37. Deploy freely — no live application exists yet.
-- **10-13 → 10-15:** freeze. Nothing deploys.
-- **after 10-15:** only what is actively broken in the live call.
+- ~~**10-13 → 10-15:** freeze.~~ **Superseded 2026-09-30:** the real dates came in and
+  the call opens on **10-01**, not 10-15. So the freeze starts at the last deploy
+  on 09-30, the one carrying #42.
+- **from 10-01 (the call is live):** only what is actively broken in the live call.
 
 ### What is already verified, so you needn't re-derive it
 
@@ -135,16 +137,17 @@ to be live weeks before it, not on it.
 
 ### Estimated phases of the new call
 
-Derived from REDIB-2601's shape, **not yet confirmed**. When the `Call`
-object is created in the portal, replace these with its real dates:
+**Confirmed 2026-09-30** from the call object (`/calls/2/`, REDIB-2602). This
+is earlier than the ~10-15 estimate everything above was planned around:
 
-| Phase | Estimate |
+| Phase | Date |
 |---|---|
-| Submissions open → close | 2026-10-15 → ~2026-11-30 |
-| Feasibility review | ~2026-12 |
-| Evaluation | ~2026-12 → ~2027-01 |
-| Resolution + acceptance windows | ~2027-01 → ~2027-02 |
-| Execution starts | ~2027-03 |
+| Submissions open → close | **2026-10-01 → 2026-10-31** |
+| Feasibility review | October, as applications arrive |
+| Evaluator assignment | early November (the clinical watch, row 12, moves here) |
+| Evaluation deadline | **2026-11-30** (form locks 12-07) |
+| Resolution + acceptance windows | ~December 2026 |
+| Execution | **2027-01-01 → 2027-06-30** |
 
 ## 2. The production deadline rule
 

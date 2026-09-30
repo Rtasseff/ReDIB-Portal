@@ -8,11 +8,13 @@ Tests the publication submission workflow:
 """
 
 from django.test import TestCase, Client
+from django.core import mail
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from datetime import timedelta
 
 from applications.models import Application
+from calls.models import Call
 from access.models import Publication
 from access.tasks import send_publication_followups
 from core.test_utils import create_complete_user
@@ -492,3 +494,42 @@ class PhaseIntegrationTest(TestCase):
         self.assertTrue(publication.redib_acknowledged)
 
         # Success!
+
+
+class PublicationFollowupWordingTests(TestCase):
+    """#42: a running project is told to mark it complete first; a completed one gets the form link."""
+
+    def setUp(self):
+        from django.core.management import call_command
+        call_command('seed_email_templates', verbosity=0)
+        self.applicant = User.objects.create_user(
+            email='pub42@example.com', password='x', first_name='Pat', last_name='Lee')
+        self.call = Call.objects.create(
+            code='TEST-42', title='Call 42',
+            submission_start=timezone.now() - timedelta(days=200),
+            submission_end=timezone.now() - timedelta(days=150),
+            evaluation_deadline=timezone.now() - timedelta(days=120),
+            execution_start=timezone.now() - timedelta(days=100),
+            execution_end=timezone.now() + timedelta(days=50),
+        )
+
+    def _send(self, status):
+        Application.objects.create(
+            applicant=self.applicant, call=self.call, code=f'TEST-42-{status}',
+            brief_description='x', status=status, accepted_by_applicant=True,
+            handoff_email_sent_at=timezone.now() - timedelta(days=182),
+        )
+        mail.outbox = []
+        send_publication_followups()
+        self.assertEqual(len(mail.outbox), 1)
+        return mail.outbox[0].body
+
+    def test_running_project_is_told_to_mark_complete_first(self):
+        body = self._send('accepted')
+        self.assertIn('not marked complete', body)
+        self.assertIn('/access/handoff/', body)
+
+    def test_completed_project_gets_the_publication_form(self):
+        body = self._send('completed')
+        self.assertNotIn('not marked complete', body)
+        self.assertIn('/access/publications/submit/', body)

@@ -1342,10 +1342,15 @@ It has been approximately 6 months since your access was granted for application
 
 We would greatly appreciate it if you could report any publications that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.
 
-If your work has resulted in publications, please log in to the ReDIB portal and submit publication details:
+{% if project_complete %}If your work has resulted in publications, please log in to the ReDIB portal and submit publication details:
 
 {{ publication_url }}
+{% else %}Your project is not marked complete in the portal yet, and publications can only be reported once it is. When your work is finished, open My Active Access, click Mark Complete and enter the hours you used:
 
+{{ active_access_url }}
+
+After that you can report publications here: {{ publication_url }}
+{% endif %}
 IMPORTANT REMINDER:
 Per regulatory requirements, all publications must acknowledge ReDIB support with the following text:
 
@@ -1372,7 +1377,9 @@ This is an automated reminder from the ReDIB COA Management System.''',
 
 <p>We would greatly appreciate it if you could <strong>report any publications</strong> that have resulted from your use of ReDIB equipment. This information helps us demonstrate the impact of ReDIB resources and secure continued funding.</p>
 
-<p>If your work has resulted in publications, please <a href="{{ publication_url }}" style="color: #2c5282; text-decoration: underline;">log in to the ReDIB portal and submit publication details</a>.</p>
+{% if project_complete %}<p>If your work has resulted in publications, please <a href="{{ publication_url }}" style="color: #2c5282; text-decoration: underline;">log in to the ReDIB portal and submit publication details</a>.</p>
+{% else %}<p>Your project is <strong>not marked complete</strong> in the portal yet, and publications can only be reported once it is. When your work is finished, open <a href="{{ active_access_url }}" style="color: #2c5282; text-decoration: underline;">My Active Access</a>, click <strong>Mark Complete</strong> and enter the hours you used. After that you can <a href="{{ publication_url }}" style="color: #2c5282; text-decoration: underline;">report your publications</a>.</p>
+{% endif %}
 
 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
     <h3 style="margin-top: 0; color: #92400e;">IMPORTANT REMINDER:</h3>

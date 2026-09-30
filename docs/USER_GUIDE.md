@@ -613,7 +613,9 @@ about what happens next.
 #### Publications
 
 About six months after the hand-off, if you have not reported a publication
-yet, you get a follow-up email. To report one, open **Publications** and click
+yet, you get a follow-up email. Publications can only be reported against a
+completed application, so if your project is not marked complete yet, the email
+asks you to do that first. To report one, open **Publications** and click
 **Submit Publication** (or **Add Publication** next to a completed application
 in **My Applications**). Enter the application it came from, the title,
 authors, journal or conference, DOI and publication date, and confirm that
