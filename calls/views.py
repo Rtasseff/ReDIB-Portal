@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.utils import timezone
 from django.db import transaction
@@ -22,6 +23,7 @@ from .forms import (
 )
 from .services import (
     build_call_url,
+    close_expired_calls,
     notify_call_audience,
     open_announced_calls,
     send_consult_confirmation_email,
@@ -39,16 +41,12 @@ CONSULT_DUPLICATE_WINDOW_SECONDS = 600
 
 def _auto_close_expired_calls():
     """
-    View-level fallback: close any open calls past their submission deadline.
+    View-level fallback: close calls past their submission deadline.
 
-    This ensures correct behavior even if Celery Beat is not running.
+    This ensures correct behavior even if Celery Beat is not running. Same
+    function as the beat task, so both paths give the same result.
     """
-    now = timezone.now()
-    expired = Call.objects.filter(status__in=['open', 'announced'], submission_end__lt=now)
-    count = expired.count()
-    if count > 0:
-        expired.update(status='closed')
-    return count
+    return len(close_expired_calls())
 
 
 def _auto_open_announced_calls(request):
@@ -319,6 +317,7 @@ def coordinator_dashboard(request):
 
     context = {
         'calls': calls,
+        'announcement_emails_enabled': settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED,
     }
     return render(request, 'calls/coordinator_dashboard.html', context)
 
@@ -368,6 +367,48 @@ def call_create(request):
     return render(request, 'calls/call_form.html', context)
 
 
+
+def _dates_vs_status_warning(call):
+    """#64: say so when an edit leaves the dates and the status disagreeing.
+
+    `Call.status` is written by the dates (the daily beat and the public-page
+    fallbacks) and by humans (Announce / Publish), and the two are allowed to
+    disagree; the public lists filter on both, so a call whose owners disagree
+    drops out of the site while its badge still looks right. The edit form
+    cannot change `status` (#27) — this only tells the coordinator what the
+    dates they just saved actually do. Returns a message or None.
+    """
+    now = timezone.now()
+    fmt = lambda dt: timezone.localtime(dt).strftime('%d %b %Y, %H:%M')  # noqa: E731
+    if call.status == 'open' and not call.is_open:
+        if call.submission_start > now:
+            return (
+                f"{call.code} is marked Open, but its submission start is now in the "
+                f"future ({fmt(call.submission_start)}): it is NOT accepting applications "
+                "and is not listed on the public calls page until then. Applicants who "
+                "already hold a draft can still submit. Move the start back to today or "
+                "earlier if that was not the intent."
+            )
+        return (
+            f"{call.code} is marked Open, but its submission deadline is now in the past "
+            f"({fmt(call.submission_end)}): it is not accepting new applications and "
+            "will be closed automatically by the daily check. Extend the deadline if "
+            "that was not the intent."
+        )
+    if call.status == 'announced' and call.submission_start <= now:
+        return (
+            f"{call.code} is Announced, but its submission start ({fmt(call.submission_start)}) "
+            "has already passed: it will open automatically the next time the public "
+            "calls page is visited or the daily check runs."
+        )
+    if call.status == 'closed' and call.submission_end > now:
+        return (
+            f"{call.code} is Closed and stays closed: moving the deadline to "
+            f"{fmt(call.submission_end)} does not reopen it. Reopening a closed call "
+            "needs a developer (backlog #54)."
+        )
+    return None
+
 @coordinator_required
 def call_edit(request, pk):
     """Edit an existing call."""
@@ -382,6 +423,9 @@ def call_edit(request, pk):
             formset.save()
 
             messages.success(request, f"Call {call.code} updated successfully.")
+            warning = _dates_vs_status_warning(call)
+            if warning:
+                messages.warning(request, warning)
             return redirect('calls:detail', pk=call.pk)
     else:
         form = CallForm(instance=call)
@@ -392,6 +436,7 @@ def call_edit(request, pk):
         'formset': formset,
         'call': call,
         'is_create': False,
+        'announcement_emails_enabled': settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED,
     }
     return render(request, 'calls/call_form.html', context)
 
@@ -428,11 +473,13 @@ def call_detail(request, pk):
         'equipment_allocations': equipment_allocations,
         'applications': applications,
         'consult_requests': consult_requests,
+        'announcement_emails_enabled': settings.CALL_ANNOUNCEMENT_EMAILS_ENABLED,
     }
     return render(request, 'calls/detail.html', context)
 
 
 @coordinator_required
+@require_POST
 def call_announce(request, pk):
     """
     Announce a call ahead of its submission window.
@@ -494,6 +541,7 @@ def call_announce(request, pk):
 
 
 @coordinator_required
+@require_POST
 def call_publish(request, pk):
     """
     Publish a call — open it for submissions now.
@@ -595,14 +643,23 @@ def consult_requests(request, pk):
 
 
 @coordinator_required
+@require_POST
 def call_close(request, pk):
     """
     Close call for submissions.
 
     Changes status to 'closed', preventing new applications.
-    Ready for evaluator assignment.
+    Ready for evaluator assignment. Only an open call can be closed.
     """
     call = get_object_or_404(Call, pk=pk)
+
+    if call.status != 'open':
+        messages.error(
+            request,
+            f"Only open calls can be closed. {call.code} is "
+            f"{call.get_status_display()}."
+        )
+        return redirect('calls:detail', pk=call.pk)
 
     call.status = 'closed'
     call.save()
@@ -616,12 +673,9 @@ def call_resolve(request, pk):
     """
     Mark a call resolved: 'closed' -> 'resolved', resolution locked.
 
-    Deliberately separate from the legacy `finalize_resolution` bulk flow
-    (`applications/services/resolution.py`), which also re-dispatches
-    resolution notification emails to every applicant — unsafe to press on
-    a call whose node resolutions have already gone out per-application.
-    This action has **no email side-effects**; it only closes out the
-    call's lifecycle field. See docs/developer/call-lifecycle-proposal.md
+    Each applicant was already emailed when their application's last node
+    decided, so this action has **no email side-effects**; it only closes
+    out the call's lifecycle field. See docs/developer/call-lifecycle-proposal.md
     for the (deferred) redesign this manual action deliberately does not
     anticipate.
     """

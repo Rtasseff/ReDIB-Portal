@@ -28,24 +28,24 @@
         </div>
 
         {% if call.status == 'draft' %}
-        <a href="{% url 'calls:announce' call.pk %}" class="btn btn-sm btn-primary me-2"
-           onclick="return confirm('Announce this call? It will be listed publicly as upcoming, notification emails go out now, and it opens automatically on the submission start date.')">
+        <button type="submit" form="call-action-form" formaction="{% url 'calls:announce' call.pk %}" class="btn btn-sm btn-primary me-2"
+           onclick="return confirm('Announce this call? It will be listed publicly as upcoming and opens automatically on the submission start date.{% if announcement_emails_enabled %} Notification emails go out now.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')">
             <i class="bi bi-megaphone"></i> Announce
-        </a>
-        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
-           onclick="return confirm('Publish this call? This opens it for submissions now and sends notification emails to users.')">
+        </button>
+        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
+           onclick="return confirm('Publish this call? This opens it for submissions now.{% if announcement_emails_enabled %} Notification emails go out to users.{% else %} No email is sent — announce it yourself and link people to the public call page.{% endif %}')">
             <i class="bi bi-send"></i> Publish
-        </a>
+        </button>
         {% elif call.status == 'announced' %}
-        <a href="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
-           onclick="return confirm('Open this call for submissions now? This sends the &quot;Now Open&quot; email.')">
+        <button type="submit" form="call-action-form" formaction="{% url 'calls:publish' call.pk %}" class="btn btn-sm btn-success"
+           onclick="return confirm('Open this call for submissions now?{% if announcement_emails_enabled %} This sends the &quot;Now Open&quot; email.{% else %} No email is sent — tell applicants yourself.{% endif %}')">
             <i class="bi bi-send"></i> Open Now
-        </a>
+        </button>
         {% elif call.status == 'open' %}
-        <a href="{% url 'calls:close' call.pk %}" class="btn btn-sm btn-warning"
+        <button type="submit" form="call-action-form" formaction="{% url 'calls:close' call.pk %}" class="btn btn-sm btn-warning"
            onclick="return confirm('Close this call for submissions?')">
             <i class="bi bi-lock"></i> Close Submissions
-        </a>
+        </button>
         {% elif call.status == 'closed' %}
         {% if not call.resolutions_released %}
         <a href="{% url 'calls:release_resolutions' call.pk %}" class="btn btn-sm btn-warning me-2">
@@ -297,4 +297,5 @@
     </div>
 </div>
 {% endif %}
+<form id="call-action-form" method="post" class="d-none">{% csrf_token %}</form>
 {% endblock %}

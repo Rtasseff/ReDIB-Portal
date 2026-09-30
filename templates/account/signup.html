@@ -13,8 +13,22 @@
 </div>
 {% endif %}
 
+<noscript>
+<div class="alert alert-warning">Creating an account needs JavaScript. Please enable it in your browser.</div>
+</noscript>
+
 <form method="post" action="{% url 'account_signup' %}">
     {% csrf_token %}
+
+    {# Bot protection, backlog #92. The honeypot's name is ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD; #}
+    {# people never see it, a bot that fills every input does. browser_check is filled by the #}
+    {# script at the bottom (core.forms.SignupForm).                                           #}
+    <div style="display: none;" aria-hidden="true">
+        <label for="id_website">Leave this field empty</label>
+        <input type="text" name="website" id="id_website" tabindex="-1" autocomplete="off">
+    </div>
+    <input type="hidden" name="browser_check" id="id_browser_check" value=""
+           data-token="{{ form.browser_check_token }}">
 
     <div class="mb-3">
         <label for="id_email" class="form-label">Email address</label>
@@ -76,4 +90,13 @@
 
 {% block entrance_footer %}
 <p>Already have an account? <a href="{% url 'account_login' %}">Sign in</a></p>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        var field = document.getElementById('id_browser_check');
+        field.value = field.dataset.token;
+    })();
+</script>
 {% endblock %}

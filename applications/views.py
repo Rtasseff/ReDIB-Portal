@@ -41,15 +41,18 @@ def _is_consult_request(request):
 
 
 def _send_consult_request_emails(request, application):
-    """Dispatch a pre-submission consult email to the node coordinator(s)
-    of every node whose equipment this draft requests.
+    """Dispatch a pre-submission consult email for every node whose
+    equipment this draft requests.
 
-    Returns (sent_count, nodes_without_coordinator). Wraps each call in a
-    try/except per node so a single failure doesn't block the rest; the
-    caller wraps the whole thing again in try/except to survive Celery
-    being down (mirroring the application_submit pattern at lines ~668-705).
+    Recipients come from `calls.services.consult_recipients`, the same rule
+    as the public consult: every active node coordinator of each node, and
+    the ReDIB coordinators for a node with none.
+
+    Returns (sent_count, nodes_without_coordinator). Wraps each send in a
+    try/except so a single failure doesn't block the rest; the caller wraps
+    the whole thing again in try/except to survive Celery being down.
     """
-    from core.models import UserRole
+    from calls.services import consult_recipients
     from communications.tasks import send_email_from_template
     import logging
     log = logging.getLogger(__name__)
@@ -62,8 +65,11 @@ def _send_consult_request_emails(request, application):
     for ra in requested_access:
         equipment_by_node.setdefault(ra.equipment.node, []).append(ra.equipment.name)
 
+    by_node, nodes_without_coord, fallback_users = consult_recipients(
+        equipment_by_node.keys()
+    )
+
     sent = 0
-    nodes_without_coord = []
     application_url = request.build_absolute_uri(
         reverse('applications:detail', kwargs={'pk': application.pk})
     )
@@ -74,40 +80,48 @@ def _send_consult_request_emails(request, application):
     )
     applicant_email = application.applicant_email or application.applicant.email
 
-    for node, equipment_names in equipment_by_node.items():
-        coord = (
-            UserRole.objects
-            .filter(node=node, role='node_coordinator', is_active=True)
-            .select_related('user')
-            .first()
-        )
-        if not coord:
-            nodes_without_coord.append(node)
-            continue
+    # One (recipient, node label, equipment names, fallback?) per email.
+    sends = [
+        (user, node.name, equipment_by_node[node], False)
+        for node, users in by_node.items()
+        for user in users
+    ]
+    if nodes_without_coord:
+        uncovered_names = ', '.join(n.name for n in nodes_without_coord)
+        uncovered_equipment = [
+            name for n in nodes_without_coord for name in equipment_by_node[n]
+        ]
+        sends += [
+            (user, uncovered_names, uncovered_equipment, True)
+            for user in fallback_users
+        ]
+
+    for user, node_name, equipment_names, is_fallback in sends:
         try:
             send_email_from_template.delay(
                 template_type='feasibility_consult_request',
-                recipient_email=coord.user.email,
+                recipient_email=user.email,
                 context_data={
-                    'coordinator_name': coord.user.get_full_name() or coord.user.email,
+                    'coordinator_name': user.get_full_name() or user.email,
                     'applicant_name': applicant_name,
                     'applicant_email': applicant_email,
                     'applicant_phone': application.applicant_phone or '',
                     'application_code': application.code,
-                    'node_name': node.name,
+                    'node_name': node_name,
                     'equipment_list': ', '.join(equipment_names),
                     'application_url': application_url,
                     'call_code': application.call.code,
                     'submission_end': application.call.submission_end.strftime('%Y-%m-%d %H:%M'),
+                    'no_node_coordinator': is_fallback,
                 },
-                recipient_user_id=coord.user.id,
+                recipient_user_id=user.id,
                 related_application_id=application.id,
             )
             sent += 1
         except Exception:
             log.exception(
-                "Consult email failed for application %s node %s",
-                application.code, node.code,
+                "Consult email failed for application %s recipient %s",
+                application.code, user.email,
             )
     return sent, nodes_without_coord
 
@@ -649,6 +663,16 @@ def application_edit_step5(request, pk):
                         "Your consult request has been sent to the node coordinator(s). "
                         "They will contact you. Your draft has been saved."
                     )
+                elif no_coord_nodes:
+                    # Nobody to email at all: no node coordinator, and no
+                    # active ReDIB coordinator to fall back on.
+                    messages.warning(
+                        request,
+                        "Your draft has been saved and your consult request recorded, "
+                        "but nobody could be emailed: these nodes have no coordinator "
+                        "on file: " + ", ".join(n.code for n in no_coord_nodes)
+                        + ". Please contact ReDIB directly."
+                    )
                 else:
                     messages.success(
                         request,
@@ -657,11 +681,12 @@ def application_edit_step5(request, pk):
                         "this to a specific node coordinator. Please add equipment in "
                         "step 3 and click Save Draft again, or contact ReDIB directly."
                     )
-                if no_coord_nodes:
+                if sent and no_coord_nodes:
                     messages.warning(
                         request,
-                        "Some nodes have no active coordinator on file and were not "
-                        "notified: " + ", ".join(n.code for n in no_coord_nodes)
+                        "Some nodes have no active coordinator on file, so your request "
+                        "went to the ReDIB coordinators instead: "
+                        + ", ".join(n.code for n in no_coord_nodes)
                     )
                 return redirect('applications:my_applications')
             if draft_mode:
@@ -715,6 +740,12 @@ def application_submit(request, pk):
         status='draft'
     )
 
+    # Check call deadline first — an applicant on a closed call should learn
+    # that before being sent around every incomplete-field check.
+    if timezone.now() > application.call.submission_end:
+        messages.error(request, "Submission deadline has passed.")
+        return redirect('applications:detail', pk=application.pk)
+
     # Validate application is complete. We check the model fields directly
     # so a user who POSTs to /submit/ without walking the wizard still gets
     # bounced back to the first incomplete step instead of submitting a
@@ -756,11 +787,6 @@ def application_submit(request, pk):
     if not application.data_consent:
         messages.error(request, "You must consent to data processing.")
         return redirect('applications:edit_step5', pk=application.pk)
-
-    # Check call deadline
-    if timezone.now() > application.call.submission_end:
-        messages.error(request, "Submission deadline has passed.")
-        return redirect('applications:detail', pk=application.pk)
 
     # Generate application code if not already set (resubmissions reuse the original code)
     if not application.code:
@@ -979,7 +1005,7 @@ def feasibility_queue(request):
     Shows all applications requiring feasibility review for nodes
     where the current user is a node coordinator (via UserRole).
     """
-    from core.models import UserRole
+    from core.models import UserRole, Node
 
     # Get nodes where user is coordinator (via UserRole)
     my_nodes = UserRole.objects.filter(
@@ -1000,7 +1026,7 @@ def feasibility_queue(request):
 
     context = {
         'pending_reviews': pending_reviews,
-        'user_nodes': my_nodes,
+        'user_nodes': Node.objects.filter(pk__in=my_nodes).select_related('organization'),
     }
     return render(request, 'applications/feasibility_queue.html', context)
 
@@ -1182,6 +1208,17 @@ def resolution_dashboard(request):
         .order_by('-evaluation_deadline')
     )
 
+    # Calls that are fully evaluated but not yet released — the dashboard's
+    # empty state should name these rather than imply nothing is waiting.
+    gated_calls = (
+        Call.objects
+        .annotate(
+            evaluated_apps=Count('applications', filter=Q(applications__status='evaluated')),
+        )
+        .filter(evaluated_apps__gt=0, resolutions_released=False)
+        .order_by('-evaluation_deadline')
+    )
+
     # Add resolution summary for each call
     from applications.services import ResolutionService
     calls_with_stats = []
@@ -1195,6 +1232,7 @@ def resolution_dashboard(request):
 
     context = {
         'calls_with_stats': calls_with_stats,
+        'gated_calls': gated_calls,
     }
     return render(request, 'applications/resolution/dashboard.html', context)
 
@@ -1203,12 +1241,9 @@ def resolution_dashboard(request):
 @role_required('coordinator')
 def call_resolution_detail(request, call_id):
     """
-    Prioritized list of applications for resolution.
-
-    Shows applications sorted by priority (score DESC, code ASC) with:
-    - Hours availability per equipment
-    - Current resolution status
-    - Actions to set resolution
+    Read-only watch list: a call's evaluated applications ranked by score
+    (score DESC, code ASC) with the call's resolution counts. The node
+    coordinators make the decisions; nothing on this page writes.
     """
     from calls.models import Call
     from applications.services import ResolutionService
@@ -1228,159 +1263,6 @@ def call_resolution_detail(request, call_id):
         'summary': summary,
     }
     return render(request, 'applications/resolution/call_detail.html', context)
-
-
-@login_required
-@role_required('coordinator')
-def application_resolution(request, application_id):
-    """
-    AJAX endpoint for individual application resolution.
-
-    GET: Return application details as JSON
-    POST: Apply resolution and return result
-    """
-    import json
-    from django.http import JsonResponse
-    from applications.forms import ApplicationResolutionForm
-    from applications.services import ResolutionService
-
-    application = get_object_or_404(Application, pk=application_id)
-    service = ResolutionService(application.call)
-
-    if request.method == 'GET':
-        # Return application details
-        can_accept, reason, details = service.can_accept_application(application)
-
-        data = {
-            'id': application.id,
-            'code': application.code,
-            'applicant_name': application.applicant_name,
-            'brief_description': application.brief_description,
-            'final_score': float(application.final_score) if application.final_score else None,
-            'has_competitive_funding': application.has_competitive_funding,
-            'current_resolution': application.resolution,
-            'resolution_comments': application.resolution_comments,
-            'can_accept': can_accept,
-            'acceptance_reason': reason,
-            'acceptance_details': details,
-            'requested_access': [
-                {
-                    'equipment': ra.equipment.name,
-                    'hours_requested': float(ra.hours_requested),
-                }
-                for ra in application.requested_access.select_related('equipment').all()
-            ]
-        }
-        return JsonResponse(data)
-
-    elif request.method == 'POST':
-        # Apply resolution
-        form = ApplicationResolutionForm(request.POST, instance=application, application=application)
-
-        if form.is_valid():
-            resolution = form.cleaned_data['resolution']
-            comments = form.cleaned_data['resolution_comments']
-
-            try:
-                result = service.apply_resolution(
-                    application,
-                    resolution,
-                    comments,
-                    request.user
-                )
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Resolution applied: {resolution}',
-                    'result': result
-                })
-            except ValidationError as e:
-                return JsonResponse({
-                    'success': False,
-                    'error': str(e)
-                }, status=400)
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            }, status=400)
-
-
-@login_required
-@role_required('coordinator')
-def bulk_resolution(request, call_id):
-    """
-    AJAX endpoint for bulk auto-allocation of resolutions.
-
-    POST: Apply bulk resolution and return summary
-    """
-    from django.http import JsonResponse
-    from applications.forms import BulkResolutionForm
-    from applications.services import ResolutionService
-    from calls.models import Call
-
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-
-    call = get_object_or_404(Call, pk=call_id)
-    service = ResolutionService(call)
-
-    form = BulkResolutionForm(request.POST)
-
-    if form.is_valid():
-        threshold_score = form.cleaned_data['threshold_score']
-        auto_pending = form.cleaned_data['auto_pending']
-
-        try:
-            result = service.bulk_auto_allocate(
-                threshold_score=threshold_score,
-                auto_pending=auto_pending
-            )
-            return JsonResponse({
-                'success': True,
-                'message': f'Bulk resolution complete',
-                'result': result
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    else:
-        return JsonResponse({
-            'success': False,
-            'errors': form.errors
-        }, status=400)
-
-
-@login_required
-@role_required('coordinator')
-def finalize_resolution(request, call_id):
-    """
-    Finalize call resolution and trigger notifications.
-
-    POST: Lock call and send notification emails
-    """
-    from calls.models import Call
-    from applications.services import ResolutionService
-
-    if request.method != 'POST':
-        messages.error(request, 'Invalid request method')
-        return redirect('applications:resolution_dashboard')
-
-    call = get_object_or_404(Call, pk=call_id)
-    service = ResolutionService(call)
-
-    try:
-        result = service.finalize_resolution(request.user)
-        messages.success(
-            request,
-            f'Resolution finalized for {call.code}. '
-            f'{result["statistics"]["total"]} notifications sent.'
-        )
-        return redirect('applications:resolution_dashboard')
-    except ValidationError as e:
-        messages.error(request, str(e))
-        return redirect('applications:call_resolution_detail', call_id=call.id)
 
 
 # =============================================================================
@@ -1538,6 +1420,70 @@ def _can_manage_application(user, application):
     return bool(requested_node_ids & nc_node_ids)
 
 
+def _parse_execution_end(request, application):
+    """Read the node-set `execution_end` date from POST (#80a).
+
+    Returns (date, None) on success or (None, error message). The one rule:
+    the date may not fall before the call's execution start (local date).
+    Shared by node resolution, promotion and the detail-page edit.
+    """
+    from datetime import date
+
+    raw = (request.POST.get('execution_end') or '').strip()
+    if not raw:
+        return None, "Enter the date this project's execution period ends."
+    try:
+        value = date.fromisoformat(raw)
+    except ValueError:
+        return None, f"'{raw}' is not a valid date for the end of the execution period."
+    start = timezone.localtime(application.call.execution_start).date()
+    if value < start:
+        return None, (
+            f"The execution period cannot end before the call's execution "
+            f"start ({start.strftime('%b %d, %Y')})."
+        )
+    return value, None
+
+
+@login_required
+@require_POST
+def set_execution_end(request, pk):
+    """A node coordinator changes an accepted project's execution end (#80a).
+
+    Same authorisation as the other Access Tracking actions
+    (`_can_manage_application`); with several nodes on one application the
+    last edit wins. Only an accepted, not-yet-completed application has a
+    live execution period to move.
+    """
+    application = get_object_or_404(Application.objects.select_related('call'), pk=pk)
+
+    if not _can_manage_application(request.user, application):
+        messages.error(request, "You are not authorised to change this application's execution period.")
+        return redirect('access:access_tracking')
+
+    if application.status != 'accepted' or application.is_completed:
+        messages.error(
+            request,
+            f"{application.code} has no running execution period to change "
+            f"(status: {application.get_status_display()})."
+        )
+        return redirect('applications:detail', pk=application.pk)
+
+    value, error = _parse_execution_end(request, application)
+    if error:
+        messages.error(request, error)
+        return redirect('applications:detail', pk=application.pk)
+
+    application.set_execution_end(value)
+    application.save(update_fields=['execution_end'])
+    messages.success(
+        request,
+        f"The execution period of {application.code} now ends on "
+        f"{timezone.localtime(application.effective_execution_end).strftime('%b %d, %Y')}."
+    )
+    return redirect('applications:detail', pk=application.pk)
+
+
 @login_required
 @transaction.atomic
 def promote_waitlisted_application(request, pk):
@@ -1564,6 +1510,9 @@ def promote_waitlisted_application(request, pk):
     - resolution: pending -> accepted
     - resolution_date refreshed to now; acceptance_deadline is cleared
       (applicant has already accepted — no second clock needed)
+    - every NodeResolution still on 'waitlist' becomes 'accept', with the
+      promotion noted in its comments (the published resolution table reads
+      NodeResolution, not Application.status)
     - resolution_accepted notification + handoff email dispatched to
       applicant and node coordinators.
     """
@@ -1598,12 +1547,14 @@ def promote_waitlisted_application(request, pk):
                 'equipment_id': ra.equipment.id,
                 'equipment_name': ra.equipment.name,
                 'hours_requested': ra.hours_requested,
+                'hours_approved': ra.hours_requested,
             }
             for ra in requested_access
         ]
         return render(request, 'applications/promote_waitlist_confirm.html', {
             'application': application,
             'equipment_forms': equipment_forms,
+            'execution_end_value': timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d'),
         })
 
     from decimal import Decimal, InvalidOperation
@@ -1625,9 +1576,35 @@ def promote_waitlisted_application(request, pk):
         )
         return redirect('applications:detail', pk=application.pk)
 
+    # #80a: the node sets the project's execution end as it confirms the
+    # hours. A bad date saves nothing — hours included — and re-renders the
+    # page with what was entered. A POST without the field (the bare
+    # "Promote" submit above) keeps the date as it is.
+    execution_end_date = None
+    if 'execution_end' in request.POST:
+        execution_end_date, error = _parse_execution_end(request, application)
+        if error:
+            messages.error(request, error)
+            return render(request, 'applications/promote_waitlist_confirm.html', {
+                'application': application,
+                'equipment_forms': [
+                    {
+                        'equipment_id': ra.equipment.id,
+                        'equipment_name': ra.equipment.name,
+                        'hours_requested': ra.hours_requested,
+                        'hours_approved': approved_hours[ra.equipment_id],
+                    }
+                    for ra in requested_access
+                ],
+                'execution_end_value': request.POST.get('execution_end', ''),
+            })
+
     for ra in requested_access:
         ra.hours_approved = approved_hours[ra.equipment_id]
         ra.save(update_fields=['hours_approved'])
+
+    if execution_end_date is not None:
+        application.set_execution_end(execution_end_date)
 
     application.status = 'accepted'
     application.resolution = 'accepted'
@@ -1639,6 +1616,25 @@ def promote_waitlisted_application(request, pk):
     ).strip()
     application.acceptance_deadline = None  # applicant has already accepted
     application.save()
+
+    # Promotion is the node's later decision, so record it where the published
+    # resolution reads it: every node still on 'waitlist' now reads 'accept'
+    # (status 'accepted' means every node accepted). `reviewer` keeps the
+    # original decision-maker; the promotion lives in `comments` and history.
+    # 'accept' and 'reject' rows are left alone (#74).
+    promoted_at = timezone.now()
+    promotion_note = (
+        f"Promoted from the waitlist by {user.get_full_name() or user.email} "
+        f"on {promoted_at.date().isoformat()}."
+    )
+    for node_resolution in application.node_resolutions.filter(resolution='waitlist'):
+        node_resolution.resolution = 'accept'
+        node_resolution.reviewed_at = promoted_at
+        node_resolution.comments = (
+            f"{node_resolution.comments}\n\n{promotion_note}"
+            if node_resolution.comments else promotion_note
+        )
+        node_resolution.save()
 
     # The applicant accepted the original resolution_pending offer, but
     # promotion is the moment this application's resolution actually becomes
@@ -1715,8 +1711,8 @@ def close_out_waitlisted_application(request, pk):
         messages.error(
             request,
             f"Cannot close out {application.code}: the applicant has not yet "
-            "responded to the waitlist offer. Wait for their response, or let "
-            "it auto-expire."
+            "responded to the waitlist offer. Wait for their response. If the "
+            "deadline passes with no answer, use Expire on Access Tracking."
         )
         return redirect('applications:detail', pk=application.pk)
 
@@ -2536,14 +2532,37 @@ def node_resolution_review(request, application_id, node_id):
             except (ValueError, TypeError):
                 approved_hours[ra.equipment.id] = ra.hours_requested
 
-        if form.is_valid():
+        # #80a: the execution end rides with the hours, and only on accept —
+        # a waitlisted application gets its date at promotion, a rejected one
+        # has none. A bad date submits nothing (hours included); the page
+        # re-renders. A POST without the field keeps the date as it is, and so
+        # does one that sends back unchanged the date the page showed: on a
+        # multi-node application another node may have set a date since this
+        # page loaded, and an untouched prefill is not an edit.
+        execution_end_date = None
+        execution_end_error = None
+        execution_end_untouched = (
+            'execution_end_shown' in request.POST
+            and request.POST.get('execution_end') == request.POST['execution_end_shown']
+        )
+        if (form.is_valid() and form.cleaned_data['resolution'] == 'accept'
+                and 'execution_end' in request.POST and not execution_end_untouched):
+            execution_end_date, execution_end_error = _parse_execution_end(request, application)
+
+        if execution_end_error:
+            messages.error(
+                request,
+                f"Your resolution was NOT submitted. {execution_end_error}"
+            )
+        elif form.is_valid():
             try:
                 result = service.apply_node_resolution(
                     application=application,
                     resolution=form.cleaned_data['resolution'],
                     comments=form.cleaned_data['comments'],
                     approved_hours_dict=approved_hours,
-                    user=request.user
+                    user=request.user,
+                    execution_end_date=execution_end_date,
                 )
 
                 # Success message
@@ -2594,11 +2613,20 @@ def node_resolution_review(request, application_id, node_id):
             'equipment_name': ra.equipment.name,
             'equipment_id': ra.equipment.id,
             'hours_requested': ra.hours_requested,
-            'hours_approved': ra.hours_approved or ra.hours_requested,
+            # A re-render after an error keeps the hours just entered.
+            'hours_approved': (
+                approved_hours[ra.equipment.id] if request.method == 'POST'
+                else ra.hours_approved or ra.hours_requested
+            ),
         })
 
     # Get evaluations for display
     evaluations = application.evaluations.select_related('evaluator').all()
+
+    # The stored date as of this render, sent back as `execution_end_shown`
+    # so the POST can tell an edit from an untouched prefill.
+    application.refresh_from_db(fields=['execution_end'])
+    execution_end_shown = timezone.localtime(application.effective_execution_end).strftime('%Y-%m-%d')
 
     # Get other nodes' resolutions (for multi-node visibility)
     other_node_resolutions = application.node_resolutions.exclude(
@@ -2616,6 +2644,12 @@ def node_resolution_review(request, application_id, node_id):
         'evaluations': evaluations,
         'existing_resolution': existing_resolution,
         'other_node_resolutions': other_node_resolutions,
+        'execution_end_value': (
+            request.POST.get('execution_end')
+            if request.method == 'POST' and 'execution_end' in request.POST
+            else execution_end_shown
+        ),
+        'execution_end_shown': execution_end_shown,
     }
     return render(request, 'applications/node_resolution/review.html', context)
 
