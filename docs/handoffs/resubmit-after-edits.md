@@ -1,5 +1,7 @@
 # Handoff — `feature/resubmit-after-edits`
 
+> **Merged 2026-10-01 as PR #48** (suite 555, no migration). This file is now the record of the branch, not a task list.
+
 <!-- Copy of docs/developer/handoff-template.md, seeded by scripts/new-worktree.sh.
      Lives at docs/handoffs/resubmit-after-edits.md on the branch. Keep "Status" current. -->
 

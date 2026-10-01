@@ -10,7 +10,7 @@ source venv/bin/activate
 python manage.py test tests reports
 ```
 
-**545 tests, about 2½ minutes** (148 s on the dev laptop, 2026-09-29). All
+**555 tests, about 2½ minutes** (148 s on the dev laptop, 2026-10-01). All
 should pass on `main`.
 
 **Why the two labels.** `tests/` has no `__init__.py`, so a bare
