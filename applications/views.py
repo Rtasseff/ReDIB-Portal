@@ -741,8 +741,10 @@ def application_submit(request, pk):
     )
 
     # Check call deadline first — an applicant on a closed call should learn
-    # that before being sent around every incomplete-field check.
-    if timezone.now() > application.call.submission_end:
+    # that before being sent around every incomplete-field check. A draft a
+    # node sent back for edits may still be resubmitted.
+    if (timezone.now() > application.call.submission_end
+            and not application.can_resubmit_after_deadline):
         messages.error(request, "Submission deadline has passed.")
         return redirect('applications:detail', pk=application.pk)
 

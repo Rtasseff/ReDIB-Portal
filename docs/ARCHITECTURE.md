@@ -107,7 +107,7 @@ completed ■
 | Transition | Written by | Code (`applications/views.py` unless noted) |
 |---|---|---|
 | (new) → draft | Applicant, on an open call; one draft per applicant per call. `Application.save()` assigns the code `<CALL>-NNN` | `application_create` |
-| draft → submitted → under_feasibility_review | Applicant, **Submit Application**. One request makes both changes and creates a `FeasibilityReview` for each requested node | `application_submit` |
+| draft → submitted → under_feasibility_review | Applicant, **Submit Application**. One request makes both changes and creates a `FeasibilityReview` for each requested node. Refused after `submission_end`, except for a draft a node sent back with **Request Edits**, until the call is `resolved` (`Application.can_resubmit_after_deadline`: a draft with any `FeasibilityReview`) | `application_submit` |
 | under_feasibility_review → draft | A node coordinator picks **Request Edits** | `feasibility_review` |
 | under_feasibility_review → rejected_feasibility / pending_evaluation | Whoever decides the last pending review. Any rejection gives `rejected_feasibility` | `feasibility_review` |
 | pending_evaluation → under_evaluation | Coordinator, **Auto-Assign Evaluators** (moves only applications that got ≥1 evaluator), or a manual assignment | `evaluations.tasks.assign_evaluators_to_call` (run synchronously by `auto_assign_call`); `evaluations.views.manual_assign_evaluator` |

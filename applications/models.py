@@ -504,6 +504,21 @@ class Application(models.Model):
             recommendation='denied',
         ).exists()
 
+    @property
+    def can_resubmit_after_deadline(self):
+        """True for a draft a node sent back for edits, until the call is resolved.
+
+        Such a draft may be resubmitted after the call's submission deadline;
+        a first submission may not. Only `application_submit` creates
+        `FeasibilityReview` rows and Request Edits keeps them, so a draft
+        with any review has been submitted and sent back.
+        """
+        return (
+            self.status == 'draft'
+            and self.call.status != 'resolved'
+            and self.feasibility_reviews.exists()
+        )
+
 
 class RequestedAccess(models.Model):
     """Equipment access requests within an application"""
